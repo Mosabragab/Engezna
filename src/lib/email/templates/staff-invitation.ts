@@ -1,10 +1,10 @@
 export interface StaffInvitationData {
-  to: string
-  staffName: string
-  storeName: string
-  merchantName: string
-  role: string
-  inviteUrl: string
+  to: string;
+  staffName: string;
+  storeName: string;
+  merchantName: string;
+  role: string;
+  inviteUrl: string;
 }
 
 export function staffInvitationTemplate(data: StaffInvitationData): string {
@@ -13,9 +13,9 @@ export function staffInvitationTemplate(data: StaffInvitationData): string {
     cashier: 'كاشير',
     kitchen: 'مطبخ',
     staff: 'موظف',
-  }
+  };
 
-  const roleName = roleNames[data.role] || data.role
+  const roleName = roleNames[data.role] || data.role;
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -148,5 +148,5 @@ export function staffInvitationTemplate(data: StaffInvitationData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

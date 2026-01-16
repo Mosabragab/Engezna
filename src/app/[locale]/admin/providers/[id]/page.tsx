@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, AdminLayout } from '@/components/admin'
-import { formatNumber, formatDate, formatCurrency } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar, AdminLayout } from '@/components/admin';
+import { formatNumber, formatDate, formatCurrency } from '@/lib/utils/formatters';
 import {
   Shield,
   Store,
@@ -34,124 +34,130 @@ import {
   User as UserIcon,
   Eye,
   AlertTriangle,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  category: string
-  logo_url: string | null
-  cover_image_url: string | null
-  status: string
-  rejection_reason: string | null
-  commission_rate: number
-  rating: number
-  total_reviews: number
-  total_orders: number
-  is_featured: boolean
-  phone: string | null
-  email: string | null
-  address_ar: string | null
-  address_en: string | null
-  opening_time: string | null
-  closing_time: string | null
-  delivery_fee: number
-  min_order_amount: number
-  estimated_delivery_time_min: number
-  created_at: string
-  updated_at: string
-  governorate?: { id: string; name_ar: string; name_en: string } | null
-  city?: { id: string; name_ar: string; name_en: string } | null
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  status: string;
+  rejection_reason: string | null;
+  commission_rate: number;
+  rating: number;
+  total_reviews: number;
+  total_orders: number;
+  is_featured: boolean;
+  phone: string | null;
+  email: string | null;
+  address_ar: string | null;
+  address_en: string | null;
+  opening_time: string | null;
+  closing_time: string | null;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  created_at: string;
+  updated_at: string;
+  governorate?: { id: string; name_ar: string; name_en: string } | null;
+  city?: { id: string; name_ar: string; name_en: string } | null;
 }
 
 interface Order {
-  id: string
-  order_number: string
-  status: string
-  total: number
-  created_at: string
-  customer?: { full_name: string }
+  id: string;
+  order_number: string;
+  status: string;
+  total: number;
+  created_at: string;
+  customer?: { full_name: string };
 }
 
 export default function ProviderDetailPage() {
-  const locale = useLocale()
-  const params = useParams()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
-  const providerId = params.id as string
+  const locale = useLocale();
+  const params = useParams();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
+  const providerId = params.id as string;
 
-  const { toggle: toggleSidebar } = useAdminSidebar()
+  const { toggle: toggleSidebar } = useAdminSidebar();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalCommission: 0,
     completedOrders: 0,
     pendingOrders: 0,
-  })
+  });
 
   // Modal states
-  const [showActionModal, setShowActionModal] = useState(false)
-  const [currentAction, setCurrentAction] = useState<'approve' | 'reject' | 'suspend' | 'reactivate' | null>(null)
-  const [actionReason, setActionReason] = useState('')
-  const [actionLoading, setActionLoading] = useState(false)
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [currentAction, setCurrentAction] = useState<
+    'approve' | 'reject' | 'suspend' | 'reactivate' | null
+  >(null);
+  const [actionReason, setActionReason] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [showCommissionModal, setShowCommissionModal] = useState(false)
-  const [newCommissionRate, setNewCommissionRate] = useState(0)
-  const [commissionLoading, setCommissionLoading] = useState(false)
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [newCommissionRate, setNewCommissionRate] = useState(0);
+  const [commissionLoading, setCommissionLoading] = useState(false);
 
   // Define loadProviderStats first (called by loadProvider)
   const loadProviderStats = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = createClient();
     const { data: orders } = await supabase
       .from('orders')
       .select('status, total, platform_commission')
-      .eq('provider_id', providerId)
+      .eq('provider_id', providerId);
 
     if (orders) {
-      const completed = orders.filter(o => o.status === 'delivered')
-      const pending = orders.filter(o => ['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(o.status))
+      const completed = orders.filter((o) => o.status === 'delivered');
+      const pending = orders.filter((o) =>
+        ['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(o.status)
+      );
 
       setStats({
         totalRevenue: completed.reduce((sum, o) => sum + (o.total || 0), 0),
         totalCommission: completed.reduce((sum, o) => sum + (o.platform_commission || 0), 0),
         completedOrders: completed.length,
         pendingOrders: pending.length,
-      })
+      });
     }
-  }, [providerId])
+  }, [providerId]);
 
   // Define loadRecentOrders second (called by loadProvider)
   const loadRecentOrders = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = createClient();
     const { data: orders } = await supabase
       .from('orders')
-      .select(`
+      .select(
+        `
         id,
         order_number,
         status,
         total,
         created_at,
         customer:users!customer_id(full_name)
-      `)
+      `
+      )
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(5);
 
     if (orders) {
-      setRecentOrders(orders as unknown as Order[])
+      setRecentOrders(orders as unknown as Order[]);
     }
-  }, [providerId])
+  }, [providerId]);
 
   // Define loadProvider third (uses loadProviderStats and loadRecentOrders)
   const loadProvider = useCallback(async () => {
@@ -160,56 +166,58 @@ export default function ProviderDetailPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'get', providerId }),
-      })
-      const result = await response.json()
+      });
+      const result = await response.json();
 
       if (result.success && result.data) {
-        setProvider(result.data)
-        setNewCommissionRate(result.data.commission_rate || 10)
-        await loadProviderStats()
-        await loadRecentOrders()
+        setProvider(result.data);
+        setNewCommissionRate(result.data.commission_rate || 10);
+        await loadProviderStats();
+        await loadRecentOrders();
       }
     } catch {
       // Error handled silently
     }
-  }, [providerId, loadProviderStats, loadRecentOrders])
+  }, [providerId, loadProviderStats, loadRecentOrders]);
 
   // Define checkAuth fourth (uses loadProvider)
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadProvider()
+        setIsAdmin(true);
+        await loadProvider();
       }
     }
 
-    setLoading(false)
-  }, [loadProvider])
+    setLoading(false);
+  }, [loadProvider]);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   function openActionModal(action: 'approve' | 'reject' | 'suspend' | 'reactivate') {
-    setCurrentAction(action)
-    setActionReason('')
-    setShowActionModal(true)
+    setCurrentAction(action);
+    setActionReason('');
+    setShowActionModal(true);
   }
 
   async function executeAction() {
-    if (!currentAction) return
+    if (!currentAction) return;
 
-    setActionLoading(true)
+    setActionLoading(true);
 
     try {
       const actionMap = {
@@ -217,7 +225,7 @@ export default function ProviderDetailPage() {
         reject: 'reject',
         suspend: 'suspend',
         reactivate: 'reactivate',
-      }
+      };
 
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
@@ -227,24 +235,24 @@ export default function ProviderDetailPage() {
           providerId,
           reason: actionReason || undefined,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        await loadProvider()
-        setShowActionModal(false)
-        setCurrentAction(null)
+        await loadProvider();
+        setShowActionModal(false);
+        setCurrentAction(null);
       }
     } catch {
       // Error handled silently
     }
 
-    setActionLoading(false)
+    setActionLoading(false);
   }
 
   async function updateCommission() {
-    setCommissionLoading(true)
+    setCommissionLoading(true);
 
     try {
       const response = await fetch('/api/admin/providers', {
@@ -255,19 +263,19 @@ export default function ProviderDetailPage() {
           providerId,
           commissionRate: newCommissionRate,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        await loadProvider()
-        setShowCommissionModal(false)
+        await loadProvider();
+        setShowCommissionModal(false);
       }
     } catch {
       // Error handled silently
     }
 
-    setCommissionLoading(false)
+    setCommissionLoading(false);
   }
 
   async function toggleFeatured() {
@@ -280,12 +288,12 @@ export default function ProviderDetailPage() {
           providerId,
           isFeatured: !provider?.is_featured,
         }),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (result.success) {
-        await loadProvider()
+        await loadProvider();
       }
     } catch {
       // Error handled silently
@@ -294,17 +302,26 @@ export default function ProviderDetailPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-green-100 text-green-700'
-      case 'closed': return 'bg-slate-100 text-slate-700'
-      case 'pending_approval': return 'bg-amber-100 text-amber-700'
-      case 'incomplete': return 'bg-orange-100 text-orange-700'
-      case 'temporarily_paused': return 'bg-yellow-100 text-yellow-700'
-      case 'on_vacation': return 'bg-blue-100 text-blue-700'
-      case 'suspended': return 'bg-red-100 text-red-700'
-      case 'rejected': return 'bg-red-100 text-red-700'
-      default: return 'bg-slate-100 text-slate-700'
+      case 'open':
+        return 'bg-green-100 text-green-700';
+      case 'closed':
+        return 'bg-slate-100 text-slate-700';
+      case 'pending_approval':
+        return 'bg-amber-100 text-amber-700';
+      case 'incomplete':
+        return 'bg-orange-100 text-orange-700';
+      case 'temporarily_paused':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'on_vacation':
+        return 'bg-blue-100 text-blue-700';
+      case 'suspended':
+        return 'bg-red-100 text-red-700';
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -316,9 +333,9 @@ export default function ProviderDetailPage() {
       on_vacation: { ar: 'في إجازة', en: 'On Vacation' },
       suspended: { ar: 'موقوف', en: 'Suspended' },
       rejected: { ar: 'مرفوض', en: 'Rejected' },
-    }
-    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
-  }
+    };
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
+  };
 
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -326,18 +343,22 @@ export default function ProviderDetailPage() {
       coffee_shop: { ar: 'كافيه', en: 'Coffee Shop' },
       grocery: { ar: 'بقالة', en: 'Grocery' },
       vegetables_fruits: { ar: 'خضار وفواكه', en: 'Vegetables & Fruits' },
-    }
-    return labels[category]?.[locale === 'ar' ? 'ar' : 'en'] || category
-  }
+    };
+    return labels[category]?.[locale === 'ar' ? 'ar' : 'en'] || category;
+  };
 
   const getOrderStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-700'
-      case 'cancelled': return 'bg-red-100 text-red-700'
-      case 'pending': return 'bg-amber-100 text-amber-700'
-      default: return 'bg-blue-100 text-blue-700'
+      case 'delivered':
+        return 'bg-green-100 text-green-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      case 'pending':
+        return 'bg-amber-100 text-amber-700';
+      default:
+        return 'bg-blue-100 text-blue-700';
     }
-  }
+  };
 
   const getOrderStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -348,9 +369,9 @@ export default function ProviderDetailPage() {
       delivering: { ar: 'قيد التوصيل', en: 'Delivering' },
       delivered: { ar: 'تم التوصيل', en: 'Delivered' },
       cancelled: { ar: 'ملغي', en: 'Cancelled' },
-    }
-    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
-  }
+    };
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
+  };
 
   const getActionConfig = (action: 'approve' | 'reject' | 'suspend' | 'reactivate') => {
     const configs = {
@@ -386,9 +407,9 @@ export default function ProviderDetailPage() {
         icon: PlayCircle,
         requiresReason: false,
       },
-    }
-    return configs[action]
-  }
+    };
+    return configs[action];
+  };
 
   if (loading) {
     return (
@@ -398,7 +419,7 @@ export default function ProviderDetailPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </div>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -425,7 +446,7 @@ export default function ProviderDetailPage() {
           </div>
         </div>
       </>
-    )
+    );
   }
 
   if (!provider) {
@@ -445,7 +466,7 @@ export default function ProviderDetailPage() {
           </div>
         </div>
       </AdminLayout>
-    )
+    );
   }
 
   return (
@@ -460,7 +481,10 @@ export default function ProviderDetailPage() {
       {/* Page Content */}
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
         {/* Back Button */}
-        <Link href={`/${locale}/admin/providers`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6">
+        <Link
+          href={`/${locale}/admin/providers`}
+          className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6"
+        >
           {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
           <span>{locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}</span>
         </Link>
@@ -487,7 +511,9 @@ export default function ProviderDetailPage() {
                   <p className="text-sm text-slate-500">{getCategoryLabel(provider.category)}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm px-3 py-1 rounded-full ${getStatusColor(provider.status)}`}>
+                  <span
+                    className={`text-sm px-3 py-1 rounded-full ${getStatusColor(provider.status)}`}
+                  >
                     {getStatusLabel(provider.status)}
                   </span>
                   {provider.is_featured && (
@@ -566,22 +592,20 @@ export default function ProviderDetailPage() {
                 </Button>
               ) : null}
 
-              <Button
-                onClick={() => setShowCommissionModal(true)}
-                variant="outline"
-              >
+              <Button onClick={() => setShowCommissionModal(true)} variant="outline">
                 <Percent className="w-4 h-4 me-2" />
                 {locale === 'ar' ? 'تعديل العمولة' : 'Edit Commission'}
               </Button>
 
-              <Button
-                onClick={toggleFeatured}
-                variant="outline"
-              >
+              <Button onClick={toggleFeatured} variant="outline">
                 <Award className="w-4 h-4 me-2" />
                 {provider.is_featured
-                  ? (locale === 'ar' ? 'إزالة التميز' : 'Remove Featured')
-                  : (locale === 'ar' ? 'تمييز المتجر' : 'Mark Featured')}
+                  ? locale === 'ar'
+                    ? 'إزالة التميز'
+                    : 'Remove Featured'
+                  : locale === 'ar'
+                    ? 'تمييز المتجر'
+                    : 'Mark Featured'}
               </Button>
             </div>
           </div>
@@ -607,7 +631,9 @@ export default function ProviderDetailPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Star className="w-5 h-5 text-amber-500" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'التقييم' : 'Rating'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'التقييم' : 'Rating'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
               {formatNumber(provider.rating || 0, locale)}
@@ -620,20 +646,25 @@ export default function ProviderDetailPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Package className="w-5 h-5 text-blue-500" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'الطلبات' : 'Orders'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'الطلبات' : 'Orders'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
               {formatNumber(provider.total_orders || 0, locale)}
             </p>
             <p className="text-xs text-slate-500">
-              {formatNumber(stats.pendingOrders, locale)} {locale === 'ar' ? 'قيد التنفيذ' : 'pending'}
+              {formatNumber(stats.pendingOrders, locale)}{' '}
+              {locale === 'ar' ? 'قيد التنفيذ' : 'pending'}
             </p>
           </div>
 
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-5 h-5 text-green-500" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'الإيرادات' : 'Revenue'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
               {formatCurrency(stats.totalRevenue, locale)}
@@ -643,7 +674,9 @@ export default function ProviderDetailPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Percent className="w-5 h-5 text-purple-500" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'العمولة' : 'Commission'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'العمولة' : 'Commission'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
               {formatNumber(provider.commission_rate, locale)}%
@@ -697,7 +730,9 @@ export default function ProviderDetailPage() {
                   <label className="text-sm text-slate-500 block mb-1">
                     {locale === 'ar' ? 'الحد الأدنى للطلب' : 'Min Order'}
                   </label>
-                  <p className="text-slate-700">{formatCurrency(provider.min_order_amount, locale)}</p>
+                  <p className="text-slate-700">
+                    {formatCurrency(provider.min_order_amount, locale)}
+                  </p>
                 </div>
 
                 <div>
@@ -705,7 +740,8 @@ export default function ProviderDetailPage() {
                     {locale === 'ar' ? 'وقت التوصيل المتوقع' : 'Est. Delivery Time'}
                   </label>
                   <p className="text-slate-700">
-                    {formatNumber(provider.estimated_delivery_time_min, locale)} {locale === 'ar' ? 'دقيقة' : 'min'}
+                    {formatNumber(provider.estimated_delivery_time_min, locale)}{' '}
+                    {locale === 'ar' ? 'دقيقة' : 'min'}
                   </p>
                 </div>
 
@@ -748,8 +784,12 @@ export default function ProviderDetailPage() {
                       </p>
                     </div>
                     <div className="text-end">
-                      <p className="font-medium text-slate-900">{formatCurrency(order.total, locale)}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${getOrderStatusColor(order.status)}`}>
+                      <p className="font-medium text-slate-900">
+                        {formatCurrency(order.total, locale)}
+                      </p>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full ${getOrderStatusColor(order.status)}`}
+                      >
                         {getOrderStatusLabel(order.status)}
                       </span>
                     </div>
@@ -782,8 +822,8 @@ export default function ProviderDetailPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             {(() => {
-              const config = getActionConfig(currentAction)
-              const ActionIcon = config.icon
+              const config = getActionConfig(currentAction);
+              const ActionIcon = config.icon;
               return (
                 <>
                   <div className="flex items-center justify-between mb-4">
@@ -791,7 +831,10 @@ export default function ProviderDetailPage() {
                       {config.title[locale === 'ar' ? 'ar' : 'en']}
                     </h2>
                     <button
-                      onClick={() => { setShowActionModal(false); setCurrentAction(null); }}
+                      onClick={() => {
+                        setShowActionModal(false);
+                        setCurrentAction(null);
+                      }}
                       className="text-slate-400 hover:text-slate-600"
                     >
                       <X className="w-6 h-6" />
@@ -820,7 +863,10 @@ export default function ProviderDetailPage() {
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
-                      onClick={() => { setShowActionModal(false); setCurrentAction(null); }}
+                      onClick={() => {
+                        setShowActionModal(false);
+                        setCurrentAction(null);
+                      }}
                       className="flex-1"
                       disabled={actionLoading}
                     >
@@ -842,7 +888,7 @@ export default function ProviderDetailPage() {
                     </Button>
                   </div>
                 </>
-              )
+              );
             })()}
           </div>
         </div>
@@ -911,5 +957,5 @@ export default function ProviderDetailPage() {
         </div>
       )}
     </>
-  )
+  );
 }

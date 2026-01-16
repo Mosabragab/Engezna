@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
+import { test, expect } from '@playwright/test';
+import { TEST_USERS, LOCATORS } from './fixtures/test-utils';
 
 /**
  * Complaints System E2E Tests
@@ -14,468 +14,518 @@ import { TEST_USERS, LOCATORS } from './fixtures/test-utils'
 
 // Helper function to login as customer
 async function loginAsCustomer(page: import('@playwright/test').Page) {
-  await page.goto('/ar/auth/login')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/ar/auth/login');
+  await page.waitForLoadState('networkidle');
 
   // Customer login page requires clicking "Continue with Email" button first
-  const emailButton = page.locator('button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")')
-  await emailButton.waitFor({ state: 'visible', timeout: 15000 })
-  await emailButton.click()
+  const emailButton = page.locator(
+    'button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")'
+  );
+  await emailButton.waitFor({ state: 'visible', timeout: 15000 });
+  await emailButton.click();
 
   // Wait for the email form to appear
-  const emailInput = page.locator(LOCATORS.emailInput)
-  await emailInput.waitFor({ state: 'visible', timeout: 10000 })
+  const emailInput = page.locator(LOCATORS.emailInput);
+  await emailInput.waitFor({ state: 'visible', timeout: 10000 });
 
-  const passwordInput = page.locator(LOCATORS.passwordInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput);
 
-  await emailInput.fill(TEST_USERS.customer.email)
-  await passwordInput.fill(TEST_USERS.customer.password)
-  await page.click(LOCATORS.submitButton)
+  await emailInput.fill(TEST_USERS.customer.email);
+  await passwordInput.fill(TEST_USERS.customer.password);
+  await page.click(LOCATORS.submitButton);
 
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
 }
 
 // Helper function to login as provider
 async function loginAsProvider(page: import('@playwright/test').Page) {
-  await page.goto('/ar/provider/login')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/ar/provider/login');
+  await page.waitForLoadState('networkidle');
 
   // Wait for the form to appear (after checkingAuth spinner disappears)
-  const emailInput = page.locator(LOCATORS.emailInput)
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+  const emailInput = page.locator(LOCATORS.emailInput);
+  await emailInput.waitFor({ state: 'visible', timeout: 15000 });
 
-  const passwordInput = page.locator(LOCATORS.passwordInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput);
 
-  await emailInput.fill(TEST_USERS.provider.email)
-  await passwordInput.fill(TEST_USERS.provider.password)
-  await page.click(LOCATORS.submitButton)
+  await emailInput.fill(TEST_USERS.provider.email);
+  await passwordInput.fill(TEST_USERS.provider.password);
+  await page.click(LOCATORS.submitButton);
 
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
 }
 
 // Helper function to login as admin
 async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.goto('/ar/admin/login')
-  await page.waitForLoadState('networkidle')
+  await page.goto('/ar/admin/login');
+  await page.waitForLoadState('networkidle');
 
   // Wait for the form to appear (after checkingAuth spinner disappears)
-  const emailInput = page.locator(LOCATORS.emailInput)
-  await emailInput.waitFor({ state: 'visible', timeout: 15000 })
+  const emailInput = page.locator(LOCATORS.emailInput);
+  await emailInput.waitFor({ state: 'visible', timeout: 15000 });
 
-  const passwordInput = page.locator(LOCATORS.passwordInput)
+  const passwordInput = page.locator(LOCATORS.passwordInput);
 
-  await emailInput.fill(TEST_USERS.admin.email)
-  await passwordInput.fill(TEST_USERS.admin.password)
-  await page.click(LOCATORS.submitButton)
+  await emailInput.fill(TEST_USERS.admin.email);
+  await passwordInput.fill(TEST_USERS.admin.password);
+  await page.click(LOCATORS.submitButton);
 
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(2000)
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(2000);
 }
 
 test.describe('Customer Support Ticket Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display support page', async ({ page }) => {
-    await page.goto('/ar/profile/support')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/profile/support');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/support')) {
-      const pageContent = await page.textContent('body')
-      const hasSupportContent = pageContent?.includes('دعم') ||
-                                 pageContent?.includes('support') ||
-                                 pageContent?.includes('شكوى') ||
-                                 pageContent?.includes('مساعدة')
+      const pageContent = await page.textContent('body');
+      const hasSupportContent =
+        pageContent?.includes('دعم') ||
+        pageContent?.includes('support') ||
+        pageContent?.includes('شكوى') ||
+        pageContent?.includes('مساعدة');
 
-      expect(hasSupportContent).toBeTruthy()
+      expect(hasSupportContent).toBeTruthy();
     } else {
       // Redirected to login is expected
-      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy()
+      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy();
     }
-  })
+  });
 
   test('should have ticket creation form elements', async ({ page }) => {
-    await page.goto('/ar/profile/support')
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1000)
+    await page.goto('/ar/profile/support');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    const url = page.url()
+    const url = page.url();
 
     // If redirected to login, test passes
     if (url.includes('/login') || url.includes('/auth')) {
-      expect(true).toBeTruthy()
-      return
+      expect(true).toBeTruthy();
+      return;
     }
 
     if (url.includes('/support') || url.includes('/profile')) {
       // Look for form elements or buttons
-      const subjectInput = page.locator('input[name="subject"], input[placeholder*="موضوع"], input[placeholder*="subject"]')
-      const descriptionInput = page.locator('textarea[name="description"], textarea[name="message"], textarea')
-      const typeSelect = page.locator('select[name="type"], [class*="select"]')
-      const submitButton = page.locator('button[type="submit"], button:has-text("إرسال"), button:has-text("submit")')
+      const subjectInput = page.locator(
+        'input[name="subject"], input[placeholder*="موضوع"], input[placeholder*="subject"]'
+      );
+      const descriptionInput = page.locator(
+        'textarea[name="description"], textarea[name="message"], textarea'
+      );
+      const typeSelect = page.locator('select[name="type"], [class*="select"]');
+      const submitButton = page.locator(
+        'button[type="submit"], button:has-text("إرسال"), button:has-text("submit")'
+      );
 
-      const hasSubject = await subjectInput.first().isVisible().catch(() => false)
-      const hasDescription = await descriptionInput.first().isVisible().catch(() => false)
-      const hasType = await typeSelect.first().isVisible().catch(() => false)
-      const hasSubmit = await submitButton.first().isVisible().catch(() => false)
+      const hasSubject = await subjectInput
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasDescription = await descriptionInput
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasType = await typeSelect
+        .first()
+        .isVisible()
+        .catch(() => false);
+      const hasSubmit = await submitButton
+        .first()
+        .isVisible()
+        .catch(() => false);
 
       // Check for support-related content
-      const pageContent = await page.textContent('body')
-      const hasSupportContent = pageContent?.includes('دعم') ||
-                                pageContent?.includes('support') ||
-                                pageContent?.includes('شكوى') ||
-                                pageContent?.includes('تذكرة') ||
-                                (pageContent && pageContent.length > 100)
+      const pageContent = await page.textContent('body');
+      const hasSupportContent =
+        pageContent?.includes('دعم') ||
+        pageContent?.includes('support') ||
+        pageContent?.includes('شكوى') ||
+        pageContent?.includes('تذكرة') ||
+        (pageContent && pageContent.length > 100);
 
       // Should have form elements OR support content
-      expect(hasSubject || hasDescription || hasType || hasSubmit || hasSupportContent).toBeTruthy()
+      expect(
+        hasSubject || hasDescription || hasType || hasSubmit || hasSupportContent
+      ).toBeTruthy();
     }
-  })
+  });
 
   test('should display ticket history', async ({ page }) => {
-    await page.goto('/ar/profile/support')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/profile/support');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/support') && !page.url().includes('/login')) {
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
 
       // Should show tickets or empty state
-      const hasTicketContent = pageContent?.includes('تذكرة') ||
-                                pageContent?.includes('ticket') ||
-                                pageContent?.includes('شكوى') ||
-                                pageContent?.includes('لا يوجد') ||
-                                pageContent?.includes('فارغ')
+      const hasTicketContent =
+        pageContent?.includes('تذكرة') ||
+        pageContent?.includes('ticket') ||
+        pageContent?.includes('شكوى') ||
+        pageContent?.includes('لا يوجد') ||
+        pageContent?.includes('فارغ');
 
-      expect(hasTicketContent).toBeTruthy()
+      expect(hasTicketContent).toBeTruthy();
     }
-  })
-})
+  });
+});
 
 test.describe('Provider Complaints Management', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display complaints page in provider dashboard', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/complaints')) {
-      const pageContent = await page.textContent('body')
-      const hasComplaintsContent = pageContent?.includes('شكو') ||
-                                    pageContent?.includes('complaint') ||
-                                    pageContent?.includes('تذكرة') ||
-                                    pageContent?.includes('عميل')
+      const pageContent = await page.textContent('body');
+      const hasComplaintsContent =
+        pageContent?.includes('شكو') ||
+        pageContent?.includes('complaint') ||
+        pageContent?.includes('تذكرة') ||
+        pageContent?.includes('عميل');
 
-      expect(hasComplaintsContent).toBeTruthy()
+      expect(hasComplaintsContent).toBeTruthy();
     } else {
       // Redirected to login
-      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy()
+      expect(url.includes('/login') || url.includes('/auth')).toBeTruthy();
     }
-  })
+  });
 
   test('should have complaint status tabs', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1000)
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
 
-    const url = page.url()
+    const url = page.url();
 
     // If redirected to login, test passes
     if (url.includes('/login') || url.includes('/auth')) {
-      expect(true).toBeTruthy()
-      return
+      expect(true).toBeTruthy();
+      return;
     }
 
     if (url.includes('/complaints') || url.includes('/provider')) {
       // Look for status tabs or buttons
-      const tabs = page.locator('button[role="tab"], [class*="tab"], [class*="Tab"]')
-      const buttons = page.locator('button')
-      const tabCount = await tabs.count()
-      const buttonCount = await buttons.count()
+      const tabs = page.locator('button[role="tab"], [class*="tab"], [class*="Tab"]');
+      const buttons = page.locator('button');
+      const tabCount = await tabs.count();
+      const buttonCount = await buttons.count();
 
       // Verify tab content or general complaints content
-      const pageContent = await page.textContent('body')
-      const hasStatusContent = pageContent?.includes('مفتوحة') ||
-                                pageContent?.includes('open') ||
-                                pageContent?.includes('انتظار') ||
-                                pageContent?.includes('waiting') ||
-                                pageContent?.includes('محلولة') ||
-                                pageContent?.includes('resolved') ||
-                                pageContent?.includes('شكوى') ||
-                                pageContent?.includes('complaint') ||
-                                pageContent?.includes('تذكرة') ||
-                                pageContent?.includes('لا يوجد') ||
-                                (pageContent && pageContent.length > 100)
+      const pageContent = await page.textContent('body');
+      const hasStatusContent =
+        pageContent?.includes('مفتوحة') ||
+        pageContent?.includes('open') ||
+        pageContent?.includes('انتظار') ||
+        pageContent?.includes('waiting') ||
+        pageContent?.includes('محلولة') ||
+        pageContent?.includes('resolved') ||
+        pageContent?.includes('شكوى') ||
+        pageContent?.includes('complaint') ||
+        pageContent?.includes('تذكرة') ||
+        pageContent?.includes('لا يوجد') ||
+        (pageContent && pageContent.length > 100);
 
       // Should have tabs OR buttons OR status content
-      expect(tabCount > 0 || buttonCount > 2 || hasStatusContent).toBeTruthy()
+      expect(tabCount > 0 || buttonCount > 2 || hasStatusContent).toBeTruthy();
     }
-  })
+  });
 
   test('should display complaint statistics cards', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // Look for stats cards
-      const statsCards = page.locator('[class*="card"]:has([class*="text-2xl"]), [class*="stat"]')
-      const cardCount = await statsCards.count()
+      const statsCards = page.locator('[class*="card"]:has([class*="text-2xl"]), [class*="stat"]');
+      const cardCount = await statsCards.count();
 
       // Should have stats cards for open, waiting, resolved counts
-      expect(cardCount).toBeGreaterThanOrEqual(0)
+      expect(cardCount).toBeGreaterThanOrEqual(0);
     }
-  })
+  });
 
   test('should show complaint details with messaging', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // Look for a complaint card to click
-      const complaintCard = page.locator('[class*="card"][class*="cursor-pointer"], [class*="complaint"]').first()
+      const complaintCard = page
+        .locator('[class*="card"][class*="cursor-pointer"], [class*="complaint"]')
+        .first();
 
       if (await complaintCard.isVisible().catch(() => false)) {
-        await complaintCard.click()
-        await page.waitForTimeout(500)
+        await complaintCard.click();
+        await page.waitForTimeout(500);
 
         // Check for message/chat area
-        const messageArea = page.locator('textarea, [class*="message"], [class*="chat"]')
-        const hasMessageArea = await messageArea.first().isVisible().catch(() => false)
+        const messageArea = page.locator('textarea, [class*="message"], [class*="chat"]');
+        const hasMessageArea = await messageArea
+          .first()
+          .isVisible()
+          .catch(() => false);
 
         // Check for customer info
-        const pageContent = await page.textContent('body')
-        const hasCustomerInfo = pageContent?.includes('عميل') ||
-                                 pageContent?.includes('customer') ||
-                                 pageContent?.includes('رقم') ||
-                                 pageContent?.includes('phone')
+        const pageContent = await page.textContent('body');
+        const hasCustomerInfo =
+          pageContent?.includes('عميل') ||
+          pageContent?.includes('customer') ||
+          pageContent?.includes('رقم') ||
+          pageContent?.includes('phone');
 
-        expect(hasMessageArea || hasCustomerInfo).toBeTruthy()
+        expect(hasMessageArea || hasCustomerInfo).toBeTruthy();
       }
     }
-  })
+  });
 
   test('should have reply input for complaints', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // Click on first complaint if available
-      const complaintCard = page.locator('[class*="card"][class*="cursor-pointer"]').first()
+      const complaintCard = page.locator('[class*="card"][class*="cursor-pointer"]').first();
 
       if (await complaintCard.isVisible().catch(() => false)) {
-        await complaintCard.click()
-        await page.waitForTimeout(500)
+        await complaintCard.click();
+        await page.waitForTimeout(500);
 
         // Look for reply textarea and send button
-        const replyInput = page.locator('textarea[placeholder*="رد"], textarea[placeholder*="reply"]')
-        const sendButton = page.locator('button:has-text("إرسال"), button:has(svg[class*="send"])')
+        const replyInput = page.locator(
+          'textarea[placeholder*="رد"], textarea[placeholder*="reply"]'
+        );
+        const sendButton = page.locator('button:has-text("إرسال"), button:has(svg[class*="send"])');
 
-        const hasReplyInput = await replyInput.isVisible().catch(() => false)
-        const hasSendButton = await sendButton.first().isVisible().catch(() => false)
+        const hasReplyInput = await replyInput.isVisible().catch(() => false);
+        const hasSendButton = await sendButton
+          .first()
+          .isVisible()
+          .catch(() => false);
 
         // Either has reply UI or complaint is closed
-        expect(hasReplyInput || hasSendButton || true).toBeTruthy()
+        expect(hasReplyInput || hasSendButton || true).toBeTruthy();
       }
     }
-  })
+  });
 
   test('should show complaint notification badge in sidebar', async ({ page }) => {
-    await page.goto('/ar/provider')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Look for complaints link in sidebar
-      const complaintsLink = page.locator('a[href*="/complaints"]')
+      const complaintsLink = page.locator('a[href*="/complaints"]');
 
       if (await complaintsLink.first().isVisible()) {
         // Check for badge (may or may not be visible depending on pending complaints)
-        const sidebar = page.locator('aside')
-        const badges = sidebar.locator('[class*="badge"], [class*="rounded-full"][class*="bg-red"]')
+        const sidebar = page.locator('aside');
+        const badges = sidebar.locator(
+          '[class*="badge"], [class*="rounded-full"][class*="bg-red"]'
+        );
 
         // Verify the complaints link exists in navigation
-        await expect(complaintsLink.first()).toBeVisible()
+        await expect(complaintsLink.first()).toBeVisible();
 
         // Check page text for complaints menu item
-        const pageContent = await page.textContent('aside')
-        const hasComplaintsMenu = pageContent?.includes('شكو') || pageContent?.includes('complaint')
+        const pageContent = await page.textContent('aside');
+        const hasComplaintsMenu =
+          pageContent?.includes('شكو') || pageContent?.includes('complaint');
 
-        expect(hasComplaintsMenu).toBeTruthy()
+        expect(hasComplaintsMenu).toBeTruthy();
       }
     }
-  })
-})
+  });
+});
 
 test.describe('Admin Resolution Center', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should display admin support/resolution page', async ({ page }) => {
-    await page.goto('/ar/admin/support')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/admin/support');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/support') || url.includes('/resolution')) {
-      const pageContent = await page.textContent('body')
-      const hasSupportContent = pageContent?.includes('دعم') ||
-                                 pageContent?.includes('support') ||
-                                 pageContent?.includes('شكوى') ||
-                                 pageContent?.includes('تذكرة')
+      const pageContent = await page.textContent('body');
+      const hasSupportContent =
+        pageContent?.includes('دعم') ||
+        pageContent?.includes('support') ||
+        pageContent?.includes('شكوى') ||
+        pageContent?.includes('تذكرة');
 
-      expect(hasSupportContent).toBeTruthy()
+      expect(hasSupportContent).toBeTruthy();
     }
-  })
+  });
 
   test('should display resolution center page', async ({ page }) => {
-    await page.goto('/ar/admin/resolution-center')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/admin/resolution-center');
+    await page.waitForLoadState('networkidle');
 
-    const url = page.url()
+    const url = page.url();
 
     if (url.includes('/resolution')) {
-      const pageContent = await page.textContent('body')
-      const hasResolutionContent = pageContent?.includes('حل') ||
-                                    pageContent?.includes('resolution') ||
-                                    pageContent?.includes('نزاع') ||
-                                    pageContent?.includes('dispute')
+      const pageContent = await page.textContent('body');
+      const hasResolutionContent =
+        pageContent?.includes('حل') ||
+        pageContent?.includes('resolution') ||
+        pageContent?.includes('نزاع') ||
+        pageContent?.includes('dispute');
 
-      expect(hasResolutionContent).toBeTruthy()
+      expect(hasResolutionContent).toBeTruthy();
     }
-  })
+  });
 
   test('should have ticket management capabilities', async ({ page }) => {
-    await page.goto('/ar/admin/support')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/admin/support');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/support') && !page.url().includes('/login')) {
       // Look for management UI elements
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
 
-      const hasManagementUI = pageContent?.includes('معلق') ||
-                               pageContent?.includes('pending') ||
-                               pageContent?.includes('حل') ||
-                               pageContent?.includes('resolve') ||
-                               pageContent?.includes('تعيين') ||
-                               pageContent?.includes('assign')
+      const hasManagementUI =
+        pageContent?.includes('معلق') ||
+        pageContent?.includes('pending') ||
+        pageContent?.includes('حل') ||
+        pageContent?.includes('resolve') ||
+        pageContent?.includes('تعيين') ||
+        pageContent?.includes('assign');
 
-      expect(hasManagementUI || pageContent?.includes('تذكرة')).toBeTruthy()
+      expect(hasManagementUI || pageContent?.includes('تذكرة')).toBeTruthy();
     }
-  })
-})
+  });
+});
 
 test.describe('Complaint Messaging System', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should support real-time message updates', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // Check that page structure supports messaging
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
 
       // Page should have complaints content
-      const hasContent = pageContent?.includes('شكو') ||
-                          pageContent?.includes('complaint') ||
-                          pageContent?.includes('لا يوجد')
+      const hasContent =
+        pageContent?.includes('شكو') ||
+        pageContent?.includes('complaint') ||
+        pageContent?.includes('لا يوجد');
 
-      expect(hasContent).toBeTruthy()
+      expect(hasContent).toBeTruthy();
     }
-  })
+  });
 
   test('should display message history', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // Click on first complaint
-      const complaintCard = page.locator('[class*="card"][class*="cursor-pointer"]').first()
+      const complaintCard = page.locator('[class*="card"][class*="cursor-pointer"]').first();
 
       if (await complaintCard.isVisible().catch(() => false)) {
-        await complaintCard.click()
-        await page.waitForTimeout(500)
+        await complaintCard.click();
+        await page.waitForTimeout(500);
 
         // Look for message bubbles
-        const messages = page.locator('[class*="message"], [class*="rounded-xl"][class*="p-3"]')
-        const messageCount = await messages.count()
+        const messages = page.locator('[class*="message"], [class*="rounded-xl"][class*="p-3"]');
+        const messageCount = await messages.count();
 
         // Either has messages or shows initial complaint description
-        expect(messageCount >= 0).toBeTruthy()
+        expect(messageCount >= 0).toBeTruthy();
       }
     }
-  })
-})
+  });
+});
 
 test.describe('Complaint Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should be mobile responsive on provider complaints page', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints')) {
       const hasHorizontalScroll = await page.evaluate(() => {
-        return document.documentElement.scrollWidth > document.documentElement.clientWidth
-      })
+        return document.documentElement.scrollWidth > document.documentElement.clientWidth;
+      });
 
-      expect(hasHorizontalScroll).toBeFalsy()
+      expect(hasHorizontalScroll).toBeFalsy();
     }
-  })
+  });
 
   test('should adapt layout on mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
       // On mobile, layout should stack
-      const mainContent = page.locator('[class*="grid"]').first()
+      const mainContent = page.locator('[class*="grid"]').first();
 
       if (await mainContent.isVisible().catch(() => false)) {
         // Verify content is visible on mobile
-        const contentVisible = await page.locator('[class*="card"]').first().isVisible().catch(() => false)
-        expect(contentVisible || true).toBeTruthy()
+        const contentVisible = await page
+          .locator('[class*="card"]')
+          .first()
+          .isVisible()
+          .catch(() => false);
+        expect(contentVisible || true).toBeTruthy();
       }
     }
-  })
-})
+  });
+});
 
 test.describe('Complaint Ticket Types', () => {
   test.beforeEach(async ({ page }) => {
     // Auth handled by storageState
-  })
+  });
 
   test('should support different complaint categories', async ({ page }) => {
-    await page.goto('/ar/provider/complaints')
-    await page.waitForLoadState('networkidle')
+    await page.goto('/ar/provider/complaints');
+    await page.waitForLoadState('networkidle');
 
     if (page.url().includes('/complaints') && !page.url().includes('/login')) {
-      const pageContent = await page.textContent('body')
+      const pageContent = await page.textContent('body');
 
       // Check for complaint type categories
-      const hasCategories = pageContent?.includes('دفع') ||
-                            pageContent?.includes('payment') ||
-                            pageContent?.includes('توصيل') ||
-                            pageContent?.includes('delivery') ||
-                            pageContent?.includes('جودة') ||
-                            pageContent?.includes('quality') ||
-                            pageContent?.includes('شكوى')
+      const hasCategories =
+        pageContent?.includes('دفع') ||
+        pageContent?.includes('payment') ||
+        pageContent?.includes('توصيل') ||
+        pageContent?.includes('delivery') ||
+        pageContent?.includes('جودة') ||
+        pageContent?.includes('quality') ||
+        pageContent?.includes('شكوى');
 
-      expect(hasCategories).toBeTruthy()
+      expect(hasCategories).toBeTruthy();
     }
-  })
-})
+  });
+});

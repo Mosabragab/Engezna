@@ -184,11 +184,18 @@ export async function getAuditLog(options: {
 }): Promise<OperationResult<{ entries: AuditLogEntry[]; total: number }>> {
   try {
     const supabase = createAdminClient();
-    const { page = 1, limit = 20, adminId, resourceType, resourceId, status, dateFrom, dateTo } = options;
+    const {
+      page = 1,
+      limit = 20,
+      adminId,
+      resourceType,
+      resourceId,
+      status,
+      dateFrom,
+      dateTo,
+    } = options;
 
-    let query = supabase
-      .from('permission_audit_log')
-      .select('*', { count: 'exact' });
+    let query = supabase.from('permission_audit_log').select('*', { count: 'exact' });
 
     // Apply filters
     if (adminId) {
@@ -212,9 +219,7 @@ export async function getAuditLog(options: {
 
     // Pagination and ordering
     const offset = (page - 1) * limit;
-    query = query
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    query = query.order('created_at', { ascending: false }).range(offset, offset + limit - 1);
 
     const { data, error, count } = await query;
 

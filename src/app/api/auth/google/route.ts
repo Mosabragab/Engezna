@@ -1,19 +1,19 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { code } = await request.json()
+    const { code } = await request.json();
 
     if (!code) {
-      return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
     }
 
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.error('Google OAuth credentials not configured')
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+      console.error('Google OAuth credentials not configured');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     // Exchange authorization code for tokens
@@ -29,22 +29,25 @@ export async function POST(request: Request) {
         redirect_uri: 'postmessage', // Special value for popup flow
         grant_type: 'authorization_code',
       }),
-    })
+    });
 
-    const tokens = await tokenResponse.json()
+    const tokens = await tokenResponse.json();
 
     if (tokens.error) {
-      console.error('Google token exchange error:', tokens.error)
-      return NextResponse.json({ error: tokens.error_description || 'Token exchange failed' }, { status: 400 })
+      console.error('Google token exchange error:', tokens.error);
+      return NextResponse.json(
+        { error: tokens.error_description || 'Token exchange failed' },
+        { status: 400 }
+      );
     }
 
     // Return the ID token to the client
     return NextResponse.json({
       id_token: tokens.id_token,
       access_token: tokens.access_token,
-    })
+    });
   } catch (error) {
-    console.error('Google auth error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Google auth error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

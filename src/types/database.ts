@@ -1,10 +1,4 @@
-export type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | { [key: string]: Json | undefined }
-  | Json[]
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 // ============================================================================
 // ENUMS
@@ -15,7 +9,11 @@ export type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin
 // Business Categories - Updated December 2025
 // OLD VALUES (DEPRECATED): 'restaurant', 'coffee_shop', 'juice_shop', 'pharmacy'
 // NEW VALUES: 'restaurant_cafe', 'coffee_patisserie', 'grocery', 'vegetables_fruits'
-export type ProviderCategory = 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits';
+export type ProviderCategory =
+  | 'restaurant_cafe'
+  | 'coffee_patisserie'
+  | 'grocery'
+  | 'vegetables_fruits';
 
 // Updated: Added 'active', 'approved', 'rejected', 'incomplete' for consistency across the app
 export type ProviderStatus =
@@ -58,7 +56,13 @@ export type OrderType = 'delivery' | 'pickup';
 export type DeliveryTiming = 'asap' | 'scheduled';
 
 // NEW: Settlement status enum for consistency
-export type SettlementStatus = 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived';
+export type SettlementStatus =
+  | 'pending'
+  | 'partially_paid'
+  | 'paid'
+  | 'overdue'
+  | 'disputed'
+  | 'waived';
 
 // NEW: Settlement direction for COD/Online breakdown
 export type SettlementDirection = 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
@@ -79,7 +83,7 @@ export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
 // Custom order request status
 export type CustomRequestStatus =
   | 'pending'
-  | 'pricing_in_progress'  // Temporary lock during pricing submission
+  | 'pricing_in_progress' // Temporary lock during pricing submission
   | 'priced'
   | 'customer_approved'
   | 'customer_rejected'
@@ -2078,7 +2082,7 @@ export const ACTIVE_PROVIDER_STATUSES: ProviderStatus[] = [
   'active',
   'open',
   'closed',
-  'temporarily_paused'
+  'temporarily_paused',
 ];
 
 // Valid order statuses for in-progress orders
@@ -2088,11 +2092,8 @@ export const IN_PROGRESS_ORDER_STATUSES: OrderStatus[] = [
   'accepted',
   'preparing',
   'ready',
-  'out_for_delivery'
+  'out_for_delivery',
 ];
 
 // Valid order statuses for completed orders (used in settlements)
-export const COMPLETED_ORDER_STATUSES: OrderStatus[] = [
-  'delivered',
-  'completed'
-];
+export const COMPLETED_ORDER_STATUSES: OrderStatus[] = ['delivered', 'completed'];

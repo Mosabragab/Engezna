@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useRef } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
   XCircle,
@@ -13,30 +13,30 @@ import {
   Package,
   Layers,
   ListChecks,
-} from 'lucide-react'
-import type { ExtractedCategory, ExtractedAddon } from '@/types/menu-import'
+} from 'lucide-react';
+import type { ExtractedCategory, ExtractedAddon } from '@/types/menu-import';
 
 interface ConfirmStepProps {
-  importId: string
-  providerId: string
-  categories: ExtractedCategory[]
-  addons: ExtractedAddon[]
+  importId: string;
+  providerId: string;
+  categories: ExtractedCategory[];
+  addons: ExtractedAddon[];
   onComplete: (results: {
-    categoriesCreated: number
-    productsCreated: number
-    variantsCreated: number
-  }) => void
-  onError: (error: string) => void
-  onBack: () => void
+    categoriesCreated: number;
+    productsCreated: number;
+    variantsCreated: number;
+  }) => void;
+  onError: (error: string) => void;
+  onBack: () => void;
 }
 
 interface SaveResult {
-  success: boolean
-  categoriesCreated: number
-  productsCreated: number
-  variantsCreated: number
-  addonsCreated: number
-  error?: string
+  success: boolean;
+  categoriesCreated: number;
+  productsCreated: number;
+  variantsCreated: number;
+  addonsCreated: number;
+  error?: string;
 }
 
 const SAVING_MESSAGES = {
@@ -52,7 +52,7 @@ const SAVING_MESSAGES = {
     'Saving price variants...',
     'Finalizing import...',
   ],
-}
+};
 
 export function ConfirmStep({
   importId,
@@ -63,48 +63,48 @@ export function ConfirmStep({
   onError,
   onBack,
 }: ConfirmStepProps) {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
-  const messages = SAVING_MESSAGES[locale === 'ar' ? 'ar' : 'en']
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
+  const messages = SAVING_MESSAGES[locale === 'ar' ? 'ar' : 'en'];
 
-  const [status, setStatus] = useState<'saving' | 'success' | 'error'>('saving')
-  const [currentMessage, setCurrentMessage] = useState(0)
-  const [result, setResult] = useState<SaveResult | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const hasStarted = useRef(false)
+  const [status, setStatus] = useState<'saving' | 'success' | 'error'>('saving');
+  const [currentMessage, setCurrentMessage] = useState(0);
+  const [result, setResult] = useState<SaveResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const hasStarted = useRef(false);
 
   // Rotate messages while saving
   useEffect(() => {
-    if (status !== 'saving') return
+    if (status !== 'saving') return;
 
     const interval = setInterval(() => {
-      setCurrentMessage(prev => (prev + 1) % messages.length)
-    }, 2000)
+      setCurrentMessage((prev) => (prev + 1) % messages.length);
+    }, 2000);
 
-    return () => clearInterval(interval)
-  }, [status, messages.length])
+    return () => clearInterval(interval);
+  }, [status, messages.length]);
 
   // Start saving
   useEffect(() => {
-    if (hasStarted.current) return
-    hasStarted.current = true
+    if (hasStarted.current) return;
+    hasStarted.current = true;
 
-    saveToDatabase()
-  }, [])
+    saveToDatabase();
+  }, []);
 
   async function saveToDatabase() {
     try {
-      setStatus('saving')
-      setErrorMessage(null)
+      setStatus('saving');
+      setErrorMessage(null);
 
       // Filter out deleted items
       const filteredCategories = categories
-        .filter(cat => !cat.isDeleted)
-        .map(cat => ({
+        .filter((cat) => !cat.isDeleted)
+        .map((cat) => ({
           ...cat,
-          products: cat.products.filter(prod => !prod.isDeleted),
-        }))
+          products: cat.products.filter((prod) => !prod.isDeleted),
+        }));
 
       const response = await fetch('/api/menu-import/save', {
         method: 'POST',
@@ -117,47 +117,47 @@ export function ConfirmStep({
           categories: filteredCategories,
           addons: addons,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to save menu')
+        throw new Error(data.error || 'Failed to save menu');
       }
 
-      setResult(data)
-      setStatus('success')
+      setResult(data);
+      setStatus('success');
       onComplete({
         categoriesCreated: data.categoriesCreated,
         productsCreated: data.productsCreated,
         variantsCreated: data.variantsCreated,
-      })
+      });
     } catch (err) {
-      setStatus('error')
+      setStatus('error');
       setErrorMessage(
         err instanceof Error
           ? err.message
           : locale === 'ar'
-          ? 'فشل في حفظ البيانات'
-          : 'Failed to save data'
-      )
-      onError(err instanceof Error ? err.message : 'Save failed')
+            ? 'فشل في حفظ البيانات'
+            : 'Failed to save data'
+      );
+      onError(err instanceof Error ? err.message : 'Save failed');
     }
   }
 
   async function handleRetry() {
-    hasStarted.current = false
-    await saveToDatabase()
+    hasStarted.current = false;
+    await saveToDatabase();
   }
 
   const goToProducts = () => {
-    router.push(`/${locale}/provider/products`)
-  }
+    router.push(`/${locale}/provider/products`);
+  };
 
   const startNewImport = () => {
-    router.push(`/${locale}/provider/menu-import`)
-    router.refresh()
-  }
+    router.push(`/${locale}/provider/menu-import`);
+    router.refresh();
+  };
 
   return (
     <div className="p-8">
@@ -182,7 +182,7 @@ export function ConfirmStep({
           </p>
 
           <div className="flex justify-center gap-2 mt-6">
-            {[0, 1, 2].map(i => (
+            {[0, 1, 2].map((i) => (
               <div
                 key={i}
                 className="w-2 h-2 bg-primary rounded-full animate-pulse"
@@ -213,9 +213,7 @@ export function ConfirmStep({
           </h2>
 
           <p className="text-slate-600 mb-6">
-            {locale === 'ar'
-              ? 'تم إضافة المنتجات بنجاح'
-              : 'Products have been added successfully'}
+            {locale === 'ar' ? 'تم إضافة المنتجات بنجاح' : 'Products have been added successfully'}
           </p>
 
           {/* Results Summary */}
@@ -224,9 +222,7 @@ export function ConfirmStep({
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <Layers className="w-5 h-5 text-blue-600" />
               </div>
-              <div className="text-2xl font-bold text-blue-700">
-                {result.categoriesCreated}
-              </div>
+              <div className="text-2xl font-bold text-blue-700">{result.categoriesCreated}</div>
               <div className="text-xs text-blue-600">
                 {locale === 'ar' ? 'أقسام' : 'Categories'}
               </div>
@@ -236,9 +232,7 @@ export function ConfirmStep({
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <Package className="w-5 h-5 text-green-600" />
               </div>
-              <div className="text-2xl font-bold text-green-700">
-                {result.productsCreated}
-              </div>
+              <div className="text-2xl font-bold text-green-700">{result.productsCreated}</div>
               <div className="text-xs text-green-600">
                 {locale === 'ar' ? 'منتجات' : 'Products'}
               </div>
@@ -248,9 +242,7 @@ export function ConfirmStep({
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                 <ListChecks className="w-5 h-5 text-purple-600" />
               </div>
-              <div className="text-2xl font-bold text-purple-700">
-                {result.variantsCreated}
-              </div>
+              <div className="text-2xl font-bold text-purple-700">{result.variantsCreated}</div>
               <div className="text-xs text-purple-600">
                 {locale === 'ar' ? 'خيارات' : 'Variants'}
               </div>
@@ -272,11 +264,7 @@ export function ConfirmStep({
               className="px-6 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium flex items-center justify-center gap-2"
             >
               {locale === 'ar' ? 'عرض المنتجات' : 'View Products'}
-              {isRTL ? (
-                <ArrowLeft className="w-4 h-4" />
-              ) : (
-                <ArrowRight className="w-4 h-4" />
-              )}
+              {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -305,11 +293,7 @@ export function ConfirmStep({
               onClick={onBack}
               className="px-6 py-3 border border-slate-200 rounded-xl text-slate-700 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
             >
-              {isRTL ? (
-                <ArrowRight className="w-4 h-4" />
-              ) : (
-                <ArrowLeft className="w-4 h-4" />
-              )}
+              {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
               {locale === 'ar' ? 'رجوع للمراجعة' : 'Back to Review'}
             </button>
 
@@ -324,5 +308,5 @@ export function ConfirmStep({
         </div>
       )}
     </div>
-  )
+  );
 }

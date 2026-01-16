@@ -119,7 +119,8 @@ export function useBroadcastRealtime(
       // Fetch requests with provider info
       const { data: requests, error: requestsError } = await supabase
         .from('custom_order_requests')
-        .select(`
+        .select(
+          `
           *,
           provider:providers(
             id,
@@ -129,7 +130,8 @@ export function useBroadcastRealtime(
             rating,
             delivery_fee
           )
-        `)
+        `
+        )
         .eq('broadcast_id', broadcastId)
         .order('created_at', { ascending: true });
 
@@ -212,7 +214,8 @@ export function useBroadcastRealtime(
         // Fetch full request with provider info
         const { data: fullRequest } = await supabase
           .from('custom_order_requests')
-          .select(`
+          .select(
+            `
             *,
             provider:providers(
               id,
@@ -222,26 +225,22 @@ export function useBroadcastRealtime(
               rating,
               delivery_fee
             )
-          `)
+          `
+          )
           .eq('id', newRequest.id)
           .single();
 
         if (fullRequest) {
           setState((prev) => ({
             ...prev,
-            requests: prev.requests.map((r) =>
-              r.id === fullRequest.id ? fullRequest : r
-            ),
+            requests: prev.requests.map((r) => (r.id === fullRequest.id ? fullRequest : r)),
             lastUpdate: new Date(),
           }));
 
           callbacksRef.current?.onRequestUpdate?.(fullRequest as CustomOrderRequest);
 
           // Check if pricing was just submitted
-          if (
-            fullRequest.status === 'priced' &&
-            oldRequest?.status === 'pending'
-          ) {
+          if (fullRequest.status === 'priced' && oldRequest?.status === 'pending') {
             callbacksRef.current?.onPricingReceived?.(fullRequest as CustomOrderRequest);
           }
         }
@@ -324,9 +323,7 @@ export interface UseProviderPricingRealtimeOptions {
 /**
  * Hook for provider to receive new pricing requests
  */
-export function useProviderPricingRealtime(
-  options: UseProviderPricingRealtimeOptions
-) {
+export function useProviderPricingRealtime(options: UseProviderPricingRealtimeOptions) {
   const { providerId, enabled = true, onNewRequest } = options;
 
   const [pendingCount, setPendingCount] = useState(0);
@@ -433,9 +430,7 @@ export interface UseCustomerBroadcastsOptions {
 /**
  * Hook for customer to track all active broadcasts
  */
-export function useCustomerActiveBroadcasts(
-  options: UseCustomerBroadcastsOptions
-) {
+export function useCustomerActiveBroadcasts(options: UseCustomerBroadcastsOptions) {
   const { customerId, enabled = true } = options;
 
   const [broadcasts, setBroadcasts] = useState<CustomOrderBroadcast[]>([]);
@@ -498,9 +493,7 @@ export function useCustomerActiveBroadcasts(
           // Check if exists
           const exists = prev.some((b) => b.id === newBroadcast.id);
           if (exists) {
-            return prev.map((b) =>
-              b.id === newBroadcast.id ? newBroadcast : b
-            );
+            return prev.map((b) => (b.id === newBroadcast.id ? newBroadcast : b));
           }
 
           // Add new broadcast

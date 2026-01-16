@@ -24,10 +24,7 @@ import type {
   CustomRequestStatus,
   OperationMode,
 } from '@/types/custom-order';
-import {
-  MAX_BROADCAST_PROVIDERS,
-  DEFAULT_CUSTOM_ORDER_SETTINGS,
-} from '@/types/custom-order';
+import { MAX_BROADCAST_PROVIDERS, DEFAULT_CUSTOM_ORDER_SETTINGS } from '@/types/custom-order';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -96,19 +93,14 @@ export class BroadcastService {
    * Create a new broadcast to multiple providers
    * إنشاء بث جديد لعدة متاجر
    */
-  async createBroadcast(
-    payload: CreateBroadcastPayload
-  ): Promise<CreateBroadcastResponse> {
+  async createBroadcast(payload: CreateBroadcastPayload): Promise<CreateBroadcastResponse> {
     if (!this.customerId) {
       throw new BroadcastError('Customer ID is required', 'UNAUTHORIZED');
     }
 
     // Validate provider count
     if (payload.providerIds.length === 0) {
-      throw new BroadcastError(
-        'At least one provider is required',
-        'INVALID_INPUT'
-      );
+      throw new BroadcastError('At least one provider is required', 'INVALID_INPUT');
     }
 
     if (payload.providerIds.length > MAX_BROADCAST_PROVIDERS) {
@@ -120,10 +112,7 @@ export class BroadcastService {
 
     // Validate input content
     if (!payload.text && !payload.voiceUrl && !payload.imageUrls?.length) {
-      throw new BroadcastError(
-        'Order must have text, voice, or images',
-        'INVALID_INPUT'
-      );
+      throw new BroadcastError('Order must have text, voice, or images', 'INVALID_INPUT');
     }
 
     // Validate and get provider details
@@ -139,9 +128,7 @@ export class BroadcastService {
     );
 
     const now = new Date();
-    const pricingDeadline = new Date(
-      now.getTime() + pricingTimeoutHours * 60 * 60 * 1000
-    );
+    const pricingDeadline = new Date(now.getTime() + pricingTimeoutHours * 60 * 60 * 1000);
 
     // Auto-cancel deadline (longest timeout from providers)
     const autoCancelHours = Math.max(
@@ -151,16 +138,16 @@ export class BroadcastService {
           DEFAULT_CUSTOM_ORDER_SETTINGS.auto_cancel_after_hours
       )
     );
-    const expiresAt = new Date(
-      now.getTime() + autoCancelHours * 60 * 60 * 1000
-    );
+    const expiresAt = new Date(now.getTime() + autoCancelHours * 60 * 60 * 1000);
 
     // Get delivery address if provided
     let deliveryAddress = null;
     if (payload.deliveryAddressId) {
       const { data: address } = await this.supabase
         .from('addresses')
-        .select('id, label, address_line1, address_line2, building, floor, apartment, area, city, landmark, delivery_instructions, location')
+        .select(
+          'id, label, address_line1, address_line2, building, floor, apartment, area, city, landmark, delivery_instructions, location'
+        )
         .eq('id', payload.deliveryAddressId)
         .single();
       if (address) {
@@ -234,10 +221,7 @@ export class BroadcastService {
 
     if (requestsError || !requests) {
       // Rollback: delete the broadcast
-      await this.supabase
-        .from('custom_order_broadcasts')
-        .delete()
-        .eq('id', broadcast.id);
+      await this.supabase.from('custom_order_broadcasts').delete().eq('id', broadcast.id);
 
       console.error('Error creating requests:', requestsError);
       throw new BroadcastError(
@@ -256,9 +240,7 @@ export class BroadcastService {
   /**
    * Validate that all providers exist and support custom orders
    */
-  private async validateProviders(
-    providerIds: string[]
-  ): Promise<ValidatedProvider[]> {
+  private async validateProviders(providerIds: string[]): Promise<ValidatedProvider[]> {
     const { data: providers, error } = await this.supabase
       .from('providers')
       .select('id, name_ar, name_en, operation_mode, custom_order_settings, delivery_fee, status')
@@ -280,9 +262,7 @@ export class BroadcastService {
     }
 
     // Check that all providers support custom orders
-    const nonCustomProviders = providers.filter(
-      (p) => p.operation_mode === 'standard'
-    );
+    const nonCustomProviders = providers.filter((p) => p.operation_mode === 'standard');
     if (nonCustomProviders.length > 0) {
       throw new BroadcastError(
         `Providers do not support custom orders: ${nonCustomProviders.map((p) => p.name_ar).join(', ')}`,
@@ -301,9 +281,7 @@ export class BroadcastService {
    * Get broadcast with all requests (for comparison view)
    * الحصول على البث مع جميع الطلبات
    */
-  async getBroadcastWithRequests(
-    broadcastId: string
-  ): Promise<BroadcastStatusResponse> {
+  async getBroadcastWithRequests(broadcastId: string): Promise<BroadcastStatusResponse> {
     const { data: broadcast, error: broadcastError } = await this.supabase
       .from('custom_order_broadcasts')
       .select('*')
@@ -328,7 +306,8 @@ export class BroadcastService {
     // Get requests with provider details
     const { data: requests, error: requestsError } = await this.supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         *,
         provider:providers(
           id,
@@ -338,7 +317,8 @@ export class BroadcastService {
           rating,
           delivery_fee
         )
-      `)
+      `
+      )
       .eq('broadcast_id', broadcastId)
       .order('created_at', { ascending: true });
 
@@ -421,7 +401,8 @@ export class BroadcastService {
 
     const { data, error } = await this.supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         *,
         broadcast:custom_order_broadcasts(
           customer_id,
@@ -434,7 +415,8 @@ export class BroadcastService {
           order_type,
           pricing_deadline
         )
-      `)
+      `
+      )
       .eq('provider_id', this.providerId)
       .eq('status', 'pending')
       .order('created_at', { ascending: true });
@@ -451,16 +433,15 @@ export class BroadcastService {
    * Get all requests for provider (for dashboard)
    * الحصول على جميع الطلبات للتاجر
    */
-  async getProviderRequests(
-    status?: CustomRequestStatus[]
-  ): Promise<CustomOrderRequest[]> {
+  async getProviderRequests(status?: CustomRequestStatus[]): Promise<CustomOrderRequest[]> {
     if (!this.providerId) {
       throw new BroadcastError('Provider ID is required', 'UNAUTHORIZED');
     }
 
     let query = this.supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         *,
         broadcast:custom_order_broadcasts(
           customer_id,
@@ -479,7 +460,8 @@ export class BroadcastService {
           pricing_deadline,
           status
         )
-      `)
+      `
+      )
       .eq('provider_id', this.providerId)
       .order('created_at', { ascending: false });
 
@@ -526,10 +508,7 @@ export class BroadcastService {
     }
 
     if (broadcast.status !== 'active') {
-      throw new BroadcastError(
-        'Cannot cancel non-active broadcast',
-        'BROADCAST_NOT_ACTIVE'
-      );
+      throw new BroadcastError('Cannot cancel non-active broadcast', 'BROADCAST_NOT_ACTIVE');
     }
 
     // Update broadcast status

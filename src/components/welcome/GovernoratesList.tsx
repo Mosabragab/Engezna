@@ -1,34 +1,34 @@
-import { createStaticClient } from '@/lib/supabase/static'
-import { MapPin, CheckCircle2 } from 'lucide-react'
+import { createStaticClient } from '@/lib/supabase/static';
+import { MapPin, CheckCircle2 } from 'lucide-react';
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
 }
 
 interface GovernoratesListProps {
-  locale: string
+  locale: string;
 }
 
 // This component fetches data - will be streamed with Suspense
 export async function GovernoratesList({ locale }: GovernoratesListProps) {
-  const isRTL = locale === 'ar'
+  const isRTL = locale === 'ar';
 
-  const supabase = createStaticClient()
+  const supabase = createStaticClient();
   const { data: governorates } = await supabase
     .from('governorates')
     .select('id, name_ar, name_en, is_active')
     .eq('is_active', true)
-    .order('name_ar')
+    .order('name_ar');
 
   if (!governorates || governorates.length === 0) {
     return (
       <p className="text-slate-500 mb-6">
         {isRTL ? 'قريباً في محافظتك' : 'Coming soon to your governorate'}
       </p>
-    )
+    );
   }
 
   return (
@@ -43,12 +43,12 @@ export async function GovernoratesList({ locale }: GovernoratesListProps) {
         </span>
       ))}
     </div>
-  )
+  );
 }
 
 // Loading placeholder - shown while GovernoratesList is loading
 export function GovernoratesListSkeleton({ locale }: { locale: string }) {
-  const isRTL = locale === 'ar'
+  const isRTL = locale === 'ar';
 
   return (
     <div className="flex flex-wrap justify-center gap-3 mb-6">
@@ -63,5 +63,5 @@ export function GovernoratesListSkeleton({ locale }: { locale: string }) {
         </span>
       ))}
     </div>
-  )
+  );
 }

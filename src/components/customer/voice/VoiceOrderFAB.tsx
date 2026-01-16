@@ -1,88 +1,90 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { SmartAssistant } from '@/components/customer/chat/SmartAssistant'
-import { createClient } from '@/lib/supabase/client'
-import { useUserLocation } from '@/lib/contexts'
+import { useState, useEffect } from 'react';
+import { useLocale } from 'next-intl';
+import { Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { SmartAssistant } from '@/components/customer/chat/SmartAssistant';
+import { createClient } from '@/lib/supabase/client';
+import { useUserLocation } from '@/lib/contexts';
 
 interface ChatFABProps {
-  className?: string
-  isOpen?: boolean
-  onOpenChange?: (open: boolean) => void
-  showFAB?: boolean
+  className?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  showFAB?: boolean;
 }
 
 export function ChatFAB({
   className,
   isOpen: externalIsOpen,
   onOpenChange,
-  showFAB = true
+  showFAB = true,
 }: ChatFABProps) {
-  const locale = useLocale()
-  const [internalIsOpen, setInternalIsOpen] = useState(false)
-  const [showTooltip, setShowTooltip] = useState(false)
-  const [userId, setUserId] = useState<string | undefined>()
-  const [customerName, setCustomerName] = useState<string | undefined>()
+  const locale = useLocale();
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [userId, setUserId] = useState<string | undefined>();
+  const [customerName, setCustomerName] = useState<string | undefined>();
 
   // Get location from context (no Supabase query needed!)
-  const { cityId, governorateId } = useUserLocation()
+  const { cityId, governorateId } = useUserLocation();
 
   // Fetch only user auth data (not location)
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
         if (user) {
-          setUserId(user.id)
+          setUserId(user.id);
 
           // Fetch profile for name only
           const { data: profile } = await supabase
             .from('profiles')
             .select('full_name')
             .eq('id', user.id)
-            .single()
+            .single();
 
           if (profile) {
-            setCustomerName(profile.full_name?.split(' ')[0])
+            setCustomerName(profile.full_name?.split(' ')[0]);
           }
         }
       } catch {
         // Error handled silently
       }
-    }
+    };
 
-    fetchUserData()
-  }, [])
+    fetchUserData();
+  }, []);
 
   // Show tooltip for new users
   useEffect(() => {
-    const seen = localStorage.getItem('engezna_chat_tooltip_seen')
+    const seen = localStorage.getItem('engezna_chat_tooltip_seen');
     if (!seen) {
-      const timer = setTimeout(() => setShowTooltip(true), 2000)
-      return () => clearTimeout(timer)
+      const timer = setTimeout(() => setShowTooltip(true), 2000);
+      return () => clearTimeout(timer);
     }
-  }, [])
+  }, []);
 
   // Use external state if provided, otherwise use internal
-  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = (value: boolean) => {
     if (onOpenChange) {
-      onOpenChange(value)
+      onOpenChange(value);
     } else {
-      setInternalIsOpen(value)
+      setInternalIsOpen(value);
     }
-  }
+  };
 
   const handleClick = () => {
-    setShowTooltip(false)
-    localStorage.setItem('engezna_chat_tooltip_seen', 'true')
-    setIsOpen(true)
-  }
+    setShowTooltip(false);
+    localStorage.setItem('engezna_chat_tooltip_seen', 'true');
+    setIsOpen(true);
+  };
 
   return (
     <>
@@ -123,8 +125,8 @@ export function ChatFAB({
         customerName={customerName}
       />
     </>
-  )
+  );
 }
 
 // Keep backward compatibility export
-export { ChatFAB as VoiceOrderFAB }
+export { ChatFAB as VoiceOrderFAB };

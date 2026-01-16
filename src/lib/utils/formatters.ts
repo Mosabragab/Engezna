@@ -9,7 +9,7 @@
  * English locale uses Western Arabic numerals (0-9)
  */
 export function formatNumber(num: number, locale: string): string {
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(num)
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG').format(num);
 }
 
 /**
@@ -21,16 +21,16 @@ export function formatCurrency(amount: number, locale: string): string {
     style: 'decimal',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount)
+  }).format(amount);
 }
 
 /**
  * Format currency with currency symbol
  */
 export function formatCurrencyWithSymbol(amount: number, locale: string): string {
-  const formatted = formatCurrency(amount, locale)
-  const symbol = locale === 'ar' ? 'ج.م' : 'EGP'
-  return `${formatted} ${symbol}`
+  const formatted = formatCurrency(amount, locale);
+  const symbol = locale === 'ar' ? 'ج.م' : 'EGP';
+  return `${formatted} ${symbol}`;
 }
 
 /**
@@ -41,7 +41,7 @@ export function formatPercentage(num: number, locale: string): string {
     style: 'percent',
     minimumFractionDigits: 0,
     maximumFractionDigits: 1,
-  }).format(num / 100)
+  }).format(num / 100);
 }
 
 /**
@@ -52,7 +52,7 @@ export function formatDate(dateString: string, locale: string): string {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
-  })
+  });
 }
 
 /**
@@ -65,7 +65,7 @@ export function formatDateTime(dateString: string, locale: string): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 /**
@@ -73,29 +73,23 @@ export function formatDateTime(dateString: string, locale: string): string {
  * e.g., "منذ ٣ دقائق" or "3 minutes ago"
  */
 export function formatTimeAgo(dateString: string, locale: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  const formatNum = (n: number) => formatNumber(n, locale)
+  const formatNum = (n: number) => formatNumber(n, locale);
 
   if (diffMins < 1) {
-    return locale === 'ar' ? 'الآن' : 'Just now'
+    return locale === 'ar' ? 'الآن' : 'Just now';
   } else if (diffMins < 60) {
-    return locale === 'ar'
-      ? `منذ ${formatNum(diffMins)} دقيقة`
-      : `${formatNum(diffMins)}m ago`
+    return locale === 'ar' ? `منذ ${formatNum(diffMins)} دقيقة` : `${formatNum(diffMins)}m ago`;
   } else if (diffHours < 24) {
-    return locale === 'ar'
-      ? `منذ ${formatNum(diffHours)} ساعة`
-      : `${formatNum(diffHours)}h ago`
+    return locale === 'ar' ? `منذ ${formatNum(diffHours)} ساعة` : `${formatNum(diffHours)}h ago`;
   } else {
-    return locale === 'ar'
-      ? `منذ ${formatNum(diffDays)} يوم`
-      : `${formatNum(diffDays)}d ago`
+    return locale === 'ar' ? `منذ ${formatNum(diffDays)} يوم` : `${formatNum(diffDays)}d ago`;
   }
 }
 
@@ -104,31 +98,31 @@ export function formatTimeAgo(dateString: string, locale: string): string {
  * e.g., "متبقي ٣ ساعات" or "3 hours remaining"
  */
 export function formatTimeRemaining(dateString: string, locale: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = date.getTime() - now.getTime();
 
   if (diffMs < 0) {
-    return locale === 'ar' ? 'انتهى' : 'Expired'
+    return locale === 'ar' ? 'انتهى' : 'Expired';
   }
 
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  const formatNum = (n: number) => formatNumber(n, locale)
+  const formatNum = (n: number) => formatNumber(n, locale);
 
   if (diffMins < 60) {
     return locale === 'ar'
       ? `متبقي ${formatNum(diffMins)} دقيقة`
-      : `${formatNum(diffMins)}m remaining`
+      : `${formatNum(diffMins)}m remaining`;
   } else if (diffHours < 24) {
     return locale === 'ar'
       ? `متبقي ${formatNum(diffHours)} ساعة`
-      : `${formatNum(diffHours)}h remaining`
+      : `${formatNum(diffHours)}h remaining`;
   } else {
     return locale === 'ar'
       ? `متبقي ${formatNum(diffDays)} يوم`
-      : `${formatNum(diffDays)}d remaining`
+      : `${formatNum(diffDays)}d remaining`;
   }
 }

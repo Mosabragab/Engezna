@@ -1,7 +1,7 @@
-export { ProviderLayout } from './ProviderLayout'
-export { ProviderSidebar } from './ProviderSidebar'
-export { ProviderSidebarSkeleton } from './ProviderSidebarSkeleton'
-export { ProviderHeader } from './ProviderHeader'
-export { ProviderBottomNav } from './ProviderBottomNav'
-export { AccessDenied, PermissionGuard } from './AccessDenied'
-export { SoundTestDebug } from './SoundTestDebug'
+export { ProviderLayout } from './ProviderLayout';
+export { ProviderSidebar } from './ProviderSidebar';
+export { ProviderSidebarSkeleton } from './ProviderSidebarSkeleton';
+export { ProviderHeader } from './ProviderHeader';
+export { ProviderBottomNav } from './ProviderBottomNav';
+export { AccessDenied, PermissionGuard } from './AccessDenied';
+export { SoundTestDebug } from './SoundTestDebug';

@@ -1,4 +1,5 @@
 # Product Requirements Document (PRD)
+
 ## Engezna - إنجزنا | Delivery Marketplace Platform
 
 **Version:** 6.1 (Production Ready)
@@ -20,10 +21,12 @@ Cairo, Giza, Alexandria, and North Coast as the final phase – while supporting
 local businesses and creating economic opportunities through fair, transparent pricing.
 
 **Expansion Strategy:**
+
 - **Phase 1-2:** Secondary governorates (المحافظات الثانوية) – current focus
 - **Phase 3-4:** Cairo, Giza, Alexandria, North Coast – final expansion phase
 
 **Key Differentiator:**
+
 - **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
 - Providers manage their own delivery staff
@@ -33,39 +36,40 @@ local businesses and creating economic opportunities through fair, transparent p
 
 ## 📊 Current Development Status
 
-| Metric | Value |
-|--------|-------|
-| **Phase** | Week 7 - Production Ready |
-| **Progress** | ~97% MVP Complete |
-| **Target Launch** | February 2026 |
-| **Sessions Completed** | 27 |
+| Metric                 | Value                     |
+| ---------------------- | ------------------------- |
+| **Phase**              | Week 7 - Production Ready |
+| **Progress**           | ~97% MVP Complete         |
+| **Target Launch**      | February 2026             |
+| **Sessions Completed** | 27                        |
 
 ### System Completion Status
 
-| System | Status | Details |
-|--------|--------|---------|
-| Customer Journey | ✅ 100% | Browsing, Cart, Checkout, Tracking, Reviews, Favorites |
-| Provider Dashboard | ✅ 100% | Orders, Menu, Analytics, Settlements, Store Hours |
-| Admin Panel | ✅ 100% | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging |
-| Custom Orders | ✅ 100% | Triple Broadcast, Voice/Image/Text, Pricing UI |
-| AI Assistant (أحمد) | ✅ 100% | Natural language ordering, Menu search |
-| Settlement System | ✅ 100% | COD/Online breakdown, Commission calculation |
-| Legal Compliance | ✅ 100% | Privacy Policy, Terms & Conditions |
-| Payment Gateway | ✅ Ready | Kashier integrated (pending activation) |
+| System              | Status   | Details                                                |
+| ------------------- | -------- | ------------------------------------------------------ |
+| Customer Journey    | ✅ 100%  | Browsing, Cart, Checkout, Tracking, Reviews, Favorites |
+| Provider Dashboard  | ✅ 100%  | Orders, Menu, Analytics, Settlements, Store Hours      |
+| Admin Panel         | ✅ 100%  | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging    |
+| Custom Orders       | ✅ 100%  | Triple Broadcast, Voice/Image/Text, Pricing UI         |
+| AI Assistant (أحمد) | ✅ 100%  | Natural language ordering, Menu search                 |
+| Settlement System   | ✅ 100%  | COD/Online breakdown, Commission calculation           |
+| Legal Compliance    | ✅ 100%  | Privacy Policy, Terms & Conditions                     |
+| Payment Gateway     | ✅ Ready | Kashier integrated (pending activation)                |
 
 ### Pending Items
 
-| Item | Priority | Blocker |
-|------|----------|---------|
-| Push Notifications | Medium | Firebase account setup |
-| Email Notifications | Low | Resend/SendGrid account |
-| SMS Verification | Medium | Provider account |
+| Item                | Priority | Blocker                 |
+| ------------------- | -------- | ----------------------- |
+| Push Notifications  | Medium   | Firebase account setup  |
+| Email Notifications | Low      | Resend/SendGrid account |
+| SMS Verification    | Medium   | Provider account        |
 
 ---
 
 ### Session 17 Updates (December 11, 2025)
 
 **Provider Variants Management:**
+
 - ✅ **Full Variants CRUD UI** in product edit page (`/provider/products/[id]`)
 - ✅ Toggle variants on/off for any product
 - ✅ Add new variants with name (AR/EN), price, original price
@@ -75,17 +79,20 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Variants saved to database on product save
 
 **Excel Import Enhancement:**
+
 - ✅ **Image URL Import** - Added `image_url` column support
 - ✅ URL validation (must start with http:// or https://)
 - ✅ Manual column mapping option for image_url
 - ✅ Documentation updated in EXCEL_IMPORT_GUIDE.md
 
 **Bug Fixes:**
+
 - ✅ Promotion badge showing duplicate % symbol (replaced icon with "خصم" text)
 - ✅ Product detail modal not opening (added stopPropagation to ProductCard buttons)
 - ✅ Hover effects on variant action buttons fixed
 
 **Files Modified:**
+
 - `src/app/[locale]/provider/products/[id]/page.tsx` - Variants management UI
 - `src/components/customer/shared/ProductCard.tsx` - stopPropagation + badge fix
 - `src/lib/utils/excel-import.ts` - Image URL import
@@ -95,6 +102,7 @@ local businesses and creating economic opportunities through fair, transparent p
 ### Session 16 Updates (December 10, 2025)
 
 **Excel Menu Import System:**
+
 - ✅ **Import Page**: `/provider/menu-import` - Bulk import from Excel files
 - ✅ **4 Pricing Types**: fixed, per_unit, variants, weight_variants
 - ✅ **Variants Format**: `نصف كيلو:480|ربع كيلو:250` (name:price|name:price)
@@ -103,23 +111,27 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Successfully imported: 30 categories, 156 products, 203 variants
 
 **Product Variants System:**
+
 - ✅ **VariantSelectionModal** component for size/weight selection
 - ✅ **ProductDetailModal** component for full product view
 - ✅ Customer can select variants and quantity before adding to cart
 
 **UI Fixes:**
+
 - ✅ Modal z-index increased to z-[60] (above bottom navigation)
 - ✅ Add to Cart button visibility fixed on mobile
 - ✅ Click-outside-to-close for modals
 - ✅ Products disappearing bug fixed (was using INNER JOIN instead of LEFT JOIN)
 
 **Documentation:**
+
 - ✅ Created `/docs/EXCEL_IMPORT_GUIDE.md` for providers
 - ✅ Updated SESSION_LOG.md, NEXT_SESSION.md, project-status.md
 
 ### Session 15 Updates (December 7, 2025)
 
 **Evening Session: In-App Chat & Messaging System:**
+
 - ✅ **Provider Notifications System**:
   - Created `provider_notifications` table with triggers
   - RLS policies for notifications persistence (DELETE, UPDATE)
@@ -138,6 +150,7 @@ local businesses and creating economic opportunities through fair, transparent p
   - `src/hooks/customer/useNotifications.ts` - Polling fallback
 
 **Part 4: Smart Settlements (COD vs Online):**
+
 - ✅ **Payment-aware settlement logic**:
   - COD orders: Provider collects cash → Owes up to 7% commission to Engezna
   - Online orders: Engezna collects payment → Owes 93%+ payout to provider
@@ -158,6 +171,7 @@ local businesses and creating economic opportunities through fair, transparent p
   - Net Balance Card with direction indicator
 
 **Part 3: Settlements System:**
+
 - ✅ Admin settlements page (`/admin/settlements`) with full management:
   - Stats cards: Pending dues, Overdue dues, Total paid
   - Period selector: Daily, Every 3 days, Weekly
@@ -180,6 +194,7 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Database migration: `20251207000002_settlements_system.sql`
 
 **Part 2: Dynamic Footer & Governorate Analytics:**
+
 - ✅ Footer now dynamically fetches active governorates from database
 - ✅ When admin adds/removes a governorate, it automatically appears/disappears in Footer
 - ✅ Updated translations: "المدن المتاحة" → "المحافظات المتاحة"
@@ -194,6 +209,7 @@ local businesses and creating economic opportunities through fair, transparent p
   - Top performing governorates
 
 **Part 1: Voice to Chat Transition:**
+
 - ✅ Fixed notification badge rapid flashing (removed animate-pulse)
 - ✅ Converted voice ordering to text chat ("دردش واطلب" / "Chat & Order")
 - ✅ ChatFAB replaces VoiceOrderFAB (message icon instead of microphone)
@@ -204,15 +220,18 @@ local businesses and creating economic opportunities through fair, transparent p
 ### Session 14 Updates (December 6, 2025)
 
 **Security Update (CRITICAL):**
+
 - ✅ Patched CVE-2025-55182 & CVE-2025-66478 (CVSS 10.0 - RCE vulnerabilities)
 - ✅ Updated Next.js to 16.0.7 (security patched)
 - ✅ Updated React/React-DOM to 19.2.1 (security patched)
 
 **Finance Page Improvements:**
+
 - ✅ Fixed color consistency with brand identity (replaced Tailwind amber with CSS variables)
 - ✅ Using brand colors: `--warning`, `--premium`, `--deal`, `--info`
 
 **Orders Page UX Improvements:**
+
 - ✅ Added order counts to filter tabs (Ready, Completed, Cancelled)
 - ✅ Added "Payment Received" button directly on order cards
 - ✅ Added payment status badge (Paid/Pending) for delivered orders
@@ -221,29 +240,35 @@ local businesses and creating economic opportunities through fair, transparent p
 ### Session 13 Updates (December 5, 2025)
 
 **Reviews RLS Infinite Recursion Fix:**
+
 - ✅ Fixed circular dependency between providers and provider_staff tables
 - ✅ Created SECURITY DEFINER helper functions to bypass RLS
 
 **Provider Notifications:**
+
 - ✅ Combined notifications badge (orders + reviews)
 - ✅ Hover dropdown for notifications
 
 **Customer Notifications:**
+
 - ✅ Created `customer_notifications` table
 - ✅ Automatic notifications on order status changes
 
 **Admin Notifications:**
+
 - ✅ Notifications for order cancellations, new providers, support tickets
 
 ### Session 12 Updates (December 5, 2025)
 
 **Order Cancellation Feature:**
+
 - ✅ Added cancellation button on order tracking page
 - ✅ Cancellation allowed for pending/confirmed/accepted orders
 - ✅ Cancellation modal with reason selection (bilingual)
 - ✅ Database update with cancellation details
 
 **Reviews & Ratings System (Complete):**
+
 - ✅ Customer review submission on order tracking page (for delivered orders)
 - ✅ Star rating (1-5) with optional comment
 - ✅ Reviews display on provider detail page with customer names
@@ -252,10 +277,12 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Reviews menu item in provider sidebar
 
 **Favorites Feature:**
+
 - ✅ Customers can favorite/unfavorite providers
 - ✅ Favorites page (`/favorites`) showing saved providers
 
 **Real-time Notifications (Supabase Realtime):**
+
 - ✅ useNotifications hook with real-time subscriptions
 - ✅ useProviderOrderNotifications hook for provider order alerts
 - ✅ Live unread count in customer header
@@ -265,12 +292,14 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Store name display in customer notifications
 
 **In-App Chat System (NEW! - Session 15 Evening):**
+
 - ✅ Order-based messaging between customer and provider
 - ✅ Message read status indicators (✓ sent, ✓✓ read)
 - ✅ RTL-aware message alignment (own messages on RIGHT)
 - ✅ Real-time message delivery
 
 **Promo Codes System:**
+
 - ✅ Promo code validation (validity, limits, restrictions)
 - ✅ Promo code input UI in checkout
 - ✅ Discount calculation and display
@@ -280,18 +309,21 @@ local businesses and creating economic opportunities through fair, transparent p
 ### Session 11 Updates (December 4, 2025)
 
 **Auth System Enhancements:**
+
 - ✅ Created Reset Password page (`/auth/reset-password`)
 - ✅ Created dedicated Provider Login page (`/provider/login`)
 - ✅ Added logo + back-to-home link to all auth pages
 - ✅ Removed debug console.logs from customer login
 
 **Footer & Partner Landing Page:**
+
 - ✅ Created Footer component (4-column: Brand | Customers | Partners | Contact)
 - ✅ Created Partner Landing page (`/partner`) with hero, benefits, CTA
 - ✅ Added Footer to CustomerLayout
 - ✅ Added CSS animations (fade-in, fade-in-up)
 
 **Logo Brand Consistency (EngeznaLogo Unification):**
+
 - ✅ All pages now use `EngeznaLogo` component with Aref Ruqaa font
 - ✅ Customer Header: size `md` (was `sm`)
 - ✅ Provider Header/Sidebar/Dashboard: EngeznaLogo (was Store icon)
@@ -299,6 +331,7 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Logo sizes: `lg` for login pages, `md` for sidebars, `sm` for mobile headers
 
 ### Session 10 Updates (December 3, 2025)
+
 - ✅ **Fixed Admin Analytics Geographic Filtering**
   - Fixed analytics showing zeros when selecting a governorate
   - Added fallback name-based filtering for old orders without IDs
@@ -309,6 +342,7 @@ local businesses and creating economic opportunities through fair, transparent p
 ### What's Built ✅
 
 **Infrastructure & Design:**
+
 - ✅ Complete technical infrastructure (Next.js 16.0.7, React 19.2.1, TypeScript, Tailwind CSS v3.4.17)
 - ✅ Full database schema design and **DEPLOYED to Supabase** (1,431 lines SQL with all tables, RLS policies, triggers)
 - ✅ Brand identity and design system (Engezna Blue #009DE0, logos, typography)
@@ -319,6 +353,7 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ Locale-aware number formatting (Arabic-Indic numerals ٠-٩ in Arabic, Western Arabic 0-9 in English)
 
 **Database & Data:**
+
 - ✅ **Database deployed to Supabase** with live connection
 - ✅ **4 providers seeded** (restaurants, coffee shops, groceries, vegetables/fruits)
 - ✅ **30 menu items** across all providers
@@ -326,6 +361,7 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ RLS policies active and working
 
 **Pages & Features:**
+
 - ✅ Homepage/Landing page (bilingual, responsive)
 - ✅ **Authentication System** (FULLY FUNCTIONAL)
   - ✅ Signup page with email/password registration
@@ -387,6 +423,7 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ 404 error pages for both locales
 
 **Admin Dashboard (NEW - Week 4):**
+
 - ✅ **Unified Admin Components**
   - ✅ AdminHeader with language switcher, notifications, user menu
   - ✅ AdminSidebar with collapsible navigation
@@ -422,11 +459,13 @@ local businesses and creating economic opportunities through fair, transparent p
   - ✅ CRUD for super admins
 
 **Location Settings (NEW - Week 4):**
+
 - ✅ **District/Neighborhood Filtering**
   - ✅ Cascading dropdowns: Governorate → City → District → Neighborhood
   - ✅ Improved location selection in settings
 
 **DevOps:**
+
 - ✅ Git repository + GitHub integration
 - ✅ Vercel deployment setup (auto-deploy on push)
 - ✅ Environment configuration ready
@@ -435,6 +474,7 @@ local businesses and creating economic opportunities through fair, transparent p
 ### What's NOT Built Yet 🚧
 
 **Admin Panel (Backend Integration - Phase 0 Complete ✅):**
+
 - ✅ **Provider approval workflow** - Approve, reject, suspend, reactivate with audit logging
 - ✅ **User management backend** - Ban, unban, change role with audit logging
 - ✅ **Provider detail page** - Full view with stats and action controls
@@ -442,20 +482,24 @@ local businesses and creating economic opportunities through fair, transparent p
 - ✅ **Financial settlements** - Admin and provider settlements pages complete (Session 15)
 
 **Storage (Complete ✅):**
+
 - ✅ **Supabase Storage bucket** - Configured and working (Dec 1, 2025)
 - ✅ **Logo and product image uploads** - Functional
 
 **Payment Integration:**
+
 - ✅ **Online payment (Kashier)** - Integrated, pending account activation
 - ⚠️ Card payments - NOT available
 - ⚠️ Vodafone Cash - NOT available
 
 **Notifications:**
+
 - ✅ **Real-time notifications** - Supabase Realtime for live updates ✅ (Session 12)
 - ⚠️ **SMS notifications** - No Twilio/SMS provider integration
 - ⏸️ **Email notifications** - **مؤجل** (يتطلب خدمة بريد خارجية مثل Resend/SendGrid + API Keys + قوالب بريد إلكتروني)
 
 **Customer Features Missing:**
+
 - ✅ **Order cancellation** - Customers can cancel pending/confirmed/accepted orders ✅ (Session 12)
 - ✅ **Reviews/Ratings** - Customers can rate providers and leave reviews ✅ (Session 12)
 - ✅ **Favorites** - Customers can favorite providers ✅ (Session 12)
@@ -463,11 +507,13 @@ local businesses and creating economic opportunities through fair, transparent p
 - ⚠️ **Scheduled orders** - Cannot order for later
 
 **Provider Features Missing:**
+
 - ✅ **Real-time order notifications** - Supabase Realtime subscription ✅ (Session 12)
 - ⚠️ **Multi-user support** - No staff accounts for providers
 - ⚠️ **Inventory management** - No stock tracking
 
 **Other Missing:**
+
 - ⚠️ **Google Maps integration** - No map display or geocoding
 - ⚠️ **Full-text search** - No search across providers
 - ✅ **In-app chat** - Order-based messaging between customer and provider (Session 15 Evening)
@@ -475,6 +521,7 @@ local businesses and creating economic opportunities through fair, transparent p
 ### Next Priority Steps (Week 5+)
 
 **Week 1-2 Tasks (COMPLETE ✅):**
+
 1. ✅ Deploy database schema to Supabase (COMPLETE)
 2. ✅ Implement provider listing pages (COMPLETE)
 3. ✅ Add provider detail pages (COMPLETE)
@@ -485,6 +532,7 @@ local businesses and creating economic opportunities through fair, transparent p
 8. ✅ Build order placement (COMPLETE)
 
 **Week 3 Tasks (COMPLETE ✅):**
+
 1. ✅ Partner registration (multi-step flow)
 2. ✅ Business profile completion
 3. ✅ Provider dashboard (status-aware)
@@ -497,6 +545,7 @@ local businesses and creating economic opportunities through fair, transparent p
 10. ✅ Provider settings & profile
 
 **Week 4 Tasks (COMPLETE ✅):**
+
 1. ✅ Admin Dashboard unified components (AdminHeader, AdminSidebar)
 2. ✅ Locale-aware number formatting (Arabic-Indic numerals)
 3. ✅ District/neighborhood filtering in location settings
@@ -509,39 +558,35 @@ local businesses and creating economic opportunities through fair, transparent p
 **Week 5+ Priorities:**
 
 **✅ Completed:**
+
 1. ✅ **Admin Backend Integration Phase 0** - Providers, users connected with audit logging
 2. ✅ **Supabase Storage** - Bucket configured, logo/image uploads working
 3. ✅ **UI/UX Improvements** - Auth pages, Footer, Partner page, Logo unification
 
-**High Priority (Current):**
-4. ✅ **Payment Integration (Kashier)** - Online payment support (pending account activation)
-5. **Advanced Analytics** - Time-series charts, performance metrics
+**High Priority (Current):** 4. ✅ **Payment Integration (Kashier)** - Online payment support (pending account activation) 5. **Advanced Analytics** - Time-series charts, performance metrics
 
-**Medium Priority (Completed ✅):**
-6. ✅ Customer reviews and ratings system (Session 12)
-7. ✅ Order cancellation flow for customers (Session 12)
-8. ✅ Favorites/wishlist feature (Session 12)
+**Medium Priority (Completed ✅):** 6. ✅ Customer reviews and ratings system (Session 12) 7. ✅ Order cancellation flow for customers (Session 12) 8. ✅ Favorites/wishlist feature (Session 12)
 
-**Current Priority:**
-9. ✅ Real-time notifications (Supabase Realtime) - COMPLETE (Session 12)
-10. ⏸️ Email transactional notifications - **مؤجل** (يتطلب خدمة خارجية)
-11. ✅ Promo codes system - COMPLETE (Session 12)
+**Current Priority:** 9. ✅ Real-time notifications (Supabase Realtime) - COMPLETE (Session 12) 10. ⏸️ Email transactional notifications - **مؤجل** (يتطلب خدمة خارجية) 11. ✅ Promo codes system - COMPLETE (Session 12)
 
-**Lower Priority:**
-12. Google Maps integration
+**Lower Priority:** 12. Google Maps integration
 
 ---
 
 ## 🎯 Project Overview
 
 ### **Problem Statement**
+
 Egyptian governorates outside major cities lack modern delivery infrastructure. Existing national platforms (Talabat, Noon) don't serve these regions adequately with their high 15-20% commission rates, leaving a gap for:
+
 - Customers who want convenient delivery services
 - Local stores seeking online presence and affordable platform fees
 - Local economy needing digital transformation
 
 ### **Solution**
+
 A localized, bilingual (Arabic/English) delivery marketplace that:
+
 - Connects customers with local stores (restaurants, supermarkets, groceries, pharmacies, and more)
 - **Providers use their existing delivery staff** (no driver app needed)
 - **Ultra-low commission** (5-7% vs competitors' 15-20%)
@@ -552,6 +597,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 **Key Differentiator:** By letting providers manage their own delivery (which most already have), we offer the lowest commission in the market while maintaining simplicity.
 
 ### **Success Metrics**
+
 - **MVP Launch:** 3 months from project start
 - **Year 1 Targets:**
   - 50+ partner restaurants/shops
@@ -568,8 +614,9 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 ### **Primary Users**
 
 #### **1. Customers (End Users)**
+
 - **Demographics:** 18-45 years old, smartphone users in Beni Suef
-- **Behaviors:** 
+- **Behaviors:**
   - Prefer Arabic interface
   - Cash payment dominant (90%+)
   - Value local businesses
@@ -581,6 +628,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
   - Clear delivery estimates
 
 #### **2. Restaurant Partners (Providers)**
+
 - **Types:**
   - Quick service restaurants
   - Traditional Egyptian restaurants
@@ -596,6 +644,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 ### **Secondary Users**
 
 #### **3. Admin Team**
+
 - **Roles:**
   - Operations manager
   - Customer support
@@ -614,6 +663,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 ### **Tech Stack**
 
 #### **Frontend** ✅ FULLY IMPLEMENTED
+
 - **Framework:** Next.js 16.0.3 (App Router) ✅
   - React 19.2.0
   - App Router with route groups (customer/provider/admin)
@@ -642,6 +692,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 - **Forms:** React Hook Form + Zod validation (installed, ready for use)
 
 #### **Backend** ✅ DEPLOYED - WORKING
+
 - **Platform:** Supabase (deployed and active)
   - ✅ PostgreSQL database (schema deployed with 4 providers, 30 menu items)
   - ✅ **Authentication** (FULLY INTEGRATED - email/password + OTP)
@@ -661,6 +712,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
   - ⚠️ Real-time features pending (Week 3)
 
 #### **Infrastructure**
+
 - **Development:** ✅ COMPLETE
   - ✅ Local development environment
   - ✅ Git version control
@@ -683,6 +735,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
   - Sentry (to be integrated for error tracking)
 
 #### **Third-Party Integrations** 🔄 ALL PLANNED (Week 2+)
+
 - **Maps:** Google Maps API (navigation, geocoding) - Week 2-3
 - **Payments:** ✅ INTEGRATED
   - Kashier (Egyptian payment gateway) - pending account activation
@@ -696,6 +749,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 **Status:** Schema designed, deployed to Supabase, and working with live data.
 
 **Supabase Setup Completed:**
+
 - [x] Create Supabase project
 - [ ] Configure authentication (pending Week 2)
 - [x] Set up database tables
@@ -704,16 +758,17 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 - [ ] Set up Edge Functions (pending Week 3-4)
 
 **Planned Schema:**
+
 ```sql
 -- Users
 users (
-  id, email, phone, name, role, 
+  id, email, phone, name, role,
   created_at, updated_at
 )
 
 -- Restaurants/Shops
 providers (
-  id, owner_id, name_ar, name_en, 
+  id, owner_id, name_ar, name_en,
   category, address, location (point),
   rating, delivery_time, delivery_fee,
   is_open, created_at
@@ -723,7 +778,7 @@ providers (
 menu_items (
   id, provider_id, name_ar, name_en,
   description_ar, description_en,
-  price, image_url, category, 
+  price, image_url, category,
   is_available, created_at
 )
 
@@ -752,6 +807,7 @@ reviews (
 ### **Phase 1: MVP (Months 1-3)**
 
 #### **Customer App**
+
 1. **User Authentication**
    - Phone number + OTP
    - Email/password
@@ -799,6 +855,7 @@ reviews (
    - **Documentation:** `docs/AI_SMART_ASSISTANT.md`
 
 #### **Provider Dashboard**
+
 1. **Menu Management**
    - Add/edit/delete items
    - Upload images
@@ -828,6 +885,7 @@ reviews (
    - **Delivery performance** (managed by provider)
 
 #### **Admin Panel**
+
 1. **Dashboard**
    - Key metrics (GMV, orders, users)
    - Real-time order monitoring
@@ -906,6 +964,7 @@ reviews (
 ### **Brand Identity**
 
 #### **Logo** ✅ IMPLEMENTED
+
 - **Primary:** "إنجزنا" (Arabic) + "Engezna" (English)
 - **Variations:** 6 logo variants implemented as React component
   1. **Arabic Large** - إنجزنا (display text)
@@ -921,6 +980,7 @@ reviews (
   - Fully responsive and theme-aware
 
 #### **Color Scheme** ✅ IMPLEMENTED (Brand Identity Guide v2.0)
+
 - **Primary:** Engezna Blue (#009DE0) 💙
   - Represents: Trust, professionalism, clarity, reliability
   - Used for: CTAs, highlights, active states, brand elements
@@ -950,11 +1010,13 @@ reviews (
   - All shadcn/ui components themed with blue accent
 
 **⚠️ Brand Color History:**
+
 - v1.0: Deep Green (#06c769) - Changed
 - v1.5: Orange (#E85D04) - Changed
 - v2.0 (Current): Engezna Blue (#009DE0)
 
 #### **Typography** ✅ IMPLEMENTED
+
 - **Arabic:** Noto Sans Arabic (Variable Font) ✅
   - Loaded via `next/font/google`
   - Variable axes: weight (100-900)
@@ -971,6 +1033,7 @@ reviews (
   - Automatic font switching based on language context
 
 #### **Design Principles**
+
 1. **Arabic-First:** RTL layout, Arabic typography prioritized
 2. **Simplicity:** Clean, uncluttered interface
 3. **Speed:** Fast loading, minimal interactions
@@ -980,6 +1043,7 @@ reviews (
 ### **UI Components**
 
 #### **Implemented Components** ✅
+
 1. **Logo Component** (`/components/shared/Logo.tsx`)
    - 6 variations (language × variant × size)
    - Light-only theme
@@ -1011,6 +1075,7 @@ reviews (
    - All support light theme and RTL
 
 #### **Customer App** 🔄 PLANNED (Week 1-2)
+
 - Restaurant cards with images
 - Menu item cards
 - Cart summary
@@ -1021,6 +1086,7 @@ reviews (
 - Bottom navigation
 
 #### **Provider Dashboard** 🔄 PLANNED (Week 5-6)
+
 - Order cards with actions
 - Menu item editor
 - Image uploader
@@ -1034,21 +1100,24 @@ reviews (
 ## 🔐 Security & Privacy
 
 ### **Data Protection**
+
 - **Encryption:** TLS 1.3 for data in transit
 - **Storage:** AES-256 for sensitive data at rest
 - **Authentication:** JWT tokens, httpOnly cookies
 - **Authorization:** Row Level Security (RLS) in Supabase
-- **PII Protection:** 
+- **PII Protection:**
   - Phone numbers hashed
   - Addresses anonymized in analytics
   - Payment data never stored (tokenized)
 
 ### **Compliance**
+
 - **GDPR:** User data export/deletion on request
 - **Egyptian Data Protection Law:** Compliance with local regulations
 - **PCI DSS:** Level 1 compliance for payment processing
 
 ### **Security Measures**
+
 - Rate limiting on all APIs
 - CAPTCHA on registration/login
 - SMS verification for phone numbers
@@ -1088,14 +1157,16 @@ reviews (
 ### **Cost Structure**
 
 #### **Fixed Costs**
+
 - Solo developer salary/living costs
 - Infrastructure (Vercel, Supabase): ~$200/month
-- Office/workspace: ~1,000 EGP/month  
+- Office/workspace: ~1,000 EGP/month
 - Marketing budget: 5,000-10,000 EGP/month
 - Legal and accounting: 2,000 EGP/month
 - **Total Fixed:** ~15,000-20,000 EGP/month
 
 #### **Variable Costs**
+
 - Payment processing fees (2-3% on online payments)
 - SMS notifications (~0.05 EGP/SMS)
 - Customer support (as needed)
@@ -1109,6 +1180,7 @@ reviews (
 **Model:** 7% maximum commission
 
 **Conservative Scenario:**
+
 - Average order value: 80 EGP
 - Orders per month: 1,000 (Month 3) → 5,000 (Month 12)
 - Commission: 7% max = 5.60 EGP per order
@@ -1117,17 +1189,20 @@ reviews (
 - Profit margin: ~60% after costs = ~108,000 EGP/year
 
 **Optimistic Scenario:**
+
 - Orders per month: 2,000 (Month 3) → 10,000 (Month 12)
 - Monthly revenue (Month 12): 10,000 × 4.80 = ~48,000 EGP
-- Annual revenue: ~360,000 EGP  
+- Annual revenue: ~360,000 EGP
 - Profit margin: ~65% after costs = ~234,000 EGP/year
 
 **Break-even Point:**
+
 - Fixed costs: ~18,000 EGP/month
 - Orders needed: 3,750 orders/month (at 4.80 EGP commission)
 - Expected: Month 6-7
 
 **Key Advantages:**
+
 - Lower commission = more providers
 - No delivery infrastructure costs
 - Simple, predictable revenue
@@ -1139,30 +1214,35 @@ reviews (
 ## 🎯 Competitive Advantages
 
 ### **1. Ultra-Low Commission (5-7%)**
+
 - **Talabat/Noon:** 15-20% commission
 - **Engezna:** 5-7% commission
 - **Savings for providers:** 10-13% more profit per order
 - **Example:** 100 EGP order = Provider keeps 93-95 EGP vs 80-85 EGP
 
 ### **2. No Delivery Management Complexity**
+
 - Providers use existing delivery staff
 - No driver onboarding, training, or disputes
 - Providers control delivery quality directly
 - Simpler operations for everyone
 
 ### **3. Local Focus**
+
 - Dedicated to Beni Suef and Upper Egypt
 - Understands local market dynamics
 - Personalized provider relationships
 - Arabic-first experience
 
 ### **4. Simple, Transparent Pricing**
+
 - Maximum 7% commission (0% for first 6 months)
 - No hidden fees
 - No delivery fee split confusion
 - Providers set their own delivery charges
 
 ### **5. Technical Advantages**
+
 - Modern tech stack (Next.js, Supabase)
 - Fast, responsive interface
 - Real-time order updates
@@ -1176,11 +1256,13 @@ reviews (
 ### **Phase 1: Soft Launch (Month 1-2)**
 
 #### **Objectives**
+
 - Onboard 10 partner restaurants (with existing delivery capability)
 - Acquire 100 early adopter customers
 - Process 50+ successful orders
 
 #### **Tactics**
+
 1. **Direct Sales:**
    - Visit top 30 restaurants in Beni Suef
    - Target providers with existing delivery staff
@@ -1196,12 +1278,14 @@ reviews (
 ### **Phase 2: Public Launch (Month 3)**
 
 #### **Launch Event**
+
 - Press release to local media
-- Social media campaign (#إنجزنا_بني_سويف)
+- Social media campaign (#إنجزنا*بني*سويف)
 - Influencer partnerships (local micro-influencers)
 - Launch week: 30% discount on all orders
 
 #### **Channels**
+
 1. **Digital Marketing:**
    - Facebook Ads (lookalike audiences)
    - Instagram (visual content, stories)
@@ -1223,12 +1307,14 @@ reviews (
 ### **Phase 3: Growth (Month 4-12)**
 
 #### **Customer Retention**
+
 - Loyalty program launch
 - Push notification campaigns
 - Email marketing (weekly deals)
 - Referral program (30 EGP credit)
 
 #### **Market Expansion**
+
 - Expand to nearby areas (El Fashn, Beba)
 - Add new restaurant categories
 - Launch grocery delivery
@@ -1240,31 +1326,31 @@ reviews (
 
 ### **Technical Risks**
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| App crashes/bugs | High | Medium | Extensive testing, error monitoring, staged rollouts |
-| Server downtime | High | Low | Supabase SLA 99.9%, multi-region backup |
-| Data breach | Critical | Low | Regular security audits, encryption, compliance |
-| Slow performance | Medium | Medium | Code optimization, CDN, caching strategies |
+| Risk             | Impact   | Probability | Mitigation                                           |
+| ---------------- | -------- | ----------- | ---------------------------------------------------- |
+| App crashes/bugs | High     | Medium      | Extensive testing, error monitoring, staged rollouts |
+| Server downtime  | High     | Low         | Supabase SLA 99.9%, multi-region backup              |
+| Data breach      | Critical | Low         | Regular security audits, encryption, compliance      |
+| Slow performance | Medium   | Medium      | Code optimization, CDN, caching strategies           |
 
 ### **Business Risks**
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Low restaurant adoption | Critical | Medium | Value proposition (low 5-7% commission), direct sales, first month free |
-| Competition (Talabat/Noon enters) | High | Medium | Local focus, lower commission (5-7% vs 15-20%), better relationships |
-| Low order volume | Critical | Medium | Aggressive marketing, university partnerships, influencers |
-| Payment fraud | Medium | Low | COD dominance, verification, anti-fraud tools |
-| Providers lack delivery capability | High | Low | Target only providers with existing delivery, assist with setup if needed |
+| Risk                               | Impact   | Probability | Mitigation                                                                |
+| ---------------------------------- | -------- | ----------- | ------------------------------------------------------------------------- |
+| Low restaurant adoption            | Critical | Medium      | Value proposition (low 5-7% commission), direct sales, first month free   |
+| Competition (Talabat/Noon enters)  | High     | Medium      | Local focus, lower commission (5-7% vs 15-20%), better relationships      |
+| Low order volume                   | Critical | Medium      | Aggressive marketing, university partnerships, influencers                |
+| Payment fraud                      | Medium   | Low         | COD dominance, verification, anti-fraud tools                             |
+| Providers lack delivery capability | High     | Low         | Target only providers with existing delivery, assist with setup if needed |
 
 ### **Operational Risks**
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|------------|
-| Poor delivery quality | High | Medium | Provider training, rating system, quality standards |
-| Customer service issues | Medium | Medium | Dedicated support team, response SLA |
-| Restaurant disputes | Medium | Medium | Clear contracts, mediation process |
-| Seasonal demand fluctuations | Low | High | Marketing during slow periods, diversify |
+| Risk                         | Impact | Probability | Mitigation                                          |
+| ---------------------------- | ------ | ----------- | --------------------------------------------------- |
+| Poor delivery quality        | High   | Medium      | Provider training, rating system, quality standards |
+| Customer service issues      | Medium | Medium      | Dedicated support team, response SLA                |
+| Restaurant disputes          | Medium | Medium      | Clear contracts, mediation process                  |
+| Seasonal demand fluctuations | Low    | High        | Marketing during slow periods, diversify            |
 
 ---
 
@@ -1273,6 +1359,7 @@ reviews (
 ### **Week 0-1 (Nov 18-23, 2025): Foundation & Core Features** ✅ 100% COMPLETE
 
 **Completed Tasks:**
+
 - [x] Project initialization (Next.js 16.0.3 + TypeScript)
 - [x] Git repository setup and GitHub integration
 - [x] Design system foundation
@@ -1320,6 +1407,7 @@ reviews (
 ### **Week 2 (Nov 23-25, 2025): Authentication & Checkout** ✅ 100% COMPLETE
 
 **Completed Tasks:**
+
 - [x] Supabase Auth integration (email/password + OTP)
 - [x] Authentication hooks (useAuth, useUser, useSession)
 - [x] Authentication actions (signup, login, OTP, password reset)
@@ -1366,6 +1454,7 @@ reviews (
 ### **Week 3 (Nov 25-27, 2025): Partner Registration & Dashboard** ✅ 100% COMPLETE
 
 **Completed Tasks:**
+
 - [x] **Partner Registration** (`/partner/register`)
   - [x] Multi-step registration (personal info + business type)
   - [x] Business category dropdown (6 types: restaurant, cafe, supermarket, juice_shop, pharmacy, vegetables_fruits)
@@ -1426,6 +1515,7 @@ reviews (
 ### **Week 4 (Nov 28 - Dec 1, 2025): Admin Dashboard & Supervisor System** ✅ 100% COMPLETE
 
 **Completed Tasks:**
+
 - [x] **Unified Admin Components**
   - [x] AdminHeader with language switcher, notifications, user menu
   - [x] AdminSidebar with collapsible navigation
@@ -1491,6 +1581,7 @@ reviews (
 ### **Week 5-6 (Dec 2-15, 2025): Admin Backend Integration & UI Polish** 🔄 IN PROGRESS
 
 **✅ Completed (Session 8-11):**
+
 - [x] **Admin Backend Integration Phase 0** ✅ (Dec 3, 2025)
   - [x] TypeScript types for admin module (`src/lib/admin/types.ts`)
   - [x] Audit logging system (`src/lib/admin/audit.ts`)
@@ -1513,11 +1604,13 @@ reviews (
   - [x] Added fallback name-based filtering
 
 **🔄 In Progress:**
+
 - [ ] **Advanced Analytics**
   - [ ] Time-series revenue/orders charts
   - [ ] Performance metrics and trends
 
 **✅ Completed:**
+
 - [x] **Payment Integration (Kashier)**
   - [x] Kashier account setup and API credentials
   - [x] Integrate Kashier Egyptian payment gateway
@@ -1528,6 +1621,7 @@ reviews (
 ### **Week 7-8 (Dec 16-29, 2025): Notifications & Customer Features** 🔄 PLANNED
 
 **Medium Priority Tasks (MOSTLY COMPLETE ✅):**
+
 - [x] **Notifications System**
   - [x] Real-time notifications (Supabase Realtime) ✅
   - [ ] SMS notifications (Twilio or local provider)
@@ -1548,6 +1642,7 @@ reviews (
 ### **Week 9-10 (Dec 30 - Jan 12, 2026): Testing & Optimization** 🔄 PLANNED
 
 **Tasks:**
+
 - [ ] End-to-end testing (customer flow, provider flow, admin flow)
 - [ ] Performance optimization
 - [ ] Bug fixes from testing
@@ -1558,6 +1653,7 @@ reviews (
 ### **Week 11-12 (Jan 13-26, 2026): Launch Preparation** 🔄 PLANNED
 
 **Tasks:**
+
 - [ ] Restaurant onboarding (10 partners with delivery teams)
 - [ ] Verify provider delivery capability
 - [ ] Marketing materials
@@ -1569,6 +1665,7 @@ reviews (
 ### **Week 13 (Jan 27 - Feb 2, 2026): SOFT LAUNCH** 🚀 PLANNED
 
 **Tasks:**
+
 - [ ] Limited public release in Beni Suef
 - [ ] Monitor performance and stability
 - [ ] Gather feedback from early users
@@ -1580,9 +1677,11 @@ reviews (
 ## 👨‍💼 Team & Resources
 
 ### **Current Team**
+
 - **Mosab** - Founder, Full-stack Developer, Product Manager
 
 ### **Required Team (Month 3+)**
+
 - **Operations Manager** - Restaurant relations, onboarding, support
 - **Customer Support** - 2 agents (Arabic-speaking)
 - **Marketing Lead** - Digital campaigns, partnerships, content
@@ -1590,6 +1689,7 @@ reviews (
 **Note:** No delivery coordinator needed - providers manage their own delivery staff.
 
 ### **Advisors/Consultants**
+
 - **Legal** - Contracts, compliance
 - **Accounting** - Financial management, taxes
 - **UX Designer** - UI/UX improvements (freelance)
@@ -1601,6 +1701,7 @@ reviews (
 ### **Customer Support**
 
 #### **Channels**
+
 - In-app chat (primary)
 - WhatsApp Business
 - Phone hotline (local Beni Suef number)
@@ -1608,18 +1709,21 @@ reviews (
 - Facebook Messenger
 
 #### **Response SLA**
+
 - Critical (payment issues, missing orders): <15 minutes
 - High (delivery delays, wrong items): <30 minutes
 - Medium (general inquiries): <2 hours
 - Low (feature requests): <24 hours
 
 #### **Support Hours**
+
 - 10 AM - 11 PM daily (Beni Suef time)
 - Extended hours during Ramadan
 
 ### **Operational Metrics**
 
 #### **KPIs to Track**
+
 - **Order Metrics:**
   - Orders per day/week/month
   - Average order value (AOV)
@@ -1650,6 +1754,7 @@ reviews (
 ## 🌍 Future Vision (Year 2-3)
 
 ### **Geographic Expansion**
+
 1. **Upper Egypt Cities:**
    - El-Minia
    - Assiut
@@ -1662,12 +1767,14 @@ reviews (
    - 500+ partner restaurants
 
 ### **Product Expansion**
+
 1. **Engezna Groceries** - Full supermarket delivery
 2. **Engezna Pharmacy** - Medicine and health products
 3. **Engezna Express** - Package delivery service
 4. **Engezna Business** - B2B catering and supplies
 
 ### **Technology Innovation**
+
 1. **AI-Powered:**
    - Demand forecasting
    - Dynamic pricing
@@ -1689,6 +1796,7 @@ reviews (
 ## 📝 Success Criteria
 
 ### **MVP Success (Month 3)**
+
 - ✅ App deployed and publicly accessible
 - ✅ 10+ partner restaurants (with delivery capability)
 - ✅ 100+ registered customers
@@ -1698,6 +1806,7 @@ reviews (
 - ✅ >4.0 average provider rating
 
 ### **Year 1 Success**
+
 - 🎯 50+ partner restaurants/shops
 - 🎯 1,000+ monthly active users
 - 🎯 5,000+ orders per month
@@ -1708,6 +1817,7 @@ reviews (
 - 🎯 Break-even or profitable
 
 ### **Long-term Success (Year 3)**
+
 - 🎯 Market leader in Upper Egypt food delivery
 - 🎯 10,000+ monthly active users
 - 🎯 50,000+ orders per month
@@ -1720,6 +1830,7 @@ reviews (
 ## 📁 Current Project Structure
 
 ### **As of Week 0 (Nov 22, 2025)**
+
 ```
 engezna/
 ├── public/
@@ -1780,16 +1891,16 @@ engezna/
 
 ### **Key Files Status**
 
-| File | Status | Notes |
-|------|--------|-------|
-| `src/lib/fonts.ts` | ✅ Complete | Noto Sans Arabic & English configured |
-| `src/components/shared/Logo.tsx` | ✅ Complete | 6 variations, fully typed |
-| `src/components/shared/ThemeToggle.tsx` | ⚠️ Deprecated | Light-only theme (no toggle needed) |
-| `src/components/shared/LanguageSwitcher.tsx` | ⚠️ Blocked | Created but non-functional (routing) |
-| `src/app/[locale]/page.tsx` | ⚠️ Blocked | Returns 404 despite correct structure |
-| `src/middleware.ts` | ⚠️ Blocked | Executes but routes fail |
-| `tailwind.config.ts` | ✅ Complete | Custom theme, light-only, RTL support |
-| `PRD.md` | ✅ Complete | Comprehensive documentation |
+| File                                         | Status        | Notes                                 |
+| -------------------------------------------- | ------------- | ------------------------------------- |
+| `src/lib/fonts.ts`                           | ✅ Complete   | Noto Sans Arabic & English configured |
+| `src/components/shared/Logo.tsx`             | ✅ Complete   | 6 variations, fully typed             |
+| `src/components/shared/ThemeToggle.tsx`      | ⚠️ Deprecated | Light-only theme (no toggle needed)   |
+| `src/components/shared/LanguageSwitcher.tsx` | ⚠️ Blocked    | Created but non-functional (routing)  |
+| `src/app/[locale]/page.tsx`                  | ⚠️ Blocked    | Returns 404 despite correct structure |
+| `src/middleware.ts`                          | ⚠️ Blocked    | Executes but routes fail              |
+| `tailwind.config.ts`                         | ✅ Complete   | Custom theme, light-only, RTL support |
+| `PRD.md`                                     | ✅ Complete   | Comprehensive documentation           |
 
 ---
 
@@ -1797,26 +1908,29 @@ engezna/
 
 ### **Competitive Analysis**
 
-| Platform | Coverage | Strengths | Weaknesses | Opportunity |
-|----------|----------|-----------|------------|-------------|
-| **Talabat** | Cairo, Alex | Brand recognition, large selection | High 15-20% fees, no Upper Egypt | Lower 5-7% commission, local focus |
-| **Noon Food** | Major cities | Fast delivery | High fees, limited reach | Region expertise, better economics |
-| **Elmenus** | Nationwide | Restaurant discovery | No delivery, no transactions | Full-stack solution with delivery |
-| **Local Delivery** | Beni Suef | Established, knows market | Manual process, no app | Modern tech, scalability, lower cost |
+| Platform           | Coverage     | Strengths                          | Weaknesses                       | Opportunity                          |
+| ------------------ | ------------ | ---------------------------------- | -------------------------------- | ------------------------------------ |
+| **Talabat**        | Cairo, Alex  | Brand recognition, large selection | High 15-20% fees, no Upper Egypt | Lower 5-7% commission, local focus   |
+| **Noon Food**      | Major cities | Fast delivery                      | High fees, limited reach         | Region expertise, better economics   |
+| **Elmenus**        | Nationwide   | Restaurant discovery               | No delivery, no transactions     | Full-stack solution with delivery    |
+| **Local Delivery** | Beni Suef    | Established, knows market          | Manual process, no app           | Modern tech, scalability, lower cost |
 
 ### **Market Sizing**
 
 **Beni Suef Market:**
+
 - Population: ~750,000
 - Smartphone penetration: ~60% = 450,000
 - Target demographic (18-45): ~40% = 180,000
 - Addressable market: ~25% = 45,000 potential users
 
 **TAM (Total Addressable Market):**
+
 - Upper Egypt population: ~20 million
 - Potential users (with expansion): ~2 million
 
 **Initial Market (Year 1):**
+
 - Target: 1,000 active users
 - Market penetration: 2% of addressable market
 
@@ -1848,12 +1962,14 @@ engezna/
 ## 📞 Contact & Resources
 
 ### **Project Links**
+
 - **GitHub Repository:** https://github.com/Mosabragab/Engezna
 - **Figma Designs:** [To be created]
 - **Admin Dashboard:** [To be deployed]
 - **Staging Environment:** [To be deployed]
 
 ### **Key Documents**
+
 - Technical Architecture Document (TAD)
 - API Documentation
 - Brand Guidelines
@@ -1861,6 +1977,7 @@ engezna/
 - Market Research Report
 
 ### **Team Communication**
+
 - **Slack:** [To be created]
 - **Project Management:** GitHub Projects
 - **Documentation:** Notion
@@ -1869,6 +1986,7 @@ engezna/
 ---
 
 **Document Version History:**
+
 - **v1.0** - November 22, 2025 12:00 PM - Initial PRD created with full project scope
 - **v1.1** - November 22, 2025 1:00 PM - Updated to reflect actual Week 0 implementation
   - Added actual tech stack versions and status
@@ -2196,10 +2314,11 @@ engezna/
 ---
 
 **Approved By:**
+
 - **Mosab** - Founder & Product Lead - December 3, 2025
 
 **Next Review Date:** December 4, 2025
 
 ---
 
-*This is a living document that will be updated as the project evolves and new insights are gained.*
+_This is a living document that will be updated as the project evolves and new insights are gained._

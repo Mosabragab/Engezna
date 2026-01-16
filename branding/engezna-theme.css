@@ -18,60 +18,60 @@
   /* ================================================================
    * BRAND COLORS - Core Identity
    * ================================================================ */
-  --color-primary: #009DE0;              /* Engezna Blue - DO NOT CHANGE */
-  --color-primary-light: #33B1E6;        /* 10% lighter */
-  --color-primary-dark: #007BB3;         /* 10% darker */
-  --color-primary-foreground: #FFFFFF;
+  --color-primary: #009de0; /* Engezna Blue - DO NOT CHANGE */
+  --color-primary-light: #33b1e6; /* 10% lighter */
+  --color-primary-dark: #007bb3; /* 10% darker */
+  --color-primary-foreground: #ffffff;
 
-  --color-secondary: #0F172A;            /* Charcoal (NOT black) */
-  --color-secondary-foreground: #FFFFFF;
+  --color-secondary: #0f172a; /* Charcoal (NOT black) */
+  --color-secondary-foreground: #ffffff;
 
-  --color-white: #FFFFFF;
+  --color-white: #ffffff;
 
   /* ================================================================
    * ACCENT COLORS - Brand Palette
    * ================================================================ */
-  --color-deal: #00C27A;                 /* Green-Cyan (Deals/Discounts) */
-  --color-premium: #FFD166;              /* Soft Gold (Premium) */
-  --color-info: #36C5F0;                 /* Cyan (Information) */
+  --color-deal: #00c27a; /* Green-Cyan (Deals/Discounts) */
+  --color-premium: #ffd166; /* Soft Gold (Premium) */
+  --color-info: #36c5f0; /* Cyan (Information) */
 
   /* ================================================================
    * SEMANTIC COLORS - Professional Dashboard Standards
    * ================================================================ */
-  --color-success: #22C55E;              /* Green - Completed orders */
-  --color-warning: #FACC15;              /* Yellow - Pending, temporary */
-  --color-error: #EF4444;                /* Red - Tailwind standard */
-  --color-in-progress: #3B82F6;          /* Blue - Active orders */
+  --color-success: #22c55e; /* Green - Completed orders */
+  --color-warning: #facc15; /* Yellow - Pending, temporary */
+  --color-error: #ef4444; /* Red - Tailwind standard */
+  --color-in-progress: #3b82f6; /* Blue - Active orders */
 
   /* ================================================================
    * CARD BACKGROUNDS - 10% Opacity Tints
    * Use with corresponding text color for clean SaaS look
    * ================================================================ */
-  --color-primary-bg: #E6F6FC;           /* Primary 10% */
-  --color-deal-bg: #E6F9F2;              /* Deal 10% */
-  --color-premium-bg: #FFF9E6;           /* Premium 10% */
-  --color-info-bg: #EAF7FD;              /* Info 10% */
-  --color-success-bg: #E8F9EE;           /* Success 10% */
-  --color-warning-bg: #FFF9E6;           /* Warning 10% */
-  --color-error-bg: #FDECEC;             /* Error 10% */
-  --color-inprogress-bg: #EAF1FE;        /* In-Progress 10% */
+  --color-primary-bg: #e6f6fc; /* Primary 10% */
+  --color-deal-bg: #e6f9f2; /* Deal 10% */
+  --color-premium-bg: #fff9e6; /* Premium 10% */
+  --color-info-bg: #eaf7fd; /* Info 10% */
+  --color-success-bg: #e8f9ee; /* Success 10% */
+  --color-warning-bg: #fff9e6; /* Warning 10% */
+  --color-error-bg: #fdecec; /* Error 10% */
+  --color-inprogress-bg: #eaf1fe; /* In-Progress 10% */
 
   /* ================================================================
    * TEXT HIERARCHY - Contrast System
    * ================================================================ */
-  --color-text-primary: #0F172A;         /* Main text */
-  --color-text-secondary: #475569;       /* Secondary text */
-  --color-text-muted: #94A3B8;           /* Muted text */
+  --color-text-primary: #0f172a; /* Main text */
+  --color-text-secondary: #475569; /* Secondary text */
+  --color-text-muted: #94a3b8; /* Muted text */
 
   /* ================================================================
    * NEUTRALS – Light Mode Only
    * ================================================================ */
-  --color-background: #FFFFFF;
-  --color-foreground: #0F172A;
-  --color-muted: #F1F5F9;
-  --color-muted-foreground: #64748B;
-  --color-border: #E2E8F0;
-  --color-input: #E2E8F0;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
   --color-ring: var(--color-primary);
 
   /* ================================================================
@@ -81,7 +81,7 @@
   --chart-2: var(--color-in-progress);
   --chart-3: var(--color-success);
   --chart-4: var(--color-warning);
-  --chart-5: #8B5CF6;                    /* Purple */
+  --chart-5: #8b5cf6; /* Purple */
 
   /* RADIUS */
   --radius: 0.5rem;
@@ -90,53 +90,123 @@
 /* ================================================================
  * UTILITY CLASSES - Backgrounds
  * ================================================================ */
-.bg-primary { background-color: var(--color-primary); }
-.bg-deal { background-color: var(--color-deal); }
-.bg-premium { background-color: var(--color-premium); }
-.bg-info { background-color: var(--color-info); }
-.bg-success { background-color: var(--color-success); }
-.bg-warning { background-color: var(--color-warning); }
-.bg-error { background-color: var(--color-error); }
-.bg-in-progress { background-color: var(--color-in-progress); }
+.bg-primary {
+  background-color: var(--color-primary);
+}
+.bg-deal {
+  background-color: var(--color-deal);
+}
+.bg-premium {
+  background-color: var(--color-premium);
+}
+.bg-info {
+  background-color: var(--color-info);
+}
+.bg-success {
+  background-color: var(--color-success);
+}
+.bg-warning {
+  background-color: var(--color-warning);
+}
+.bg-error {
+  background-color: var(--color-error);
+}
+.bg-in-progress {
+  background-color: var(--color-in-progress);
+}
 
 /* Card Backgrounds - 10% Tints */
-.bg-primary-tint { background-color: var(--color-primary-bg); }
-.bg-deal-tint { background-color: var(--color-deal-bg); }
-.bg-premium-tint { background-color: var(--color-premium-bg); }
-.bg-info-tint { background-color: var(--color-info-bg); }
-.bg-success-tint { background-color: var(--color-success-bg); }
-.bg-warning-tint { background-color: var(--color-warning-bg); }
-.bg-error-tint { background-color: var(--color-error-bg); }
-.bg-inprogress-tint { background-color: var(--color-inprogress-bg); }
+.bg-primary-tint {
+  background-color: var(--color-primary-bg);
+}
+.bg-deal-tint {
+  background-color: var(--color-deal-bg);
+}
+.bg-premium-tint {
+  background-color: var(--color-premium-bg);
+}
+.bg-info-tint {
+  background-color: var(--color-info-bg);
+}
+.bg-success-tint {
+  background-color: var(--color-success-bg);
+}
+.bg-warning-tint {
+  background-color: var(--color-warning-bg);
+}
+.bg-error-tint {
+  background-color: var(--color-error-bg);
+}
+.bg-inprogress-tint {
+  background-color: var(--color-inprogress-bg);
+}
 
 /* ================================================================
  * UTILITY CLASSES - Text
  * ================================================================ */
-.text-primary { color: var(--color-primary); }
-.text-deal { color: var(--color-deal); }
-.text-premium { color: var(--color-premium); }
-.text-info { color: var(--color-info); }
-.text-success { color: var(--color-success); }
-.text-warning { color: var(--color-warning); }
-.text-error { color: var(--color-error); }
-.text-in-progress { color: var(--color-in-progress); }
+.text-primary {
+  color: var(--color-primary);
+}
+.text-deal {
+  color: var(--color-deal);
+}
+.text-premium {
+  color: var(--color-premium);
+}
+.text-info {
+  color: var(--color-info);
+}
+.text-success {
+  color: var(--color-success);
+}
+.text-warning {
+  color: var(--color-warning);
+}
+.text-error {
+  color: var(--color-error);
+}
+.text-in-progress {
+  color: var(--color-in-progress);
+}
 
 /* Text Hierarchy */
-.text-body { color: var(--color-text-primary); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-muted { color: var(--color-text-muted); }
+.text-body {
+  color: var(--color-text-primary);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-muted {
+  color: var(--color-text-muted);
+}
 
 /* ================================================================
  * UTILITY CLASSES - Borders
  * ================================================================ */
-.border-primary { border-color: var(--color-primary); }
-.border-deal { border-color: var(--color-deal); }
-.border-premium { border-color: var(--color-premium); }
-.border-info { border-color: var(--color-info); }
-.border-success { border-color: var(--color-success); }
-.border-warning { border-color: var(--color-warning); }
-.border-error { border-color: var(--color-error); }
-.border-in-progress { border-color: var(--color-in-progress); }
+.border-primary {
+  border-color: var(--color-primary);
+}
+.border-deal {
+  border-color: var(--color-deal);
+}
+.border-premium {
+  border-color: var(--color-premium);
+}
+.border-info {
+  border-color: var(--color-info);
+}
+.border-success {
+  border-color: var(--color-success);
+}
+.border-warning {
+  border-color: var(--color-warning);
+}
+.border-error {
+  border-color: var(--color-error);
+}
+.border-in-progress {
+  border-color: var(--color-in-progress);
+}
 
 /* ================================================================
  * COMPONENTS - Buttons
@@ -184,7 +254,7 @@
 /* Success Button */
 .btn-success {
   background-color: var(--color-success);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: var(--radius);
   border: none;
   padding: 0.75rem 1.5rem;
@@ -194,7 +264,7 @@
 }
 
 .btn-success:hover {
-  background-color: #16A34A;
+  background-color: #16a34a;
   transform: translateY(-1px);
 }
 
@@ -211,7 +281,7 @@
 }
 
 .btn-warning:hover {
-  background-color: #EAB308;
+  background-color: #eab308;
   transform: translateY(-1px);
 }
 
@@ -219,7 +289,7 @@
 .btn-error,
 .btn-danger {
   background-color: var(--color-error);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: var(--radius);
   border: none;
   padding: 0.75rem 1.5rem;
@@ -230,7 +300,7 @@
 
 .btn-error:hover,
 .btn-danger:hover {
-  background-color: #DC2626;
+  background-color: #dc2626;
   transform: translateY(-1px);
 }
 
@@ -256,7 +326,7 @@
  * ================================================================ */
 .badge-deal {
   background-color: var(--color-deal);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -274,7 +344,7 @@
 
 .badge-success {
   background-color: var(--color-success);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -292,7 +362,7 @@
 
 .badge-error {
   background-color: var(--color-error);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -301,7 +371,7 @@
 
 .badge-in-progress {
   background-color: var(--color-in-progress);
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 999px;
   padding: 0.25rem 0.75rem;
   font-size: 0.75rem;
@@ -314,7 +384,7 @@
  * ================================================================ */
 .status-success {
   background-color: var(--color-success-bg);
-  color: #16A34A; /* Darker green for readability */
+  color: #16a34a; /* Darker green for readability */
   border: 1px solid rgba(34, 197, 94, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -322,7 +392,7 @@
 
 .status-warning {
   background-color: var(--color-warning-bg);
-  color: #A16207; /* Darker yellow/brown for readability */
+  color: #a16207; /* Darker yellow/brown for readability */
   border: 1px solid rgba(250, 204, 21, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -330,7 +400,7 @@
 
 .status-error {
   background-color: var(--color-error-bg);
-  color: #DC2626; /* Darker red for readability */
+  color: #dc2626; /* Darker red for readability */
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -338,7 +408,7 @@
 
 .status-info {
   background-color: var(--color-info-bg);
-  color: #0891B2; /* Darker cyan for readability */
+  color: #0891b2; /* Darker cyan for readability */
   border: 1px solid rgba(54, 197, 240, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -346,7 +416,7 @@
 
 .status-in-progress {
   background-color: var(--color-inprogress-bg);
-  color: #2563EB; /* Darker blue for readability */
+  color: #2563eb; /* Darker blue for readability */
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -354,7 +424,7 @@
 
 .status-primary {
   background-color: var(--color-primary-bg);
-  color: #0077B6; /* Darker primary for readability */
+  color: #0077b6; /* Darker primary for readability */
   border: 1px solid rgba(0, 157, 224, 0.3);
   border-radius: var(--radius);
   padding: 1rem;
@@ -366,19 +436,15 @@
 .gradient-hero-light {
   background: linear-gradient(
     135deg,
-    #FFFFFF 0%,
-    #E6F6FC 25%,
-    #B3E5FC 50%,
+    #ffffff 0%,
+    #e6f6fc 25%,
+    #b3e5fc 50%,
     var(--color-primary) 100%
   );
 }
 
 .gradient-primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-dark) 100%
-  );
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 
 /* ================================================================
@@ -435,7 +501,7 @@
 .nav-btn-logout:hover {
   background-color: var(--color-error-bg);
   border-color: rgba(239, 68, 68, 0.5);
-  color: #DC2626;
+  color: #dc2626;
 }
 
 /* Active Orders Badge */
@@ -472,7 +538,9 @@
   margin-top: 0;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
   background-color: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);

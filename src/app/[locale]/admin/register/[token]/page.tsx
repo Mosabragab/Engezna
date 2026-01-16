@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
 import {
   Shield,
   ShieldCheck,
@@ -32,97 +32,113 @@ import {
   ShoppingCart,
   TrendingUp,
   MessageCircle,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // Database role type
 interface DbRole {
-  id: string
-  code: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  color: string
-  icon: string
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  color: string;
+  icon: string;
 }
 
 interface Invitation {
-  id: string
-  email: string
-  full_name: string | null
-  role: string
-  role_id: string | null
-  permissions: object
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string;
+  role_id: string | null;
+  permissions: object;
   assigned_regions: Array<{
-    governorate_id: string | null
-    city_id: string | null
-    district_id: string | null
-  }>
-  invitation_message: string | null
-  expires_at: string
-  invited_by: string
-  inviter_name?: string
+    governorate_id: string | null;
+    city_id: string | null;
+    district_id: string | null;
+  }>;
+  invitation_message: string | null;
+  expires_at: string;
+  invited_by: string;
+  inviter_name?: string;
   // Dynamic role info from database
-  roleInfo?: DbRole
+  roleInfo?: DbRole;
 }
 
 // Role icon component - renders icon based on name
-function RoleIconComponent({ iconName, className, style }: {
-  iconName?: string
-  className?: string
-  style?: React.CSSProperties
+function RoleIconComponent({
+  iconName,
+  className,
+  style,
+}: {
+  iconName?: string;
+  className?: string;
+  style?: React.CSSProperties;
 }) {
   switch (iconName) {
-    case 'Crown': return <Crown className={className} style={style} />
-    case 'UserCog': return <UserCog className={className} style={style} />
-    case 'Headphones': return <Headphones className={className} style={style} />
-    case 'Wallet': return <Wallet className={className} style={style} />
-    case 'ShieldCheck': return <ShieldCheck className={className} style={style} />
-    case 'Store': return <Store className={className} style={style} />
-    case 'MapPin': return <MapPin className={className} style={style} />
-    case 'ShoppingCart': return <ShoppingCart className={className} style={style} />
-    case 'MessageCircle': return <MessageCircle className={className} style={style} />
-    case 'TrendingUp': return <TrendingUp className={className} style={style} />
-    case 'Eye': return <Eye className={className} style={style} />
+    case 'Crown':
+      return <Crown className={className} style={style} />;
+    case 'UserCog':
+      return <UserCog className={className} style={style} />;
+    case 'Headphones':
+      return <Headphones className={className} style={style} />;
+    case 'Wallet':
+      return <Wallet className={className} style={style} />;
+    case 'ShieldCheck':
+      return <ShieldCheck className={className} style={style} />;
+    case 'Store':
+      return <Store className={className} style={style} />;
+    case 'MapPin':
+      return <MapPin className={className} style={style} />;
+    case 'ShoppingCart':
+      return <ShoppingCart className={className} style={style} />;
+    case 'MessageCircle':
+      return <MessageCircle className={className} style={style} />;
+    case 'TrendingUp':
+      return <TrendingUp className={className} style={style} />;
+    case 'Eye':
+      return <Eye className={className} style={style} />;
     case 'Shield':
-    default: return <Shield className={className} style={style} />
+    default:
+      return <Shield className={className} style={style} />;
   }
 }
 
 export default function AdminRegisterPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const params = useParams()
-  const token = params.token as string
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const params = useParams();
+  const token = params.token as string;
+  const isRTL = locale === 'ar';
 
-  const [loading, setLoading] = useState(true)
-  const [invitation, setInvitation] = useState<Invitation | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [invitation, setInvitation] = useState<Invitation | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Form state
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Form errors
-  const [formError, setFormError] = useState('')
-  const [formLoading, setFormLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [formError, setFormError] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const validateInvitation = useCallback(async () => {
     if (!token) {
-      setError(locale === 'ar' ? 'رابط الدعوة غير صالح' : 'Invalid invitation link')
-      setLoading(false)
-      return
+      setError(locale === 'ar' ? 'رابط الدعوة غير صالح' : 'Invalid invitation link');
+      setLoading(false);
+      return;
     }
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Get invitation by token
@@ -130,61 +146,65 @@ export default function AdminRegisterPage() {
         .from('admin_invitations')
         .select('*')
         .eq('invitation_token', token)
-        .single()
+        .single();
 
       if (fetchError || !invitationData) {
-        setError(locale === 'ar' ? 'الدعوة غير موجودة' : 'Invitation not found')
-        setLoading(false)
-        return
+        setError(locale === 'ar' ? 'الدعوة غير موجودة' : 'Invitation not found');
+        setLoading(false);
+        return;
       }
 
       // Check if invitation is pending
       if (invitationData.status !== 'pending') {
         if (invitationData.status === 'accepted') {
-          setError(locale === 'ar' ? 'تم استخدام هذه الدعوة مسبقاً' : 'This invitation has already been used')
+          setError(
+            locale === 'ar'
+              ? 'تم استخدام هذه الدعوة مسبقاً'
+              : 'This invitation has already been used'
+          );
         } else if (invitationData.status === 'expired') {
-          setError(locale === 'ar' ? 'انتهت صلاحية الدعوة' : 'This invitation has expired')
+          setError(locale === 'ar' ? 'انتهت صلاحية الدعوة' : 'This invitation has expired');
         } else if (invitationData.status === 'cancelled') {
-          setError(locale === 'ar' ? 'تم إلغاء هذه الدعوة' : 'This invitation has been cancelled')
+          setError(locale === 'ar' ? 'تم إلغاء هذه الدعوة' : 'This invitation has been cancelled');
         } else {
-          setError(locale === 'ar' ? 'الدعوة غير صالحة' : 'Invalid invitation')
+          setError(locale === 'ar' ? 'الدعوة غير صالحة' : 'Invalid invitation');
         }
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       // Check if expired
-      const expiresAt = new Date(invitationData.expires_at)
+      const expiresAt = new Date(invitationData.expires_at);
       if (expiresAt < new Date()) {
         // Mark as expired
         await supabase
           .from('admin_invitations')
           .update({ status: 'expired' })
-          .eq('id', invitationData.id)
+          .eq('id', invitationData.id);
 
-        setError(locale === 'ar' ? 'انتهت صلاحية الدعوة' : 'This invitation has expired')
-        setLoading(false)
-        return
+        setError(locale === 'ar' ? 'انتهت صلاحية الدعوة' : 'This invitation has expired');
+        setLoading(false);
+        return;
       }
 
       // Get inviter info
-      let inviterName = ''
+      let inviterName = '';
       if (invitationData.invited_by) {
         const { data: inviterData } = await supabase
           .from('admin_users')
           .select('user_id')
           .eq('id', invitationData.invited_by)
-          .single()
+          .single();
 
         if (inviterData) {
           const { data: inviterProfile } = await supabase
             .from('profiles')
             .select('full_name')
             .eq('id', inviterData.user_id)
-            .single()
+            .single();
 
           if (inviterProfile) {
-            inviterName = inviterProfile.full_name || ''
+            inviterName = inviterProfile.full_name || '';
           }
         }
       }
@@ -196,10 +216,10 @@ export default function AdminRegisterPage() {
           view_count: (invitationData.view_count || 0) + 1,
           last_viewed_at: new Date().toISOString(),
         })
-        .eq('id', invitationData.id)
+        .eq('id', invitationData.id);
 
       // Load role info from roles table
-      let roleInfo: DbRole | undefined = undefined
+      let roleInfo: DbRole | undefined = undefined;
 
       // First try using role_id if available
       if (invitationData.role_id) {
@@ -207,10 +227,10 @@ export default function AdminRegisterPage() {
           .from('roles')
           .select('*')
           .eq('id', invitationData.role_id)
-          .single()
+          .single();
 
         if (roleData) {
-          roleInfo = roleData
+          roleInfo = roleData;
         }
       }
 
@@ -220,10 +240,10 @@ export default function AdminRegisterPage() {
           .from('roles')
           .select('*')
           .eq('code', invitationData.role)
-          .single()
+          .single();
 
         if (roleData) {
-          roleInfo = roleData
+          roleInfo = roleData;
         }
       }
 
@@ -231,73 +251,76 @@ export default function AdminRegisterPage() {
         ...invitationData,
         inviter_name: inviterName,
         roleInfo: roleInfo,
-      })
+      });
 
       // Pre-fill name if provided
       if (invitationData.full_name) {
-        setFullName(invitationData.full_name)
+        setFullName(invitationData.full_name);
       }
-
     } catch {
-      setError(locale === 'ar' ? 'حدث خطأ أثناء التحقق من الدعوة' : 'Error validating invitation')
+      setError(locale === 'ar' ? 'حدث خطأ أثناء التحقق من الدعوة' : 'Error validating invitation');
     }
 
-    setLoading(false)
-  }, [token, locale])
+    setLoading(false);
+  }, [token, locale]);
 
   useEffect(() => {
-    validateInvitation()
-  }, [validateInvitation])
+    validateInvitation();
+  }, [validateInvitation]);
 
   function getTimeRemaining(): string {
-    if (!invitation) return ''
+    if (!invitation) return '';
 
-    const expiresAt = new Date(invitation.expires_at)
-    const now = new Date()
-    const diff = expiresAt.getTime() - now.getTime()
+    const expiresAt = new Date(invitation.expires_at);
+    const now = new Date();
+    const diff = expiresAt.getTime() - now.getTime();
 
-    if (diff <= 0) return locale === 'ar' ? 'منتهية' : 'Expired'
+    if (diff <= 0) return locale === 'ar' ? 'منتهية' : 'Expired';
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     if (hours > 24) {
-      const days = Math.floor(hours / 24)
-      return locale === 'ar' ? `${days} أيام` : `${days} days`
+      const days = Math.floor(hours / 24);
+      return locale === 'ar' ? `${days} أيام` : `${days} days`;
     }
 
     if (hours > 0) {
-      return locale === 'ar' ? `${hours} ساعة و ${minutes} دقيقة` : `${hours}h ${minutes}m`
+      return locale === 'ar' ? `${hours} ساعة و ${minutes} دقيقة` : `${hours}h ${minutes}m`;
     }
 
-    return locale === 'ar' ? `${minutes} دقيقة` : `${minutes} minutes`
+    return locale === 'ar' ? `${minutes} دقيقة` : `${minutes} minutes`;
   }
 
   async function handleRegister(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!invitation) return
+    if (!invitation) return;
 
     // Validation
     if (!fullName.trim()) {
-      setFormError(locale === 'ar' ? 'الاسم الكامل مطلوب' : 'Full name is required')
-      return
+      setFormError(locale === 'ar' ? 'الاسم الكامل مطلوب' : 'Full name is required');
+      return;
     }
 
     if (password.length < 8) {
-      setFormError(locale === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters')
-      return
+      setFormError(
+        locale === 'ar'
+          ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+          : 'Password must be at least 8 characters'
+      );
+      return;
     }
 
     if (password !== confirmPassword) {
-      setFormError(locale === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match')
-      return
+      setFormError(locale === 'ar' ? 'كلمتا المرور غير متطابقتين' : 'Passwords do not match');
+      return;
     }
 
-    setFormLoading(true)
-    setFormError('')
+    setFormLoading(true);
+    setFormError('');
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Create the auth user
@@ -310,63 +333,72 @@ export default function AdminRegisterPage() {
             phone: phone.trim() || null,
           },
         },
-      })
+      });
 
       if (signUpError) {
         if (signUpError.message.includes('already registered')) {
-          setFormError(locale === 'ar' ? 'هذا البريد مسجل بالفعل. جرب تسجيل الدخول.' : 'This email is already registered. Try logging in.')
+          setFormError(
+            locale === 'ar'
+              ? 'هذا البريد مسجل بالفعل. جرب تسجيل الدخول.'
+              : 'This email is already registered. Try logging in.'
+          );
         } else {
-          setFormError(signUpError.message)
+          setFormError(signUpError.message);
         }
-        setFormLoading(false)
-        return
+        setFormLoading(false);
+        return;
       }
 
       if (!authData.user) {
-        setFormError(locale === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account')
-        setFormLoading(false)
-        return
+        setFormError(locale === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account');
+        setFormLoading(false);
+        return;
       }
 
       // Use the database function to create admin account (bypasses RLS)
-      const { data: registerResult, error: registerError } = await supabase
-        .rpc('register_admin_from_invitation', {
+      const { data: registerResult, error: registerError } = await supabase.rpc(
+        'register_admin_from_invitation',
+        {
           p_user_id: authData.user.id,
           p_invitation_token: token,
           p_full_name: fullName.trim(),
           p_phone: phone.trim() || null,
-        })
+        }
+      );
 
       if (registerError) {
-        console.error('Register RPC error:', registerError)
-        setFormError(locale === 'ar'
-          ? `خطأ في إنشاء حساب المشرف: ${registerError.message}`
-          : `Error creating admin account: ${registerError.message}`)
-        setFormLoading(false)
-        return
+        console.error('Register RPC error:', registerError);
+        setFormError(
+          locale === 'ar'
+            ? `خطأ في إنشاء حساب المشرف: ${registerError.message}`
+            : `Error creating admin account: ${registerError.message}`
+        );
+        setFormLoading(false);
+        return;
       }
 
       if (registerResult && !registerResult.success) {
-        console.error('Register function error:', registerResult.error)
-        setFormError(locale === 'ar'
-          ? `خطأ في إنشاء حساب المشرف: ${registerResult.error || 'Unknown error'}`
-          : `Error creating admin account: ${registerResult.error || 'Unknown error'}`)
-        setFormLoading(false)
-        return
+        console.error('Register function error:', registerResult.error);
+        setFormError(
+          locale === 'ar'
+            ? `خطأ في إنشاء حساب المشرف: ${registerResult.error || 'Unknown error'}`
+            : `Error creating admin account: ${registerResult.error || 'Unknown error'}`
+        );
+        setFormLoading(false);
+        return;
       }
 
-      setSuccess(true)
+      setSuccess(true);
 
       // Redirect after 3 seconds
       setTimeout(() => {
-        router.push(`/${locale}/admin/login`)
-      }, 3000)
-
+        router.push(`/${locale}/admin/login`);
+      }, 3000);
     } catch {
-      setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+      setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
-    setFormLoading(false)
+    setFormLoading(false);
   }
 
   if (loading) {
@@ -379,7 +411,7 @@ export default function AdminRegisterPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -400,7 +432,7 @@ export default function AdminRegisterPage() {
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   if (success) {
@@ -421,20 +453,24 @@ export default function AdminRegisterPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-3 border-[#009DE0] border-t-transparent mx-auto"></div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!invitation) return null
+  if (!invitation) return null;
 
   // Get role display info - use dynamic roleInfo if available, otherwise show raw role code
-  const roleInfo = invitation.roleInfo
+  const roleInfo = invitation.roleInfo;
   const roleName = roleInfo
-    ? (locale === 'ar' ? roleInfo.name_ar : roleInfo.name_en)
-    : invitation.role
+    ? locale === 'ar'
+      ? roleInfo.name_ar
+      : roleInfo.name_en
+    : invitation.role;
   const roleDescription = roleInfo
-    ? (locale === 'ar' ? roleInfo.description_ar : roleInfo.description_en)
-    : ''
-  const roleColor = roleInfo?.color || '#6B7280'
+    ? locale === 'ar'
+      ? roleInfo.description_ar
+      : roleInfo.description_en
+    : '';
+  const roleColor = roleInfo?.color || '#6B7280';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
@@ -466,9 +502,7 @@ export default function AdminRegisterPage() {
                 <h1 className="text-xl font-bold">
                   {locale === 'ar' ? 'دعوة للانضمام' : 'Invitation to Join'}
                 </h1>
-                <p className="text-sm text-white/80">
-                  {roleName}
-                </p>
+                <p className="text-sm text-white/80">{roleName}</p>
               </div>
             </div>
 
@@ -502,7 +536,9 @@ export default function AdminRegisterPage() {
                 {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               </label>
               <div className="relative">
-                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Mail
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type="email"
                   value={invitation.email}
@@ -516,10 +552,13 @@ export default function AdminRegisterPage() {
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'} <span className="text-red-500">*</span>
+                {locale === 'ar' ? 'الاسم الكامل' : 'Full Name'}{' '}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <User className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <User
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type="text"
                   value={fullName}
@@ -534,10 +573,15 @@ export default function AdminRegisterPage() {
             {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'رقم الهاتف' : 'Phone Number'} <span className="text-slate-400 text-xs">({locale === 'ar' ? 'اختياري' : 'optional'})</span>
+                {locale === 'ar' ? 'رقم الهاتف' : 'Phone Number'}{' '}
+                <span className="text-slate-400 text-xs">
+                  ({locale === 'ar' ? 'اختياري' : 'optional'})
+                </span>
               </label>
               <div className="relative">
-                <Phone className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Phone
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type="tel"
                   value={phone}
@@ -552,10 +596,13 @@ export default function AdminRegisterPage() {
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'كلمة المرور' : 'Password'} <span className="text-red-500">*</span>
+                {locale === 'ar' ? 'كلمة المرور' : 'Password'}{' '}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Lock
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -578,10 +625,13 @@ export default function AdminRegisterPage() {
             {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'} <span className="text-red-500">*</span>
+                {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}{' '}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Lock
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
@@ -595,7 +645,11 @@ export default function AdminRegisterPage() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -607,10 +661,16 @@ export default function AdminRegisterPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <RoleIconComponent iconName={roleInfo?.icon} className="w-4 h-4" style={{ color: roleColor }} />
+                  <RoleIconComponent
+                    iconName={roleInfo?.icon}
+                    className="w-4 h-4"
+                    style={{ color: roleColor }}
+                  />
                   <span className="text-slate-700">
                     {locale === 'ar' ? 'الدور: ' : 'Role: '}
-                    <span className="font-medium" style={{ color: roleColor }}>{roleName}</span>
+                    <span className="font-medium" style={{ color: roleColor }}>
+                      {roleName}
+                    </span>
                   </span>
                 </div>
                 {roleDescription && (
@@ -653,14 +713,16 @@ export default function AdminRegisterPage() {
         {/* Already have account */}
         <div className="text-center mt-6">
           <p className="text-slate-600">
-            {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}
-            {' '}
-            <Link href={`/${locale}/admin/login`} className="text-[#009DE0] hover:underline font-medium">
+            {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
+            <Link
+              href={`/${locale}/admin/login`}
+              className="text-[#009DE0] hover:underline font-medium"
+            >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
             </Link>
           </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,4 +1,5 @@
 # Engezna – Brand Quick Reference
+
 Version: 2.2
 Last Updated: 2026-01-13
 
@@ -13,10 +14,11 @@ Last Updated: 2026-01-13
 - **Tagline (EN):** Want to order? Engezna!
 - **What we do:**
   Connect customers with local service providers (restaurants, supermarkets, cafés, pharmacies, fruits & veg) across all Egyptian governorates, replacing phone-based ordering with app-based ordering.
-  
+
 **Expansion Strategy:**
-  - Phase 1-2: Secondary governorates (المحافظات الثانوية)
-  - Phase 3-4: Cairo, Giza, Alexandria, North Coast (المرحلة النهائية)
+
+- Phase 1-2: Secondary governorates (المحافظات الثانوية)
+- Phase 3-4: Cairo, Giza, Alexandria, North Coast (المرحلة النهائية)
 
 ---
 
@@ -48,38 +50,44 @@ Last Updated: 2026-01-13
 ## 4. Visuals – Colors
 
 ### Primary Brand
+
 - **Primary:** `#009DE0` (Engezna Blue)
 - **Secondary:**
   - Black `#000000`
   - White `#FFFFFF`
 
 ### Semantic Colors (Dashboard)
-| State | Color | Usage |
-|-------|-------|-------|
-| **Success** | `#22C55E` | Completed, delivered |
-| **Warning** | `#CA8A04` | Pending, alerts (yellow-600) |
-| **Error** | `#EF4444` | Cancelled, errors |
-| **In Progress** | `#3B82F6` | Active orders |
-| **Info** | `#009DE0` | Same as Primary |
+
+| State           | Color     | Usage                        |
+| --------------- | --------- | ---------------------------- |
+| **Success**     | `#22C55E` | Completed, delivered         |
+| **Warning**     | `#CA8A04` | Pending, alerts (yellow-600) |
+| **Error**       | `#EF4444` | Cancelled, errors            |
+| **In Progress** | `#3B82F6` | Active orders                |
+| **Info**        | `#009DE0` | Same as Primary              |
 
 ### Text Hierarchy
-| Level | Color | Usage |
-|-------|-------|-------|
-| **Primary** | `#0F172A` | Main text, numbers |
-| **Secondary** | `#475569` | Descriptions |
-| **Muted** | `#94A3B8` | Hints, disabled |
+
+| Level         | Color     | Usage              |
+| ------------- | --------- | ------------------ |
+| **Primary**   | `#0F172A` | Main text, numbers |
+| **Secondary** | `#475569` | Descriptions       |
+| **Muted**     | `#94A3B8` | Hints, disabled    |
 
 ### Card Backgrounds (10% Tints)
+
 - Primary: `#E0F4FF`
 - Success: `#DCFCE7`
 - Warning: `#FEF9C3`
 - Error: `#FEF2F2`
 
 ### Accents (Special Use)
+
 - Deals: `#00C27A`
 - Premium: `#FFD166`
 
 ### Offer Cards Gradient (Blue Shades)
+
 - Primary: `#009DE0`
 - Secondary: `#0088CC`
 - Tertiary: `#0077B6`
@@ -101,6 +109,7 @@ Last Updated: 2026-01-13
 - No complex Fusha in the app UI
 
 **Example copy:**
+
 - "عايز تطلب؟ إنجزنا."
 - "طلبك رايح للتاجر دلوقتي."
 - "في تاجر جديد قريب منك – جرّبه!"
@@ -110,12 +119,14 @@ Last Updated: 2026-01-13
 ## 7. Do & Don't
 
 **Do:**
+
 - Use primary blue for main CTAs.
 - Keep messages short and clear.
 - Use Arabic RTL properly.
 - Respect merchants and customers in tone.
 
 **Don't:**
+
 - Don't promise unrealistic delivery times.
 - Don't use orange as a primary brand color anymore.
 - Don't overload screens with too many colors.

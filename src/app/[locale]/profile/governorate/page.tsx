@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale, useTranslations } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft } from 'lucide-react'
-import { useLocation, useUserLocation } from '@/lib/contexts'
+} from '@/components/ui/select';
+import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { useLocation, useUserLocation } from '@/lib/contexts';
 
 export default function GovernoratePage() {
-  const locale = useLocale()
-  const t = useTranslations('settings.governorate')
-  const router = useRouter()
+  const locale = useLocale();
+  const t = useTranslations('settings.governorate');
+  const router = useRouter();
 
   // Get location data from context (no redundant queries!)
   const {
@@ -32,7 +32,7 @@ export default function GovernoratePage() {
     isDataLoading: locationDataLoading,
     isDataLoaded: locationDataLoaded,
     setUserLocation,
-  } = useLocation()
+  } = useLocation();
 
   // Get current user location from context
   const {
@@ -40,81 +40,86 @@ export default function GovernoratePage() {
     cityId: currentCityId,
     isLoading: userLocationLoading,
     hasLocation: hasUserLocation,
-  } = useUserLocation()
+  } = useUserLocation();
 
-  const [userId, setUserId] = useState<string | null>(null)
-  const [isGuest, setIsGuest] = useState(false)
-  const [isNewVisitor, setIsNewVisitor] = useState(false) // Guest without location
-  const [authLoading, setAuthLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [isNewVisitor, setIsNewVisitor] = useState(false); // Guest without location
+  const [authLoading, setAuthLoading] = useState(true);
 
   // Selected values (may differ from current saved values)
-  const [governorateId, setGovernorateId] = useState('')
-  const [cityId, setCityId] = useState('')
+  const [governorateId, setGovernorateId] = useState('');
+  const [cityId, setCityId] = useState('');
 
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Filter cities based on selected governorate using context helper
   const cities = useMemo(() => {
-    if (!governorateId) return []
-    return getCitiesByGovernorate(governorateId)
-  }, [governorateId, getCitiesByGovernorate])
+    if (!governorateId) return [];
+    return getCitiesByGovernorate(governorateId);
+  }, [governorateId, getCitiesByGovernorate]);
 
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (user) {
-      setUserId(user.id)
-      setIsGuest(false)
+      setUserId(user.id);
+      setIsGuest(false);
     } else {
-      setIsGuest(true)
+      setIsGuest(true);
     }
 
-    setAuthLoading(false)
-  }, [])
+    setAuthLoading(false);
+  }, []);
 
   // Check auth state on mount
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   // Initialize selections when user location loads
   useEffect(() => {
     if (!userLocationLoading && locationDataLoaded) {
       if (currentGovernorateId) {
-        setGovernorateId(currentGovernorateId)
+        setGovernorateId(currentGovernorateId);
         if (currentCityId) {
-          setCityId(currentCityId)
+          setCityId(currentCityId);
         }
       } else if (!userId) {
         // Guest without location
-        setIsNewVisitor(true)
+        setIsNewVisitor(true);
       }
     }
-  }, [userLocationLoading, locationDataLoaded, currentGovernorateId, currentCityId, userId])
+  }, [userLocationLoading, locationDataLoaded, currentGovernorateId, currentCityId, userId]);
 
   // Reset city when governorate changes
   useEffect(() => {
     // Only reset if user changed governorate (not on initial load)
     if (governorateId && governorateId !== currentGovernorateId) {
-      setCityId('')
+      setCityId('');
     }
-  }, [governorateId, currentGovernorateId])
+  }, [governorateId, currentGovernorateId]);
 
   async function handleSave() {
     if (!governorateId) {
-      setMessage({ type: 'error', text: locale === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select a governorate' })
-      return
+      setMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'يرجى اختيار المحافظة' : 'Please select a governorate',
+      });
+      return;
     }
 
-    setSaving(true)
-    setMessage(null)
+    setSaving(true);
+    setMessage(null);
 
     try {
       // Get names for display using context helpers
-      const selectedGov = getGovernorateById(governorateId)
-      const selectedCity = cityId ? getCityById(cityId) : null
+      const selectedGov = getGovernorateById(governorateId);
+      const selectedCity = cityId ? getCityById(cityId) : null;
 
       // Use context's setUserLocation which handles both guests and logged-in users
       await setUserLocation({
@@ -122,28 +127,29 @@ export default function GovernoratePage() {
         governorateName: selectedGov ? { ar: selectedGov.name_ar, en: selectedGov.name_en } : null,
         cityId: cityId || null,
         cityName: selectedCity ? { ar: selectedCity.name_ar, en: selectedCity.name_en } : null,
-      })
+      });
 
-      setMessage({ type: 'success', text: isGuest ? (locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved') : t('saved') })
+      setMessage({
+        type: 'success',
+        text: isGuest ? (locale === 'ar' ? 'تم حفظ الموقع' : 'Location saved') : t('saved'),
+      });
 
       if (isGuest) {
         // Redirect guests to home after short delay
         setTimeout(() => {
-          router.push(`/${locale}`)
-        }, 1000)
+          router.push(`/${locale}`);
+        }, 1000);
       } else {
-        setTimeout(() => setMessage(null), 3000)
+        setTimeout(() => setMessage(null), 3000);
       }
     } catch {
       setMessage({
         type: 'error',
-        text: locale === 'ar'
-          ? 'حدث خطأ أثناء حفظ الموقع'
-          : 'Error saving location'
-      })
+        text: locale === 'ar' ? 'حدث خطأ أثناء حفظ الموقع' : 'Error saving location',
+      });
     }
 
-    setSaving(false)
+    setSaving(false);
   }
 
   // Show loading while auth or location data is loading
@@ -154,18 +160,19 @@ export default function GovernoratePage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
     <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
-
       <main className="container mx-auto px-4 py-6 max-w-2xl">
         <h1 className="text-2xl font-bold text-foreground mb-2">
           {locale === 'ar' ? 'المحافظة والمدينة' : 'Governorate & City'}
         </h1>
         <p className="text-muted-foreground mb-6">
-          {locale === 'ar' ? 'اختر موقعك لعرض الخدمات المتاحة' : 'Select your location to see available services'}
+          {locale === 'ar'
+            ? 'اختر موقعك لعرض الخدمات المتاحة'
+            : 'Select your location to see available services'}
         </p>
 
         {/* Guest Mode Notice */}
@@ -191,7 +198,11 @@ export default function GovernoratePage() {
             onClick={() => router.push(`/${locale}/welcome`)}
             className="mb-4 flex items-center gap-2 text-sm text-slate-600 hover:text-primary transition-colors"
           >
-            {locale === 'ar' ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
+            {locale === 'ar' ? (
+              <ArrowRight className="w-4 h-4" />
+            ) : (
+              <ArrowLeft className="w-4 h-4" />
+            )}
             {locale === 'ar' ? 'العودة لصفحة الترحيب' : 'Back to Welcome Page'}
           </button>
         )}
@@ -209,18 +220,23 @@ export default function GovernoratePage() {
                 onValueChange={(value) => {
                   if (value === '_welcome_') {
                     // Navigate to welcome page
-                    router.push(`/${locale}/welcome`)
+                    router.push(`/${locale}/welcome`);
                   } else {
-                    setGovernorateId(value)
+                    setGovernorateId(value);
                   }
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'} />
+                  <SelectValue
+                    placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {/* Welcome page option - always first */}
-                  <SelectItem value="_welcome_" className="text-primary border-b border-slate-100 mb-1">
+                  <SelectItem
+                    value="_welcome_"
+                    className="text-primary border-b border-slate-100 mb-1"
+                  >
                     {locale === 'ar' ? '← العودة لصفحة الترحيب' : '← Back to Welcome Page'}
                   </SelectItem>
                   {governorates.map((gov) => (
@@ -253,25 +269,25 @@ export default function GovernoratePage() {
 
             {/* Save Button */}
             <div className="flex items-center gap-3 pt-2">
-              <Button
-                onClick={handleSave}
-                disabled={saving || !governorateId}
-                className="flex-1"
-              >
+              <Button onClick={handleSave} disabled={saving || !governorateId} className="flex-1">
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                   </>
+                ) : locale === 'ar' ? (
+                  'حفظ الموقع'
                 ) : (
-                  locale === 'ar' ? 'حفظ الموقع' : 'Save Location'
+                  'Save Location'
                 )}
               </Button>
             </div>
 
             {/* Message */}
             {message && (
-              <div className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg`}>
+              <div
+                className={`flex items-center gap-2 text-sm ${message.type === 'success' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'} p-3 rounded-lg`}
+              >
                 {message.type === 'success' && <Check className="w-4 h-4" />}
                 <span>{message.text}</span>
               </div>
@@ -280,5 +296,5 @@ export default function GovernoratePage() {
         </Card>
       </main>
     </CustomerLayout>
-  )
+  );
 }

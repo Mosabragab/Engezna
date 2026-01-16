@@ -28,7 +28,7 @@ import { calculateCustomOrderFinancials } from '@/types/custom-order';
 export interface UseCustomOrderFinancialsOptions {
   items: CustomOrderItem[];
   deliveryFee: number;
-  commissionRate?: number;  // Default: calculated based on subtotal
+  commissionRate?: number; // Default: calculated based on subtotal
 }
 
 export interface ExtendedFinancials extends CustomOrderFinancials {
@@ -52,8 +52,8 @@ export interface ExtendedFinancials extends CustomOrderFinancials {
  * نسب العمولة المتدرجة
  */
 const COMMISSION_TIERS = [
-  { minAmount: 0, maxAmount: 500, rate: 0.07 },      // 7% for orders up to 500 EGP
-  { minAmount: 500, maxAmount: 1000, rate: 0.06 },   // 6% for orders 500-1000 EGP
+  { minAmount: 0, maxAmount: 500, rate: 0.07 }, // 7% for orders up to 500 EGP
+  { minAmount: 500, maxAmount: 1000, rate: 0.06 }, // 6% for orders 500-1000 EGP
   { minAmount: 1000, maxAmount: Infinity, rate: 0.05 }, // 5% for orders above 1000 EGP
 ];
 
@@ -115,9 +115,7 @@ export function useCustomOrderFinancials(
   return useMemo(() => {
     // Calculate counts by status
     const itemsCount = items.length;
-    const availableItemsCount = items.filter(
-      (i) => i.availability_status === 'available'
-    ).length;
+    const availableItemsCount = items.filter((i) => i.availability_status === 'available').length;
     const unavailableItemsCount = items.filter(
       (i) => i.availability_status === 'unavailable'
     ).length;
@@ -126,20 +124,13 @@ export function useCustomOrderFinancials(
     ).length;
 
     // Calculate product subtotal
-    const productSubtotal = items.reduce(
-      (sum, item) => sum + calculateItemPrice(item),
-      0
-    );
+    const productSubtotal = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
 
     // Determine commission rate
     const commissionRate = providedCommissionRate ?? getCommissionRate(productSubtotal);
 
     // Use the shared calculation function
-    const financials = calculateCustomOrderFinancials(
-      items,
-      deliveryFee,
-      commissionRate
-    );
+    const financials = calculateCustomOrderFinancials(items, deliveryFee, commissionRate);
 
     // Add formatted values and counts
     return {
@@ -243,14 +234,9 @@ export function usePricingCalculator(
     setItems((prev) => [...prev, item]);
   }, []);
 
-  const updateItem = useCallbackReact(
-    (index: number, updates: Partial<PricingItem>) => {
-      setItems((prev) =>
-        prev.map((item, i) => (i === index ? { ...item, ...updates } : item))
-      );
-    },
-    []
-  );
+  const updateItem = useCallbackReact((index: number, updates: Partial<PricingItem>) => {
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
+  }, []);
 
   const removeItem = useCallbackReact((index: number) => {
     setItems((prev) => prev.filter((_, i) => i !== index));
@@ -323,9 +309,7 @@ export interface PriceComparisonResult {
   };
 }
 
-export function usePriceComparison(
-  options: UsePriceComparisonOptions
-): PriceComparisonResult {
+export function usePriceComparison(options: UsePriceComparisonOptions): PriceComparisonResult {
   const { items } = options;
 
   return useMemo(() => {
@@ -346,17 +330,13 @@ export function usePriceComparison(
     // Sort by different criteria
     const sortedByTotal = [...items].sort((a, b) => a.total - b.total);
     const sortedBySubtotal = [...items].sort((a, b) => a.subtotal - b.subtotal);
-    const sortedByCompleteness = [...items].sort(
-      (a, b) => b.availableCount - a.availableCount
-    );
+    const sortedByCompleteness = [...items].sort((a, b) => b.availableCount - a.availableCount);
 
     // Find best options
     const cheapestByTotal = sortedByTotal[0];
     const cheapestBySubtotal = sortedBySubtotal[0];
     const mostComplete = sortedByCompleteness[0];
-    const highestRated = [...items].sort(
-      (a, b) => (b.rating ?? 0) - (a.rating ?? 0)
-    )[0];
+    const highestRated = [...items].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
 
     // Calculate savings
     const maxTotal = Math.max(...items.map((i) => i.total));
@@ -385,9 +365,4 @@ export function usePriceComparison(
 // Utility Exports
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export {
-  getCommissionRate,
-  formatCurrency,
-  calculateItemPrice,
-  COMMISSION_TIERS,
-};
+export { getCommissionRate, formatCurrency, calculateItemPrice, COMMISSION_TIERS };

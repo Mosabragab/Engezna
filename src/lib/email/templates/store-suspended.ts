@@ -1,10 +1,10 @@
 export interface StoreSuspendedData {
-  to: string
-  merchantName: string
-  storeName: string
-  suspensionReason: string
-  suspensionDate: string
-  supportUrl: string
+  to: string;
+  merchantName: string;
+  storeName: string;
+  suspensionReason: string;
+  suspensionDate: string;
+  supportUrl: string;
 }
 
 export function storeSuspendedTemplate(data: StoreSuspendedData): string {
@@ -12,7 +12,7 @@ export function storeSuspendedTemplate(data: StoreSuspendedData): string {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
+  });
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -156,5 +156,5 @@ export function storeSuspendedTemplate(data: StoreSuspendedData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

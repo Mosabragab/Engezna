@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
+import { useEffect, useState } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
 import {
   Clock,
   MapPin,
@@ -28,9 +28,13 @@ import {
   MessageSquare,
   DollarSign,
   RotateCcw,
-} from 'lucide-react'
-import { OrderChat } from '@/components/shared/OrderChat'
-import { RefundRequestModal, RefundConfirmationCard, SupportOptionsModal } from '@/components/customer/support'
+} from 'lucide-react';
+import { OrderChat } from '@/components/shared/OrderChat';
+import {
+  RefundRequestModal,
+  RefundConfirmationCard,
+  SupportOptionsModal,
+} from '@/components/customer/support';
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -40,20 +44,25 @@ const CANCELLATION_REASONS = [
   { id: 'long_wait', label_ar: 'وقت انتظار طويل', label_en: 'Long wait time' },
   { id: 'found_alternative', label_ar: 'وجدت بديل آخر', label_en: 'Found an alternative' },
   { id: 'other', label_ar: 'سبب آخر', label_en: 'Other reason' },
-]
+];
 
 // Star component for rating
-function StarRating({ rating, onRatingChange, size = 'md', readonly = false }: {
-  rating: number
-  onRatingChange?: (rating: number) => void
-  size?: 'sm' | 'md' | 'lg'
-  readonly?: boolean
+function StarRating({
+  rating,
+  onRatingChange,
+  size = 'md',
+  readonly = false,
+}: {
+  rating: number;
+  onRatingChange?: (rating: number) => void;
+  size?: 'sm' | 'md' | 'lg';
+  readonly?: boolean;
 }) {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-8 h-8',
     lg: 'w-10 h-10',
-  }
+  };
 
   return (
     <div className="flex gap-1">
@@ -75,100 +84,100 @@ function StarRating({ rating, onRatingChange, size = 'md', readonly = false }: {
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 type Order = {
-  id: string
-  order_number: string
-  customer_id: string
-  provider_id: string
-  status: string
-  subtotal: number
-  delivery_fee: number
-  discount: number
-  promo_code: string | null
-  total: number
-  payment_method: string
-  payment_status: string
+  id: string;
+  order_number: string;
+  customer_id: string;
+  provider_id: string;
+  status: string;
+  subtotal: number;
+  delivery_fee: number;
+  discount: number;
+  promo_code: string | null;
+  total: number;
+  payment_method: string;
+  payment_status: string;
   delivery_address: {
     // Geographic hierarchy
-    governorate_id?: string
-    governorate_ar?: string
-    governorate_en?: string
-    city_id?: string
-    city_ar?: string
-    city_en?: string
-    district_id?: string
-    district_ar?: string
-    district_en?: string
+    governorate_id?: string;
+    governorate_ar?: string;
+    governorate_en?: string;
+    city_id?: string;
+    city_ar?: string;
+    city_en?: string;
+    district_id?: string;
+    district_ar?: string;
+    district_en?: string;
     // Address details
-    address?: string
-    address_line1?: string
-    building?: string
-    floor?: string
-    apartment?: string
-    landmark?: string
+    address?: string;
+    address_line1?: string;
+    building?: string;
+    floor?: string;
+    apartment?: string;
+    landmark?: string;
     // Contact
-    phone?: string
-    full_name?: string
-    notes?: string
-    delivery_instructions?: string
-  } | null
-  customer_notes: string | null
-  estimated_delivery_time: string
-  created_at: string
-  accepted_at: string | null
-  preparing_at: string | null
-  ready_at: string | null
-  out_for_delivery_at: string | null
-  delivered_at: string | null
-  cancelled_at: string | null
-}
+    phone?: string;
+    full_name?: string;
+    notes?: string;
+    delivery_instructions?: string;
+  } | null;
+  customer_notes: string | null;
+  estimated_delivery_time: string;
+  created_at: string;
+  accepted_at: string | null;
+  preparing_at: string | null;
+  ready_at: string | null;
+  out_for_delivery_at: string | null;
+  delivered_at: string | null;
+  cancelled_at: string | null;
+};
 
 type OrderItem = {
-  id: string
-  order_id: string
-  menu_item_id: string
-  item_name_ar: string
-  item_name_en: string
-  item_price: number
-  quantity: number
-  unit_price: number
-  total_price: number
-}
+  id: string;
+  order_id: string;
+  menu_item_id: string;
+  item_name_ar: string;
+  item_name_en: string;
+  item_price: number;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+};
 
 type OrderRefund = {
-  id: string
-  amount: number
-  processed_amount: number | null
-  reason: string
-  reason_ar: string | null
-  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
-  refund_type: string | null
-  created_at: string
-  processed_at: string | null
-}
+  id: string;
+  amount: number;
+  processed_amount: number | null;
+  reason: string;
+  reason_ar: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed';
+  refund_type: string | null;
+  created_at: string;
+  processed_at: string | null;
+};
 
 type Provider = {
-  name_ar: string
-  name_en: string
-  phone: string
-  logo_url: string | null
-}
+  name_ar: string;
+  name_en: string;
+  phone: string;
+  logo_url: string | null;
+};
 
 type Review = {
-  id: string
-  order_id: string
-  customer_id: string
-  provider_id: string
-  rating: number
-  comment: string | null
-  provider_response: string | null
-  provider_response_at: string | null
-  created_at: string
-  updated_at: string
-}
+  id: string;
+  order_id: string;
+  customer_id: string;
+  provider_id: string;
+  rating: number;
+  comment: string | null;
+  provider_response: string | null;
+  provider_response_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 const ORDER_STATUSES = [
   { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
@@ -177,71 +186,71 @@ const ORDER_STATUSES = [
   { key: 'ready', icon: Package, label_ar: 'جاهز للتوصيل', label_en: 'Ready' },
   { key: 'out_for_delivery', icon: Truck, label_ar: 'في الطريق', label_en: 'Out for Delivery' },
   { key: 'delivered', icon: CheckCircle2, label_ar: 'تم التوصيل', label_en: 'Delivered' },
-]
+];
 
 export default function OrderTrackingPage() {
-  const params = useParams()
-  const orderId = params.id as string
-  const locale = useLocale()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { user, loading: authLoading } = useAuth()
-  const isRTL = locale === 'ar'
-  const openChat = searchParams.get('openChat') === 'true'
+  const params = useParams();
+  const orderId = params.id as string;
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+  const isRTL = locale === 'ar';
+  const openChat = searchParams.get('openChat') === 'true';
 
-  const [order, setOrder] = useState<Order | null>(null)
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([])
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [refunds, setRefunds] = useState<OrderRefund[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const [order, setOrder] = useState<Order | null>(null);
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [refunds, setRefunds] = useState<OrderRefund[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Cancellation state
-  const [showCancelModal, setShowCancelModal] = useState(false)
-  const [cancelReason, setCancelReason] = useState('')
-  const [cancelNote, setCancelNote] = useState('')
-  const [cancelling, setCancelling] = useState(false)
-  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelNote, setCancelNote] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // Review state
-  const [showReviewModal, setShowReviewModal] = useState(false)
-  const [reviewRating, setReviewRating] = useState(0)
-  const [reviewComment, setReviewComment] = useState('')
-  const [existingReview, setExistingReview] = useState<Review | null>(null)
-  const [submittingReview, setSubmittingReview] = useState(false)
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [existingReview, setExistingReview] = useState<Review | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   // Refund/Support state
-  const [showSupportOptions, setShowSupportOptions] = useState(false)
-  const [showRefundModal, setShowRefundModal] = useState(false)
+  const [showSupportOptions, setShowSupportOptions] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [pendingRefund, setPendingRefund] = useState<{
-    id: string
-    order_id: string
-    amount: number
-    provider_action: string
-    customer_confirmed: boolean
-    confirmation_deadline: string
-    provider_notes?: string
-    provider?: { name_ar: string; name_en: string }
-  } | null>(null)
+    id: string;
+    order_id: string;
+    amount: number;
+    provider_action: string;
+    customer_confirmed: boolean;
+    confirmation_deadline: string;
+    provider_notes?: string;
+    provider?: { name_ar: string; name_en: string };
+  } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/orders/${orderId}`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/orders/${orderId}`);
+      return;
     }
     if (user) {
-      loadOrderDetails()
+      loadOrderDetails();
     }
-  }, [orderId, user, authLoading])
+  }, [orderId, user, authLoading]);
 
   // Realtime subscription for order status updates
   useEffect(() => {
-    if (!orderId || !user) return
+    if (!orderId || !user) return;
 
-    const supabase = createClient()
-    let isSubscribed = true
-    let retryCount = 0
-    const maxRetries = 3
+    const supabase = createClient();
+    let isSubscribed = true;
+    let retryCount = 0;
+    const maxRetries = 3;
 
     // Subscribe to order changes with status callback
     const channel = supabase
@@ -256,85 +265,81 @@ export default function OrderTrackingPage() {
         },
         (payload) => {
           if (isSubscribed) {
-            setOrder(payload.new as Order)
+            setOrder(payload.new as Order);
           }
         }
       )
       .subscribe((status, err) => {
         if (status === 'SUBSCRIBED') {
-          retryCount = 0
+          retryCount = 0;
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           if (retryCount < maxRetries && isSubscribed) {
-            retryCount++
-            const delay = Math.pow(2, retryCount) * 1000
+            retryCount++;
+            const delay = Math.pow(2, retryCount) * 1000;
             setTimeout(() => {
               if (isSubscribed) {
-                channel.subscribe()
+                channel.subscribe();
               }
-            }, delay)
+            }, delay);
           }
         }
-      })
+      });
 
     // Also poll every 10 seconds as fallback for mobile
     const pollInterval = setInterval(async () => {
-      if (!isSubscribed) return
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single()
+      if (!isSubscribed) return;
+      const { data } = await supabase.from('orders').select('*').eq('id', orderId).single();
 
       if (data && isSubscribed) {
-        setOrder(prev => {
+        setOrder((prev) => {
           if (prev?.status !== data.status) {
-            return data
+            return data;
           }
-          return prev
-        })
+          return prev;
+        });
       }
-    }, 10000)
+    }, 10000);
 
     // Cleanup subscription on unmount
     return () => {
-      isSubscribed = false
-      clearInterval(pollInterval)
-      supabase.removeChannel(channel)
-    }
-  }, [orderId, user])
+      isSubscribed = false;
+      clearInterval(pollInterval);
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, user]);
 
   const loadOrderDetails = async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Fetch order
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .select('*')
       .eq('id', orderId)
-      .single()
+      .single();
 
     if (orderError) {
-      router.push(`/${locale}/orders`)
-      return
+      router.push(`/${locale}/orders`);
+      return;
     }
 
     // Check if user owns this order
     if (orderData.customer_id !== user?.id) {
-      router.push(`/${locale}/orders`)
-      return
+      router.push(`/${locale}/orders`);
+      return;
     }
 
-    setOrder(orderData)
+    setOrder(orderData);
 
     // Fetch order items
     const { data: itemsData, error: itemsError } = await supabase
       .from('order_items')
       .select('*')
-      .eq('order_id', orderId)
+      .eq('order_id', orderId);
 
     if (!itemsError) {
-      setOrderItems(itemsData || [])
+      setOrderItems(itemsData || []);
     }
 
     // Fetch provider
@@ -342,24 +347,26 @@ export default function OrderTrackingPage() {
       .from('providers')
       .select('name_ar, name_en, phone, logo_url')
       .eq('id', orderData.provider_id)
-      .single()
+      .single();
 
     if (!providerError) {
-      setProvider(providerData)
+      setProvider(providerData);
     }
 
     // Fetch all refunds for this order
     const { data: allRefundsData } = await supabase
       .from('refunds')
-      .select(`
+      .select(
+        `
         id, amount, processed_amount, reason, reason_ar, status,
         refund_type, created_at, processed_at
-      `)
+      `
+      )
       .eq('order_id', orderId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (allRefundsData) {
-      setRefunds(allRefundsData)
+      setRefunds(allRefundsData);
     }
 
     // Fetch existing review for this order
@@ -367,18 +374,19 @@ export default function OrderTrackingPage() {
       .from('reviews')
       .select('*')
       .eq('order_id', orderId)
-      .single()
+      .single();
 
     if (reviewData) {
-      setExistingReview(reviewData)
-      setReviewRating(reviewData.rating)
-      setReviewComment(reviewData.comment || '')
+      setExistingReview(reviewData);
+      setReviewRating(reviewData.rating);
+      setReviewComment(reviewData.comment || '');
     }
 
     // Fetch pending refund that needs confirmation
     const { data: refundData } = await supabase
       .from('refunds')
-      .select(`
+      .select(
+        `
         id,
         order_id,
         amount,
@@ -387,38 +395,39 @@ export default function OrderTrackingPage() {
         confirmation_deadline,
         provider_notes,
         provider:providers(name_ar, name_en)
-      `)
+      `
+      )
       .eq('order_id', orderId)
       .eq('provider_action', 'cash_refund')
       .or('customer_confirmed.eq.false,customer_confirmed.is.null')
-      .single()
+      .single();
 
     if (refundData) {
       // Handle provider being returned as array or single object from Supabase
       const providerData = Array.isArray(refundData.provider)
         ? refundData.provider[0]
-        : refundData.provider
+        : refundData.provider;
       setPendingRefund({
         ...refundData,
-        provider: providerData as { name_ar: string; name_en: string } | undefined
-      })
+        provider: providerData as { name_ar: string; name_en: string } | undefined,
+      });
     }
 
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const handleRefresh = async () => {
-    setRefreshing(true)
-    await loadOrderDetails()
-    setRefreshing(false)
-  }
+    setRefreshing(true);
+    await loadOrderDetails();
+    setRefreshing(false);
+  };
 
   const handleCancelOrder = async () => {
-    if (!cancelReason || !order) return
+    if (!cancelReason || !order) return;
 
-    setCancelling(true)
-    setCancelError(null)
-    const supabase = createClient()
+    setCancelling(true);
+    setCancelError(null);
+    const supabase = createClient();
 
     try {
       // First check current order status
@@ -426,15 +435,15 @@ export default function OrderTrackingPage() {
         .from('orders')
         .select('status')
         .eq('id', order.id)
-        .single()
+        .single();
 
       if (fetchError) {
         setCancelError(
           locale === 'ar'
             ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
             : 'Connection error. Please try again.'
-        )
-        return
+        );
+        return;
       }
 
       // Check if order can still be cancelled
@@ -443,10 +452,10 @@ export default function OrderTrackingPage() {
           locale === 'ar'
             ? 'لا يمكن إلغاء هذا الطلب لأنه تم قبوله بالفعل من المتجر'
             : 'This order cannot be cancelled because it has already been accepted by the store'
-        )
+        );
         // Update local state to reflect actual status
-        setOrder({ ...order, status: currentOrder.status })
-        return
+        setOrder({ ...order, status: currentOrder.status });
+        return;
       }
 
       const { data: updatedOrder, error } = await supabase
@@ -461,41 +470,41 @@ export default function OrderTrackingPage() {
         .eq('id', order.id)
         .eq('status', 'pending')
         .select()
-        .single()
+        .single();
 
       if (error) {
         setCancelError(
           locale === 'ar'
             ? `حدث خطأ أثناء إلغاء الطلب: ${error.message}`
             : `Error cancelling order: ${error.message}`
-        )
+        );
       } else if (updatedOrder) {
         // Update local state
-        setOrder({ ...order, status: 'cancelled', cancelled_at: new Date().toISOString() })
-        setShowCancelModal(false)
-        setCancelReason('')
-        setCancelNote('')
-        setCancelError(null)
+        setOrder({ ...order, status: 'cancelled', cancelled_at: new Date().toISOString() });
+        setShowCancelModal(false);
+        setCancelReason('');
+        setCancelNote('');
+        setCancelError(null);
       }
     } catch (err) {
       setCancelError(
         locale === 'ar'
           ? 'حدث خطأ في الاتصال. يرجى المحاولة مرة أخرى.'
           : 'Connection error. Please try again.'
-      )
+      );
     } finally {
-      setCancelling(false)
+      setCancelling(false);
     }
-  }
+  };
 
-  const canCancelOrder = order?.status === 'pending'
+  const canCancelOrder = order?.status === 'pending';
 
   // Submit review
   const handleSubmitReview = async () => {
-    if (!reviewRating || !order || !user) return
+    if (!reviewRating || !order || !user) return;
 
-    setSubmittingReview(true)
-    const supabase = createClient()
+    setSubmittingReview(true);
+    const supabase = createClient();
 
     try {
       if (existingReview) {
@@ -507,18 +516,18 @@ export default function OrderTrackingPage() {
             comment: reviewComment || null,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', existingReview.id)
+          .eq('id', existingReview.id);
 
         if (error) {
-          alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث التقييم' : 'Error updating review')
+          alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث التقييم' : 'Error updating review');
         } else {
           setExistingReview({
             ...existingReview,
             rating: reviewRating,
             comment: reviewComment || null,
             updated_at: new Date().toISOString(),
-          })
-          setShowReviewModal(false)
+          });
+          setShowReviewModal(false);
         }
       } else {
         // Create new review
@@ -532,50 +541,51 @@ export default function OrderTrackingPage() {
             comment: reviewComment || null,
           })
           .select()
-          .single()
+          .single();
 
         if (error) {
-          const errorMsg = locale === 'ar'
-            ? `حدث خطأ أثناء إرسال التقييم: ${error.message || error.code || 'خطأ غير معروف'}`
-            : `Error submitting review: ${error.message || error.code || 'Unknown error'}`
-          alert(errorMsg)
+          const errorMsg =
+            locale === 'ar'
+              ? `حدث خطأ أثناء إرسال التقييم: ${error.message || error.code || 'خطأ غير معروف'}`
+              : `Error submitting review: ${error.message || error.code || 'Unknown error'}`;
+          alert(errorMsg);
         } else {
-          setExistingReview(data)
-          setShowReviewModal(false)
+          setExistingReview(data);
+          setShowReviewModal(false);
         }
       }
     } catch (err) {
       // Error handled silently
     } finally {
-      setSubmittingReview(false)
+      setSubmittingReview(false);
     }
-  }
+  };
 
-  const canReviewOrder = order?.status === 'delivered'
+  const canReviewOrder = order?.status === 'delivered';
 
   const getStatusIndex = (status: string) => {
-    if (status === 'cancelled' || status === 'rejected') return -1
-    return ORDER_STATUSES.findIndex(s => s.key === status)
-  }
+    if (status === 'cancelled' || status === 'rejected') return -1;
+    return ORDER_STATUSES.findIndex((s) => s.key === status);
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   const getEstimatedDelivery = () => {
-    if (!order?.estimated_delivery_time) return null
-    const date = new Date(order.estimated_delivery_time)
+    if (!order?.estimated_delivery_time) return null;
+    const date = new Date(order.estimated_delivery_time);
     return date.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   if (loading || authLoading) {
     return (
@@ -583,13 +593,11 @@ export default function OrderTrackingPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-            <p className="text-slate-500">
-              {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-            </p>
+            <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   if (!order) {
@@ -610,12 +618,12 @@ export default function OrderTrackingPage() {
           </button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
-  const currentStatusIndex = getStatusIndex(order.status)
-  const isCancelled = order.status === 'cancelled' || order.status === 'rejected'
-  const isDelivered = order.status === 'delivered'
+  const currentStatusIndex = getStatusIndex(order.status);
+  const isCancelled = order.status === 'cancelled' || order.status === 'rejected';
+  const isDelivered = order.status === 'delivered';
 
   return (
     <CustomerLayout showBottomNav={true}>
@@ -670,28 +678,27 @@ export default function OrderTrackingPage() {
                 {locale === 'ar' ? 'تم إلغاء الطلب' : 'Order Cancelled'}
               </p>
               {order.cancelled_at && (
-                <p className="text-sm text-slate-500 mt-1">
-                  {formatDate(order.cancelled_at)}
-                </p>
+                <p className="text-sm text-slate-500 mt-1">{formatDate(order.cancelled_at)}</p>
               )}
             </div>
           ) : (
             <div className="space-y-4">
               {ORDER_STATUSES.map((status, index) => {
-                const Icon = status.icon
-                const isCompleted = index <= currentStatusIndex
-                const isCurrent = index === currentStatusIndex
+                const Icon = status.icon;
+                const isCompleted = index <= currentStatusIndex;
+                const isCurrent = index === currentStatusIndex;
 
                 return (
                   <div key={status.key} className="flex items-center gap-3">
                     <div
                       className={`
                         w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all
-                        ${isCompleted
-                          ? isCurrent
-                            ? 'bg-primary text-white shadow-md shadow-primary/30'
-                            : 'bg-green-500 text-white'
-                          : 'bg-slate-100 text-slate-400'
+                        ${
+                          isCompleted
+                            ? isCurrent
+                              ? 'bg-primary text-white shadow-md shadow-primary/30'
+                              : 'bg-green-500 text-white'
+                            : 'bg-slate-100 text-slate-400'
                         }
                       `}
                     >
@@ -702,7 +709,9 @@ export default function OrderTrackingPage() {
                       )}
                     </div>
                     <div className="flex-1">
-                      <p className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}>
+                      <p
+                        className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}
+                      >
                         {locale === 'ar' ? status.label_ar : status.label_en}
                       </p>
                       {isCurrent && !isDelivered && (
@@ -712,7 +721,7 @@ export default function OrderTrackingPage() {
                       )}
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           )}
@@ -770,8 +779,8 @@ export default function OrderTrackingPage() {
             refund={pendingRefund}
             locale={locale}
             onConfirm={() => {
-              setPendingRefund(null)
-              loadOrderDetails()
+              setPendingRefund(null);
+              loadOrderDetails();
             }}
             className="mb-4"
           />
@@ -793,7 +802,9 @@ export default function OrderTrackingPage() {
                   {locale === 'ar' ? 'هل واجهت مشكلة؟' : 'Had an issue?'}
                 </p>
                 <p className="text-sm text-orange-700">
-                  {locale === 'ar' ? 'اضغط هنا لطلب استرداد أو تقديم شكوى' : 'Tap here to request refund or submit complaint'}
+                  {locale === 'ar'
+                    ? 'اضغط هنا لطلب استرداد أو تقديم شكوى'
+                    : 'Tap here to request refund or submit complaint'}
                 </p>
               </div>
               <div className="flex-shrink-0">
@@ -815,43 +826,65 @@ export default function OrderTrackingPage() {
           </h3>
 
           {/* Geographic Tags */}
-          {order.delivery_address && (order.delivery_address.governorate_ar || order.delivery_address.city_ar || order.delivery_address.district_ar) && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {order.delivery_address.governorate_ar && (
-                <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                  {locale === 'ar' ? order.delivery_address.governorate_ar : order.delivery_address.governorate_en}
-                </span>
-              )}
-              {order.delivery_address.city_ar && (
-                <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
-                  {locale === 'ar' ? order.delivery_address.city_ar : order.delivery_address.city_en}
-                </span>
-              )}
-              {order.delivery_address.district_ar && (
-                <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
-                  {locale === 'ar' ? order.delivery_address.district_ar : order.delivery_address.district_en}
-                </span>
-              )}
-            </div>
-          )}
+          {order.delivery_address &&
+            (order.delivery_address.governorate_ar ||
+              order.delivery_address.city_ar ||
+              order.delivery_address.district_ar) && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {order.delivery_address.governorate_ar && (
+                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                    {locale === 'ar'
+                      ? order.delivery_address.governorate_ar
+                      : order.delivery_address.governorate_en}
+                  </span>
+                )}
+                {order.delivery_address.city_ar && (
+                  <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                    {locale === 'ar'
+                      ? order.delivery_address.city_ar
+                      : order.delivery_address.city_en}
+                  </span>
+                )}
+                {order.delivery_address.district_ar && (
+                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                    {locale === 'ar'
+                      ? order.delivery_address.district_ar
+                      : order.delivery_address.district_en}
+                  </span>
+                )}
+              </div>
+            )}
 
           <p className="font-medium text-slate-900">{order.delivery_address?.full_name}</p>
-          <p className="text-slate-600">{order.delivery_address?.address || order.delivery_address?.address_line1}</p>
+          <p className="text-slate-600">
+            {order.delivery_address?.address || order.delivery_address?.address_line1}
+          </p>
 
           {/* Building Details */}
-          {order.delivery_address && (order.delivery_address.building || order.delivery_address.floor || order.delivery_address.apartment) && (
-            <p className="text-sm text-slate-500 mt-1">
-              {order.delivery_address.building && (
-                <span>{locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}</span>
-              )}
-              {order.delivery_address.floor && (
-                <span>{order.delivery_address.building ? ' - ' : ''}{locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}</span>
-              )}
-              {order.delivery_address.apartment && (
-                <span>{(order.delivery_address.building || order.delivery_address.floor) ? ' - ' : ''}{locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}</span>
-              )}
-            </p>
-          )}
+          {order.delivery_address &&
+            (order.delivery_address.building ||
+              order.delivery_address.floor ||
+              order.delivery_address.apartment) && (
+              <p className="text-sm text-slate-500 mt-1">
+                {order.delivery_address.building && (
+                  <span>
+                    {locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
+                  </span>
+                )}
+                {order.delivery_address.floor && (
+                  <span>
+                    {order.delivery_address.building ? ' - ' : ''}
+                    {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
+                  </span>
+                )}
+                {order.delivery_address.apartment && (
+                  <span>
+                    {order.delivery_address.building || order.delivery_address.floor ? ' - ' : ''}
+                    {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
+                  </span>
+                )}
+              </p>
+            )}
 
           {/* Landmark */}
           {order.delivery_address?.landmark && (
@@ -867,7 +900,8 @@ export default function OrderTrackingPage() {
 
           {order.delivery_address?.delivery_instructions && (
             <div className="mt-2 p-2 bg-card-bg-warning rounded text-xs text-warning">
-              <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong> {order.delivery_address.delivery_instructions}
+              <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong>{' '}
+              {order.delivery_address.delivery_instructions}
             </div>
           )}
 
@@ -905,11 +939,15 @@ export default function OrderTrackingPage() {
           <div className="pt-4 border-t border-slate-100 space-y-2">
             <div className="flex justify-between text-sm text-slate-600">
               <span>{locale === 'ar' ? 'المجموع الفرعي' : 'Subtotal'}</span>
-              <span>{order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span>
+                {order.subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
             <div className="flex justify-between text-sm text-slate-600">
               <span>{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}</span>
-              <span>{order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span>
+                {order.delivery_fee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
             {order.discount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
@@ -921,12 +959,16 @@ export default function OrderTrackingPage() {
                     </span>
                   )}
                 </span>
-                <span>-{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                <span>
+                  -{order.discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
               </div>
             )}
             <div className="flex justify-between text-lg font-bold pt-2 border-t border-slate-100">
               <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
-              <span className="text-primary">{order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span className="text-primary">
+                {order.total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
           </div>
 
@@ -936,8 +978,12 @@ export default function OrderTrackingPage() {
             </p>
             <p className="text-sm text-slate-500">
               {order.payment_method === 'cash'
-                ? locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'
-                : locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                ? locale === 'ar'
+                  ? 'الدفع عند الاستلام'
+                  : 'Cash on Delivery'
+                : locale === 'ar'
+                  ? 'الدفع الإلكتروني'
+                  : 'Online Payment'}
             </p>
           </div>
         </div>
@@ -951,14 +997,33 @@ export default function OrderTrackingPage() {
             </h3>
             <div className="space-y-3">
               {refunds.map((refund) => {
-                const statusConfig: Record<string, { label_ar: string; label_en: string; color: string }> = {
-                  pending: { label_ar: 'قيد المراجعة', label_en: 'Pending Review', color: 'bg-yellow-100 text-yellow-700' },
-                  approved: { label_ar: 'تم الموافقة', label_en: 'Approved', color: 'bg-blue-100 text-blue-700' },
-                  rejected: { label_ar: 'مرفوض', label_en: 'Rejected', color: 'bg-red-100 text-red-700' },
-                  processed: { label_ar: 'تم الاسترداد', label_en: 'Refunded', color: 'bg-green-100 text-green-700' },
+                const statusConfig: Record<
+                  string,
+                  { label_ar: string; label_en: string; color: string }
+                > = {
+                  pending: {
+                    label_ar: 'قيد المراجعة',
+                    label_en: 'Pending Review',
+                    color: 'bg-yellow-100 text-yellow-700',
+                  },
+                  approved: {
+                    label_ar: 'تم الموافقة',
+                    label_en: 'Approved',
+                    color: 'bg-blue-100 text-blue-700',
+                  },
+                  rejected: {
+                    label_ar: 'مرفوض',
+                    label_en: 'Rejected',
+                    color: 'bg-red-100 text-red-700',
+                  },
+                  processed: {
+                    label_ar: 'تم الاسترداد',
+                    label_en: 'Refunded',
+                    color: 'bg-green-100 text-green-700',
+                  },
                   failed: { label_ar: 'فشل', label_en: 'Failed', color: 'bg-red-100 text-red-700' },
-                }
-                const status = statusConfig[refund.status] || statusConfig.pending
+                };
+                const status = statusConfig[refund.status] || statusConfig.pending;
 
                 return (
                   <div key={refund.id} className="bg-white rounded-xl p-3 border border-amber-100">
@@ -966,39 +1031,53 @@ export default function OrderTrackingPage() {
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-amber-600" />
                         <span className="font-semibold text-amber-800">
-                          {(refund.processed_amount || refund.amount).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                          {(refund.processed_amount || refund.amount).toFixed(2)}{' '}
+                          {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </span>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}
+                      >
                         {locale === 'ar' ? status.label_ar : status.label_en}
                       </span>
                     </div>
 
                     <p className="text-sm text-slate-600 mb-2">
-                      {locale === 'ar' ? (refund.reason_ar || refund.reason) : refund.reason}
+                      {locale === 'ar' ? refund.reason_ar || refund.reason : refund.reason}
                     </p>
 
                     <div className="flex flex-wrap gap-2 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        {new Date(refund.created_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                        {new Date(refund.created_at).toLocaleDateString(
+                          locale === 'ar' ? 'ar-EG' : 'en-US'
+                        )}
                       </span>
                       {refund.refund_type && (
                         <span className="bg-slate-100 px-2 py-0.5 rounded">
-                          {refund.refund_type === 'full' ? (locale === 'ar' ? 'كامل' : 'Full') :
-                           refund.refund_type === 'partial' ? (locale === 'ar' ? 'جزئي' : 'Partial') :
-                           refund.refund_type}
+                          {refund.refund_type === 'full'
+                            ? locale === 'ar'
+                              ? 'كامل'
+                              : 'Full'
+                            : refund.refund_type === 'partial'
+                              ? locale === 'ar'
+                                ? 'جزئي'
+                                : 'Partial'
+                              : refund.refund_type}
                         </span>
                       )}
                       {refund.status === 'processed' && refund.processed_at && (
                         <span className="flex items-center gap-1 text-green-600">
                           <CheckCircle2 className="w-3 h-3" />
-                          {locale === 'ar' ? 'تم في' : 'Completed'} {new Date(refund.processed_at).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                          {locale === 'ar' ? 'تم في' : 'Completed'}{' '}
+                          {new Date(refund.processed_at).toLocaleDateString(
+                            locale === 'ar' ? 'ar-EG' : 'en-US'
+                          )}
                         </span>
                       )}
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -1035,9 +1114,7 @@ export default function OrderTrackingPage() {
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <StarRating rating={existingReview.rating} readonly size="sm" />
-                  <span className="text-sm text-slate-500">
-                    ({existingReview.rating}/5)
-                  </span>
+                  <span className="text-sm text-slate-500">({existingReview.rating}/5)</span>
                 </div>
                 {existingReview.comment && (
                   <p className="text-slate-600 text-sm mb-3 p-3 bg-slate-50 rounded-lg">
@@ -1198,8 +1275,8 @@ export default function OrderTrackingPage() {
             <div className="flex gap-3 p-4 border-t">
               <button
                 onClick={() => {
-                  setShowCancelModal(false)
-                  setCancelError(null)
+                  setShowCancelModal(false);
+                  setCancelError(null);
                 }}
                 className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
               >
@@ -1251,7 +1328,7 @@ export default function OrderTrackingPage() {
             provider_id: order.provider_id,
             customer_id: order.customer_id,
             created_at: order.created_at,
-            items: orderItems.map(item => ({
+            items: orderItems.map((item) => ({
               id: item.id,
               item_name_ar: item.item_name_ar,
               item_name_en: item.item_name_en,
@@ -1273,8 +1350,12 @@ export default function OrderTrackingPage() {
               <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                 <Star className="w-5 h-5 text-yellow-500" />
                 {existingReview
-                  ? (locale === 'ar' ? 'تعديل التقييم' : 'Edit Review')
-                  : (locale === 'ar' ? 'إضافة تقييم' : 'Add Review')}
+                  ? locale === 'ar'
+                    ? 'تعديل التقييم'
+                    : 'Edit Review'
+                  : locale === 'ar'
+                    ? 'إضافة تقييم'
+                    : 'Add Review'}
               </h3>
               <button
                 onClick={() => setShowReviewModal(false)}
@@ -1305,7 +1386,8 @@ export default function OrderTrackingPage() {
                       {locale === 'ar' ? provider.name_ar : provider.name_en}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {locale === 'ar' ? 'طلب رقم:' : 'Order:'} #{order?.order_number || order?.id.slice(0, 8)}
+                      {locale === 'ar' ? 'طلب رقم:' : 'Order:'} #
+                      {order?.order_number || order?.id.slice(0, 8)}
                     </p>
                   </div>
                 </div>
@@ -1314,16 +1396,10 @@ export default function OrderTrackingPage() {
               {/* Star Rating */}
               <div className="text-center mb-6">
                 <p className="text-slate-600 mb-3">
-                  {locale === 'ar'
-                    ? 'كيف تقيم تجربتك؟'
-                    : 'How would you rate your experience?'}
+                  {locale === 'ar' ? 'كيف تقيم تجربتك؟' : 'How would you rate your experience?'}
                 </p>
                 <div className="flex justify-center">
-                  <StarRating
-                    rating={reviewRating}
-                    onRatingChange={setReviewRating}
-                    size="lg"
-                  />
+                  <StarRating rating={reviewRating} onRatingChange={setReviewRating} size="lg" />
                 </div>
                 {reviewRating > 0 && (
                   <p className="text-sm text-slate-500 mt-2">
@@ -1352,9 +1428,7 @@ export default function OrderTrackingPage() {
                   className="w-full p-3 border border-slate-200 rounded-xl resize-none h-28 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   maxLength={500}
                 />
-                <p className="text-xs text-slate-400 text-end mt-1">
-                  {reviewComment.length}/500
-                </p>
+                <p className="text-xs text-slate-400 text-end mt-1">{reviewComment.length}/500</p>
               </div>
             </div>
 
@@ -1362,14 +1436,14 @@ export default function OrderTrackingPage() {
             <div className="flex gap-3 p-4 border-t">
               <button
                 onClick={() => {
-                  setShowReviewModal(false)
+                  setShowReviewModal(false);
                   // Reset to existing values if editing
                   if (existingReview) {
-                    setReviewRating(existingReview.rating)
-                    setReviewComment(existingReview.comment || '')
+                    setReviewRating(existingReview.rating);
+                    setReviewComment(existingReview.comment || '');
                   } else {
-                    setReviewRating(0)
-                    setReviewComment('')
+                    setReviewRating(0);
+                    setReviewComment('');
                   }
                 }}
                 className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
@@ -1390,8 +1464,12 @@ export default function OrderTrackingPage() {
                   <>
                     <Star className="w-4 h-4" />
                     {existingReview
-                      ? (locale === 'ar' ? 'تحديث التقييم' : 'Update Review')
-                      : (locale === 'ar' ? 'إرسال التقييم' : 'Submit Review')}
+                      ? locale === 'ar'
+                        ? 'تحديث التقييم'
+                        : 'Update Review'
+                      : locale === 'ar'
+                        ? 'إرسال التقييم'
+                        : 'Submit Review'}
                   </>
                 )}
               </button>
@@ -1400,5 +1478,5 @@ export default function OrderTrackingPage() {
         </div>
       )}
     </CustomerLayout>
-  )
+  );
 }

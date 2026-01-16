@@ -1,28 +1,17 @@
-'use client'
+'use client';
 
-import { useState, useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
-import {
-  Star,
-  Truck,
-  Clock,
-  Check,
-  AlertCircle,
-  Search,
-  MapPin,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Input } from '@/components/ui/input'
-import type {
-  MerchantSelectorProps,
-  ProviderWithCustomSettings,
-} from '@/types/custom-order'
-import { MAX_BROADCAST_PROVIDERS } from '@/types/custom-order'
+import { useState, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { Star, Truck, Clock, Check, AlertCircle, Search, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Input } from '@/components/ui/input';
+import type { MerchantSelectorProps, ProviderWithCustomSettings } from '@/types/custom-order';
+import { MAX_BROADCAST_PROVIDERS } from '@/types/custom-order';
 
 interface ExtendedMerchantSelectorProps extends MerchantSelectorProps {
-  className?: string
-  showSearch?: boolean
+  className?: string;
+  showSearch?: boolean;
 }
 
 export function MerchantSelector({
@@ -33,41 +22,39 @@ export function MerchantSelector({
   className,
   showSearch = true,
 }: ExtendedMerchantSelectorProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter providers by search
   const filteredProviders = useMemo(() => {
-    if (!searchQuery.trim()) return providers
+    if (!searchQuery.trim()) return providers;
 
-    const query = searchQuery.toLowerCase()
+    const query = searchQuery.toLowerCase();
     return providers.filter(
-      (p) =>
-        p.name_ar.toLowerCase().includes(query) ||
-        p.name_en.toLowerCase().includes(query)
-    )
-  }, [providers, searchQuery])
+      (p) => p.name_ar.toLowerCase().includes(query) || p.name_en.toLowerCase().includes(query)
+    );
+  }, [providers, searchQuery]);
 
   // Check if can select more
-  const canSelectMore = selected.length < maxSelection
+  const canSelectMore = selected.length < maxSelection;
 
   // Toggle provider selection
   const toggleProvider = (providerId: string) => {
     if (selected.includes(providerId)) {
       // Deselect
-      onSelectionChange(selected.filter((id) => id !== providerId))
+      onSelectionChange(selected.filter((id) => id !== providerId));
     } else if (canSelectMore) {
       // Select
-      onSelectionChange([...selected, providerId])
+      onSelectionChange([...selected, providerId]);
     }
-  }
+  };
 
   // Get selection index for ordering badge
   const getSelectionIndex = (providerId: string) => {
-    return selected.indexOf(providerId)
-  }
+    return selected.indexOf(providerId);
+  };
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -82,8 +69,8 @@ export function MerchantSelector({
             selected.length === maxSelection
               ? 'bg-amber-100 text-amber-700'
               : selected.length > 0
-              ? 'bg-primary/10 text-primary'
-              : 'bg-slate-100 text-slate-500'
+                ? 'bg-primary/10 text-primary'
+                : 'bg-slate-100 text-slate-500'
           )}
         >
           {selected.length}/{maxSelection}
@@ -119,9 +106,9 @@ export function MerchantSelector({
       <div className="grid gap-3">
         <AnimatePresence>
           {filteredProviders.map((provider, index) => {
-            const isSelected = selected.includes(provider.id)
-            const selectionIndex = getSelectionIndex(provider.id)
-            const isDisabled = !isSelected && !canSelectMore
+            const isSelected = selected.includes(provider.id);
+            const selectionIndex = getSelectionIndex(provider.id);
+            const isDisabled = !isSelected && !canSelectMore;
 
             return (
               <motion.button
@@ -138,8 +125,8 @@ export function MerchantSelector({
                   isSelected
                     ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10'
                     : isDisabled
-                    ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
-                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                      ? 'border-slate-200 bg-slate-50 opacity-50 cursor-not-allowed'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -197,8 +184,7 @@ export function MerchantSelector({
                       <div className="flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md text-slate-600">
                         <Clock className="w-3 h-3" />
                         <span className="text-xs font-medium">
-                          {provider.estimated_delivery_time_min || 30}{' '}
-                          {isRTL ? 'د' : 'min'}
+                          {provider.estimated_delivery_time_min || 30} {isRTL ? 'د' : 'min'}
                         </span>
                       </div>
                     </div>
@@ -257,7 +243,7 @@ export function MerchantSelector({
                   </div>
                 )}
               </motion.button>
-            )
+            );
           })}
         </AnimatePresence>
       </div>
@@ -272,8 +258,8 @@ export function MerchantSelector({
                 ? 'لا توجد نتائج مطابقة'
                 : 'No matching results'
               : isRTL
-              ? 'لا توجد متاجر متاحة في منطقتك'
-              : 'No merchants available in your area'}
+                ? 'لا توجد متاجر متاحة في منطقتك'
+                : 'No merchants available in your area'}
           </p>
         </div>
       )}
@@ -295,5 +281,5 @@ export function MerchantSelector({
         </motion.div>
       )}
     </div>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 /**
  * AdminSidebarSkeleton - هيكل تحميل للقائمة الجانبية
@@ -77,7 +77,7 @@ export function AdminSidebarSkeleton() {
         </div>
       </nav>
     </div>
-  )
+  );
 }
 
-export default AdminSidebarSkeleton
+export default AdminSidebarSkeleton;

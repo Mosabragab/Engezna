@@ -32,22 +32,22 @@ export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
  * حالة طلب التسعير
  */
 export type CustomRequestStatus =
-  | 'pending'              // بانتظار التسعير
-  | 'pricing_in_progress'  // قيد التسعير (قفل مؤقت)
-  | 'priced'               // تم التسعير
-  | 'customer_approved'    // العميل وافق
-  | 'customer_rejected'    // العميل رفض
-  | 'expired'              // انتهت المهلة
-  | 'cancelled';           // ألغي (تم اختيار تاجر آخر)
+  | 'pending' // بانتظار التسعير
+  | 'pricing_in_progress' // قيد التسعير (قفل مؤقت)
+  | 'priced' // تم التسعير
+  | 'customer_approved' // العميل وافق
+  | 'customer_rejected' // العميل رفض
+  | 'expired' // انتهت المهلة
+  | 'cancelled'; // ألغي (تم اختيار تاجر آخر)
 
 /**
  * Item availability status
  * حالة توفر الصنف
  */
 export type ItemAvailabilityStatus =
-  | 'available'    // متوفر
-  | 'unavailable'  // غير متوفر
-  | 'partial'      // متوفر جزئياً
+  | 'available' // متوفر
+  | 'unavailable' // غير متوفر
+  | 'partial' // متوفر جزئياً
   | 'substituted'; // تم استبداله
 
 /**
@@ -55,9 +55,9 @@ export type ItemAvailabilityStatus =
  * حالة البث الثلاثي
  */
 export type BroadcastStatus =
-  | 'active'     // نشط - في انتظار التسعير
-  | 'completed'  // مكتمل - تم اختيار فائز
-  | 'expired'    // منتهي - انتهت المهلة
+  | 'active' // نشط - في انتظار التسعير
+  | 'completed' // مكتمل - تم اختيار فائز
+  | 'expired' // منتهي - انتهت المهلة
   | 'cancelled'; // ملغي - ألغاه العميل
 
 /**
@@ -65,11 +65,11 @@ export type BroadcastStatus =
  * حالة التسعير للطلب
  */
 export type PricingStatus =
-  | 'awaiting_pricing'  // بانتظار التسعير
-  | 'pricing_sent'      // التسعير مرسل للعميل
-  | 'pricing_approved'  // العميل وافق على التسعير
-  | 'pricing_rejected'  // العميل رفض التسعير
-  | 'pricing_expired';  // انتهت مهلة الموافقة
+  | 'awaiting_pricing' // بانتظار التسعير
+  | 'pricing_sent' // التسعير مرسل للعميل
+  | 'pricing_approved' // العميل وافق على التسعير
+  | 'pricing_rejected' // العميل رفض التسعير
+  | 'pricing_expired'; // انتهت مهلة الموافقة
 
 /**
  * Order flow type
@@ -360,10 +360,10 @@ export interface CustomOrderDraft {
   providerName: string;
   inputType: CustomOrderInputType;
   text?: string;
-  voiceCacheId?: string;  // Reference to IndexedDB
-  imageDataUrls?: string[];  // Base64 for small previews
+  voiceCacheId?: string; // Reference to IndexedDB
+  imageDataUrls?: string[]; // Base64 for small previews
   notes?: string;
-  savedAt: number;  // Unix timestamp
+  savedAt: number; // Unix timestamp
 }
 
 /**
@@ -561,7 +561,10 @@ export interface BroadcastComparisonProps {
 export interface PricingNotepadProps {
   request: CustomOrderRequestWithItems;
   priceHistory: PriceHistoryItem[];
-  onSubmitPricing: (items: Omit<CustomOrderItem, 'id' | 'request_id' | 'order_id' | 'created_at' | 'updated_at'>[], deliveryFee: number) => Promise<void>;
+  onSubmitPricing: (
+    items: Omit<CustomOrderItem, 'id' | 'request_id' | 'order_id' | 'created_at' | 'updated_at'>[],
+    deliveryFee: number
+  ) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -589,14 +592,14 @@ export interface PricingItemRowProps {
  * Custom order financial breakdown
  */
 export interface CustomOrderFinancials {
-  productSubtotal: number;      // Sum of priced items
-  deliveryFee: number;          // From provider settings
-  customerTotal: number;        // subtotal + deliveryFee
+  productSubtotal: number; // Sum of priced items
+  deliveryFee: number; // From provider settings
+  customerTotal: number; // subtotal + deliveryFee
 
-  commissionRate: number;       // 5-7% tiered
-  platformCommission: number;   // subtotal * rate
+  commissionRate: number; // 5-7% tiered
+  platformCommission: number; // subtotal * rate
 
-  merchantPayout: number;       // subtotal - commission + deliveryFee
+  merchantPayout: number; // subtotal - commission + deliveryFee
 }
 
 /**
@@ -638,9 +641,9 @@ export function calculateCustomOrderFinancials(
  */
 export interface ProviderFeatures {
   // Tab visibility in dashboard
-  showOrdersTab: boolean;        // Standard orders
-  showPricingTab: boolean;       // Custom order pricing
-  showProductsTab: boolean;      // Menu management
+  showOrdersTab: boolean; // Standard orders
+  showPricingTab: boolean; // Custom order pricing
+  showProductsTab: boolean; // Menu management
 
   // Customer interface mode
   customerInterface: 'menu' | 'custom-order' | 'both';
@@ -702,7 +705,7 @@ export const UNIT_TYPES = [
   { value: 'bundle', labelAr: 'حزمة', labelEn: 'Bundle' },
 ] as const;
 
-export type UnitType = typeof UNIT_TYPES[number]['value'];
+export type UnitType = (typeof UNIT_TYPES)[number]['value'];
 
 // ============================================================================
 // CONSTANTS

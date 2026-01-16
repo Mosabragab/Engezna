@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { createPortal } from 'react-dom'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import {
   X,
   DollarSign,
@@ -13,17 +13,17 @@ import {
   AlertTriangle,
   Loader2,
   Send,
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface SupportOptionsModalProps {
-  isOpen: boolean
-  onClose: () => void
-  locale: string
-  orderId?: string
-  providerId?: string
-  userId?: string
-  onOpenRefundModal?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  locale: string;
+  orderId?: string;
+  providerId?: string;
+  userId?: string;
+  onOpenRefundModal?: () => void;
 }
 
 export function SupportOptionsModal({
@@ -35,79 +35,77 @@ export function SupportOptionsModal({
   userId,
   onOpenRefundModal,
 }: SupportOptionsModalProps) {
-  const router = useRouter()
-  const isArabic = locale === 'ar'
-  const [view, setView] = useState<'options' | 'refund_info' | 'complaint_form'>('options')
-  const [complaintText, setComplaintText] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const router = useRouter();
+  const isArabic = locale === 'ar';
+  const [view, setView] = useState<'options' | 'refund_info' | 'complaint_form'>('options');
+  const [complaintText, setComplaintText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleRefundClick = () => {
     if (onOpenRefundModal) {
       // If we have a refund modal handler (on order details page), use it
-      onClose()
-      onOpenRefundModal()
+      onClose();
+      onOpenRefundModal();
     } else {
       // Show info about how to request refund
-      setView('refund_info')
+      setView('refund_info');
     }
-  }
+  };
 
   const handleComplaintClick = () => {
-    setView('complaint_form')
-  }
+    setView('complaint_form');
+  };
 
   const handleGoToOrders = () => {
-    onClose()
-    router.push(`/${locale}/orders`)
-  }
+    onClose();
+    router.push(`/${locale}/orders`);
+  };
 
   const handleSubmitComplaint = async () => {
-    if (!complaintText.trim() || !userId) return
+    if (!complaintText.trim() || !userId) return;
 
-    setSubmitting(true)
-    const supabase = createClient()
+    setSubmitting(true);
+    const supabase = createClient();
 
     try {
       // Generate ticket number
-      const ticketNumber = `TKT-${Date.now().toString(36).toUpperCase()}`
+      const ticketNumber = `TKT-${Date.now().toString(36).toUpperCase()}`;
 
-      const { error } = await supabase
-        .from('support_tickets')
-        .insert({
-          ticket_number: ticketNumber,
-          user_id: userId,
-          order_id: orderId || null,
-          provider_id: providerId || null,
-          type: 'complaint',
-          subject: isArabic ? 'شكوى عامة' : 'General Complaint',
-          description: complaintText,
-          status: 'open',
-          priority: 'medium',
-        })
+      const { error } = await supabase.from('support_tickets').insert({
+        ticket_number: ticketNumber,
+        user_id: userId,
+        order_id: orderId || null,
+        provider_id: providerId || null,
+        type: 'complaint',
+        subject: isArabic ? 'شكوى عامة' : 'General Complaint',
+        description: complaintText,
+        status: 'open',
+        priority: 'medium',
+      });
 
-      if (error) throw error
+      if (error) throw error;
 
-      setSubmitted(true)
+      setSubmitted(true);
       setTimeout(() => {
-        onClose()
-        setView('options')
-        setComplaintText('')
-        setSubmitted(false)
-      }, 2000)
+        onClose();
+        setView('options');
+        setComplaintText('');
+        setSubmitted(false);
+      }, 2000);
     } catch (error) {
-      alert(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'An error occurred, please try again')
+      alert(isArabic ? 'حدث خطأ، يرجى المحاولة مرة أخرى' : 'An error occurred, please try again');
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleBack = () => {
-    setView('options')
-    setComplaintText('')
-  }
+    setView('options');
+    setComplaintText('');
+  };
 
   const modalContent = (
     <div
@@ -157,7 +155,11 @@ export function SupportOptionsModal({
                   onClick={handleBack}
                   className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"
                 >
-                  {isArabic ? <ChevronRight className="w-5 h-5 text-white" /> : <ChevronLeft className="w-5 h-5 text-white" />}
+                  {isArabic ? (
+                    <ChevronRight className="w-5 h-5 text-white" />
+                  ) : (
+                    <ChevronLeft className="w-5 h-5 text-white" />
+                  )}
                 </button>
               )}
               <div className="flex items-center gap-2">
@@ -230,9 +232,7 @@ export function SupportOptionsModal({
                       {isArabic ? 'تقديم شكوى' : 'Submit Complaint'}
                     </p>
                     <p className="text-sm text-slate-600">
-                      {isArabic
-                        ? 'أخبرنا عن أي مشكلة واجهتك'
-                        : 'Tell us about any issue you faced'}
+                      {isArabic ? 'أخبرنا عن أي مشكلة واجهتك' : 'Tell us about any issue you faced'}
                     </p>
                   </div>
                   {isArabic ? (
@@ -262,20 +262,38 @@ export function SupportOptionsModal({
                     </h3>
                     <ol className="space-y-2 text-sm text-slate-700">
                       <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                          1
+                        </span>
                         <span>{isArabic ? 'اذهب إلى صفحة طلباتي' : 'Go to My Orders page'}</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
-                        <span>{isArabic ? 'اختر الطلب الذي تريد استرداده' : 'Select the order you want to refund'}</span>
+                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                          2
+                        </span>
+                        <span>
+                          {isArabic
+                            ? 'اختر الطلب الذي تريد استرداده'
+                            : 'Select the order you want to refund'}
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
-                        <span>{isArabic ? 'اضغط على "هل واجهت مشكلة؟"' : 'Click on "Had an issue?"'}</span>
+                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                          3
+                        </span>
+                        <span>
+                          {isArabic ? 'اضغط على "هل واجهت مشكلة؟"' : 'Click on "Had an issue?"'}
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">4</span>
-                        <span>{isArabic ? 'اتبع الخطوات لتقديم طلب الاسترداد' : 'Follow the steps to submit refund request'}</span>
+                        <span className="w-5 h-5 rounded-full bg-blue-200 text-blue-800 text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+                          4
+                        </span>
+                        <span>
+                          {isArabic
+                            ? 'اتبع الخطوات لتقديم طلب الاسترداد'
+                            : 'Follow the steps to submit refund request'}
+                        </span>
                       </li>
                     </ol>
                   </div>
@@ -363,9 +381,9 @@ export function SupportOptionsModal({
         <div style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }} />
       </div>
     </div>
-  )
+  );
 
   // Use portal to render outside DOM hierarchy
-  if (typeof window === 'undefined') return null
-  return createPortal(modalContent, document.body)
+  if (typeof window === 'undefined') return null;
+  return createPortal(modalContent, document.body);
 }

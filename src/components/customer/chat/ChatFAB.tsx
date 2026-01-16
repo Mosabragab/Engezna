@@ -2,18 +2,18 @@
  * ChatFAB - Floating Action Button for opening AI Chat
  */
 
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, X, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, X, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ChatFABProps {
-  onClick: () => void
-  isOpen: boolean
-  hasUnread?: boolean
-  className?: string
+  onClick: () => void;
+  isOpen: boolean;
+  hasUnread?: boolean;
+  className?: string;
 }
 
 export function ChatFAB({ onClick, isOpen, hasUnread = false, className }: ChatFABProps) {
@@ -80,7 +80,7 @@ export function ChatFAB({ onClick, isOpen, hasUnread = false, className }: ChatF
         </motion.span>
       )}
     </motion.button>
-  )
+  );
 }
 
-export default ChatFAB
+export default ChatFAB;

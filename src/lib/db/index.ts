@@ -4,8 +4,8 @@
  * This module provides helper functions for common database operations
  */
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 
 /**
  * Execute a raw SQL query (admin only - bypasses RLS)
@@ -13,19 +13,19 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
  * @param params - Query parameters
  */
 export async function executeSQL(query: string, params?: any[]) {
-  const supabase = createAdminClient()
+  const supabase = createAdminClient();
 
   try {
     const { data, error } = await supabase.rpc('exec_sql', {
       query,
       params: params || [],
-    })
+    });
 
-    if (error) throw error
-    return { data, error: null }
+    if (error) throw error;
+    return { data, error: null };
   } catch (error) {
-    console.error('SQL execution error:', error)
-    return { data: null, error }
+    console.error('SQL execution error:', error);
+    return { data: null, error };
   }
 }
 
@@ -34,18 +34,18 @@ export async function executeSQL(query: string, params?: any[]) {
  * @param migrationSQL - SQL migration content
  */
 export async function runMigration(migrationSQL: string) {
-  const supabase = createAdminClient()
+  const supabase = createAdminClient();
 
   try {
     const { data, error } = await supabase.rpc('exec_sql', {
       query: migrationSQL,
-    })
+    });
 
-    if (error) throw error
-    return { success: true, error: null }
+    if (error) throw error;
+    return { success: true, error: null };
   } catch (error) {
-    console.error('Migration error:', error)
-    return { success: false, error }
+    console.error('Migration error:', error);
+    return { success: false, error };
   }
 }
 
@@ -54,18 +54,18 @@ export async function runMigration(migrationSQL: string) {
  */
 export async function checkConnection() {
   try {
-    const supabase = await createServerClient()
-    const { error } = await supabase.from('_migrations').select('id').limit(1)
+    const supabase = await createServerClient();
+    const { error } = await supabase.from('_migrations').select('id').limit(1);
 
     // If table doesn't exist, that's okay - connection is still working
     if (error && !error.message.includes('does not exist')) {
-      throw error
+      throw error;
     }
 
-    return { connected: true, error: null }
+    return { connected: true, error: null };
   } catch (error) {
-    console.error('Connection check failed:', error)
-    return { connected: false, error }
+    console.error('Connection check failed:', error);
+    return { connected: false, error };
   }
 }
 
@@ -73,21 +73,20 @@ export async function checkConnection() {
  * Get database statistics
  */
 export async function getDatabaseStats() {
-  const supabase = createAdminClient()
+  const supabase = createAdminClient();
 
   try {
     // Get table counts
-    const { data: tables, error } = await supabase
-      .rpc('get_table_stats')
+    const { data: tables, error } = await supabase.rpc('get_table_stats');
 
     if (error && !error.message.includes('does not exist')) {
-      throw error
+      throw error;
     }
 
-    return { data: tables || [], error: null }
+    return { data: tables || [], error: null };
   } catch (error) {
-    console.error('Error fetching database stats:', error)
-    return { data: [], error }
+    console.error('Error fetching database stats:', error);
+    return { data: [], error };
   }
 }
 
@@ -97,44 +96,41 @@ export async function getDatabaseStats() {
 export async function query<T = any>(
   tableName: string,
   options: {
-    select?: string
-    filter?: Record<string, any>
-    orderBy?: { column: string; ascending?: boolean }
-    limit?: number
+    select?: string;
+    filter?: Record<string, any>;
+    orderBy?: { column: string; ascending?: boolean };
+    limit?: number;
   } = {}
 ) {
-  const supabase = await createServerClient()
+  const supabase = await createServerClient();
 
-  let queryBuilder = supabase
-    .from(tableName)
-    .select(options.select || '*')
+  let queryBuilder = supabase.from(tableName).select(options.select || '*');
 
   // Apply filters
   if (options.filter) {
     Object.entries(options.filter).forEach(([key, value]) => {
-      queryBuilder = queryBuilder.eq(key, value)
-    })
+      queryBuilder = queryBuilder.eq(key, value);
+    });
   }
 
   // Apply ordering
   if (options.orderBy) {
-    queryBuilder = queryBuilder.order(
-      options.orderBy.column,
-      { ascending: options.orderBy.ascending ?? true }
-    )
+    queryBuilder = queryBuilder.order(options.orderBy.column, {
+      ascending: options.orderBy.ascending ?? true,
+    });
   }
 
   // Apply limit
   if (options.limit) {
-    queryBuilder = queryBuilder.limit(options.limit)
+    queryBuilder = queryBuilder.limit(options.limit);
   }
 
-  const { data, error } = await queryBuilder
+  const { data, error } = await queryBuilder;
 
   if (error) {
-    console.error(`Query error on ${tableName}:`, error)
-    return { data: null, error }
+    console.error(`Query error on ${tableName}:`, error);
+    return { data: null, error };
   }
 
-  return { data: data as T[], error: null }
+  return { data: data as T[], error: null };
 }

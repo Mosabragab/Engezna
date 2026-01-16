@@ -1,100 +1,97 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { useLocale, useTranslations } from 'next-intl'
-import { usePathname, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import {
-  Globe,
-  Menu,
-  X,
-  User as UserIcon,
-  LogOut,
-  ShoppingBag,
-} from 'lucide-react'
-import type { User } from '@supabase/supabase-js'
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Globe, Menu, X, User as UserIcon, LogOut, ShoppingBag } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
 
 export function CustomerNavbar() {
-  const locale = useLocale()
-  const t = useTranslations('nav')
-  const pathname = usePathname()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
-  const [user, setUser] = useState<User | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [activeOrdersCount, setActiveOrdersCount] = useState(0)
+  const locale = useLocale();
+  const t = useTranslations('nav');
+  const pathname = usePathname();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   const fetchActiveOrdersCount = useCallback(async (userId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
     const { count, error } = await supabase
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('customer_id', userId)
-      .not('status', 'in', '("delivered","cancelled","rejected")')
+      .not('status', 'in', '("delivered","cancelled","rejected")');
 
     if (!error && count !== null) {
-      setActiveOrdersCount(count)
+      setActiveOrdersCount(count);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setAuthLoading(false)
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setAuthLoading(false);
 
       if (user) {
-        fetchActiveOrdersCount(user.id)
+        fetchActiveOrdersCount(user.id);
       }
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null)
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
         if (session?.user) {
-          fetchActiveOrdersCount(session.user.id)
+          fetchActiveOrdersCount(session.user.id);
         } else {
-          setActiveOrdersCount(0)
+          setActiveOrdersCount(0);
         }
-      })
+      });
 
-      return () => subscription.unsubscribe()
+      return () => subscription.unsubscribe();
     }
 
-    checkAuth()
-  }, [fetchActiveOrdersCount])
+    checkAuth();
+  }, [fetchActiveOrdersCount]);
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = `/${locale}`;
   }
 
   const switchLanguage = useCallback(() => {
-    const newLocale = locale === 'ar' ? 'en' : 'ar'
-    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
+    const newLocale = locale === 'ar' ? 'en' : 'ar';
+    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`);
 
-    document.documentElement.classList.add('no-transition')
-    document.documentElement.lang = newLocale
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr'
+    document.documentElement.classList.add('no-transition');
+    document.documentElement.lang = newLocale;
+    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
 
-    router.push(newPathname)
+    router.push(newPathname);
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        document.documentElement.classList.remove('no-transition')
-      })
-    })
-  }, [locale, pathname, router])
+        document.documentElement.classList.remove('no-transition');
+      });
+    });
+  }, [locale, pathname, router]);
 
   const navLinks = [
     { href: `/${locale}`, label: t('home') },
     { href: `/${locale}#services`, label: t('services') },
     { href: `/${locale}#about`, label: t('about') },
     { href: `/${locale}#contact`, label: t('contact') },
-  ]
+  ];
 
   return (
     <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
@@ -153,9 +150,7 @@ export function CustomerNavbar() {
                       className="flex items-center gap-2 text-gray-700 hover:text-primary hover:bg-gray-100"
                     >
                       <UserIcon className="w-4 h-4" />
-                      <span className="max-w-[100px] truncate">
-                        {user.email?.split('@')[0]}
-                      </span>
+                      <span className="max-w-[100px] truncate">{user.email?.split('@')[0]}</span>
                     </Button>
                   </Link>
 
@@ -167,9 +162,7 @@ export function CustomerNavbar() {
                     className="flex items-center gap-1.5 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span className="text-xs">
-                      {locale === 'ar' ? 'خروج' : 'Logout'}
-                    </span>
+                    <span className="text-xs">{locale === 'ar' ? 'خروج' : 'Logout'}</span>
                   </Button>
                 </>
               ) : (
@@ -196,9 +189,7 @@ export function CustomerNavbar() {
               className="flex items-center gap-1.5 text-gray-700 hover:text-primary hover:bg-gray-100"
             >
               <Globe className="w-4 h-4" />
-              <span className="text-sm font-medium">
-                {locale === 'ar' ? 'EN' : 'AR'}
-              </span>
+              <span className="text-sm font-medium">{locale === 'ar' ? 'EN' : 'AR'}</span>
             </Button>
 
             {/* Mobile Menu Button */}
@@ -208,11 +199,7 @@ export function CustomerNavbar() {
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
         </div>
@@ -265,8 +252,8 @@ export function CustomerNavbar() {
                     variant="outline"
                     className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
                     onClick={() => {
-                      handleSignOut()
-                      setMobileMenuOpen(false)
+                      handleSignOut();
+                      setMobileMenuOpen(false);
                     }}
                   >
                     <LogOut className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
@@ -288,5 +275,5 @@ export function CustomerNavbar() {
         )}
       </div>
     </header>
-  )
+  );
 }

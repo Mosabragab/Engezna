@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl';
 
 export default function NotFoundPage() {
-  const t = useTranslations('NotFoundPage')
-  
+  const t = useTranslations('NotFoundPage');
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
@@ -12,5 +12,5 @@ export default function NotFoundPage() {
         <p className="text-xl">{t('title')}</p>
       </div>
     </div>
-  )
+  );
 }

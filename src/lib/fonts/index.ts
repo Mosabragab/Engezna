@@ -4,9 +4,9 @@
 export const notoSans = {
   variable: '--font-noto-sans',
   className: 'font-sans',
-}
+};
 
 export const notoSansArabic = {
   variable: '--font-noto-sans-arabic',
   className: 'font-sans',
-}
+};

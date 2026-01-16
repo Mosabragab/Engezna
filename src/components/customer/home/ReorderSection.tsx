@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { RefreshCw, FileText, Clock, Store } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useLocale } from 'next-intl';
+import { RefreshCw, FileText, Clock, Store } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LastOrder {
-  id: string
-  providerName: string
-  providerNameAr: string
-  providerLogo?: string
-  items: string[]
-  itemsAr: string[]
-  total: number
-  createdAt: Date
+  id: string;
+  providerName: string;
+  providerNameAr: string;
+  providerLogo?: string;
+  items: string[];
+  itemsAr: string[];
+  total: number;
+  createdAt: Date;
 }
 
 interface ReorderSectionProps {
-  lastOrder?: LastOrder | null
-  onReorder?: (orderId: string) => void
-  onViewDetails?: (orderId: string) => void
-  className?: string
+  lastOrder?: LastOrder | null;
+  onReorder?: (orderId: string) => void;
+  onViewDetails?: (orderId: string) => void;
+  className?: string;
 }
 
 /**
@@ -32,44 +32,42 @@ export function ReorderSection({
   onViewDetails,
   className = '',
 }: ReorderSectionProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Don't render if no last order
-  if (!lastOrder) return null
+  if (!lastOrder) return null;
 
-  const providerName = isRTL ? lastOrder.providerNameAr : lastOrder.providerName
-  const items = isRTL ? lastOrder.itemsAr : lastOrder.items
+  const providerName = isRTL ? lastOrder.providerNameAr : lastOrder.providerName;
+  const items = isRTL ? lastOrder.itemsAr : lastOrder.items;
 
   // Format relative time
   const getRelativeTime = (date: Date) => {
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24))
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
 
     if (diffInDays === 0) {
-      return isRTL ? 'اليوم' : 'Today'
+      return isRTL ? 'اليوم' : 'Today';
     } else if (diffInDays === 1) {
-      return isRTL ? 'أمس' : 'Yesterday'
+      return isRTL ? 'أمس' : 'Yesterday';
     } else if (diffInDays < 7) {
-      return isRTL ? `منذ ${diffInDays} أيام` : `${diffInDays} days ago`
+      return isRTL ? `منذ ${diffInDays} أيام` : `${diffInDays} days ago`;
     } else if (diffInDays < 30) {
-      const weeks = Math.floor(diffInDays / 7)
-      return isRTL ? `منذ ${weeks} أسبوع` : `${weeks} week${weeks > 1 ? 's' : ''} ago`
+      const weeks = Math.floor(diffInDays / 7);
+      return isRTL ? `منذ ${weeks} أسبوع` : `${weeks} week${weeks > 1 ? 's' : ''} ago`;
     } else {
-      const months = Math.floor(diffInDays / 30)
-      return isRTL ? `منذ ${months} شهر` : `${months} month${months > 1 ? 's' : ''} ago`
+      const months = Math.floor(diffInDays / 30);
+      return isRTL ? `منذ ${months} شهر` : `${months} month${months > 1 ? 's' : ''} ago`;
     }
-  }
+  };
 
   return (
     <section className={cn('px-4 py-4', className)}>
       {/* Section Title */}
       <div className="flex items-center gap-2 mb-3">
         <RefreshCw className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-bold text-slate-900">
-          {isRTL ? 'اطلب تاني' : 'Reorder'}
-        </h2>
+        <h2 className="text-lg font-bold text-slate-900">{isRTL ? 'اطلب تاني' : 'Reorder'}</h2>
       </div>
 
       {/* Last Order Card */}
@@ -95,7 +93,8 @@ export function ReorderSection({
             </h3>
             <p className="text-sm text-slate-600 truncate mb-1">
               {items.slice(0, 3).join('، ')}
-              {items.length > 3 && (isRTL ? ` +${items.length - 3} أخرى` : ` +${items.length - 3} more`)}
+              {items.length > 3 &&
+                (isRTL ? ` +${items.length - 3} أخرى` : ` +${items.length - 3} more`)}
             </p>
             <div className="flex items-center gap-2 text-sm text-slate-500">
               <span className="font-medium text-primary">
@@ -129,5 +128,5 @@ export function ReorderSection({
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -10,22 +10,22 @@
 
 ### ما يعمل بشكل جيد ✅
 
-| الميزة | الحالة | مثال |
-|--------|--------|------|
-| التحية بحسب الوقت | ✅ | "صباح الفل!" |
-| البحث عن منتجات | ✅ | "عايز حواوشي" → نتائج صحيحة |
-| عرض الـ Variants | ✅ | عادي/كبير للحواوشي |
-| تأكيد الطلب | ✅ | "2x حواوشي فراخ كبير بـ140 ج.م صح؟" |
-| اللهجة المصرية | ✅ | طبيعية وودية |
+| الميزة            | الحالة | مثال                                |
+| ----------------- | ------ | ----------------------------------- |
+| التحية بحسب الوقت | ✅     | "صباح الفل!"                        |
+| البحث عن منتجات   | ✅     | "عايز حواوشي" → نتائج صحيحة         |
+| عرض الـ Variants  | ✅     | عادي/كبير للحواوشي                  |
+| تأكيد الطلب       | ✅     | "2x حواوشي فراخ كبير بـ140 ج.م صح؟" |
+| اللهجة المصرية    | ✅     | طبيعية وودية                        |
 
 ### المشاكل المكتشفة ❌
 
-| المشكلة | الأثر | التحليل |
-|---------|-------|---------|
-| **السلة لا تتحدث** | عالي | الـ `cart_action` يرجع من الـ API لكن الـ Frontend لا يعالجه |
-| **زر المنيو معطل** | عالي | URL يستخدم اسم التاجر بدلاً من ID/Slug |
-| **العروض فارغة** | متوسط | الـ Tool يعمل لكن قد لا توجد بيانات في DB |
-| **Quick Replies ثابتة** | منخفض | لا تتغير بحسب السياق بشكل كامل |
+| المشكلة                 | الأثر | التحليل                                                      |
+| ----------------------- | ----- | ------------------------------------------------------------ |
+| **السلة لا تتحدث**      | عالي  | الـ `cart_action` يرجع من الـ API لكن الـ Frontend لا يعالجه |
+| **زر المنيو معطل**      | عالي  | URL يستخدم اسم التاجر بدلاً من ID/Slug                       |
+| **العروض فارغة**        | متوسط | الـ Tool يعمل لكن قد لا توجد بيانات في DB                    |
+| **Quick Replies ثابتة** | منخفض | لا تتغير بحسب السياق بشكل كامل                               |
 
 ---
 
@@ -34,12 +34,14 @@
 ### 1️⃣ استراتيجية البحث (Search Strategy)
 
 **الوضع الحالي:**
+
 ```typescript
 // agentTools.ts - search_menu
 .or(`name_ar.ilike.%${query}%,description_ar.ilike.%${query}%`)
 ```
 
 **المشاكل:**
+
 - `ilike` لا يفهم المترادفات: "ساندوتش" ≠ "سندويتش"
 - لا يتعامل مع الأخطاء الإملائية: "بيتذا" ≠ "بيتزا"
 - لا يفهم السياق: "حاجة خفيفة" لا ترجع سلطات
@@ -66,6 +68,7 @@
 ```
 
 **الملفات المطلوب تعديلها:**
+
 - `src/lib/ai/agentTools.ts` - تعديل `search_menu`
 - `supabase/migrations/` - إضافة دالة `hybrid_search_menu`
 - `supabase/functions/search-embedding/` - Edge Function للـ query embedding
@@ -77,6 +80,7 @@
 ### 2️⃣ الذاكرة والسياق (Memory & Context)
 
 **الوضع الحالي:**
+
 ```typescript
 // agentPrompt.ts - buildSystemPrompt
 // السياق كله في System Prompt (~700 سطر!)
@@ -85,6 +89,7 @@
 ```
 
 **المشاكل:**
+
 - System Prompt ضخم جداً (يستهلك tokens كثيرة)
 - لا توجد ذاكرة للعميل (تفضيلاته، آخر طلباته)
 - لا يوجد context optimization
@@ -119,30 +124,32 @@ CREATE TABLE user_insights (
 ```
 
 **Context Optimization:**
+
 ```typescript
 // بدلاً من إرسال كل القواعد، نرسل فقط الملائمة للسياق
 function buildOptimizedPrompt(context: AgentContext): string {
-  const sections = []
+  const sections = [];
 
   // Core personality (دايماً)
-  sections.push(CORE_PERSONALITY)
+  sections.push(CORE_PERSONALITY);
 
   // Context-specific rules
   if (context.cartItems?.length > 0) {
-    sections.push(CART_RULES)
+    sections.push(CART_RULES);
   }
   if (context.providerContext) {
-    sections.push(PROVIDER_RULES)
+    sections.push(PROVIDER_RULES);
   }
   if (context.customerMemory?.orderCount > 0) {
-    sections.push(RETURNING_CUSTOMER_RULES)
+    sections.push(RETURNING_CUSTOMER_RULES);
   }
 
-  return sections.join('\n\n')
+  return sections.join('\n\n');
 }
 ```
 
 **الملفات المطلوب تعديلها:**
+
 - `supabase/migrations/` - إضافة جدول `user_insights`
 - `src/lib/ai/agentPrompt.ts` - تقسيم Prompt لأقسام
 - `src/app/api/chat/route.ts` - جلب insights قبل المحادثة
@@ -154,15 +161,17 @@ function buildOptimizedPrompt(context: AgentContext): string {
 ### 3️⃣ دقة استدعاء الأدوات (Tool Calling Precision)
 
 **الوضع الحالي:**
+
 ```typescript
 // agentHandler.ts
-const result = await executeAgentTool(toolName, toolArgs, context)
+const result = await executeAgentTool(toolName, toolArgs, context);
 // لا يوجد validation
 // لا يوجد fallback
 // لا يوجد retry logic
 ```
 
 **المشاكل:**
+
 - الـ AI قد يستدعي tool بـ parameters خاطئة
 - لا يوجد validation للـ input
 - لا يوجد fallback لنموذج أقوى عند الفشل
@@ -173,42 +182,42 @@ const result = await executeAgentTool(toolName, toolArgs, context)
 ```typescript
 // طبقة Validation جديدة
 interface ToolValidation {
-  toolName: string
-  validate: (params: Record<string, unknown>, context: ToolContext) => ValidationResult
+  toolName: string;
+  validate: (params: Record<string, unknown>, context: ToolContext) => ValidationResult;
 }
 
 const TOOL_VALIDATORS: Record<string, ToolValidation> = {
-  'search_menu': {
+  search_menu: {
     validate: (params, context) => {
       // لو مفيش query، ارفض
       if (!params.query || typeof params.query !== 'string') {
-        return { valid: false, error: 'Query is required' }
+        return { valid: false, error: 'Query is required' };
       }
       // لو الـ query قصير جداً
       if (params.query.length < 2) {
-        return { valid: false, error: 'Query too short' }
+        return { valid: false, error: 'Query too short' };
       }
-      return { valid: true }
-    }
+      return { valid: true };
+    },
   },
-  'add_to_cart': {
+  add_to_cart: {
     validate: (params, context) => {
       // لازم يكون فيه item_id و provider_id
       if (!params.item_id) {
-        return { valid: false, error: 'item_id is required' }
+        return { valid: false, error: 'item_id is required' };
       }
       // لو المنتج من تاجر مختلف والسلة فيها حاجات
       if (context.cartProviderId && params.provider_id !== context.cartProviderId) {
         return {
           valid: false,
           error: 'different_provider',
-          message: 'السلة فيها منتجات من تاجر تاني'
-        }
+          message: 'السلة فيها منتجات من تاجر تاني',
+        };
       }
-      return { valid: true }
-    }
-  }
-}
+      return { valid: true };
+    },
+  },
+};
 
 // Fallback Strategy
 async function executeWithFallback(
@@ -217,27 +226,28 @@ async function executeWithFallback(
   context: ToolContext
 ): Promise<ToolResult> {
   // 1. Validate first
-  const validation = TOOL_VALIDATORS[toolName]?.validate(params, context)
+  const validation = TOOL_VALIDATORS[toolName]?.validate(params, context);
   if (validation && !validation.valid) {
-    return { success: false, error: validation.error }
+    return { success: false, error: validation.error };
   }
 
   // 2. Try execution
-  const result = await executeAgentTool(toolName, params, context)
+  const result = await executeAgentTool(toolName, params, context);
 
   // 3. If failed with empty results, try alternative
   if (result.success && Array.isArray(result.data) && result.data.length === 0) {
     // Try semantic search as fallback
     if (toolName === 'search_menu' && params.query) {
-      return await executeSemanticSearch(params.query, context)
+      return await executeSemanticSearch(params.query, context);
     }
   }
 
-  return result
+  return result;
 }
 ```
 
 **الملفات المطلوب تعديلها:**
+
 - `src/lib/ai/toolValidation.ts` - ملف جديد
 - `src/lib/ai/agentHandler.ts` - إضافة validation layer
 - `src/lib/ai/agentTools.ts` - تحسين error handling
@@ -249,6 +259,7 @@ async function executeWithFallback(
 ### 4️⃣ التعامل مع اللهجات (Dialect Handling)
 
 **الوضع الحالي:**
+
 ```typescript
 // agentHandler.ts - generateDynamicQuickReplies
 // Quick replies ثابتة بـ if/else
@@ -256,11 +267,12 @@ if (isAskingVariant && hasProducts) {
   return {
     suggestions: ['صغير', 'وسط', 'كبير'],
     // ...
-  }
+  };
 }
 ```
 
 **المشاكل:**
+
 - Quick replies ثابتة لا تتغير بحسب المنتج الفعلي
 - لو المنتج له أحجام مختلفة (صغير/متوسط/عائلي) ما بتظهرش
 - الـ AI مش بيولد الـ quick replies ديناميكياً
@@ -272,11 +284,11 @@ if (isAskingVariant && hasProducts) {
 // في response format
 
 interface AIResponseFormat {
-  content: string
+  content: string;
   quick_replies?: Array<{
-    title: string
-    payload: string
-  }>
+    title: string;
+    payload: string;
+  }>;
   // الـ AI يولدهم بناءً على السياق
 }
 
@@ -293,25 +305,22 @@ interface AIResponseFormat {
 عايز أنهي؟"
 
 Frontend هيفهم إن فيه خيارين: عادي وكبير
-`
+`;
 
 // بدلاً من توليد Quick Replies من الـ handler،
 // نحللها من رد الـ AI نفسه
-function extractQuickRepliesFromContent(
-  content: string,
-  toolResults: ToolResult[]
-): QuickReply[] {
-  const replies: QuickReply[] = []
+function extractQuickRepliesFromContent(content: string, toolResults: ToolResult[]): QuickReply[] {
+  const replies: QuickReply[] = [];
 
   // 1. لو فيه variants في نتائج البحث
-  const variants = extractVariantsFromToolResults(toolResults)
+  const variants = extractVariantsFromToolResults(toolResults);
   if (variants.length > 0) {
-    variants.forEach(v => {
+    variants.forEach((v) => {
       replies.push({
         title: `📏 ${v.name} - ${v.price} ج.م`,
-        payload: `عايز ${v.name}`
-      })
-    })
+        payload: `عايز ${v.name}`,
+      });
+    });
   }
 
   // 2. لو الـ AI بيسأل عن الكمية
@@ -320,14 +329,15 @@ function extractQuickRepliesFromContent(
       { title: '1️⃣ واحدة', payload: 'واحدة' },
       { title: '2️⃣ اتنين', payload: 'اتنين' },
       { title: '3️⃣ تلاتة', payload: 'تلاتة' }
-    )
+    );
   }
 
-  return replies
+  return replies;
 }
 ```
 
 **الملفات المطلوب تعديلها:**
+
 - `src/lib/ai/agentHandler.ts` - تحسين `generateDynamicQuickReplies`
 - `src/lib/ai/agentPrompt.ts` - تعديل تعليمات الـ format
 
@@ -338,18 +348,21 @@ function extractQuickRepliesFromContent(
 ### 5️⃣ الحواجز الأمنية (Guardrails)
 
 **الوضع الحالي:**
+
 ```typescript
 // agentHandler.ts - sanitizeAgentResponse
 // يوجد regex لإزالة URLs والـ markdown
-sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
+sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '');
 ```
 
 **ما يعمل ✅:**
+
 - إزالة URLs
 - إزالة Markdown images
 - إزالة code blocks
 
 **ما ينقص ❌:**
+
 - لا يوجد stock validation قبل الإضافة للسلة
 - لا يوجد price validation
 - لا يوجد provider status check
@@ -360,95 +373,94 @@ sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
 ```typescript
 // Pre-execution Guardrails
 const PRE_EXECUTION_GUARDS: Record<string, Guard> = {
-  'add_to_cart': async (params, context) => {
+  add_to_cart: async (params, context) => {
     // 1. Check item availability
-    const item = await getMenuItem(params.item_id)
+    const item = await getMenuItem(params.item_id);
     if (!item?.is_available) {
       return {
         blocked: true,
-        message: 'المنتج ده مش متاح دلوقتي'
-      }
+        message: 'المنتج ده مش متاح دلوقتي',
+      };
     }
 
     // 2. Check stock
     if (item.has_stock === false) {
       return {
         blocked: true,
-        message: 'المنتج خلص للأسف'
-      }
+        message: 'المنتج خلص للأسف',
+      };
     }
 
     // 3. Check provider is open
-    const provider = await getProvider(params.provider_id)
+    const provider = await getProvider(params.provider_id);
     if (provider?.status !== 'open') {
       return {
         blocked: true,
-        message: 'المطعم مغلق دلوقتي'
-      }
+        message: 'المطعم مغلق دلوقتي',
+      };
     }
 
     // 4. Validate price matches
-    const expectedPrice = params.variant_id
-      ? await getVariantPrice(params.variant_id)
-      : item.price
+    const expectedPrice = params.variant_id ? await getVariantPrice(params.variant_id) : item.price;
     if (Math.abs(params.price - expectedPrice) > 0.01) {
       return {
         blocked: true,
-        message: 'فيه مشكلة في السعر، جرب تاني'
-      }
+        message: 'فيه مشكلة في السعر، جرب تاني',
+      };
     }
 
-    return { blocked: false }
-  }
-}
+    return { blocked: false };
+  },
+};
 
 // Post-execution Guardrails (في sanitizeAgentResponse)
 function sanitizeAgentResponse(content: string): string {
-  let sanitized = content
+  let sanitized = content;
 
   // 1. Remove URLs (موجود)
-  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '')
+  sanitized = sanitized.replace(/https?:\/\/[^\s<>"\)]+/gi, '');
 
   // 2. Remove UUIDs (جديد)
   sanitized = sanitized.replace(
     /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
     ''
-  )
+  );
 
   // 3. Remove JSON (تحسين)
-  sanitized = sanitized.replace(/\{[^{}]*"[^"]*"[^{}]*:[^{}]*\}/g, '')
+  sanitized = sanitized.replace(/\{[^{}]*"[^"]*"[^{}]*:[^{}]*\}/g, '');
 
   // 4. Remove provider IDs that might leak
-  sanitized = sanitized.replace(/provider[_-]?id[:=]\s*["']?[\w-]+["']?/gi, '')
+  sanitized = sanitized.replace(/provider[_-]?id[:=]\s*["']?[\w-]+["']?/gi, '');
 
   // 5. Remove any numeric IDs
-  sanitized = sanitized.replace(/\b(id|ID)[:=]\s*\d+\b/g, '')
+  sanitized = sanitized.replace(/\b(id|ID)[:=]\s*\d+\b/g, '');
 
-  return sanitized.trim()
+  return sanitized.trim();
 }
 
 // Rate Limiting
-const toolCallCounts = new Map<string, number>()
+const toolCallCounts = new Map<string, number>();
 const TOOL_RATE_LIMITS: Record<string, number> = {
-  'search_menu': 5,        // max 5 searches per conversation
-  'add_to_cart': 10,       // max 10 adds per conversation
-  'cancel_order': 1,       // max 1 cancel per conversation
-}
+  search_menu: 5, // max 5 searches per conversation
+  add_to_cart: 10, // max 10 adds per conversation
+  cancel_order: 1, // max 1 cancel per conversation
+};
 
 function checkRateLimit(toolName: string): boolean {
-  const count = toolCallCounts.get(toolName) || 0
-  const limit = TOOL_RATE_LIMITS[toolName] || Infinity
+  const count = toolCallCounts.get(toolName) || 0;
+  const limit = TOOL_RATE_LIMITS[toolName] || Infinity;
 
   if (count >= limit) {
-    return false
+    return false;
   }
 
-  toolCallCounts.set(toolName, count + 1)
-  return true
+  toolCallCounts.set(toolName, count + 1);
+  return true;
 }
 ```
 
 **الملفات المطلوب تعديلها:**
+
 - `src/lib/ai/guardrails.ts` - ملف جديد
 - `src/lib/ai/agentHandler.ts` - إضافة pre/post guards
 - `src/lib/ai/agentTools.ts` - إضافة stock check في `add_to_cart`
@@ -461,17 +473,18 @@ function checkRateLimit(toolName: string): boolean {
 
 ### المرحلة 1: الإصلاحات العاجلة (يوم واحد)
 
-| # | المهمة | الملف | الوصف |
-|---|--------|-------|-------|
-| 1.1 | إصلاح Cart Actions | `useAIChat.ts` | معالجة `cart_action` من response |
+| #   | المهمة                | الملف                | الوصف                              |
+| --- | --------------------- | -------------------- | ---------------------------------- |
+| 1.1 | إصلاح Cart Actions    | `useAIChat.ts`       | معالجة `cart_action` من response   |
 | 1.2 | إصلاح Menu Navigation | `SmartAssistant.tsx` | استخدام provider ID بدلاً من الاسم |
-| 1.3 | إضافة Stock Check | `agentTools.ts` | التحقق من التوفر قبل `add_to_cart` |
+| 1.3 | إضافة Stock Check     | `agentTools.ts`      | التحقق من التوفر قبل `add_to_cart` |
 
 **كود إصلاح Cart Actions:**
+
 ```typescript
 // useAIChat.ts - في handleResponse
 if (response.cartAction) {
-  const { type, provider_id, menu_item_id, quantity, unit_price, variant_id } = response.cartAction
+  const { type, provider_id, menu_item_id, quantity, unit_price, variant_id } = response.cartAction;
 
   switch (type) {
     case 'ADD_ITEM':
@@ -480,15 +493,15 @@ if (response.cartAction) {
         menuItemId: menu_item_id,
         quantity,
         unitPrice: unit_price,
-        variantId: variant_id
-      })
-      break
+        variantId: variant_id,
+      });
+      break;
     case 'REMOVE_ITEM':
-      removeFromCart(menu_item_id)
-      break
+      removeFromCart(menu_item_id);
+      break;
     case 'CLEAR_CART':
-      clearCart()
-      break
+      clearCart();
+      break;
   }
 }
 ```
@@ -497,14 +510,15 @@ if (response.cartAction) {
 
 ### المرحلة 2: تحسين البحث (3-5 أيام)
 
-| # | المهمة | الملف | الوصف |
-|---|--------|-------|-------|
-| 2.1 | دالة Hybrid Search | Migration | SQL function مع pgvector |
-| 2.2 | Query Embedding API | Edge Function | توليد embedding للـ query |
-| 2.3 | تحديث search_menu | `agentTools.ts` | استخدام Hybrid Search |
-| 2.4 | Fuzzy Match | Migration | إضافة pg_trgm extension |
+| #   | المهمة              | الملف           | الوصف                     |
+| --- | ------------------- | --------------- | ------------------------- |
+| 2.1 | دالة Hybrid Search  | Migration       | SQL function مع pgvector  |
+| 2.2 | Query Embedding API | Edge Function   | توليد embedding للـ query |
+| 2.3 | تحديث search_menu   | `agentTools.ts` | استخدام Hybrid Search     |
+| 2.4 | Fuzzy Match         | Migration       | إضافة pg_trgm extension   |
 
 **SQL Function:**
+
 ```sql
 CREATE OR REPLACE FUNCTION hybrid_search_menu(
   p_query text,
@@ -589,33 +603,33 @@ $$ LANGUAGE plpgsql;
 
 ### المرحلة 3: الحواجز والتحقق (2-3 أيام)
 
-| # | المهمة | الملف | الوصف |
-|---|--------|-------|-------|
-| 3.1 | Tool Validation Layer | `toolValidation.ts` | validation لكل tool |
-| 3.2 | Pre-execution Guards | `guardrails.ts` | stock, price, provider checks |
-| 3.3 | Post-execution Sanitization | `agentHandler.ts` | تحسين regex |
-| 3.4 | Rate Limiting | `agentHandler.ts` | حدود لعدد الاستدعاءات |
+| #   | المهمة                      | الملف               | الوصف                         |
+| --- | --------------------------- | ------------------- | ----------------------------- |
+| 3.1 | Tool Validation Layer       | `toolValidation.ts` | validation لكل tool           |
+| 3.2 | Pre-execution Guards        | `guardrails.ts`     | stock, price, provider checks |
+| 3.3 | Post-execution Sanitization | `agentHandler.ts`   | تحسين regex                   |
+| 3.4 | Rate Limiting               | `agentHandler.ts`   | حدود لعدد الاستدعاءات         |
 
 ---
 
 ### المرحلة 4: الذاكرة والسياق (3-5 أيام)
 
-| # | المهمة | الملف | الوصف |
-|---|--------|-------|-------|
-| 4.1 | جدول user_insights | Migration | إنشاء الجدول |
-| 4.2 | Insights Collection | API | جمع البيانات من التفاعلات |
-| 4.3 | Prompt Optimization | `agentPrompt.ts` | تقسيم وتحسين الـ prompt |
-| 4.4 | Context Loading | `route.ts` | جلب insights قبل المحادثة |
+| #   | المهمة              | الملف            | الوصف                     |
+| --- | ------------------- | ---------------- | ------------------------- |
+| 4.1 | جدول user_insights  | Migration        | إنشاء الجدول              |
+| 4.2 | Insights Collection | API              | جمع البيانات من التفاعلات |
+| 4.3 | Prompt Optimization | `agentPrompt.ts` | تقسيم وتحسين الـ prompt   |
+| 4.4 | Context Loading     | `route.ts`       | جلب insights قبل المحادثة |
 
 ---
 
 ### المرحلة 5: تحسين Quick Replies (1-2 يوم)
 
-| # | المهمة | الملف | الوصف |
-|---|--------|-------|-------|
-| 5.1 | Dynamic Variants | `agentHandler.ts` | استخراج variants من نتائج البحث |
-| 5.2 | Context-aware Replies | `agentHandler.ts` | تحسين المنطق |
-| 5.3 | AI-generated Options | `agentPrompt.ts` | تعليمات للـ AI |
+| #   | المهمة                | الملف             | الوصف                           |
+| --- | --------------------- | ----------------- | ------------------------------- |
+| 5.1 | Dynamic Variants      | `agentHandler.ts` | استخراج variants من نتائج البحث |
+| 5.2 | Context-aware Replies | `agentHandler.ts` | تحسين المنطق                    |
+| 5.3 | AI-generated Options  | `agentPrompt.ts`  | تعليمات للـ AI                  |
 
 ---
 
@@ -646,16 +660,16 @@ $$ LANGUAGE plpgsql;
 
 ## مقاييس النجاح
 
-| المقياس | الهدف | طريقة القياس |
-|---------|-------|---------------|
-| نجاح البحث | > 90% | نتائج / إجمالي البحث |
-| دقة الإضافة للسلة | > 95% | إضافات ناجحة / محاولات |
-| رضا العميل | > 4/5 | استطلاع بعد المحادثة |
-| زمن الاستجابة | < 2 ثانية | متوسط وقت الرد |
+| المقياس           | الهدف     | طريقة القياس           |
+| ----------------- | --------- | ---------------------- |
+| نجاح البحث        | > 90%     | نتائج / إجمالي البحث   |
+| دقة الإضافة للسلة | > 95%     | إضافات ناجحة / محاولات |
+| رضا العميل        | > 4/5     | استطلاع بعد المحادثة   |
+| زمن الاستجابة     | < 2 ثانية | متوسط وقت الرد         |
 
 ---
 
-*آخر تحديث: 2025-12-16*
+_آخر تحديث: 2025-12-16_
 
 ---
 
@@ -665,17 +679,17 @@ $$ LANGUAGE plpgsql;
 
 #### الأهداف المنجزة ✅
 
-| المهمة | الوصف | الملف |
-|--------|-------|-------|
-| تصفية المتاجر حسب المنطقة | المشرف الإقليمي يرى فقط متاجر منطقته | `admin/providers/page.tsx` |
-| تصفية الطلبات حسب المنطقة | الطلبات من متاجر المنطقة فقط | `admin/orders/page.tsx` |
-| تصفية العملاء حسب المنطقة | العملاء المرتبطين بطلبات المنطقة | `admin/customers/page.tsx` |
-| تصفية Resolution Center | إحصائيات المنازعات للمنطقة فقط | `admin/resolution-center/page.tsx` |
-| تصفية Analytics | تحليلات المنطقة فقط | `admin/analytics/page.tsx` |
-| تصفية أرقام الشارات | Badge counts على الـ sidebar | `admin/layout.tsx` |
-| تصفية الإشعارات | إشعارات المنطقة فقط | `components/admin/AdminHeader.tsx` |
-| AdminRegionContext | تخزين مؤقت لبيانات المشرف | `lib/contexts/AdminRegionContext.tsx` |
-| Database Migration | إضافة regional columns للإشعارات | Migration file |
+| المهمة                    | الوصف                                | الملف                                 |
+| ------------------------- | ------------------------------------ | ------------------------------------- |
+| تصفية المتاجر حسب المنطقة | المشرف الإقليمي يرى فقط متاجر منطقته | `admin/providers/page.tsx`            |
+| تصفية الطلبات حسب المنطقة | الطلبات من متاجر المنطقة فقط         | `admin/orders/page.tsx`               |
+| تصفية العملاء حسب المنطقة | العملاء المرتبطين بطلبات المنطقة     | `admin/customers/page.tsx`            |
+| تصفية Resolution Center   | إحصائيات المنازعات للمنطقة فقط       | `admin/resolution-center/page.tsx`    |
+| تصفية Analytics           | تحليلات المنطقة فقط                  | `admin/analytics/page.tsx`            |
+| تصفية أرقام الشارات       | Badge counts على الـ sidebar         | `admin/layout.tsx`                    |
+| تصفية الإشعارات           | إشعارات المنطقة فقط                  | `components/admin/AdminHeader.tsx`    |
+| AdminRegionContext        | تخزين مؤقت لبيانات المشرف            | `lib/contexts/AdminRegionContext.tsx` |
+| Database Migration        | إضافة regional columns للإشعارات     | Migration file                        |
 
 #### الدروس المستفادة 📚
 
@@ -705,17 +719,17 @@ return false // رفض الباقي
 ```typescript
 // ❌ غلط: الفلتر لا يُطبق عندما regionProviderIds فارغة
 if (hasRegionFilter && regionProviderIds.length > 0) {
-  query = query.in('provider_id', regionProviderIds)
+  query = query.in('provider_id', regionProviderIds);
 }
 // المشكلة: لو regionProviderIds.length === 0، يعرض كل البيانات!
 
 // ✅ صح: إرجاع صفر بدلاً من كل البيانات
 if (hasRegionFilter && regionProviderIds.length === 0) {
-  setData([]) // أو عرض 0
-  return
+  setData([]); // أو عرض 0
+  return;
 }
 if (hasRegionFilter && regionProviderIds.length > 0) {
-  query = query.in('provider_id', regionProviderIds)
+  query = query.in('provider_id', regionProviderIds);
 }
 ```
 
@@ -724,24 +738,24 @@ if (hasRegionFilter && regionProviderIds.length > 0) {
 ```typescript
 // ❌ غلط: تحميل البيانات قبل أن يجهز الفلتر
 useEffect(() => {
-  loadData() // الفلتر قد يكون null
-}, [])
+  loadData(); // الفلتر قد يكون null
+}, []);
 
 // ✅ صح: انتظار تحميل الفلتر
-const { loading: filterLoading, hasRegionFilter } = useAdminRegion()
+const { loading: filterLoading, hasRegionFilter } = useAdminRegion();
 
 useEffect(() => {
   if (!filterLoading) {
-    loadData() // الفلتر جاهز الآن
+    loadData(); // الفلتر جاهز الآن
   }
-}, [filterLoading])
+}, [filterLoading]);
 ```
 
 #### الملفات الجديدة
 
-| الملف | الوصف |
-|-------|-------|
-| `src/lib/contexts/AdminRegionContext.tsx` | Context للتخزين المؤقت لبيانات المنطقة |
+| الملف                                                                                  | الوصف                                        |
+| -------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `src/lib/contexts/AdminRegionContext.tsx`                                              | Context للتخزين المؤقت لبيانات المنطقة       |
 | `supabase/migrations/20251221210000_add_regional_filtering_to_admin_notifications.sql` | إضافة columns و triggers للإشعارات الإقليمية |
 
 #### Database Functions الجديدة

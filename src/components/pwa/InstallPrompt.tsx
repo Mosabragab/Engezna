@@ -1,89 +1,89 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
-import { X, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { X, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
 export function InstallPrompt() {
-  const locale = useLocale()
-  const t = useTranslations('pwa')
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
-  const [showPrompt, setShowPrompt] = useState(false)
-  const [isInstalled, setIsInstalled] = useState(false)
+  const locale = useLocale();
+  const t = useTranslations('pwa');
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true)
-      return
+      setIsInstalled(true);
+      return;
     }
 
     // Check if dismissed recently (within 7 days)
-    const dismissedAt = localStorage.getItem('pwa-prompt-dismissed')
+    const dismissedAt = localStorage.getItem('pwa-prompt-dismissed');
     if (dismissedAt) {
-      const dismissedDate = new Date(parseInt(dismissedAt))
-      const daysSinceDismissed = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24)
+      const dismissedDate = new Date(parseInt(dismissedAt));
+      const daysSinceDismissed = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceDismissed < 7) {
-        return
+        return;
       }
     }
 
     const handleBeforeInstall = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
 
       // Show prompt after 30 seconds of browsing
       setTimeout(() => {
-        setShowPrompt(true)
-      }, 30000)
-    }
+        setShowPrompt(true);
+      }, 30000);
+    };
 
     const handleAppInstalled = () => {
-      setIsInstalled(true)
-      setShowPrompt(false)
-      setDeferredPrompt(null)
-    }
+      setIsInstalled(true);
+      setShowPrompt(false);
+      setDeferredPrompt(null);
+    };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall)
-    window.addEventListener('appinstalled', handleAppInstalled)
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-    }
-  }, [])
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return
+    if (!deferredPrompt) return;
 
     try {
-      await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
 
       if (outcome === 'accepted') {
-        setIsInstalled(true)
+        setIsInstalled(true);
       }
     } catch (error) {
-      console.error('Error installing PWA:', error)
+      console.error('Error installing PWA:', error);
     }
 
-    setShowPrompt(false)
-    setDeferredPrompt(null)
-  }
+    setShowPrompt(false);
+    setDeferredPrompt(null);
+  };
 
   const handleDismiss = () => {
-    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString())
-    setShowPrompt(false)
-  }
+    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+    setShowPrompt(false);
+  };
 
   if (!showPrompt || isInstalled || !deferredPrompt) {
-    return null
+    return null;
   }
 
   return (
@@ -132,5 +132,5 @@ export function InstallPrompt() {
         </div>
       </div>
     </div>
-  )
+  );
 }

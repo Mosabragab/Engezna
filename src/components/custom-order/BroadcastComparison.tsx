@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useState, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import {
   Star,
   Truck,
@@ -18,25 +18,22 @@ import {
   ShoppingBag,
   Sparkles,
   TrendingDown,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { useBroadcastRealtime, type RequestWithProvider } from '@/hooks/useBroadcastRealtime'
-import { usePriceComparison, formatCurrency } from '@/hooks/useCustomOrderFinancials'
-import type {
-  BroadcastComparisonProps,
-  BroadcastWithRequests,
-} from '@/types/custom-order'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useBroadcastRealtime, type RequestWithProvider } from '@/hooks/useBroadcastRealtime';
+import { usePriceComparison, formatCurrency } from '@/hooks/useCustomOrderFinancials';
+import type { BroadcastComparisonProps, BroadcastWithRequests } from '@/types/custom-order';
 
 interface ExtendedBroadcastComparisonProps extends BroadcastComparisonProps {
-  className?: string
+  className?: string;
 }
 
 // Status badge component
 function StatusBadge({ status }: { status: string }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const statusConfig: Record<string, { label: string; labelAr: string; className: string }> = {
     pending: {
@@ -69,15 +66,15 @@ function StatusBadge({ status }: { status: string }) {
       labelAr: 'ملغي',
       className: 'bg-slate-100 text-slate-500 border-slate-200',
     },
-  }
+  };
 
-  const config = statusConfig[status] || statusConfig.pending
+  const config = statusConfig[status] || statusConfig.pending;
 
   return (
     <Badge variant="outline" className={cn('text-xs', config.className)}>
       {isRTL ? config.labelAr : config.label}
     </Badge>
-  )
+  );
 }
 
 // Price comparison card component
@@ -89,21 +86,21 @@ function ComparisonCard({
   loading,
   isSelected,
 }: {
-  request: RequestWithProvider
-  isCheapest: boolean
-  isFastest: boolean
-  onSelect: () => Promise<void>
-  loading: boolean
-  isSelected: boolean
+  request: RequestWithProvider;
+  isCheapest: boolean;
+  isFastest: boolean;
+  onSelect: () => Promise<void>;
+  loading: boolean;
+  isSelected: boolean;
 }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [expanded, setExpanded] = useState(false)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [expanded, setExpanded] = useState(false);
 
-  const provider = request.provider
-  const isPriced = request.status === 'priced'
-  const isPending = request.status === 'pending'
-  const isApproved = request.status === 'customer_approved'
+  const provider = request.provider;
+  const isPriced = request.status === 'priced';
+  const isPending = request.status === 'pending';
+  const isApproved = request.status === 'customer_approved';
 
   return (
     <motion.div
@@ -114,8 +111,8 @@ function ComparisonCard({
         isSelected
           ? 'border-primary shadow-lg shadow-primary/20'
           : isPriced
-          ? 'border-slate-200 hover:border-primary/50 hover:shadow-md'
-          : 'border-slate-200 opacity-75'
+            ? 'border-slate-200 hover:border-primary/50 hover:shadow-md'
+            : 'border-slate-200 opacity-75'
       )}
     >
       {/* Badges */}
@@ -154,9 +151,7 @@ function ComparisonCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xl">
-                🏪
-              </div>
+              <div className="w-full h-full flex items-center justify-center text-xl">🏪</div>
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -205,9 +200,7 @@ function ComparisonCard({
               </span>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-              <span className="font-semibold text-slate-800">
-                {isRTL ? 'الإجمالي' : 'Total'}
-              </span>
+              <span className="font-semibold text-slate-800">{isRTL ? 'الإجمالي' : 'Total'}</span>
               <span className="text-xl font-bold text-primary">
                 {formatCurrency(request.total)}
               </span>
@@ -223,20 +216,13 @@ function ComparisonCard({
         ) : (
           <div className="bg-slate-50 rounded-xl p-4 mb-3 text-center">
             <XCircle className="w-6 h-6 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm text-slate-500">
-              {isRTL ? 'لم يتم التسعير' : 'Not priced'}
-            </p>
+            <p className="text-sm text-slate-500">{isRTL ? 'لم يتم التسعير' : 'Not priced'}</p>
           </div>
         )}
 
         {/* Select Button */}
         {isPriced && !isApproved && (
-          <Button
-            onClick={onSelect}
-            disabled={loading}
-            className="w-full gap-2"
-            size="lg"
-          >
+          <Button onClick={onSelect} disabled={loading} className="w-full gap-2" size="lg">
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -261,7 +247,7 @@ function ComparisonCard({
         )}
       </div>
     </motion.div>
-  )
+  );
 }
 
 export function BroadcastComparison({
@@ -270,8 +256,8 @@ export function BroadcastComparison({
   loading = false,
   className,
 }: ExtendedBroadcastComparisonProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Use realtime hook for live updates
   const { broadcast, requests, isConnected, lastUpdate } = useBroadcastRealtime({
@@ -280,10 +266,10 @@ export function BroadcastComparison({
     callbacks: {
       onPricingReceived: (request) => {
         // Could show a toast notification here
-        console.log('New pricing received:', request)
+        console.log('New pricing received:', request);
       },
     },
-  })
+  });
 
   // Use comparison hook for analysis
   const comparisonItems = useMemo(() => {
@@ -298,27 +284,27 @@ export function BroadcastComparison({
         itemsCount: r.items_count,
         availableCount: r.items_count, // Assuming all items available for now
         rating: r.provider?.rating,
-      }))
-  }, [requests, isRTL])
+      }));
+  }, [requests, isRTL]);
 
-  const comparison = usePriceComparison({ items: comparisonItems })
+  const comparison = usePriceComparison({ items: comparisonItems });
 
   // Loading state for individual selection
-  const [selectingId, setSelectingId] = useState<string | null>(null)
+  const [selectingId, setSelectingId] = useState<string | null>(null);
 
   const handleSelect = async (orderId: string) => {
-    setSelectingId(orderId)
+    setSelectingId(orderId);
     try {
-      await onSelectProvider(orderId)
+      await onSelectProvider(orderId);
     } finally {
-      setSelectingId(null)
+      setSelectingId(null);
     }
-  }
+  };
 
   // Count stats
-  const pricedCount = requests.filter((r) => r.status === 'priced').length
-  const pendingCount = requests.filter((r) => r.status === 'pending').length
-  const totalCount = requests.length
+  const pricedCount = requests.filter((r) => r.status === 'priced').length;
+  const pendingCount = requests.filter((r) => r.status === 'pending').length;
+  const totalCount = requests.length;
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -359,9 +345,7 @@ export function BroadcastComparison({
               <p className="text-sm opacity-90">
                 {isRTL ? 'يمكنك توفير حتى' : 'You can save up to'}
               </p>
-              <p className="text-xl font-bold">
-                {formatCurrency(comparison.savings.maxSavings)}
-              </p>
+              <p className="text-xl font-bold">{formatCurrency(comparison.savings.maxSavings)}</p>
             </div>
           </div>
         </motion.div>
@@ -390,9 +374,7 @@ export function BroadcastComparison({
                   : `${pendingCount} ${pendingCount === 1 ? 'merchant' : 'merchants'} still pricing`}
               </p>
               <p className="text-xs text-amber-600 mt-0.5">
-                {isRTL
-                  ? 'سيتم التحديث تلقائياً'
-                  : 'Will update automatically'}
+                {isRTL ? 'سيتم التحديث تلقائياً' : 'Will update automatically'}
               </p>
             </div>
           </div>
@@ -402,9 +384,8 @@ export function BroadcastComparison({
       {/* Comparison Cards */}
       <div className="grid gap-4">
         {requests.map((request) => {
-          const isCheapest =
-            comparison.cheapestByTotal?.providerId === request.provider_id
-          const isFastest = false // Would need delivery time data
+          const isCheapest = comparison.cheapestByTotal?.providerId === request.provider_id;
+          const isFastest = false; // Would need delivery time data
 
           return (
             <ComparisonCard
@@ -416,7 +397,7 @@ export function BroadcastComparison({
               loading={selectingId === request.id || loading}
               isSelected={request.status === 'customer_approved'}
             />
-          )
+          );
         })}
       </div>
 
@@ -425,9 +406,7 @@ export function BroadcastComparison({
         <div className="text-center py-12">
           <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">
-            {isRTL
-              ? 'لا توجد عروض أسعار بعد'
-              : 'No pricing offers yet'}
+            {isRTL ? 'لا توجد عروض أسعار بعد' : 'No pricing offers yet'}
           </p>
         </div>
       )}
@@ -440,5 +419,5 @@ export function BroadcastComparison({
         </p>
       )}
     </div>
-  )
+  );
 }

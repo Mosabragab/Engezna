@@ -1,17 +1,17 @@
-import { notFound } from 'next/navigation'
-import { NextIntlClientProvider } from 'next-intl'
-import { notoSans, notoSansArabic } from '@/lib/fonts'
-import { ThemeProvider } from '@/components/shared/ThemeProvider'
-import { LocationProvider } from '@/lib/contexts'
-import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider'
-import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider'
-import { locales } from '@/i18n/config'
-import '../globals.css'
+import { notFound } from 'next/navigation';
+import { NextIntlClientProvider } from 'next-intl';
+import { notoSans, notoSansArabic } from '@/lib/fonts';
+import { ThemeProvider } from '@/components/shared/ThemeProvider';
+import { LocationProvider } from '@/lib/contexts';
+import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider';
+import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider';
+import { locales } from '@/i18n/config';
+import '../globals.css';
 
 export function generateMetadata() {
   return {
-    title: "Engezna - إنجزنا | Delivery Marketplace in Egypt",
-    description: "إنجزنا واطلب - Fast delivery from local stores across Egypt",
+    title: 'Engezna - إنجزنا | Delivery Marketplace in Egypt',
+    description: 'إنجزنا واطلب - Fast delivery from local stores across Egypt',
     manifest: '/manifest.json',
     themeColor: '#0F172A',
     appleWebApp: {
@@ -39,33 +39,30 @@ export function generateMetadata() {
       shortcut: '/icons/favicon-32-dark.png',
       apple: '/icons/icon-192x192.png',
     },
-  }
+  };
 }
 
 type Props = {
-  children: React.ReactNode
-  params: Promise<{ locale: string }>
-}
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+};
 
 export function generateStaticParams() {
-  return locales.map((locale) => ({ locale }))
+  return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({
-  children,
-  params
-}: Props) {
-  const { locale } = await params
+export default async function LocaleLayout({ children, params }: Props) {
+  const { locale } = await params;
 
   if (!locales.includes(locale as any)) {
-    notFound()
+    notFound();
   }
 
-  let messages
+  let messages;
   try {
-    messages = (await import(`@/i18n/messages/${locale}.json`)).default
+    messages = (await import(`@/i18n/messages/${locale}.json`)).default;
   } catch (error) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -102,14 +99,12 @@ export default async function LocaleLayout({
           <NextIntlClientProvider locale={locale} messages={messages}>
             <LocationProvider>
               <PushNotificationProvider>
-                <GoogleOAuthProvider>
-                  {children}
-                </GoogleOAuthProvider>
+                <GoogleOAuthProvider>{children}</GoogleOAuthProvider>
               </PushNotificationProvider>
             </LocationProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }

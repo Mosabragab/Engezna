@@ -1,81 +1,80 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import {
-  LogOut,
-  ShoppingBag,
-  ArrowLeft,
-  ArrowRight,
-} from 'lucide-react'
-import type { User } from '@supabase/supabase-js'
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { LogOut, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
 
 type HeaderProps = {
-  showBack?: boolean
-  backHref?: string
-  backLabel?: string
-  hideAuth?: boolean // Hide auth section (logout, orders) for internal pages
-}
+  showBack?: boolean;
+  backHref?: string;
+  backLabel?: string;
+  hideAuth?: boolean; // Hide auth section (logout, orders) for internal pages
+};
 
 export function Header({ showBack = false, backHref, backLabel, hideAuth = false }: HeaderProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const [user, setUser] = useState<User | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [activeOrdersCount, setActiveOrdersCount] = useState(0)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [activeOrdersCount, setActiveOrdersCount] = useState(0);
 
   const fetchActiveOrdersCount = useCallback(async (userId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { count, error } = await supabase
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('customer_id', userId)
-      .not('status', 'in', '("delivered","cancelled","rejected")')
+      .not('status', 'in', '("delivered","cancelled","rejected")');
 
     if (!error && count !== null) {
-      setActiveOrdersCount(count)
+      setActiveOrdersCount(count);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      setAuthLoading(false)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setAuthLoading(false);
 
       // If user is logged in, fetch active orders count
       if (user) {
-        fetchActiveOrdersCount(user.id)
+        fetchActiveOrdersCount(user.id);
       }
 
       // Listen for auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null)
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
         if (session?.user) {
-          fetchActiveOrdersCount(session.user.id)
+          fetchActiveOrdersCount(session.user.id);
         } else {
-          setActiveOrdersCount(0)
+          setActiveOrdersCount(0);
         }
-      })
+      });
 
-      return () => subscription.unsubscribe()
+      return () => subscription.unsubscribe();
     }
 
-    checkAuth()
-  }, [fetchActiveOrdersCount])
+    checkAuth();
+  }, [fetchActiveOrdersCount]);
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = `/${locale}`;
   }
 
   return (
@@ -88,12 +87,10 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
               href={backHref || `/${locale}`}
               className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors min-h-[44px] min-w-[44px] px-2"
             >
-              {isRTL ? (
-                <ArrowRight className="w-5 h-5" />
-              ) : (
-                <ArrowLeft className="w-5 h-5" />
-              )}
-              <span className="text-sm font-medium">{backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}</span>
+              {isRTL ? <ArrowRight className="w-5 h-5" /> : <ArrowLeft className="w-5 h-5" />}
+              <span className="text-sm font-medium">
+                {backLabel || (locale === 'ar' ? 'رجوع' : 'Back')}
+              </span>
             </Link>
           ) : (
             <Link href={`/${locale}`}>
@@ -107,7 +104,7 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
               <EngeznaLogo size="xs" showPen={false} bgColor="white" />
             </Link>
           )}
-          
+
           {/* Right Side - Auth & Navigation (hidden for internal pages) */}
           {!hideAuth && (
             <div className="flex items-center gap-2 sm:gap-3">
@@ -159,5 +156,5 @@ export function Header({ showBack = false, backHref, backLabel, hideAuth = false
         </div>
       </div>
     </header>
-  )
+  );
 }

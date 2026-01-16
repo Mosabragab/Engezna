@@ -20,7 +20,7 @@
 /* Allow text selection in form elements */
 .pwa-native input,
 .pwa-native textarea,
-.pwa-native [contenteditable="true"] {
+.pwa-native [contenteditable='true'] {
   -webkit-user-select: text;
   -moz-user-select: text;
   -ms-user-select: text;
@@ -160,7 +160,7 @@
 
 .network-status-bar.offline {
   transform: translateY(0);
-  background-color: #EF4444;
+  background-color: #ef4444;
   color: white;
   padding: 0.5rem 1rem;
   text-align: center;
@@ -169,7 +169,7 @@
 
 .network-status-bar.online {
   transform: translateY(0);
-  background-color: #22C55E;
+  background-color: #22c55e;
   color: white;
   padding: 0.5rem 1rem;
   text-align: center;
@@ -178,7 +178,8 @@
 }
 
 @keyframes slideUp {
-  0%, 70% {
+  0%,
+  70% {
     transform: translateY(0);
   }
   100% {
@@ -193,7 +194,7 @@
 .pwa-splash {
   position: fixed;
   inset: 0;
-  background-color: #0F172A; /* Charcoal - brand color */
+  background-color: #0f172a; /* Charcoal - brand color */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -205,12 +206,13 @@
   font-family: 'Aref Ruqaa', serif;
   font-size: 3rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -241,7 +243,7 @@
 }
 
 /* RTL Support for cards */
-[dir="rtl"] .pwa-card-tap:active {
+[dir='rtl'] .pwa-card-tap:active {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
@@ -251,7 +253,7 @@
 
 /* Cards with borders instead of shadows for dark theme */
 .dark .pwa-card,
-[data-theme="dark"] .pwa-card {
+[data-theme='dark'] .pwa-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: none;
 }
@@ -264,10 +266,10 @@
 }
 
 /* Provider/Restaurant cards in dark mode */
-.dark [class*="card"],
-.dark [class*="Card"],
-[data-theme="dark"] [class*="card"],
-[data-theme="dark"] [class*="Card"] {
+.dark [class*='card'],
+.dark [class*='Card'],
+[data-theme='dark'] [class*='card'],
+[data-theme='dark'] [class*='Card'] {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -277,11 +279,11 @@
 .dark .shadow-md,
 .dark .shadow-lg,
 .dark .shadow-xl,
-[data-theme="dark"] .shadow,
-[data-theme="dark"] .shadow-sm,
-[data-theme="dark"] .shadow-md,
-[data-theme="dark"] .shadow-lg,
-[data-theme="dark"] .shadow-xl {
+[data-theme='dark'] .shadow,
+[data-theme='dark'] .shadow-sm,
+[data-theme='dark'] .shadow-md,
+[data-theme='dark'] .shadow-lg,
+[data-theme='dark'] .shadow-xl {
   box-shadow: none;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -303,7 +305,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 1.5rem 1.5rem 0 0;
   padding: 1.5rem;
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);

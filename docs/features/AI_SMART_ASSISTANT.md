@@ -12,14 +12,15 @@
 
 إنجزنا مش مطاعم بس! المساعد يدعم 4 أقسام رئيسية:
 
-| القسم | الـ ID | الوصف |
-|-------|--------|-------|
-| 🍽️ مطاعم | `restaurant_cafe` | المطاعم |
-| ☕ البن والحلويات | `coffee_sweets` | محلات القهوة والحلويات |
-| 🛒 سوبر ماركت | `grocery` | السوبر ماركت والبقالة |
-| 🥬 خضروات وفواكه | `vegetables_fruits` | الخضار والفاكهة |
+| القسم             | الـ ID              | الوصف                  |
+| ----------------- | ------------------- | ---------------------- |
+| 🍽️ مطاعم          | `restaurant_cafe`   | المطاعم                |
+| ☕ البن والحلويات | `coffee_sweets`     | محلات القهوة والحلويات |
+| 🛒 سوبر ماركت     | `grocery`           | السوبر ماركت والبقالة  |
+| 🥬 خضروات وفواكه  | `vegetables_fruits` | الخضار والفاكهة        |
 
 ### ما يمكن للمساعد فعله:
+
 - البحث عن المنتجات والتجار
 - عرض المنتجات والأقسام لكل أنواع التجار
 - استعراض التجار حسب القسم (مطاعم، سوبر ماركت، خضار، بن)
@@ -35,25 +36,25 @@
 
 ### الملفات الرئيسية
 
-| الملف | الوصف |
-|-------|-------|
-| `src/app/api/chat/route.ts` | API endpoint (Streaming SSE) |
-| `src/lib/ai/agentTools.ts` | تعريف 22 أداة للـ Agent |
-| `src/lib/ai/agentPrompt.ts` | System Prompt بالعربية المصرية |
-| `src/lib/ai/agentHandler.ts` | محرك الـ Agent Loop |
-| `src/hooks/useAIChat.ts` | React Hook للتفاعل |
-| `src/lib/store/chat.ts` | Zustand Store للمحادثات |
-| `src/components/customer/chat/SmartAssistant.tsx` | UI Component |
+| الملف                                             | الوصف                          |
+| ------------------------------------------------- | ------------------------------ |
+| `src/app/api/chat/route.ts`                       | API endpoint (Streaming SSE)   |
+| `src/lib/ai/agentTools.ts`                        | تعريف 22 أداة للـ Agent        |
+| `src/lib/ai/agentPrompt.ts`                       | System Prompt بالعربية المصرية |
+| `src/lib/ai/agentHandler.ts`                      | محرك الـ Agent Loop            |
+| `src/hooks/useAIChat.ts`                          | React Hook للتفاعل             |
+| `src/lib/store/chat.ts`                           | Zustand Store للمحادثات        |
+| `src/components/customer/chat/SmartAssistant.tsx` | UI Component                   |
 
 ### مقارنة مع النظام القديم
 
-| النظام القديم (v1) | النظام الجديد (v2) |
-|-------------------|-------------------|
-| Intent Classification + Manual Handlers | AI Agent with Tool Use |
-| 4000+ سطر كود | ~500 سطر كود |
-| Regex patterns للأخطاء الإملائية | الـ AI يفهم السياق تلقائياً |
-| معالجات منفصلة لكل نية | الـ AI يختار الأدوات المناسبة |
-| صعب الصيانة والتوسيع | سهل إضافة أدوات جديدة |
+| النظام القديم (v1)                      | النظام الجديد (v2)            |
+| --------------------------------------- | ----------------------------- |
+| Intent Classification + Manual Handlers | AI Agent with Tool Use        |
+| 4000+ سطر كود                           | ~500 سطر كود                  |
+| Regex patterns للأخطاء الإملائية        | الـ AI يفهم السياق تلقائياً   |
+| معالجات منفصلة لكل نية                  | الـ AI يختار الأدوات المناسبة |
+| صعب الصيانة والتوسيع                    | سهل إضافة أدوات جديدة         |
 
 ---
 
@@ -61,66 +62,66 @@
 
 ### 🏢 Business Category Tools (2) - جديد!
 
-| Tool | الوصف |
-|------|-------|
-| `get_business_categories` | عرض الأقسام الرئيسية الأربعة (مطاعم، سوبر ماركت، خضار، بن) |
-| `get_providers_by_category` | عرض التجار المتاحين في قسم معين |
+| Tool                        | الوصف                                                      |
+| --------------------------- | ---------------------------------------------------------- |
+| `get_business_categories`   | عرض الأقسام الرئيسية الأربعة (مطاعم، سوبر ماركت، خضار، بن) |
+| `get_providers_by_category` | عرض التجار المتاحين في قسم معين                            |
 
 ### 🍽️ Menu Tools (6)
 
-| Tool | الوصف |
-|------|-------|
-| `get_provider_categories` | أقسام المنيو لتاجر معين |
-| `get_menu_items` | المنتجات مع الفلترة |
-| `get_item_details` | تفاصيل منتج + variants + addons |
-| `get_item_addons` | الإضافات المتاحة |
-| `search_menu` | البحث في المنيو |
-| `check_item_availability` | التحقق من التوفر |
+| Tool                      | الوصف                           |
+| ------------------------- | ------------------------------- |
+| `get_provider_categories` | أقسام المنيو لتاجر معين         |
+| `get_menu_items`          | المنتجات مع الفلترة             |
+| `get_item_details`        | تفاصيل منتج + variants + addons |
+| `get_item_addons`         | الإضافات المتاحة                |
+| `search_menu`             | البحث في المنيو                 |
+| `check_item_availability` | التحقق من التوفر                |
 
 ### 🏪 Provider Tools (4)
 
-| Tool | الوصف |
-|------|-------|
-| `get_provider_info` | معلومات التاجر |
-| `check_provider_open` | هل مفتوح الآن؟ |
-| `get_delivery_info` | رسوم التوصيل والحد الأدنى |
-| `search_providers` | البحث عن تجار |
+| Tool                  | الوصف                     |
+| --------------------- | ------------------------- |
+| `get_provider_info`   | معلومات التاجر            |
+| `check_provider_open` | هل مفتوح الآن؟            |
+| `get_delivery_info`   | رسوم التوصيل والحد الأدنى |
+| `search_providers`    | البحث عن تجار             |
 
 ### 🛒 Order Tools (4)
 
-| Tool | الوصف |
-|------|-------|
-| `get_order_status` | حالة طلب معين |
-| `get_order_history` | تاريخ طلبات العميل |
-| `track_order` | تتبع الطلب مع timeline |
-| `cancel_order` | إلغاء طلب (pending فقط) |
+| Tool                | الوصف                   |
+| ------------------- | ----------------------- |
+| `get_order_status`  | حالة طلب معين           |
+| `get_order_history` | تاريخ طلبات العميل      |
+| `track_order`       | تتبع الطلب مع timeline  |
+| `cancel_order`      | إلغاء طلب (pending فقط) |
 
 ### 👤 Customer Tools (2)
 
-| Tool | الوصف |
-|------|-------|
+| Tool                     | الوصف                  |
+| ------------------------ | ---------------------- |
 | `get_customer_addresses` | عناوين العميل المحفوظة |
-| `get_favorites` | التجار المفضلين |
+| `get_favorites`          | التجار المفضلين        |
 
 ### 🎁 Promotions Tools (2)
 
-| Tool | الوصف |
-|------|-------|
+| Tool                      | الوصف                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
 | `get_provider_promotions` | **محسّن** - يرجع العروض الترويجية + المنتجات المخفضة (original_price > price) مع نسبة الخصم |
-| `validate_promo_code` | التحقق من كود خصم |
+| `validate_promo_code`     | التحقق من كود خصم                                                                           |
 
 ### ⭐ Reviews Tools (1)
 
-| Tool | الوصف |
-|------|-------|
+| Tool                   | الوصف          |
+| ---------------------- | -------------- |
 | `get_provider_reviews` | تقييمات التجار |
 
 ### 🎫 Support Tools (2)
 
-| Tool | الوصف |
-|------|-------|
-| `create_support_ticket` | إنشاء تذكرة دعم |
-| `escalate_to_human` | تحويل لموظف بشري |
+| Tool                    | الوصف            |
+| ----------------------- | ---------------- |
+| `create_support_ticket` | إنشاء تذكرة دعم  |
+| `escalate_to_human`     | تحويل لموظف بشري |
 
 ---
 
@@ -181,21 +182,21 @@
 
 ```typescript
 interface ChatRequest {
-  messages: Array<{ role: 'user' | 'assistant'; content: string }>
-  customer_id?: string
-  city_id?: string
-  governorate_id?: string
-  customer_name?: string
-  selected_provider_id?: string
-  selected_provider_name?: string
-  cart_provider_id?: string
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  customer_id?: string;
+  city_id?: string;
+  governorate_id?: string;
+  customer_name?: string;
+  selected_provider_id?: string;
+  selected_provider_name?: string;
+  cart_provider_id?: string;
   cart_items?: Array<{
-    id: string
-    name: string
-    quantity: number
-    price: number
-  }>
-  cart_total?: number
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }>;
+  cart_total?: number;
 }
 ```
 
@@ -368,18 +369,18 @@ quickReplies: [
   { title: '🛒 سوبر ماركت', payload: 'category:grocery' },
   { title: '🥬 خضروات وفواكه', payload: 'category:vegetables_fruits' },
   { title: '☕ البن والحلويات', payload: 'category:coffee_sweets' },
-]
+];
 ```
 
 ### Quick Replies الذكية
 
 الأزرار تتغير حسب السياق:
 
-| السياق | الأزرار المعروضة |
-|--------|-----------------|
-| **بعد اختيار تاجر** | 🛒 شوف المنتجات، 🔍 بحث تاني، 🔥 العروض |
+| السياق                | الأزرار المعروضة                             |
+| --------------------- | -------------------------------------------- |
+| **بعد اختيار تاجر**   | 🛒 شوف المنتجات، 🔍 بحث تاني، 🔥 العروض      |
 | **بعد بحث بدون تاجر** | 🛒 شوف المنتجات، عندي مكان معين، 🔍 بحث تاني |
-| **بدون سياق** | أزرار الأقسام الأربعة |
+| **بدون سياق**         | أزرار الأقسام الأربعة                        |
 
 ### معالجة payload الأقسام
 
@@ -387,10 +388,10 @@ quickReplies: [
 // src/hooks/useAIChat.ts
 const handleQuickReply = (payload: string) => {
   if (payload.startsWith('category:')) {
-    const categoryId = payload.replace('category:', '')
+    const categoryId = payload.replace('category:', '');
     // يرسل رسالة للـ agent مع السياق
   }
-}
+};
 ```
 
 ### ملاحظات مهمة
@@ -409,12 +410,12 @@ const handleQuickReply = (payload: string) => {
 
 ### المكونات
 
-| المكون | الملف | الوظيفة |
-|--------|-------|---------|
-| Edge Function | `supabase/functions/generate-embedding/` | توليد الـ embedding باستخدام OpenAI |
-| Migration | `20251215000002_embedding_auto_generation.sql` | Triggers + Queue + pg_cron |
-| API Route | `src/app/api/embeddings/route.ts` | إحصائيات + تشغيل يدوي |
-| Webhook | `src/app/api/webhooks/menu-item/route.ts` | معالجة INSERT/UPDATE |
+| المكون        | الملف                                          | الوظيفة                             |
+| ------------- | ---------------------------------------------- | ----------------------------------- |
+| Edge Function | `supabase/functions/generate-embedding/`       | توليد الـ embedding باستخدام OpenAI |
+| Migration     | `20251215000002_embedding_auto_generation.sql` | Triggers + Queue + pg_cron          |
+| API Route     | `src/app/api/embeddings/route.ts`              | إحصائيات + تشغيل يدوي               |
+| Webhook       | `src/app/api/webhooks/menu-item/route.ts`      | معالجة INSERT/UPDATE                |
 
 ### كيف يعمل؟
 
@@ -441,6 +442,7 @@ const handleQuickReply = (payload: string) => {
 ### Embedding Text Format
 
 يتم بناء النص للـ embedding من:
+
 - اسم المنتج (عربي + إنجليزي)
 - الوصف (عربي + إنجليزي)
 - اسم القسم
@@ -477,6 +479,7 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 ## 📋 سجل التحديثات
 
 ### v2.4.1 (17 ديسمبر 2025) - تحسين السياق والتمييز
+
 - ✅ **قاعدة أولوية السلة** - البحث يكون في نفس التاجر أولاً لو السلة فيها حاجات
 - ✅ **استثناء المرونة** - لو العميل طلب صراحةً التغيير، روح معاه فوراً
 - ✅ **تمييز الكلمات المتشابهة** - "فته" ≠ "كفته" (جدول `confusable_terms`)
@@ -484,6 +487,7 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 - ✅ **تحديث simple_search_menu** - threshold أعلى للكلمات القصيرة
 
 ### v2.4 (17 ديسمبر 2025) - دعم الأقسام المتعددة
+
 - ✅ **دعم 4 أقسام رئيسية** - مطاعم، سوبر ماركت، خضار، بن والحلويات
 - ✅ **أداة `get_business_categories`** - عرض الأقسام الأربعة
 - ✅ **أداة `get_providers_by_category`** - عرض التجار حسب القسم
@@ -494,6 +498,7 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 - ✅ **Quick Replies ذكية** - تتغير حسب السياق (تاجر محدد أو لا)
 
 ### v2.3 (16 ديسمبر 2025)
+
 - ✅ إصلاح مشكلة عدم وصول Provider ID للـ Agent
 - ✅ تحسين `get_provider_promotions` ليرجع المنتجات المخفضة
 - ✅ إضافة جلب الـ variants inline في `search_menu`
@@ -501,9 +506,11 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 - ✅ قواعد عمليات السلة المحسنة في System Prompt
 
 ### v2.2 (15 ديسمبر 2025)
+
 - إعادة بناء كاملة باستخدام AI Agent Architecture
 
 ### v2.1 (13 ديسمبر 2025)
+
 - إصلاح زر الأقسام
 - تحسين Arabic Normalization
 
@@ -512,7 +519,9 @@ SELECT queue_missing_embeddings(100); -- يضيف 100 منتج للـ queue
 ## 🎓 الدروس المستفادة والأخطاء الشائعة
 
 ### ❌ خطأ 1: UUID "undefined" String
+
 **المشكلة:**
+
 ```
 ERROR: invalid input syntax for type uuid: "undefined"
 ```
@@ -521,15 +530,16 @@ ERROR: invalid input syntax for type uuid: "undefined"
 الـ AI أحياناً يبعت `"undefined"` كـ string بدلاً من UUID صحيح، والـ check العادي `if (!id)` مش بيمسكه لأن `"undefined"` string مش falsy.
 
 **الحل:**
+
 ```typescript
 function isValidUUID(id: string | undefined | null): id is string {
-  if (!id || id === 'undefined' || id === 'null') return false
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  return uuidRegex.test(id)
+  if (!id || id === 'undefined' || id === 'null') return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
 }
 
 // استخدمها في كل مكان بيستقبل UUID
-const effectiveProviderId = getValidUUID(param_provider_id, context.providerId)
+const effectiveProviderId = getValidUUID(param_provider_id, context.providerId);
 ```
 
 **الملف:** `src/lib/ai/agentTools.ts`
@@ -537,16 +547,21 @@ const effectiveProviderId = getValidUUID(param_provider_id, context.providerId)
 ---
 
 ### ❌ خطأ 2: عدم عثور البحث على النتائج (Synonyms)
+
 **المشكلة:**
+
 - المستخدم يقول "عايز حلويات" ← مش بيلاقي فطيرة نوتيلا، شوكولاتة
 - المستخدم يقول "عايز كفتة" ← بيلاقي 7 أنواع، بس لما يسأل عن التفاصيل بيلاقي 1 بس
 
 **السبب:**
+
 1. `search_menu` بيستخدم `simple_search_menu` مع synonym expansion
 2. `get_menu_items` كان بيستخدم `ilike` عادي بدون synonyms
 
 **الحل:**
+
 1. إضافة synonyms للحلويات في `arabic_synonyms` table:
+
 ```sql
 INSERT INTO arabic_synonyms (term, synonyms, category) VALUES
   ('حلويات', ARRAY['حلو', 'شوكولاتة', 'نوتيلا', 'لوتس', 'قشطة', 'عسل', 'سكر'], 'food'),
@@ -557,13 +572,16 @@ ON CONFLICT (term) DO UPDATE SET synonyms = EXCLUDED.synonyms;
 2. تحديث `get_menu_items` ليستخدم `simple_search_menu` RPC عند وجود search_query
 
 **الملفات:**
+
 - `supabase/migrations/20251217000002_add_dessert_synonyms.sql`
 - `src/lib/ai/agentTools.ts` (get_menu_items)
 
 ---
 
 ### ❌ خطأ 3: normalize_arabic Function لا تعمل
+
 **المشكلة:**
+
 ```
 ERROR: function normalize_arabic(text) does not exist
 ```
@@ -573,6 +591,7 @@ ERROR: function normalize_arabic(text) does not exist
 
 **الحل:**
 تشغيل الـ SQL يدوياً على Supabase:
+
 ```sql
 CREATE OR REPLACE FUNCTION normalize_arabic(text_input text)
 RETURNS text AS $$
@@ -591,7 +610,9 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 ---
 
 ### ❌ خطأ 4: Column Name خاطئ (provider_category_id vs category_id)
+
 **المشكلة:**
+
 ```
 ERROR: column mi.provider_category_id does not exist
 ```
@@ -601,6 +622,7 @@ ERROR: column mi.provider_category_id does not exist
 
 **الحل:**
 تحديث الـ SQL functions:
+
 ```sql
 -- خطأ
 LEFT JOIN provider_categories pc ON mi.provider_category_id = pc.id
@@ -614,7 +636,9 @@ LEFT JOIN provider_categories pc ON mi.category_id = pc.id
 ---
 
 ### ❌ خطأ 5: AI لا يتذكر الـ Variant IDs (Tool-Context Disconnect)
+
 **المشكلة:**
+
 - المستخدم يقول "عايز كفتة" ← AI يعرض الـ variants (ربع كيلو، نص كيلو)
 - المستخدم يقول "ضيف ربعين" ← AI بيدور تاني بدل ما يستخدم الـ IDs
 
@@ -625,6 +649,7 @@ LEFT JOIN provider_categories pc ON mi.category_id = pc.id
 إنشاء Session Memory system:
 
 1. **agentPrompt.ts** - إضافة `sessionMemory` للـ context:
+
 ```typescript
 sessionMemory?: {
   pending_item?: {
@@ -637,24 +662,27 @@ sessionMemory?: {
 ```
 
 2. **agentHandler.ts** - حفظ المنتج المعلق من نتائج البحث:
+
 ```typescript
 response.sessionMemory = {
   pending_item: {
     id: firstItem.id,
     name_ar: firstItem.name_ar,
-    variants: firstItem.variants
-  }
-}
+    variants: firstItem.variants,
+  },
+};
 ```
 
 3. **route.ts** - تمرير الـ memory من/إلى Frontend:
+
 ```typescript
-sessionMemory: body.memory as AgentContext['sessionMemory']
+sessionMemory: body.memory as AgentContext['sessionMemory'];
 // و
-memory: response?.sessionMemory
+memory: response?.sessionMemory;
 ```
 
 4. **agentPrompt.ts** - عرض المعلومات في System Prompt:
+
 ```typescript
 ${context.sessionMemory?.pending_item ? `
 🔴 منتج معلق - استخدم الـ IDs دي!
@@ -664,6 +692,7 @@ ${context.sessionMemory?.pending_item ? `
 ```
 
 **الملفات:**
+
 - `src/lib/ai/agentPrompt.ts`
 - `src/lib/ai/agentHandler.ts`
 - `src/app/api/chat/route.ts`
@@ -675,6 +704,7 @@ ${context.sessionMemory?.pending_item ? `
 ### ✅ تحسين: قاعدة أولوية السلة (v2.4.1)
 
 **المشكلة:**
+
 - العميل بحث عن "فتة" وأضافها للسلة من مطعم الصفا
 - العميل قال "عايز حلو"
 - الـ AI راح على قسم الحلويات بدل ما يدور في نفس المطعم!
@@ -702,6 +732,7 @@ ${context.sessionMemory?.pending_item ? `
 ### ✅ تحسين: تمييز الكلمات المتشابهة (v2.4.1)
 
 **المشكلة:**
+
 - العميل قال "عايز فتة"
 - الـ AI جاب كفتة كمان! (لأن "فته" substring من "كفته")
 
@@ -709,6 +740,7 @@ ${context.sessionMemory?.pending_item ? `
 دالة `expand_query_with_synonyms()` كانت تستخدم `ILIKE '%' || p_query || '%'` فـ "فته" ماتشت "كفته".
 
 **الحل:**
+
 1. إنشاء جدول `confusable_terms` للكلمات المتشابهة لفظياً لكن مختلفة المعنى
 2. تحديث `expand_query_with_synonyms()` ليستخدم word boundaries
 3. إضافة قاعدة صريحة في System Prompt
@@ -736,6 +768,7 @@ INSERT INTO confusable_terms (term1, term2) VALUES
 ```
 
 **الملفات:**
+
 - `src/lib/ai/agentPrompt.ts`
 - `supabase/migrations/20251217000003_fix_fatta_kofta_confusion.sql`
 
@@ -777,23 +810,27 @@ const provider_id = param_provider_id                           // 1. Parameter 
 ---
 
 ### ❌ خطأ 6: عدد الأنواع غير متطابق (7 vs 1)
+
 **المشكلة:**
+
 - البحث الأول: "سلطان بيتزا فيه 7 أنواع كفتة"
 - البحث الثاني داخل المطعم: "لقيت كفتة مشوية بس"
 
 **السبب:**
+
 - البحث الأول بيستخدم synonym expansion (كفتة + كباب = 7)
 - البحث الثاني (`get_menu_items` مع search_query) كان بيستخدم `ilike` بدون synonyms
 
 **الحل:**
 تحديث `get_menu_items` ليستخدم `simple_search_menu` RPC:
+
 ```typescript
 if (search_query) {
   const searchResult = await supabase.rpc('simple_search_menu', {
     p_query: search_query,
     p_provider_id: effectiveProviderId,
-    p_limit: limit
-  })
+    p_limit: limit,
+  });
   // ...
 }
 ```
@@ -801,7 +838,9 @@ if (search_query) {
 ---
 
 ### ❌ خطأ 7: ON CONFLICT بدون Unique Constraint
+
 **المشكلة:**
+
 ```
 ERROR: there is no unique or exclusion constraint matching the ON CONFLICT specification
 ```
@@ -810,6 +849,7 @@ ERROR: there is no unique or exclusion constraint matching the ON CONFLICT speci
 محاولة استخدام `ON CONFLICT (term)` على table بدون unique constraint على `term`
 
 **الحل:**
+
 ```sql
 -- أضف الـ constraint أولاً
 ALTER TABLE arabic_synonyms ADD CONSTRAINT arabic_synonyms_term_key UNIQUE (term);
@@ -825,6 +865,7 @@ ON CONFLICT (term) DO UPDATE SET synonyms = EXCLUDED.synonyms;
 
 ```markdown
 ### Database
+
 - [ ] تأكد من وجود `normalize_arabic` function
 - [ ] تأكد من وجود `simple_search_menu` function
 - [ ] تأكد من وجود `arabic_synonyms` table مع unique constraint
@@ -832,12 +873,14 @@ ON CONFLICT (term) DO UPDATE SET synonyms = EXCLUDED.synonyms;
 - [ ] تأكد من استخدام `category_id` (مش provider_category_id)
 
 ### Code
+
 - [ ] استخدم `isValidUUID()` لكل UUID parameter
 - [ ] استخدم `getValidUUID()` للـ fallback chain
 - [ ] تأكد من تمرير `sessionMemory` في request/response
 - [ ] تأكد من عرض pending_item في System Prompt
 
 ### Testing
+
 - [ ] اختبر: "عايز حلويات" → يلاقي فطير حلو
 - [ ] اختبر: "عايز كفتة" ثم "ضيف ربعين" → يضيف بدون بحث
 - [ ] اختبر: UUID undefined → يرجع رسالة خطأ مناسبة
@@ -866,4 +909,4 @@ SELECT column_name FROM information_schema.columns WHERE table_name = 'menu_item
 
 ---
 
-*آخر تحديث: 17 ديسمبر 2025 - v2.4.1*
+_آخر تحديث: 17 ديسمبر 2025 - v2.4.1_

@@ -1,3 +1,3 @@
 export default function DefaultProviderPage() {
-  return null
+  return null;
 }

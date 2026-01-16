@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { Search, X } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { Search, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface SearchBarProps {
-  placeholder?: string
-  value?: string
-  onChange?: (value: string) => void
-  onSearch?: (value: string) => void
-  autoFocus?: boolean
-  className?: string
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  onSearch?: (value: string) => void;
+  autoFocus?: boolean;
+  className?: string;
 }
 
 export function SearchBar({
@@ -21,35 +21,35 @@ export function SearchBar({
   autoFocus = false,
   className = '',
 }: SearchBarProps) {
-  const locale = useLocale()
-  const t = useTranslations('home')
-  const [internalValue, setInternalValue] = useState('')
+  const locale = useLocale();
+  const t = useTranslations('home');
+  const [internalValue, setInternalValue] = useState('');
 
-  const value = externalValue !== undefined ? externalValue : internalValue
-  const isRTL = locale === 'ar'
+  const value = externalValue !== undefined ? externalValue : internalValue;
+  const isRTL = locale === 'ar';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
+    const newValue = e.target.value;
     if (onChange) {
-      onChange(newValue)
+      onChange(newValue);
     } else {
-      setInternalValue(newValue)
+      setInternalValue(newValue);
     }
-  }
+  };
 
   const handleClear = () => {
     if (onChange) {
-      onChange('')
+      onChange('');
     } else {
-      setInternalValue('')
+      setInternalValue('');
     }
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && onSearch) {
-      onSearch(value)
+      onSearch(value);
     }
-  }
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -78,5 +78,5 @@ export function SearchBar({
         )}
       </div>
     </div>
-  )
+  );
 }

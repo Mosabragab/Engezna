@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatCurrency, formatDate } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatCurrency, formatDate } from '@/lib/utils/formatters';
 import {
   Shield,
   ArrowLeftRight,
@@ -24,78 +24,85 @@ import {
   FileText,
   MapPin,
   Filter,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface Refund {
-  id: string
-  order_id: string
-  customer_id: string
-  provider_id: string
-  amount: number
-  reason: string
-  reason_ar: string | null
-  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed'
-  refund_method: string | null
-  refund_type: string | null
-  provider_action: string | null
-  customer_confirmed: boolean
-  confirmation_deadline: string | null
-  escalated_to_admin: boolean
-  provider_notes: string | null
-  processed_amount: number
-  processing_notes: string | null
-  request_source: string
-  reviewed_by: string | null
-  reviewed_at: string | null
-  review_notes: string | null
-  processed_by: string | null
-  processed_at: string | null
-  created_at: string
+  id: string;
+  order_id: string;
+  customer_id: string;
+  provider_id: string;
+  amount: number;
+  reason: string;
+  reason_ar: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'processed' | 'failed';
+  refund_method: string | null;
+  refund_type: string | null;
+  provider_action: string | null;
+  customer_confirmed: boolean;
+  confirmation_deadline: string | null;
+  escalated_to_admin: boolean;
+  provider_notes: string | null;
+  processed_amount: number;
+  processing_notes: string | null;
+  request_source: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  processed_by: string | null;
+  processed_at: string | null;
+  created_at: string;
   // Relations
-  order?: { order_number: string; total: number }
-  customer?: { full_name: string; phone: string }
-  provider?: { name_ar: string; name_en: string; governorate_id?: string }
+  order?: { order_number: string; total: number };
+  customer?: { full_name: string; phone: string };
+  provider?: { name_ar: string; name_en: string; governorate_id?: string };
 }
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
+  id: string;
+  name_ar: string;
+  name_en: string;
 }
 
 interface AdminUser {
-  id: string
-  role: string
-  assigned_regions: Array<{ governorate_id?: string; city_id?: string; district_id?: string }>
+  id: string;
+  role: string;
+  assigned_regions: Array<{ governorate_id?: string; city_id?: string; district_id?: string }>;
 }
 
-type FilterStatus = 'all' | 'pending' | 'approved' | 'rejected' | 'processed' | 'failed' | 'escalated'
+type FilterStatus =
+  | 'all'
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'processed'
+  | 'failed'
+  | 'escalated';
 
 export default function AdminRefundsPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const { toggle: toggleSidebar } = useAdminSidebar()
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const { toggle: toggleSidebar } = useAdminSidebar();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [refunds, setRefunds] = useState<Refund[]>([])
-  const [filteredRefunds, setFilteredRefunds] = useState<Refund[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
-  const [selectedRefund, setSelectedRefund] = useState<Refund | null>(null)
-  const [showDetailModal, setShowDetailModal] = useState(false)
-  const [reviewNotes, setReviewNotes] = useState('')
-  const [processingAction, setProcessingAction] = useState(false)
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [filteredRefunds, setFilteredRefunds] = useState<Refund[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [selectedRefund, setSelectedRefund] = useState<Refund | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [processingAction, setProcessingAction] = useState(false);
 
   // Geographic filtering state
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null)
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [selectedGovernorate, setSelectedGovernorate] = useState<string>('all')
-  const isSuperAdmin = adminUser?.role === 'super_admin'
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [selectedGovernorate, setSelectedGovernorate] = useState<string>('all');
+  const isSuperAdmin = adminUser?.role === 'super_admin';
 
   const [stats, setStats] = useState({
     total: 0,
@@ -104,40 +111,42 @@ export default function AdminRefundsPage() {
     processed: 0,
     escalated: 0,
     totalAmount: 0,
-  })
+  });
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   useEffect(() => {
-    filterRefunds()
-  }, [refunds, searchQuery, statusFilter, selectedGovernorate, adminUser])
+    filterRefunds();
+  }, [refunds, searchQuery, statusFilter, selectedGovernorate, adminUser]);
 
   async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
+        setIsAdmin(true);
 
         // Load admin user details (for region-based filtering)
         const { data: adminData } = await supabase
           .from('admin_users')
           .select('id, role, assigned_regions')
           .eq('user_id', user.id)
-          .single()
+          .single();
 
         if (adminData) {
-          setAdminUser(adminData as AdminUser)
+          setAdminUser(adminData as AdminUser);
         }
 
         // Load governorates for filter dropdown
@@ -145,48 +154,50 @@ export default function AdminRefundsPage() {
           .from('governorates')
           .select('id, name_ar, name_en')
           .eq('is_active', true)
-          .order('name_ar')
+          .order('name_ar');
 
         if (govData) {
-          setGovernorates(govData)
+          setGovernorates(govData);
         }
 
-        await loadRefunds()
+        await loadRefunds();
       }
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   async function loadRefunds() {
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { data, error } = await supabase
         .from('refunds')
-        .select(`
+        .select(
+          `
           *,
           order:orders(order_number, total),
           customer:profiles!customer_id(full_name, phone),
           provider:providers(name_ar, name_en, governorate_id)
-        `)
-        .order('created_at', { ascending: false })
+        `
+        )
+        .order('created_at', { ascending: false });
 
       if (error) {
-        setRefunds([])
-        return
+        setRefunds([]);
+        return;
       }
 
-      setRefunds(data || [])
+      setRefunds(data || []);
 
       // Calculate stats
-      const pending = (data || []).filter(r => r.status === 'pending').length
-      const approved = (data || []).filter(r => r.status === 'approved').length
-      const processed = (data || []).filter(r => r.status === 'processed').length
-      const escalated = (data || []).filter(r => r.escalated_to_admin === true).length
+      const pending = (data || []).filter((r) => r.status === 'pending').length;
+      const approved = (data || []).filter((r) => r.status === 'approved').length;
+      const processed = (data || []).filter((r) => r.status === 'processed').length;
+      const escalated = (data || []).filter((r) => r.escalated_to_admin === true).length;
       const totalAmount = (data || [])
-        .filter(r => r.status === 'processed')
-        .reduce((sum, r) => sum + (r.processed_amount || r.amount), 0)
+        .filter((r) => r.status === 'processed')
+        .reduce((sum, r) => sum + (r.processed_amount || r.amount), 0);
 
       setStats({
         total: (data || []).length,
@@ -195,60 +206,62 @@ export default function AdminRefundsPage() {
         processed,
         escalated,
         totalAmount,
-      })
+      });
     } catch {
-      setRefunds([])
+      setRefunds([]);
     }
   }
 
   function filterRefunds() {
-    let filtered = [...refunds]
+    let filtered = [...refunds];
 
     // Geographic filtering
     // Super admin: filter by selected governorate (if not 'all')
     // Regional admin: filter by their assigned regions only
     if (adminUser) {
       const assignedGovernorateIds = (adminUser.assigned_regions || [])
-        .map(r => r.governorate_id)
-        .filter(Boolean) as string[]
+        .map((r) => r.governorate_id)
+        .filter(Boolean) as string[];
 
       if (adminUser.role === 'super_admin') {
         // Super admin can filter by any governorate
         if (selectedGovernorate !== 'all') {
-          filtered = filtered.filter(r => r.provider?.governorate_id === selectedGovernorate)
+          filtered = filtered.filter((r) => r.provider?.governorate_id === selectedGovernorate);
         }
       } else if (assignedGovernorateIds.length > 0) {
         // Regional admin: only show refunds from their assigned governorates
-        filtered = filtered.filter(r =>
-          r.provider?.governorate_id && assignedGovernorateIds.includes(r.provider.governorate_id)
-        )
+        filtered = filtered.filter(
+          (r) =>
+            r.provider?.governorate_id && assignedGovernorateIds.includes(r.provider.governorate_id)
+        );
       }
     }
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(r =>
-        r.order?.order_number?.toLowerCase().includes(query) ||
-        r.customer?.full_name?.toLowerCase().includes(query) ||
-        r.provider?.name_ar?.toLowerCase().includes(query) ||
-        r.reason?.toLowerCase().includes(query)
-      )
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (r) =>
+          r.order?.order_number?.toLowerCase().includes(query) ||
+          r.customer?.full_name?.toLowerCase().includes(query) ||
+          r.provider?.name_ar?.toLowerCase().includes(query) ||
+          r.reason?.toLowerCase().includes(query)
+      );
     }
 
     if (statusFilter === 'escalated') {
-      filtered = filtered.filter(r => r.escalated_to_admin === true)
+      filtered = filtered.filter((r) => r.escalated_to_admin === true);
     } else if (statusFilter !== 'all') {
-      filtered = filtered.filter(r => r.status === statusFilter)
+      filtered = filtered.filter((r) => r.status === statusFilter);
     }
 
-    setFilteredRefunds(filtered)
+    setFilteredRefunds(filtered);
   }
 
   async function handleApprove(refund: Refund) {
-    if (!user) return
-    setProcessingAction(true)
+    if (!user) return;
+    setProcessingAction(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -259,28 +272,28 @@ export default function AdminRefundsPage() {
           reviewed_at: new Date().toISOString(),
           review_notes: reviewNotes || null,
         })
-        .eq('id', refund.id)
+        .eq('id', refund.id);
 
-      if (error) throw error
+      if (error) throw error;
 
-      setShowDetailModal(false)
-      setReviewNotes('')
-      await loadRefunds()
+      setShowDetailModal(false);
+      setReviewNotes('');
+      await loadRefunds();
     } catch {
-      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
+      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred');
     } finally {
-      setProcessingAction(false)
+      setProcessingAction(false);
     }
   }
 
   async function handleReject(refund: Refund) {
     if (!user || !reviewNotes.trim()) {
-      alert(locale === 'ar' ? 'يجب إدخال سبب الرفض' : 'Rejection reason is required')
-      return
+      alert(locale === 'ar' ? 'يجب إدخال سبب الرفض' : 'Rejection reason is required');
+      return;
     }
-    setProcessingAction(true)
+    setProcessingAction(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -291,9 +304,9 @@ export default function AdminRefundsPage() {
           reviewed_at: new Date().toISOString(),
           review_notes: reviewNotes,
         })
-        .eq('id', refund.id)
+        .eq('id', refund.id);
 
-      if (error) throw error
+      if (error) throw error;
 
       // Release order from hold when refund is rejected
       await supabase
@@ -304,23 +317,23 @@ export default function AdminRefundsPage() {
           hold_until: null,
         })
         .eq('id', refund.order_id)
-        .eq('settlement_status', 'on_hold')
+        .eq('settlement_status', 'on_hold');
 
-      setShowDetailModal(false)
-      setReviewNotes('')
-      await loadRefunds()
+      setShowDetailModal(false);
+      setReviewNotes('');
+      await loadRefunds();
     } catch {
-      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
+      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred');
     } finally {
-      setProcessingAction(false)
+      setProcessingAction(false);
     }
   }
 
   async function handleProcess(refund: Refund) {
-    if (!user) return
-    setProcessingAction(true)
+    if (!user) return;
+    setProcessingAction(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -332,9 +345,9 @@ export default function AdminRefundsPage() {
           processed_amount: refund.amount,
           processing_notes: reviewNotes || null,
         })
-        .eq('id', refund.id)
+        .eq('id', refund.id);
 
-      if (error) throw error
+      if (error) throw error;
 
       // Update order status and release from hold
       await supabase
@@ -345,22 +358,22 @@ export default function AdminRefundsPage() {
           hold_reason: null,
           hold_until: null,
         })
-        .eq('id', refund.order_id)
+        .eq('id', refund.order_id);
 
-      setShowDetailModal(false)
-      setReviewNotes('')
-      await loadRefunds()
+      setShowDetailModal(false);
+      setReviewNotes('');
+      await loadRefunds();
     } catch {
-      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred')
+      alert(locale === 'ar' ? 'حدث خطأ' : 'An error occurred');
     } finally {
-      setProcessingAction(false)
+      setProcessingAction(false);
     }
   }
 
   function openDetail(refund: Refund) {
-    setSelectedRefund(refund)
-    setReviewNotes('')
-    setShowDetailModal(true)
+    setSelectedRefund(refund);
+    setReviewNotes('');
+    setShowDetailModal(true);
   }
 
   const getStatusBadge = (status: string) => {
@@ -371,85 +384,85 @@ export default function AdminRefundsPage() {
             <Clock className="w-3 h-3" />
             {locale === 'ar' ? 'في الانتظار' : 'Pending'}
           </span>
-        )
+        );
       case 'approved':
         return (
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
             <CheckCircle2 className="w-3 h-3" />
             {locale === 'ar' ? 'معتمد' : 'Approved'}
           </span>
-        )
+        );
       case 'rejected':
         return (
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-100 text-red-700">
             <XCircle className="w-3 h-3" />
             {locale === 'ar' ? 'مرفوض' : 'Rejected'}
           </span>
-        )
+        );
       case 'processed':
         return (
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
             <CheckCircle2 className="w-3 h-3" />
             {locale === 'ar' ? 'تم التنفيذ' : 'Processed'}
           </span>
-        )
+        );
       case 'failed':
         return (
           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-600">
             <AlertCircle className="w-3 h-3" />
             {locale === 'ar' ? 'فشل' : 'Failed'}
           </span>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   // Calculate time elapsed (e.g., "منذ ساعتين" or "2 hours ago")
   const getTimeElapsed = (dateString: string) => {
-    const now = new Date()
-    const date = new Date(dateString)
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffMins < 60) {
-      return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`
+      return locale === 'ar' ? `منذ ${diffMins} دقيقة` : `${diffMins}m ago`;
     } else if (diffHours < 24) {
-      return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`
+      return locale === 'ar' ? `منذ ${diffHours} ساعة` : `${diffHours}h ago`;
     } else if (diffDays < 7) {
-      return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`
+      return locale === 'ar' ? `منذ ${diffDays} يوم` : `${diffDays}d ago`;
     } else {
-      return formatDate(dateString, locale)
+      return formatDate(dateString, locale);
     }
-  }
+  };
 
   // Get governorate name for a provider
   const getGovernorateNameForProvider = (governorateId?: string) => {
-    if (!governorateId) return null
-    const gov = governorates.find(g => g.id === governorateId)
-    return gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : null
-  }
+    if (!governorateId) return null;
+    const gov = governorates.find((g) => g.id === governorateId);
+    return gov ? (locale === 'ar' ? gov.name_ar : gov.name_en) : null;
+  };
 
   // Get refund type label
   const getRefundTypeLabel = (refundType: string | null, amount: number, orderTotal: number) => {
     if (refundType === 'partial' || amount < orderTotal) {
-      return locale === 'ar' ? 'جزئي' : 'Partial'
+      return locale === 'ar' ? 'جزئي' : 'Partial';
     }
-    return locale === 'ar' ? 'كامل' : 'Full'
-  }
+    return locale === 'ar' ? 'كامل' : 'Full';
+  };
 
   // Get row background color based on priority/status
   const getRowClassName = (refund: Refund) => {
     if (refund.escalated_to_admin) {
-      return 'bg-red-50 hover:bg-red-100'
+      return 'bg-red-50 hover:bg-red-100';
     }
     if (refund.status === 'pending' && !refund.provider_action) {
-      return 'bg-amber-50 hover:bg-amber-100'
+      return 'bg-amber-50 hover:bg-amber-100';
     }
-    return 'hover:bg-slate-50'
-  }
+    return 'hover:bg-slate-50';
+  };
 
   if (loading) {
     return (
@@ -461,7 +474,7 @@ export default function AdminRefundsPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </main>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -488,7 +501,7 @@ export default function AdminRefundsPage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   return (
@@ -505,44 +518,58 @@ export default function AdminRefundsPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <ArrowLeftRight className="w-5 h-5 text-slate-600" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'إجمالي الطلبات' : 'Total'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
           </div>
           <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
             <div className="flex items-center gap-3 mb-2">
               <Clock className="w-5 h-5 text-amber-600" />
-              <span className="text-sm text-amber-700">{locale === 'ar' ? 'في الانتظار' : 'Pending'}</span>
+              <span className="text-sm text-amber-700">
+                {locale === 'ar' ? 'في الانتظار' : 'Pending'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-amber-700">{stats.pending}</p>
           </div>
           <div className="bg-red-50 rounded-xl p-4 border border-red-200">
             <div className="flex items-center gap-3 mb-2">
               <AlertCircle className="w-5 h-5 text-red-600" />
-              <span className="text-sm text-red-700">{locale === 'ar' ? 'مصعّد للإدارة' : 'Escalated'}</span>
+              <span className="text-sm text-red-700">
+                {locale === 'ar' ? 'مصعّد للإدارة' : 'Escalated'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-red-700">{stats.escalated}</p>
           </div>
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center gap-3 mb-2">
               <CheckCircle2 className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-700">{locale === 'ar' ? 'معتمد' : 'Approved'}</span>
+              <span className="text-sm text-blue-700">
+                {locale === 'ar' ? 'معتمد' : 'Approved'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-blue-700">{stats.approved}</p>
           </div>
           <div className="bg-green-50 rounded-xl p-4 border border-green-200">
             <div className="flex items-center gap-3 mb-2">
               <CheckCircle2 className="w-5 h-5 text-green-600" />
-              <span className="text-sm text-green-700">{locale === 'ar' ? 'تم التنفيذ' : 'Processed'}</span>
+              <span className="text-sm text-green-700">
+                {locale === 'ar' ? 'تم التنفيذ' : 'Processed'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-green-700">{stats.processed}</p>
           </div>
           <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
             <div className="flex items-center gap-3 mb-2">
               <DollarSign className="w-5 h-5 text-purple-600" />
-              <span className="text-sm text-purple-700">{locale === 'ar' ? 'إجمالي المسترد' : 'Total Refunded'}</span>
+              <span className="text-sm text-purple-700">
+                {locale === 'ar' ? 'إجمالي المسترد' : 'Total Refunded'}
+              </span>
             </div>
-            <p className="text-2xl font-bold text-purple-700">{formatCurrency(stats.totalAmount, locale)}</p>
+            <p className="text-2xl font-bold text-purple-700">
+              {formatCurrency(stats.totalAmount, locale)}
+            </p>
           </div>
         </div>
 
@@ -550,10 +577,16 @@ export default function AdminRefundsPage() {
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+              <Search
+                className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+              />
               <input
                 type="text"
-                placeholder={locale === 'ar' ? 'بحث برقم الطلب أو اسم العميل...' : 'Search by order number or customer...'}
+                placeholder={
+                  locale === 'ar'
+                    ? 'بحث برقم الطلب أو اسم العميل...'
+                    : 'Search by order number or customer...'
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
@@ -577,13 +610,17 @@ export default function AdminRefundsPage() {
             {/* Governorate Filter - Only for Super Admin */}
             {isSuperAdmin && governorates.length > 0 && (
               <div className="relative">
-                <MapPin className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+                <MapPin
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`}
+                />
                 <select
                   value={selectedGovernorate}
                   onChange={(e) => setSelectedGovernorate(e.target.value)}
                   className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 min-w-[150px]`}
                 >
-                  <option value="all">{locale === 'ar' ? 'كل المحافظات' : 'All Governorates'}</option>
+                  <option value="all">
+                    {locale === 'ar' ? 'كل المحافظات' : 'All Governorates'}
+                  </option>
                   {governorates.map((gov) => (
                     <option key={gov.id} value={gov.id}>
                       {locale === 'ar' ? gov.name_ar : gov.name_en}
@@ -594,15 +631,19 @@ export default function AdminRefundsPage() {
             )}
 
             {/* Show assigned region for regional admins */}
-            {!isSuperAdmin && adminUser?.assigned_regions && adminUser.assigned_regions.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                <MapPin className="w-4 h-4" />
-                <span>
-                  {locale === 'ar' ? 'منطقتك: ' : 'Your Region: '}
-                  {governorates.find(g => g.id === adminUser.assigned_regions[0]?.governorate_id)?.[locale === 'ar' ? 'name_ar' : 'name_en'] || '-'}
-                </span>
-              </div>
-            )}
+            {!isSuperAdmin &&
+              adminUser?.assigned_regions &&
+              adminUser.assigned_regions.length > 0 && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                  <MapPin className="w-4 h-4" />
+                  <span>
+                    {locale === 'ar' ? 'منطقتك: ' : 'Your Region: '}
+                    {governorates.find(
+                      (g) => g.id === adminUser.assigned_regions[0]?.governorate_id
+                    )?.[locale === 'ar' ? 'name_ar' : 'name_en'] || '-'}
+                  </span>
+                </div>
+              )}
 
             <Button
               variant="outline"
@@ -621,13 +662,27 @@ export default function AdminRefundsPage() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الطلب' : 'Order'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'العميل' : 'Customer'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المتجر' : 'Provider'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المبلغ' : 'Amount'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الوقت' : 'Time'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
-                  <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'إجراء' : 'Action'}</th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الطلب' : 'Order'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'العميل' : 'Customer'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'المتجر' : 'Provider'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'المبلغ' : 'Amount'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الوقت' : 'Time'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الحالة' : 'Status'}
+                  </th>
+                  <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'إجراء' : 'Action'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -664,13 +719,17 @@ export default function AdminRefundsPage() {
                           <div className="flex items-center gap-1.5">
                             <Store className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                             <span className="text-sm text-slate-700 truncate">
-                              {locale === 'ar' ? refund.provider?.name_ar : refund.provider?.name_en || 'N/A'}
+                              {locale === 'ar'
+                                ? refund.provider?.name_ar
+                                : refund.provider?.name_en || 'N/A'}
                             </span>
                           </div>
                           {getGovernorateNameForProvider(refund.provider?.governorate_id) && (
                             <div className="flex items-center gap-1 text-xs text-slate-500">
                               <MapPin className="w-3 h-3" />
-                              <span>{getGovernorateNameForProvider(refund.provider?.governorate_id)}</span>
+                              <span>
+                                {getGovernorateNameForProvider(refund.provider?.governorate_id)}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -680,14 +739,26 @@ export default function AdminRefundsPage() {
                           <span className="font-bold text-green-600 block">
                             {formatCurrency(refund.amount, locale)}
                           </span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${
-                            refund.refund_type === 'partial' || refund.amount < (refund.order?.total || 0)
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}>
-                            {getRefundTypeLabel(refund.refund_type, refund.amount, refund.order?.total || 0)}
-                            {refund.refund_type === 'partial' || refund.amount < (refund.order?.total || 0) ? (
-                              <span className="text-[10px] opacity-75"> ({locale === 'ar' ? 'من' : 'of'} {formatCurrency(refund.order?.total || 0, locale)})</span>
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded ${
+                              refund.refund_type === 'partial' ||
+                              refund.amount < (refund.order?.total || 0)
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            {getRefundTypeLabel(
+                              refund.refund_type,
+                              refund.amount,
+                              refund.order?.total || 0
+                            )}
+                            {refund.refund_type === 'partial' ||
+                            refund.amount < (refund.order?.total || 0) ? (
+                              <span className="text-[10px] opacity-75">
+                                {' '}
+                                ({locale === 'ar' ? 'من' : 'of'}{' '}
+                                {formatCurrency(refund.order?.total || 0, locale)})
+                              </span>
                             ) : null}
                           </span>
                         </div>
@@ -710,12 +781,18 @@ export default function AdminRefundsPage() {
                           {refund.provider_action && refund.provider_action !== 'pending' && (
                             <span className="text-xs text-slate-500">
                               {refund.provider_action === 'cash_refund'
-                                ? (locale === 'ar' ? '💵 رد نقدي' : '💵 Cash')
+                                ? locale === 'ar'
+                                  ? '💵 رد نقدي'
+                                  : '💵 Cash'
                                 : refund.provider_action === 'item_resend'
-                                ? (locale === 'ar' ? '📦 إعادة إرسال' : '📦 Resend')
-                                : refund.provider_action === 'escalated'
-                                ? (locale === 'ar' ? '⬆️ تم التصعيد' : '⬆️ Escalated')
-                                : refund.provider_action}
+                                  ? locale === 'ar'
+                                    ? '📦 إعادة إرسال'
+                                    : '📦 Resend'
+                                  : refund.provider_action === 'escalated'
+                                    ? locale === 'ar'
+                                      ? '⬆️ تم التصعيد'
+                                      : '⬆️ Escalated'
+                                    : refund.provider_action}
                             </span>
                           )}
                         </div>
@@ -727,7 +804,9 @@ export default function AdminRefundsPage() {
                             className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                           >
                             <Eye className="w-4 h-4" />
-                            <span className="hidden sm:inline">{locale === 'ar' ? 'عرض' : 'View'}</span>
+                            <span className="hidden sm:inline">
+                              {locale === 'ar' ? 'عرض' : 'View'}
+                            </span>
                           </button>
                         </div>
                       </td>
@@ -769,12 +848,20 @@ export default function AdminRefundsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-slate-500">{locale === 'ar' ? 'رقم الطلب:' : 'Order #:'}</span>
-                    <span className="font-mono font-medium mr-1">{selectedRefund.order?.order_number}</span>
+                    <span className="text-slate-500">
+                      {locale === 'ar' ? 'رقم الطلب:' : 'Order #:'}
+                    </span>
+                    <span className="font-mono font-medium mr-1">
+                      {selectedRefund.order?.order_number}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-slate-500">{locale === 'ar' ? 'قيمة الطلب:' : 'Order Total:'}</span>
-                    <span className="font-medium mr-1">{formatCurrency(selectedRefund.order?.total || 0, locale)}</span>
+                    <span className="text-slate-500">
+                      {locale === 'ar' ? 'قيمة الطلب:' : 'Order Total:'}
+                    </span>
+                    <span className="font-medium mr-1">
+                      {formatCurrency(selectedRefund.order?.total || 0, locale)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -810,7 +897,9 @@ export default function AdminRefundsPage() {
                     {locale === 'ar' ? 'مبلغ الاسترداد' : 'Refund Amount'}
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-green-700">{formatCurrency(selectedRefund.amount, locale)}</p>
+                <p className="text-2xl font-bold text-green-700">
+                  {formatCurrency(selectedRefund.amount, locale)}
+                </p>
               </div>
 
               {/* Reason */}
@@ -826,7 +915,9 @@ export default function AdminRefundsPage() {
               {/* Status & Additional Info */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-600">{locale === 'ar' ? 'الحالة:' : 'Status:'}</span>
+                  <span className="text-sm text-slate-600">
+                    {locale === 'ar' ? 'الحالة:' : 'Status:'}
+                  </span>
                   {getStatusBadge(selectedRefund.status)}
                 </div>
 
@@ -834,40 +925,60 @@ export default function AdminRefundsPage() {
                   <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-600" />
                     <span className="text-sm font-medium text-red-700">
-                      {locale === 'ar' ? 'مصعّد للإدارة - العميل لم يستلم المبلغ' : 'Escalated - Customer did not receive refund'}
+                      {locale === 'ar'
+                        ? 'مصعّد للإدارة - العميل لم يستلم المبلغ'
+                        : 'Escalated - Customer did not receive refund'}
                     </span>
                   </div>
                 )}
 
                 {selectedRefund.provider_action && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'إجراء التاجر:' : 'Provider Action:'}</span>
+                    <span className="text-sm text-slate-600">
+                      {locale === 'ar' ? 'إجراء التاجر:' : 'Provider Action:'}
+                    </span>
                     <span className="text-sm font-medium text-slate-800">
                       {selectedRefund.provider_action === 'cash_refund'
-                        ? (locale === 'ar' ? 'رد نقدي عبر المندوب' : 'Cash refund via rider')
+                        ? locale === 'ar'
+                          ? 'رد نقدي عبر المندوب'
+                          : 'Cash refund via rider'
                         : selectedRefund.provider_action === 'resend_item'
-                        ? (locale === 'ar' ? 'إعادة إرسال المنتج' : 'Resend item')
-                        : selectedRefund.provider_action === 'escalate_to_admin'
-                        ? (locale === 'ar' ? 'تصعيد للإدارة' : 'Escalate to admin')
-                        : selectedRefund.provider_action}
+                          ? locale === 'ar'
+                            ? 'إعادة إرسال المنتج'
+                            : 'Resend item'
+                          : selectedRefund.provider_action === 'escalate_to_admin'
+                            ? locale === 'ar'
+                              ? 'تصعيد للإدارة'
+                              : 'Escalate to admin'
+                            : selectedRefund.provider_action}
                     </span>
                   </div>
                 )}
 
                 {selectedRefund.provider_action === 'cash_refund' && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'تأكيد العميل:' : 'Customer Confirmed:'}</span>
-                    <span className={`text-sm font-medium ${selectedRefund.customer_confirmed ? 'text-green-600' : 'text-orange-600'}`}>
+                    <span className="text-sm text-slate-600">
+                      {locale === 'ar' ? 'تأكيد العميل:' : 'Customer Confirmed:'}
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${selectedRefund.customer_confirmed ? 'text-green-600' : 'text-orange-600'}`}
+                    >
                       {selectedRefund.customer_confirmed
-                        ? (locale === 'ar' ? 'تم الاستلام' : 'Received')
-                        : (locale === 'ar' ? 'لم يؤكد بعد' : 'Not confirmed yet')}
+                        ? locale === 'ar'
+                          ? 'تم الاستلام'
+                          : 'Received'
+                        : locale === 'ar'
+                          ? 'لم يؤكد بعد'
+                          : 'Not confirmed yet'}
                     </span>
                   </div>
                 )}
 
                 {selectedRefund.confirmation_deadline && !selectedRefund.customer_confirmed && (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-600">{locale === 'ar' ? 'مهلة التأكيد:' : 'Confirmation Deadline:'}</span>
+                    <span className="text-sm text-slate-600">
+                      {locale === 'ar' ? 'مهلة التأكيد:' : 'Confirmation Deadline:'}
+                    </span>
                     <span className="text-sm text-slate-800">
                       {formatDate(selectedRefund.confirmation_deadline, locale)}
                     </span>
@@ -917,10 +1028,7 @@ export default function AdminRefundsPage() {
             </div>
 
             <div className="p-6 border-t border-slate-200 flex gap-3 justify-end flex-wrap">
-              <Button
-                variant="outline"
-                onClick={() => setShowDetailModal(false)}
-              >
+              <Button variant="outline" onClick={() => setShowDetailModal(false)}>
                 {locale === 'ar' ? 'إغلاق' : 'Close'}
               </Button>
 
@@ -961,5 +1069,5 @@ export default function AdminRefundsPage() {
         </div>
       )}
     </>
-  )
+  );
 }

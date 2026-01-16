@@ -1,58 +1,58 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared'
-import { ChatFAB } from '@/components/customer/voice'
-import { useFavorites } from '@/hooks/customer'
-import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react'
-import { useUserLocation } from '@/lib/contexts'
+import { useEffect, useState, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared';
+import { ChatFAB } from '@/components/customer/voice';
+import { useFavorites } from '@/hooks/customer';
+import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react';
+import { useUserLocation } from '@/lib/contexts';
 
 type Provider = {
-  id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
   // Updated December 2025 - New categories
-  category: 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits'
-  logo_url: string | null
-  cover_image_url: string | null
-  rating: number
-  total_reviews: number
-  delivery_fee: number
-  min_order_amount: number
-  estimated_delivery_time_min: number
-  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval'
-  is_featured?: boolean
-  city_id?: string
-}
+  category: 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits';
+  logo_url: string | null;
+  cover_image_url: string | null;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
+  is_featured?: boolean;
+  city_id?: string;
+};
 
-type SortOption = 'rating' | 'delivery_time' | 'delivery_fee'
+type SortOption = 'rating' | 'delivery_time' | 'delivery_fee';
 
 export default function ProvidersPage() {
-  const locale = useLocale()
-  const searchParams = useSearchParams()
-  const categoryFromUrl = searchParams.get('category')
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
 
-  const [providers, setProviders] = useState<Provider[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || 'all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [sortBy, setSortBy] = useState<SortOption | null>(null)
-  const [showOpenOnly, setShowOpenOnly] = useState(false)
-  const [showOffersOnly, setShowOffersOnly] = useState(false)
-  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption | null>(null);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [showOffersOnly, setShowOffersOnly] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Update category when URL changes
   useEffect(() => {
     if (categoryFromUrl) {
-      setSelectedCategory(categoryFromUrl)
+      setSelectedCategory(categoryFromUrl);
     }
-  }, [categoryFromUrl])
+  }, [categoryFromUrl]);
 
   // Get location from context (no Supabase queries needed!)
   const {
@@ -61,70 +61,78 @@ export default function ProvidersPage() {
     cityName: userCityNameObj,
     governorateName: userGovernorateNameObj,
     isLoading: isLocationLoading,
-  } = useUserLocation()
+  } = useUserLocation();
 
   // Get display name based on locale
   const userCityName = userCityNameObj
-    ? (locale === 'ar' ? userCityNameObj.ar : userCityNameObj.en)
+    ? locale === 'ar'
+      ? userCityNameObj.ar
+      : userCityNameObj.en
     : userGovernorateNameObj
-      ? (locale === 'ar' ? userGovernorateNameObj.ar : userGovernorateNameObj.en)
-      : null
+      ? locale === 'ar'
+        ? userGovernorateNameObj.ar
+        : userGovernorateNameObj.en
+      : null;
 
   // Favorites hook
-  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
 
   // Fetch providers when location or category changes
   useEffect(() => {
     if (!isLocationLoading) {
-      fetchProviders()
+      fetchProviders();
     }
-  }, [selectedCategory, userCityId, userGovernorateId, isLocationLoading])
+  }, [selectedCategory, userCityId, userGovernorateId, isLocationLoading]);
 
   // Smart Arabic text normalization for search
   const normalizeArabicText = (text: string): string => {
-    return text
-      .toLowerCase()
-      // Normalize Taa Marbuta and Haa (ة ↔ ه)
-      .replace(/[ةه]/g, 'ه')
-      // Normalize Alef variants (أ إ آ ا)
-      .replace(/[أإآا]/g, 'ا')
-      // Normalize Yaa variants (ي ى)
-      .replace(/[يى]/g, 'ي')
-      // Remove Tashkeel (diacritics)
-      .replace(/[\u064B-\u065F]/g, '')
-      // Normalize spaces
-      .replace(/\s+/g, ' ')
-      .trim()
-  }
+    return (
+      text
+        .toLowerCase()
+        // Normalize Taa Marbuta and Haa (ة ↔ ه)
+        .replace(/[ةه]/g, 'ه')
+        // Normalize Alef variants (أ إ آ ا)
+        .replace(/[أإآا]/g, 'ا')
+        // Normalize Yaa variants (ي ى)
+        .replace(/[يى]/g, 'ي')
+        // Remove Tashkeel (diacritics)
+        .replace(/[\u064B-\u065F]/g, '')
+        // Normalize spaces
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
+  };
 
   // Filter and sort providers client-side
   const filteredProviders = useMemo(() => {
-    let result = [...providers]
+    let result = [...providers];
 
     // Search filter with smart Arabic normalization
     if (searchQuery) {
-      const normalizedQuery = normalizeArabicText(searchQuery)
+      const normalizedQuery = normalizeArabicText(searchQuery);
       result = result.filter((p) => {
-        const nameAr = normalizeArabicText(p.name_ar || '')
-        const nameEn = (p.name_en || '').toLowerCase()
-        const descAr = normalizeArabicText(p.description_ar || '')
-        const descEn = (p.description_en || '').toLowerCase()
+        const nameAr = normalizeArabicText(p.name_ar || '');
+        const nameEn = (p.name_en || '').toLowerCase();
+        const descAr = normalizeArabicText(p.description_ar || '');
+        const descEn = (p.description_en || '').toLowerCase();
 
-        return nameAr.includes(normalizedQuery) ||
-               nameEn.includes(normalizedQuery) ||
-               descAr.includes(normalizedQuery) ||
-               descEn.includes(normalizedQuery)
-      })
+        return (
+          nameAr.includes(normalizedQuery) ||
+          nameEn.includes(normalizedQuery) ||
+          descAr.includes(normalizedQuery) ||
+          descEn.includes(normalizedQuery)
+        );
+      });
     }
 
     // Open only filter
     if (showOpenOnly) {
-      result = result.filter((p) => p.status === 'open')
+      result = result.filter((p) => p.status === 'open');
     }
 
     // Offers filter (featured providers)
     if (showOffersOnly) {
-      result = result.filter((p) => p.is_featured)
+      result = result.filter((p) => p.is_featured);
     }
 
     // Sort
@@ -132,55 +140,55 @@ export default function ProvidersPage() {
       result.sort((a, b) => {
         switch (sortBy) {
           case 'rating':
-            return b.rating - a.rating
+            return b.rating - a.rating;
           case 'delivery_time':
-            return a.estimated_delivery_time_min - b.estimated_delivery_time_min
+            return a.estimated_delivery_time_min - b.estimated_delivery_time_min;
           case 'delivery_fee':
-            return a.delivery_fee - b.delivery_fee
+            return a.delivery_fee - b.delivery_fee;
           default:
-            return 0
+            return 0;
         }
-      })
+      });
     }
 
-    return result
-  }, [providers, searchQuery, sortBy, showOpenOnly, showOffersOnly])
+    return result;
+  }, [providers, searchQuery, sortBy, showOpenOnly, showOffersOnly]);
 
   async function fetchProviders() {
-    setLoading(true)
+    setLoading(true);
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       let query = supabase
         .from('providers')
         .select('*')
         .in('status', ['open', 'closed'])
         .order('is_featured', { ascending: false })
-        .order('rating', { ascending: false })
+        .order('rating', { ascending: false });
 
       // STRICT filtering by city or governorate - no fallback
       if (userCityId) {
-        query = query.eq('city_id', userCityId)
+        query = query.eq('city_id', userCityId);
       } else if (userGovernorateId) {
-        query = query.eq('governorate_id', userGovernorateId)
+        query = query.eq('governorate_id', userGovernorateId);
       }
 
       if (selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory)
+        query = query.eq('category', selectedCategory);
       }
 
-      const { data, error } = await query
+      const { data, error } = await query;
 
       if (error) {
-        setProviders([])
+        setProviders([]);
       } else {
         // No fallback - only show providers from user's location
-        setProviders(data || [])
+        setProviders(data || []);
       }
     } catch (err) {
       // Error handled silently
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -191,11 +199,11 @@ export default function ProvidersPage() {
     { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
     { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
     { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
-  ]
+  ];
 
   const handleSortToggle = (option: SortOption) => {
-    setSortBy(sortBy === option ? null : option)
-  }
+    setSortBy(sortBy === option ? null : option);
+  };
 
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
@@ -351,5 +359,5 @@ export default function ProvidersPage() {
       {/* Chat FAB */}
       <ChatFAB isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
     </CustomerLayout>
-  )
+  );
 }

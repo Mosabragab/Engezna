@@ -54,8 +54,8 @@ export type FileCategory = 'voice' | 'image' | 'item-image';
 const BUCKET_NAME = 'custom-orders';
 
 const MAX_FILE_SIZES = {
-  voice: 10 * 1024 * 1024,  // 10MB
-  image: 5 * 1024 * 1024,   // 5MB
+  voice: 10 * 1024 * 1024, // 10MB
+  image: 5 * 1024 * 1024, // 5MB
 };
 
 const ALLOWED_MIME_TYPES = {
@@ -117,10 +117,7 @@ export class CustomOrderStorageService {
 
     // Validate file type
     if (!ALLOWED_MIME_TYPES.voice.includes(file.type)) {
-      throw new StorageError(
-        `Invalid voice file type: ${file.type}`,
-        'INVALID_TYPE'
-      );
+      throw new StorageError(`Invalid voice file type: ${file.type}`, 'INVALID_TYPE');
     }
 
     // Determine extension from MIME type
@@ -151,7 +148,9 @@ export class CustomOrderStorageService {
 
       // Validate file size
       if (file.size > MAX_FILE_SIZES.image) {
-        errors.push(`Image ${i + 1} exceeds maximum size of ${MAX_FILE_SIZES.image / 1024 / 1024}MB`);
+        errors.push(
+          `Image ${i + 1} exceeds maximum size of ${MAX_FILE_SIZES.image / 1024 / 1024}MB`
+        );
         continue;
       }
 
@@ -206,10 +205,7 @@ export class CustomOrderStorageService {
 
     // Validate file type
     if (!ALLOWED_MIME_TYPES.image.includes(file.type)) {
-      throw new StorageError(
-        `Invalid image type: ${file.type}`,
-        'INVALID_TYPE'
-      );
+      throw new StorageError(`Invalid image type: ${file.type}`, 'INVALID_TYPE');
     }
 
     const ext = this.getExtensionFromMime(file.type);
@@ -227,9 +223,7 @@ export class CustomOrderStorageService {
    * الحصول على رابط عام للملف
    */
   getPublicUrl(path: string): string {
-    const { data } = this.supabase.storage
-      .from(BUCKET_NAME)
-      .getPublicUrl(path);
+    const { data } = this.supabase.storage.from(BUCKET_NAME).getPublicUrl(path);
 
     return data.publicUrl;
   }
@@ -256,9 +250,7 @@ export class CustomOrderStorageService {
    * تحميل الملف
    */
   async downloadFile(path: string): Promise<Blob | null> {
-    const { data, error } = await this.supabase.storage
-      .from(BUCKET_NAME)
-      .download(path);
+    const { data, error } = await this.supabase.storage.from(BUCKET_NAME).download(path);
 
     if (error || !data) {
       console.error('Error downloading file:', error);
@@ -277,9 +269,7 @@ export class CustomOrderStorageService {
    * حذف ملف واحد
    */
   async deleteFile(path: string): Promise<boolean> {
-    const { error } = await this.supabase.storage
-      .from(BUCKET_NAME)
-      .remove([path]);
+    const { error } = await this.supabase.storage.from(BUCKET_NAME).remove([path]);
 
     if (error) {
       console.error('Error deleting file:', error);
@@ -312,9 +302,7 @@ export class CustomOrderStorageService {
 
     // Delete all files
     const paths = files.map((f) => `broadcasts/${broadcastId}/${f.name}`);
-    const { error: deleteError } = await this.supabase.storage
-      .from(BUCKET_NAME)
-      .remove(paths);
+    const { error: deleteError } = await this.supabase.storage.from(BUCKET_NAME).remove(paths);
 
     if (deleteError) {
       console.error('Error deleting broadcast files:', deleteError);
@@ -347,9 +335,7 @@ export class CustomOrderStorageService {
 
     // Delete all files
     const paths = files.map((f) => `requests/${requestId}/${f.name}`);
-    const { error: deleteError } = await this.supabase.storage
-      .from(BUCKET_NAME)
-      .remove(paths);
+    const { error: deleteError } = await this.supabase.storage.from(BUCKET_NAME).remove(paths);
 
     if (deleteError) {
       console.error('Error deleting request files:', deleteError);
@@ -367,12 +353,10 @@ export class CustomOrderStorageService {
    * Upload a file to storage
    */
   private async uploadFile(path: string, file: Blob | File): Promise<UploadResult> {
-    const { data, error } = await this.supabase.storage
-      .from(BUCKET_NAME)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: true,  // Overwrite if exists
-      });
+    const { data, error } = await this.supabase.storage.from(BUCKET_NAME).upload(path, file, {
+      cacheControl: '3600',
+      upsert: true, // Overwrite if exists
+    });
 
     if (error) {
       console.error('Upload error:', error);

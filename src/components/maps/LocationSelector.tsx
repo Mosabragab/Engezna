@@ -51,7 +51,7 @@ export function LocationSelector({
   showMap = true,
   required = false,
   disabled = false,
-  onlyActive = true
+  onlyActive = true,
 }: LocationSelectorProps) {
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -124,14 +124,14 @@ export function LocationSelector({
     onChange({
       ...value,
       governorate_id: governorateId,
-      city_id: null // Reset city when governorate changes
+      city_id: null, // Reset city when governorate changes
     });
   };
 
   const handleCityChange = (cityId: string) => {
     onChange({
       ...value,
-      city_id: cityId
+      city_id: cityId,
     });
   };
 
@@ -140,7 +140,7 @@ export function LocationSelector({
       ...value,
       latitude: coords.lat,
       longitude: coords.lng,
-      address_details: address || value.address_details
+      address_details: address || value.address_details,
     });
   };
 
@@ -178,9 +178,7 @@ export function LocationSelector({
 
       {/* City Select */}
       <div className="space-y-2">
-        <Label htmlFor="city">
-          المدينة {required && <span className="text-red-500">*</span>}
-        </Label>
+        <Label htmlFor="city">المدينة {required && <span className="text-red-500">*</span>}</Label>
         <Select
           value={value.city_id || ''}
           onValueChange={handleCityChange}
@@ -193,7 +191,9 @@ export function LocationSelector({
                 <span>جاري التحميل...</span>
               </div>
             ) : (
-              <SelectValue placeholder={value.governorate_id ? "اختر المدينة" : "اختر المحافظة أولاً"} />
+              <SelectValue
+                placeholder={value.governorate_id ? 'اختر المدينة' : 'اختر المحافظة أولاً'}
+              />
             )}
           </SelectTrigger>
           <SelectContent>
@@ -213,7 +213,11 @@ export function LocationSelector({
             📍 حدد موقعك على الخريطة {required && <span className="text-red-500">*</span>}
           </Label>
           <LocationPicker
-            value={value.latitude && value.longitude ? { lat: value.latitude, lng: value.longitude } : null}
+            value={
+              value.latitude && value.longitude
+                ? { lat: value.latitude, lng: value.longitude }
+                : null
+            }
             onChange={handleLocationChange}
             disabled={disabled}
             required={required}

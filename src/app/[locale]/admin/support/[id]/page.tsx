@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatDateTime } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatDateTime } from '@/lib/utils/formatters';
 import {
   Shield,
   ArrowLeft,
@@ -26,179 +26,190 @@ import {
   Mail,
   AlertTriangle,
   Info,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface TicketMessage {
-  id: string
-  ticket_id: string
-  sender_id: string
-  sender_type: 'customer' | 'provider' | 'admin' | 'system'
-  recipient_type?: 'customer' | 'provider' | 'admin'
-  message: string
-  created_at: string
+  id: string;
+  ticket_id: string;
+  sender_id: string;
+  sender_type: 'customer' | 'provider' | 'admin' | 'system';
+  recipient_type?: 'customer' | 'provider' | 'admin';
+  message: string;
+  created_at: string;
   sender?: {
-    full_name: string
-    avatar_url: string | null
-  } | null
+    full_name: string;
+    avatar_url: string | null;
+  } | null;
 }
 
 interface SupportTicket {
-  id: string
-  ticket_number: string
-  subject: string
-  description: string
-  status: string
-  priority: string
-  category: string
-  created_at: string
-  updated_at: string
-  resolved_at: string | null
-  user_id: string
-  provider_id: string | null
-  order_id: string | null
-  assigned_to: string | null
-  user: { full_name: string; email: string; phone: string } | null
-  provider: { name_ar: string; name_en: string } | null
-  assignee: { full_name: string } | null
+  id: string;
+  ticket_number: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  created_at: string;
+  updated_at: string;
+  resolved_at: string | null;
+  user_id: string;
+  provider_id: string | null;
+  order_id: string | null;
+  assigned_to: string | null;
+  user: { full_name: string; email: string; phone: string } | null;
+  provider: { name_ar: string; name_en: string } | null;
+  assignee: { full_name: string } | null;
 }
 
-type ChatTab = 'customer' | 'provider'
+type ChatTab = 'customer' | 'provider';
 
 export default function AdminSupportTicketDetailPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const params = useParams()
-  const router = useRouter()
-  const ticketId = params.id as string
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const params = useParams();
+  const router = useRouter();
+  const ticketId = params.id as string;
 
-  const { toggle: toggleSidebar } = useAdminSidebar()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [ticket, setTicket] = useState<SupportTicket | null>(null)
-  const [allMessages, setAllMessages] = useState<TicketMessage[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [sendingMessage, setSendingMessage] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [activeChat, setActiveChat] = useState<ChatTab>('customer')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { toggle: toggleSidebar } = useAdminSidebar();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [ticket, setTicket] = useState<SupportTicket | null>(null);
+  const [allMessages, setAllMessages] = useState<TicketMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [activeChat, setActiveChat] = useState<ChatTab>('customer');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Filter messages based on active chat tab
   const getFilteredMessages = useCallback(() => {
     if (activeChat === 'customer') {
       // Show messages between admin and customer
-      return allMessages.filter(msg =>
-        msg.sender_type === 'customer' ||
-        (msg.sender_type === 'admin' && (!msg.recipient_type || msg.recipient_type === 'customer'))
-      )
+      return allMessages.filter(
+        (msg) =>
+          msg.sender_type === 'customer' ||
+          (msg.sender_type === 'admin' &&
+            (!msg.recipient_type || msg.recipient_type === 'customer'))
+      );
     } else {
       // Show messages between admin and provider
-      return allMessages.filter(msg =>
-        msg.sender_type === 'provider' ||
-        (msg.sender_type === 'admin' && msg.recipient_type === 'provider')
-      )
+      return allMessages.filter(
+        (msg) =>
+          msg.sender_type === 'provider' ||
+          (msg.sender_type === 'admin' && msg.recipient_type === 'provider')
+      );
     }
-  }, [allMessages, activeChat])
+  }, [allMessages, activeChat]);
 
-  const filteredMessages = getFilteredMessages()
+  const filteredMessages = getFilteredMessages();
 
   // Count unread messages for each tab
-  const customerMessagesCount = allMessages.filter(msg =>
-    msg.sender_type === 'customer' ||
-    (msg.sender_type === 'admin' && (!msg.recipient_type || msg.recipient_type === 'customer'))
-  ).length
+  const customerMessagesCount = allMessages.filter(
+    (msg) =>
+      msg.sender_type === 'customer' ||
+      (msg.sender_type === 'admin' && (!msg.recipient_type || msg.recipient_type === 'customer'))
+  ).length;
 
-  const providerMessagesCount = allMessages.filter(msg =>
-    msg.sender_type === 'provider' ||
-    (msg.sender_type === 'admin' && msg.recipient_type === 'provider')
-  ).length
+  const providerMessagesCount = allMessages.filter(
+    (msg) =>
+      msg.sender_type === 'provider' ||
+      (msg.sender_type === 'admin' && msg.recipient_type === 'provider')
+  ).length;
 
   const loadTicket = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Load ticket details
     const { data: ticketData, error: ticketError } = await supabase
       .from('support_tickets')
-      .select(`
+      .select(
+        `
         *,
         user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
         provider:providers(name_ar, name_en)
-      `)
+      `
+      )
       .eq('id', ticketId)
-      .single()
+      .single();
 
     if (ticketError) {
-      console.error('Error loading ticket:', ticketError)
-      return
+      console.error('Error loading ticket:', ticketError);
+      return;
     }
 
     // Get assignee separately if assigned_to exists
-    let assigneeData = null
+    let assigneeData = null;
     if (ticketData?.assigned_to) {
       const { data: assignee } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', ticketData.assigned_to)
-        .single()
-      assigneeData = assignee
+        .single();
+      assigneeData = assignee;
     }
 
     setTicket({
       ...ticketData,
       assignee: assigneeData,
-    } as SupportTicket)
+    } as SupportTicket);
 
     // Load all messages
     const { data: messagesData } = await supabase
       .from('ticket_messages')
-      .select(`
+      .select(
+        `
         *,
         sender:profiles!ticket_messages_sender_id_fkey(full_name, avatar_url)
-      `)
+      `
+      )
       .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true });
 
     if (messagesData) {
-      setAllMessages(messagesData as TicketMessage[])
+      setAllMessages(messagesData as TicketMessage[]);
     }
-  }, [ticketId])
+  }, [ticketId]);
 
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadTicket()
+        setIsAdmin(true);
+        await loadTicket();
       }
     }
 
-    setLoading(false)
-  }, [loadTicket])
+    setLoading(false);
+  }, [loadTicket]);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [filteredMessages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [filteredMessages]);
 
   // Real-time subscription for messages
   useEffect(() => {
-    if (!ticketId || !isAdmin) return
+    if (!ticketId || !isAdmin) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
     const channel = supabase
       .channel(`ticket-messages-${ticketId}`)
       .on(
@@ -212,81 +223,85 @@ export default function AdminSupportTicketDetailPage() {
         async (payload) => {
           const { data: newMsg } = await supabase
             .from('ticket_messages')
-            .select(`
+            .select(
+              `
               *,
               sender:profiles!ticket_messages_sender_id_fkey(full_name, avatar_url)
-            `)
+            `
+            )
             .eq('id', payload.new.id)
-            .single()
+            .single();
 
           if (newMsg) {
-            setAllMessages(prev => [...prev, newMsg as TicketMessage])
+            setAllMessages((prev) => [...prev, newMsg as TicketMessage]);
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [ticketId, isAdmin])
+      supabase.removeChannel(channel);
+    };
+  }, [ticketId, isAdmin]);
 
   async function handleSendMessage() {
-    if (!newMessage.trim() || !user) return
+    if (!newMessage.trim() || !user) return;
 
-    setSendingMessage(true)
-    const supabase = createClient()
+    setSendingMessage(true);
+    const supabase = createClient();
 
     // Try to insert with recipient_type, fall back without it if column doesn't exist
-    let error = null
+    let error = null;
 
     // First try with recipient_type
-    const result = await supabase
-      .from('ticket_messages')
-      .insert({
-        ticket_id: ticketId,
-        sender_id: user.id,
-        sender_type: 'admin',
-        recipient_type: activeChat,
-        message: newMessage.trim(),
-      })
+    const result = await supabase.from('ticket_messages').insert({
+      ticket_id: ticketId,
+      sender_id: user.id,
+      sender_type: 'admin',
+      recipient_type: activeChat,
+      message: newMessage.trim(),
+    });
 
     // Handle different error types
     if (result.error) {
       // If table doesn't exist
       if (result.error.message?.includes('does not exist')) {
-        console.error('ticket_messages table does not exist:', result.error)
-        alert(locale === 'ar'
-          ? 'جدول الرسائل غير موجود. يرجى تطبيق الـ migration أولاً.'
-          : 'Messages table does not exist. Please apply the migration first.')
-        setSendingMessage(false)
-        return
+        console.error('ticket_messages table does not exist:', result.error);
+        alert(
+          locale === 'ar'
+            ? 'جدول الرسائل غير موجود. يرجى تطبيق الـ migration أولاً.'
+            : 'Messages table does not exist. Please apply the migration first.'
+        );
+        setSendingMessage(false);
+        return;
       }
       // If recipient_type column doesn't exist, try without it
       if (result.error.message?.includes('recipient_type')) {
-        const fallbackResult = await supabase
-          .from('ticket_messages')
-          .insert({
-            ticket_id: ticketId,
-            sender_id: user.id,
-            sender_type: 'admin',
-            message: newMessage.trim(),
-          })
-        error = fallbackResult.error
+        const fallbackResult = await supabase.from('ticket_messages').insert({
+          ticket_id: ticketId,
+          sender_id: user.id,
+          sender_type: 'admin',
+          message: newMessage.trim(),
+        });
+        error = fallbackResult.error;
       } else {
-        error = result.error
+        error = result.error;
       }
     }
 
     if (error) {
-      console.error('Error sending message:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرسالة: ' + error.message : 'Error sending message: ' + error.message)
-      setSendingMessage(false)
-      return
+      console.error('Error sending message:', error);
+      alert(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء إرسال الرسالة: ' + error.message
+          : 'Error sending message: ' + error.message
+      );
+      setSendingMessage(false);
+      return;
     }
 
-    setNewMessage('')
-    await loadTicket()
+    setNewMessage('');
+    await loadTicket();
 
     // Send notification to customer if message is to customer
     if (activeChat === 'customer' && ticket?.user_id) {
@@ -301,9 +316,9 @@ export default function AdminSupportTicketDetailPage() {
           related_order_id: null,
           related_provider_id: null,
           is_read: false,
-        })
+        });
       } catch (notifError) {
-        console.error('Error sending notification:', notifError)
+        console.error('Error sending notification:', notifError);
       }
     }
 
@@ -313,7 +328,7 @@ export default function AdminSupportTicketDetailPage() {
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
-        .single()
+        .single();
 
       await supabase
         .from('support_tickets')
@@ -321,20 +336,20 @@ export default function AdminSupportTicketDetailPage() {
           status: 'in_progress',
           assigned_to: adminUser?.id || null,
         })
-        .eq('id', ticketId)
-      await loadTicket()
+        .eq('id', ticketId);
+      await loadTicket();
     }
 
-    setSendingMessage(false)
+    setSendingMessage(false);
   }
 
   async function handleStatusChange(newStatus: string) {
-    setActionLoading(true)
-    const supabase = createClient()
+    setActionLoading(true);
+    const supabase = createClient();
 
-    const updateData: Record<string, unknown> = { status: newStatus }
+    const updateData: Record<string, unknown> = { status: newStatus };
     if (newStatus === 'resolved') {
-      updateData.resolved_at = new Date().toISOString()
+      updateData.resolved_at = new Date().toISOString();
     }
 
     if (newStatus === 'in_progress' && user) {
@@ -342,21 +357,18 @@ export default function AdminSupportTicketDetailPage() {
         .from('admin_users')
         .select('id')
         .eq('user_id', user.id)
-        .single()
+        .single();
 
       if (adminUser) {
-        updateData.assigned_to = adminUser.id
+        updateData.assigned_to = adminUser.id;
       }
     }
 
-    const { error } = await supabase
-      .from('support_tickets')
-      .update(updateData)
-      .eq('id', ticketId)
+    const { error } = await supabase.from('support_tickets').update(updateData).eq('id', ticketId);
 
     if (error) {
-      console.error('Error updating ticket status:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث حالة التذكرة' : 'Error updating ticket status')
+      console.error('Error updating ticket status:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث حالة التذكرة' : 'Error updating ticket status');
     } else {
       // When ticket is resolved, release the associated order from hold
       if (newStatus === 'resolved' && ticket?.order_id) {
@@ -368,37 +380,47 @@ export default function AdminSupportTicketDetailPage() {
             hold_until: null,
           })
           .eq('id', ticket.order_id)
-          .eq('settlement_status', 'on_hold') // Only update if currently on hold
+          .eq('settlement_status', 'on_hold'); // Only update if currently on hold
 
         if (orderError) {
-          console.error('Error releasing order from hold:', orderError)
+          console.error('Error releasing order from hold:', orderError);
         }
       }
-      await loadTicket()
+      await loadTicket();
     }
 
-    setActionLoading(false)
+    setActionLoading(false);
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'open': return 'bg-yellow-100 text-yellow-700 border-yellow-300'
-      case 'in_progress': return 'bg-blue-100 text-blue-700 border-blue-300'
-      case 'resolved': return 'bg-green-100 text-green-700 border-green-300'
-      case 'closed': return 'bg-slate-100 text-slate-700 border-slate-300'
-      default: return 'bg-slate-100 text-slate-700 border-slate-300'
+      case 'open':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'resolved':
+        return 'bg-green-100 text-green-700 border-green-300';
+      case 'closed':
+        return 'bg-slate-100 text-slate-700 border-slate-300';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-300';
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'open': return <AlertCircle className="w-4 h-4" />
-      case 'in_progress': return <Clock className="w-4 h-4" />
-      case 'resolved': return <CheckCircle2 className="w-4 h-4" />
-      case 'closed': return <XCircle className="w-4 h-4" />
-      default: return <Info className="w-4 h-4" />
+      case 'open':
+        return <AlertCircle className="w-4 h-4" />;
+      case 'in_progress':
+        return <Clock className="w-4 h-4" />;
+      case 'resolved':
+        return <CheckCircle2 className="w-4 h-4" />;
+      case 'closed':
+        return <XCircle className="w-4 h-4" />;
+      default:
+        return <Info className="w-4 h-4" />;
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -406,19 +428,24 @@ export default function AdminSupportTicketDetailPage() {
       in_progress: { ar: 'قيد المعالجة', en: 'In Progress' },
       resolved: { ar: 'تم الحل', en: 'Resolved' },
       closed: { ar: 'مغلق', en: 'Closed' },
-    }
-    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
-  }
+    };
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-700'
-      case 'high': return 'bg-orange-100 text-orange-700'
-      case 'medium': return 'bg-yellow-100 text-yellow-700'
-      case 'low': return 'bg-green-100 text-green-700'
-      default: return 'bg-slate-100 text-slate-700'
+      case 'urgent':
+        return 'bg-red-100 text-red-700';
+      case 'high':
+        return 'bg-orange-100 text-orange-700';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'low':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
     }
-  }
+  };
 
   const getPriorityLabel = (priority: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -426,9 +453,9 @@ export default function AdminSupportTicketDetailPage() {
       high: { ar: 'عالي', en: 'High' },
       medium: { ar: 'متوسط', en: 'Medium' },
       low: { ar: 'منخفض', en: 'Low' },
-    }
-    return labels[priority]?.[locale === 'ar' ? 'ar' : 'en'] || priority
-  }
+    };
+    return labels[priority]?.[locale === 'ar' ? 'ar' : 'en'] || priority;
+  };
 
   if (loading) {
     return (
@@ -438,7 +465,7 @@ export default function AdminSupportTicketDetailPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </main>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -465,7 +492,7 @@ export default function AdminSupportTicketDetailPage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   if (!ticket) {
@@ -490,16 +517,12 @@ export default function AdminSupportTicketDetailPage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   return (
     <>
-      <AdminHeader
-        user={user}
-        title={`#${ticket.ticket_number}`}
-        onMenuClick={toggleSidebar}
-      />
+      <AdminHeader user={user} title={`#${ticket.ticket_number}`} onMenuClick={toggleSidebar} />
 
       <main className="flex-1 p-4 lg:p-6 overflow-auto">
         {/* Back Button */}
@@ -517,24 +540,32 @@ export default function AdminSupportTicketDetailPage() {
           <div className="lg:col-span-2 space-y-4">
             {/* Ticket Info Card */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <div className={`flex items-start justify-between gap-4 mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div
+                className={`flex items-start justify-between gap-4 mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
                 <div className={isRTL ? 'text-right' : ''}>
                   <h2 className="text-lg font-bold text-slate-900">{ticket.subject}</h2>
                   <p className="text-sm text-slate-500 mt-1">{ticket.description}</p>
                 </div>
                 <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border ${getStatusColor(ticket.status)}`}>
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border ${getStatusColor(ticket.status)}`}
+                  >
                     {getStatusIcon(ticket.status)}
                     {getStatusLabel(ticket.status)}
                   </span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(ticket.priority)}`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(ticket.priority)}`}
+                  >
                     {getPriorityLabel(ticket.priority)}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className={`flex items-center gap-2 pt-3 border-t border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div
+                className={`flex items-center gap-2 pt-3 border-t border-slate-100 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
                 {ticket.status === 'open' && (
                   <Button
                     size="sm"
@@ -542,7 +573,11 @@ export default function AdminSupportTicketDetailPage() {
                     onClick={() => handleStatusChange('in_progress')}
                     disabled={actionLoading}
                   >
-                    {actionLoading ? <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} /> : <Clock className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />}
+                    {actionLoading ? (
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    ) : (
+                      <Clock className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    )}
                     {locale === 'ar' ? 'بدء المعالجة' : 'Start Processing'}
                   </Button>
                 )}
@@ -553,7 +588,11 @@ export default function AdminSupportTicketDetailPage() {
                     onClick={() => handleStatusChange('resolved')}
                     disabled={actionLoading}
                   >
-                    {actionLoading ? <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} /> : <CheckCircle2 className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />}
+                    {actionLoading ? (
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    ) : (
+                      <CheckCircle2 className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    )}
                     {locale === 'ar' ? 'تم الحل' : 'Mark Resolved'}
                   </Button>
                 )}
@@ -564,15 +603,15 @@ export default function AdminSupportTicketDetailPage() {
                     onClick={() => handleStatusChange('in_progress')}
                     disabled={actionLoading}
                   >
-                    {actionLoading ? <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} /> : <Clock className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />}
+                    {actionLoading ? (
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    ) : (
+                      <Clock className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                    )}
                     {locale === 'ar' ? 'إعادة فتح' : 'Reopen'}
                   </Button>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={loadTicket}
-                >
+                <Button size="sm" variant="outline" onClick={loadTicket}>
                   <RefreshCw className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
                   {locale === 'ar' ? 'تحديث' : 'Refresh'}
                 </Button>
@@ -593,9 +632,13 @@ export default function AdminSupportTicketDetailPage() {
                 >
                   <UserIcon className="w-4 h-4" />
                   <span>{locale === 'ar' ? 'محادثة العميل' : 'Customer Chat'}</span>
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeChat === 'customer' ? 'bg-blue-200 text-blue-800' : 'bg-slate-200 text-slate-600'
-                  }`}>
+                  <span
+                    className={`px-2 py-0.5 text-xs rounded-full ${
+                      activeChat === 'customer'
+                        ? 'bg-blue-200 text-blue-800'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}
+                  >
                     {customerMessagesCount}
                   </span>
                 </button>
@@ -610,9 +653,13 @@ export default function AdminSupportTicketDetailPage() {
                   >
                     <Store className="w-4 h-4" />
                     <span>{locale === 'ar' ? 'محادثة المزود' : 'Provider Chat'}</span>
-                    <span className={`px-2 py-0.5 text-xs rounded-full ${
-                      activeChat === 'provider' ? 'bg-purple-200 text-purple-800' : 'bg-slate-200 text-slate-600'
-                    }`}>
+                    <span
+                      className={`px-2 py-0.5 text-xs rounded-full ${
+                        activeChat === 'provider'
+                          ? 'bg-purple-200 text-purple-800'
+                          : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
                       {providerMessagesCount}
                     </span>
                   </button>
@@ -620,9 +667,11 @@ export default function AdminSupportTicketDetailPage() {
               </div>
 
               {/* Chat Header */}
-              <div className={`p-3 border-b border-slate-100 ${
-                activeChat === 'customer' ? 'bg-blue-50' : 'bg-purple-50'
-              }`}>
+              <div
+                className={`p-3 border-b border-slate-100 ${
+                  activeChat === 'customer' ? 'bg-blue-50' : 'bg-purple-50'
+                }`}
+              >
                 <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
                   {activeChat === 'customer' ? (
                     <>
@@ -630,8 +679,12 @@ export default function AdminSupportTicketDetailPage() {
                         <UserIcon className="w-4 h-4 text-blue-700" />
                       </div>
                       <div className={isRTL ? 'text-right' : ''}>
-                        <p className="font-medium text-blue-900 text-sm">{ticket.user?.full_name || '-'}</p>
-                        <p className="text-xs text-blue-600">{locale === 'ar' ? 'العميل' : 'Customer'}</p>
+                        <p className="font-medium text-blue-900 text-sm">
+                          {ticket.user?.full_name || '-'}
+                        </p>
+                        <p className="text-xs text-blue-600">
+                          {locale === 'ar' ? 'العميل' : 'Customer'}
+                        </p>
                       </div>
                     </>
                   ) : (
@@ -643,7 +696,9 @@ export default function AdminSupportTicketDetailPage() {
                         <p className="font-medium text-purple-900 text-sm">
                           {locale === 'ar' ? ticket.provider?.name_ar : ticket.provider?.name_en}
                         </p>
-                        <p className="text-xs text-purple-600">{locale === 'ar' ? 'مقدم الخدمة' : 'Provider'}</p>
+                        <p className="text-xs text-purple-600">
+                          {locale === 'ar' ? 'مقدم الخدمة' : 'Provider'}
+                        </p>
                       </div>
                     </>
                   )}
@@ -658,47 +713,66 @@ export default function AdminSupportTicketDetailPage() {
                     <p>{locale === 'ar' ? 'لا توجد رسائل بعد' : 'No messages yet'}</p>
                     <p className="text-xs mt-1">
                       {activeChat === 'customer'
-                        ? (locale === 'ar' ? 'ابدأ محادثة مع العميل' : 'Start a conversation with the customer')
-                        : (locale === 'ar' ? 'ابدأ محادثة مع مقدم الخدمة' : 'Start a conversation with the provider')
-                      }
+                        ? locale === 'ar'
+                          ? 'ابدأ محادثة مع العميل'
+                          : 'Start a conversation with the customer'
+                        : locale === 'ar'
+                          ? 'ابدأ محادثة مع مقدم الخدمة'
+                          : 'Start a conversation with the provider'}
                     </p>
                   </div>
                 ) : (
                   filteredMessages.map((msg) => {
-                    const isAdminMessage = msg.sender_type === 'admin'
-                    const messageColor = activeChat === 'customer'
-                      ? (isAdminMessage ? 'bg-blue-600 text-white' : 'bg-white text-slate-900 border border-slate-200')
-                      : (isAdminMessage ? 'bg-purple-600 text-white' : 'bg-white text-slate-900 border border-slate-200')
+                    const isAdminMessage = msg.sender_type === 'admin';
+                    const messageColor =
+                      activeChat === 'customer'
+                        ? isAdminMessage
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-slate-900 border border-slate-200'
+                        : isAdminMessage
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-white text-slate-900 border border-slate-200';
 
                     return (
                       <div
                         key={msg.id}
-                        className={`flex ${isAdminMessage ? (isRTL ? 'justify-start' : 'justify-end') : (isRTL ? 'justify-end' : 'justify-start')}`}
+                        className={`flex ${isAdminMessage ? (isRTL ? 'justify-start' : 'justify-end') : isRTL ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${messageColor}`}>
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
-                          <div className={`flex items-center gap-2 mt-1.5 text-xs ${
-                            isAdminMessage
-                              ? (activeChat === 'customer' ? 'text-blue-200' : 'text-purple-200')
-                              : 'text-slate-400'
-                          }`}>
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm ${messageColor}`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                            {msg.message}
+                          </p>
+                          <div
+                            className={`flex items-center gap-2 mt-1.5 text-xs ${
+                              isAdminMessage
+                                ? activeChat === 'customer'
+                                  ? 'text-blue-200'
+                                  : 'text-purple-200'
+                                : 'text-slate-400'
+                            }`}
+                          >
                             <span>
                               {msg.sender?.full_name ||
                                 (msg.sender_type === 'admin'
-                                  ? (locale === 'ar' ? 'أنت' : 'You')
-                                  : (msg.sender_type === 'customer'
-                                    ? (locale === 'ar' ? 'العميل' : 'Customer')
-                                    : (locale === 'ar' ? 'المزود' : 'Provider')
-                                  )
-                                )
-                              }
+                                  ? locale === 'ar'
+                                    ? 'أنت'
+                                    : 'You'
+                                  : msg.sender_type === 'customer'
+                                    ? locale === 'ar'
+                                      ? 'العميل'
+                                      : 'Customer'
+                                    : locale === 'ar'
+                                      ? 'المزود'
+                                      : 'Provider')}
                             </span>
                             <span>•</span>
                             <span>{formatDateTime(msg.created_at, locale)}</span>
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })
                 )}
                 <div ref={messagesEndRef} />
@@ -706,17 +780,23 @@ export default function AdminSupportTicketDetailPage() {
 
               {/* Message Input */}
               {ticket.status !== 'closed' && (
-                <div className={`p-4 border-t border-slate-200 bg-white ${
-                  activeChat === 'customer' ? 'border-t-blue-100' : 'border-t-purple-100'
-                }`}>
+                <div
+                  className={`p-4 border-t border-slate-200 bg-white ${
+                    activeChat === 'customer' ? 'border-t-blue-100' : 'border-t-purple-100'
+                  }`}
+                >
                   <div className={`flex gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
                     <textarea
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       placeholder={
                         activeChat === 'customer'
-                          ? (locale === 'ar' ? 'اكتب رسالة للعميل...' : 'Type a message to customer...')
-                          : (locale === 'ar' ? 'اكتب رسالة لمقدم الخدمة...' : 'Type a message to provider...')
+                          ? locale === 'ar'
+                            ? 'اكتب رسالة للعميل...'
+                            : 'Type a message to customer...'
+                          : locale === 'ar'
+                            ? 'اكتب رسالة لمقدم الخدمة...'
+                            : 'Type a message to provider...'
                       }
                       className={`flex-1 p-3 border rounded-xl resize-none focus:ring-2 focus:border-transparent text-sm ${
                         activeChat === 'customer'
@@ -727,8 +807,8 @@ export default function AdminSupportTicketDetailPage() {
                       dir={isRTL ? 'rtl' : 'ltr'}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSendMessage()
+                          e.preventDefault();
+                          handleSendMessage();
                         }
                       }}
                     />
@@ -757,7 +837,9 @@ export default function AdminSupportTicketDetailPage() {
           <div className="space-y-4">
             {/* User Info */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <h3 className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <h3
+                className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
                 <UserIcon className="w-5 h-5" />
                 {locale === 'ar' ? 'معلومات العميل' : 'Customer Info'}
               </h3>
@@ -768,17 +850,23 @@ export default function AdminSupportTicketDetailPage() {
                   </div>
                   <div className={isRTL ? 'text-right' : ''}>
                     <p className="font-medium text-slate-900">{ticket.user?.full_name || '-'}</p>
-                    <p className="text-xs text-slate-500">{locale === 'ar' ? 'العميل' : 'Customer'}</p>
+                    <p className="text-xs text-slate-500">
+                      {locale === 'ar' ? 'العميل' : 'Customer'}
+                    </p>
                   </div>
                 </div>
                 {ticket.user?.phone && (
-                  <div className={`flex items-center gap-2 text-sm text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}
+                  >
                     <Phone className="w-4 h-4" />
                     <span dir="ltr">{ticket.user.phone}</span>
                   </div>
                 )}
                 {ticket.user?.email && (
-                  <div className={`flex items-center gap-2 text-sm text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                  <div
+                    className={`flex items-center gap-2 text-sm text-slate-600 ${isRTL ? 'flex-row-reverse' : ''}`}
+                  >
                     <Mail className="w-4 h-4" />
                     <span>{ticket.user.email}</span>
                   </div>
@@ -789,7 +877,9 @@ export default function AdminSupportTicketDetailPage() {
             {/* Provider Info */}
             {ticket.provider && (
               <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-                <h3 className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <h3
+                  className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+                >
                   <Store className="w-5 h-5" />
                   {locale === 'ar' ? 'معلومات المزود' : 'Provider Info'}
                 </h3>
@@ -814,13 +904,17 @@ export default function AdminSupportTicketDetailPage() {
 
             {/* Ticket Details */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-              <h3 className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <h3
+                className={`font-semibold text-slate-900 mb-3 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
                 <Info className="w-5 h-5" />
                 {locale === 'ar' ? 'تفاصيل التذكرة' : 'Ticket Details'}
               </h3>
               <div className="space-y-3 text-sm">
                 <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-slate-500">{locale === 'ar' ? 'رقم التذكرة' : 'Ticket #'}</span>
+                  <span className="text-slate-500">
+                    {locale === 'ar' ? 'رقم التذكرة' : 'Ticket #'}
+                  </span>
                   <span className="font-mono font-medium">#{ticket.ticket_number}</span>
                 </div>
                 <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
@@ -828,18 +922,24 @@ export default function AdminSupportTicketDetailPage() {
                   <span>{ticket.category || '-'}</span>
                 </div>
                 <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                  <span className="text-slate-500">{locale === 'ar' ? 'تاريخ الإنشاء' : 'Created'}</span>
+                  <span className="text-slate-500">
+                    {locale === 'ar' ? 'تاريخ الإنشاء' : 'Created'}
+                  </span>
                   <span>{formatDateTime(ticket.created_at, locale)}</span>
                 </div>
                 {ticket.resolved_at && (
                   <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-slate-500">{locale === 'ar' ? 'تاريخ الحل' : 'Resolved'}</span>
+                    <span className="text-slate-500">
+                      {locale === 'ar' ? 'تاريخ الحل' : 'Resolved'}
+                    </span>
                     <span>{formatDateTime(ticket.resolved_at, locale)}</span>
                   </div>
                 )}
                 {ticket.assignee && (
                   <div className={`flex justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-slate-500">{locale === 'ar' ? 'المسؤول' : 'Assigned To'}</span>
+                    <span className="text-slate-500">
+                      {locale === 'ar' ? 'المسؤول' : 'Assigned To'}
+                    </span>
                     <span>{ticket.assignee.full_name}</span>
                   </div>
                 )}
@@ -849,5 +949,5 @@ export default function AdminSupportTicketDetailPage() {
         </div>
       </main>
     </>
-  )
+  );
 }

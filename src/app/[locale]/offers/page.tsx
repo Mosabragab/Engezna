@@ -1,55 +1,55 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Tag, Percent, Truck, Gift, ChevronRight, ChevronLeft } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { ProviderCard, EmptyState } from '@/components/customer/shared'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Tag, Percent, Truck, Gift, ChevronRight, ChevronLeft } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { ProviderCard, EmptyState } from '@/components/customer/shared';
+import { Button } from '@/components/ui/button';
 
 interface PromoCode {
-  id: string
-  code: string
-  description_ar: string | null
-  description_en: string | null
-  discount_type: 'percentage' | 'fixed'
-  discount_value: number
-  min_order_amount: number
-  valid_until: string
+  id: string;
+  code: string;
+  description_ar: string | null;
+  description_en: string | null;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_amount: number;
+  valid_until: string;
 }
 
 interface Provider {
-  id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  category: string
-  logo_url: string | null
-  cover_image_url: string | null
-  rating: number
-  total_reviews: number
-  delivery_fee: number
-  min_order_amount: number
-  estimated_delivery_time_min: number
-  status: string
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: string;
 }
 
 export default function OffersPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const t = useTranslations('offers')
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations('offers');
+  const isRTL = locale === 'ar';
 
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([])
-  const [freeDeliveryProviders, setFreeDeliveryProviders] = useState<Provider[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [freeDeliveryProviders, setFreeDeliveryProviders] = useState<Provider[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchOffers = useCallback(async () => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Fetch active promo codes - wrap in try-catch in case table doesn't exist
     try {
@@ -59,10 +59,10 @@ export default function OffersPage() {
         .eq('is_active', true)
         .gte('valid_until', new Date().toISOString())
         .order('valid_until', { ascending: true })
-        .limit(5)
+        .limit(5);
 
       if (!error && promos) {
-        setPromoCodes(promos)
+        setPromoCodes(promos);
       }
     } catch (error) {
       // promo_codes table may not exist yet
@@ -76,37 +76,38 @@ export default function OffersPage() {
         .eq('delivery_fee', 0)
         .in('status', ['open', 'closed'])
         .order('rating', { ascending: false })
-        .limit(6)
+        .limit(6);
 
       if (!error && providers) {
-        setFreeDeliveryProviders(providers)
+        setFreeDeliveryProviders(providers);
       }
     } catch (error) {
       // Error handled silently
     }
 
-    setIsLoading(false)
-  }, [])
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
-    fetchOffers()
-  }, [fetchOffers])
+    fetchOffers();
+  }, [fetchOffers]);
 
   const getDescription = (promo: PromoCode) => {
-    return locale === 'ar' ? promo.description_ar : promo.description_en
-  }
+    return locale === 'ar' ? promo.description_ar : promo.description_en;
+  };
 
-  const Arrow = isRTL ? ChevronLeft : ChevronRight
+  const Arrow = isRTL ? ChevronLeft : ChevronRight;
 
   // Featured offer banner
   const featuredOffer = {
     title: locale === 'ar' ? 'خصم 50% على أول طلب!' : '50% OFF First Order!',
-    description: locale === 'ar'
-      ? 'استخدم الكود WELCOME50 واحصل على خصم 50% على طلبك الأول'
-      : 'Use code WELCOME50 and get 50% off your first order',
+    description:
+      locale === 'ar'
+        ? 'استخدم الكود WELCOME50 واحصل على خصم 50% على طلبك الأول'
+        : 'Use code WELCOME50 and get 50% off your first order',
     code: 'WELCOME50',
     bgColor: 'bg-gradient-to-br from-primary via-primary to-cyan-500',
-  }
+  };
 
   if (isLoading) {
     return (
@@ -122,14 +123,16 @@ export default function OffersPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
     <CustomerLayout headerTitle={t('title')} showBackButton>
       <div className="container mx-auto px-4 py-6 space-y-8">
         {/* Featured Offer Banner */}
-        <div className={`${featuredOffer.bgColor} rounded-2xl p-6 text-white relative overflow-hidden`}>
+        <div
+          className={`${featuredOffer.bgColor} rounded-2xl p-6 text-white relative overflow-hidden`}
+        >
           <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 start-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
 
@@ -180,8 +183,7 @@ export default function OffersPage() {
                         <span className="font-bold text-red-500">
                           {promo.discount_type === 'percentage'
                             ? `${promo.discount_value}%`
-                            : `${promo.discount_value} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-                          }
+                            : `${promo.discount_value} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
                         </span>
                         <span className="text-slate-500 text-sm ms-1">
                           {locale === 'ar' ? 'خصم' : 'OFF'}
@@ -200,11 +202,15 @@ export default function OffersPage() {
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     {promo.min_order_amount > 0 && (
                       <span>
-                        {locale === 'ar' ? 'الحد الأدنى:' : 'Min:'} {promo.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        {locale === 'ar' ? 'الحد الأدنى:' : 'Min:'} {promo.min_order_amount}{' '}
+                        {locale === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
                     )}
                     <span>
-                      {t('validUntil')} {new Date(promo.valid_until).toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US')}
+                      {t('validUntil')}{' '}
+                      {new Date(promo.valid_until).toLocaleDateString(
+                        locale === 'ar' ? 'ar-EG' : 'en-US'
+                      )}
                     </span>
                   </div>
                 </div>
@@ -223,11 +229,7 @@ export default function OffersPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {freeDeliveryProviders.map((provider) => (
-                <ProviderCard
-                  key={provider.id}
-                  provider={provider as any}
-                  variant="default"
-                />
+                <ProviderCard key={provider.id} provider={provider as any} variant="default" />
               ))}
             </div>
           </section>
@@ -238,12 +240,16 @@ export default function OffersPage() {
           <EmptyState
             icon={<Tag className="w-16 h-16 text-slate-300" />}
             title={locale === 'ar' ? 'لا توجد عروض حالياً' : 'No offers available'}
-            description={locale === 'ar' ? 'تابعنا للحصول على أحدث العروض والخصومات' : 'Follow us for the latest deals and discounts'}
+            description={
+              locale === 'ar'
+                ? 'تابعنا للحصول على أحدث العروض والخصومات'
+                : 'Follow us for the latest deals and discounts'
+            }
             actionLabel={locale === 'ar' ? 'تصفح المتاجر' : 'Browse Stores'}
             onAction={() => router.push(`/${locale}/providers`)}
           />
         )}
       </div>
     </CustomerLayout>
-  )
+  );
 }

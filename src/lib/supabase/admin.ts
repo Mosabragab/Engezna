@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * Creates a Supabase admin client with service role key
@@ -7,13 +7,13 @@ import { createClient } from '@supabase/supabase-js'
  * Never expose this client to the browser
  */
 export function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error(
       'Missing Supabase environment variables. Please check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
-    )
+    );
   }
 
   return createClient(supabaseUrl, supabaseServiceKey, {
@@ -21,5 +21,5 @@ export function createAdminClient() {
       autoRefreshToken: false,
       persistSession: false,
     },
-  })
+  });
 }

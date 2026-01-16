@@ -7,16 +7,16 @@
  */
 
 // Main pricing interface
-export { PricingNotepad } from './PricingNotepad'
+export { PricingNotepad } from './PricingNotepad';
 
 // Item row component
-export { PricingItemRow } from './PricingItemRow'
+export { PricingItemRow } from './PricingItemRow';
 
 // Price history tooltip
-export { PriceHistoryTooltip, usePriceHistory } from './PriceHistoryTooltip'
+export { PriceHistoryTooltip, usePriceHistory } from './PriceHistoryTooltip';
 
 // Summary and calculations
-export { PricingSummary, LivePricingSummary } from './PricingSummary'
+export { PricingSummary, LivePricingSummary } from './PricingSummary';
 
 // Orders list
-export { CustomOrdersList } from './CustomOrdersList'
+export { CustomOrdersList } from './CustomOrdersList';

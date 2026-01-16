@@ -2,22 +2,22 @@
  * MessageBubble - Chat message bubble component
  */
 
-'use client'
+'use client';
 
-import { memo } from 'react'
-import { motion } from 'framer-motion'
-import { Bot, User } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { ChatMessage, ChatProduct } from '@/types/chat'
-import { ProductSuggestionCard } from './ProductSuggestionCard'
-import { SuggestionChips } from './SuggestionChips'
+import { memo } from 'react';
+import { motion } from 'framer-motion';
+import { Bot, User } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { ChatMessage, ChatProduct } from '@/types/chat';
+import { ProductSuggestionCard } from './ProductSuggestionCard';
+import { SuggestionChips } from './SuggestionChips';
 
 interface MessageBubbleProps {
-  message: ChatMessage
-  onSuggestionClick?: (suggestion: string) => void
-  onAddToCart?: (product: ChatProduct) => void
-  isStreaming?: boolean
-  streamingContent?: string
+  message: ChatMessage;
+  onSuggestionClick?: (suggestion: string) => void;
+  onAddToCart?: (product: ChatProduct) => void;
+  isStreaming?: boolean;
+  streamingContent?: string;
 }
 
 /**
@@ -25,27 +25,27 @@ interface MessageBubbleProps {
  * Extract text and suggestions from JSON format
  */
 function parseAIResponse(content: string): {
-  text: string
-  suggestions?: string[]
-  actions?: string[]
+  text: string;
+  suggestions?: string[];
+  actions?: string[];
 } {
   // If it's empty, return empty
   if (!content || !content.trim()) {
-    return { text: '' }
+    return { text: '' };
   }
 
   // Try to parse as JSON
   try {
     // Check if content looks like JSON (starts with { or contains "text":)
-    const trimmed = content.trim()
+    const trimmed = content.trim();
     if (trimmed.startsWith('{') || trimmed.includes('"text"')) {
-      const parsed = JSON.parse(trimmed)
+      const parsed = JSON.parse(trimmed);
       if (parsed.text) {
         return {
           text: parsed.text,
           suggestions: parsed.suggestions,
           actions: parsed.actions,
-        }
+        };
       }
     }
   } catch {
@@ -55,27 +55,27 @@ function parseAIResponse(content: string): {
   // Check if it's a partial JSON that starts with { but isn't complete
   if (content.trim().startsWith('{') && content.includes('"text"')) {
     // Try to extract text field manually
-    const textMatch = content.match(/"text"\s*:\s*"([^"]*(?:\\"[^"]*)*)"/)
+    const textMatch = content.match(/"text"\s*:\s*"([^"]*(?:\\"[^"]*)*)"/);
     if (textMatch) {
       // Unescape the text
-      const text = textMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+      const text = textMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
 
       // Try to extract suggestions
-      const suggestionsMatch = content.match(/"suggestions"\s*:\s*\[([^\]]*)\]/)
-      let suggestions: string[] | undefined
+      const suggestionsMatch = content.match(/"suggestions"\s*:\s*\[([^\]]*)\]/);
+      let suggestions: string[] | undefined;
       if (suggestionsMatch) {
         suggestions = suggestionsMatch[1]
           .split(',')
-          .map(s => s.trim().replace(/"/g, '').replace(/'/g, ''))
-          .filter(s => s.length > 0)
+          .map((s) => s.trim().replace(/"/g, '').replace(/'/g, ''))
+          .filter((s) => s.length > 0);
       }
 
-      return { text, suggestions }
+      return { text, suggestions };
     }
   }
 
   // Return as-is if not JSON
-  return { text: content }
+  return { text: content };
 }
 
 export const MessageBubble = memo(function MessageBubble({
@@ -85,15 +85,15 @@ export const MessageBubble = memo(function MessageBubble({
   isStreaming = false,
   streamingContent = '',
 }: MessageBubbleProps) {
-  const isUser = message.role === 'user'
+  const isUser = message.role === 'user';
 
   // Parse the content - extract text from JSON if needed
-  const rawContent = isStreaming ? streamingContent : message.content
-  const parsed = isUser ? { text: rawContent } : parseAIResponse(rawContent)
-  const content = parsed.text
+  const rawContent = isStreaming ? streamingContent : message.content;
+  const parsed = isUser ? { text: rawContent } : parseAIResponse(rawContent);
+  const content = parsed.text;
 
   // Merge parsed suggestions with message suggestions
-  const allSuggestions = message.suggestions || parsed.suggestions
+  const allSuggestions = message.suggestions || parsed.suggestions;
 
   return (
     <motion.div
@@ -134,15 +134,13 @@ export const MessageBubble = memo(function MessageBubble({
           <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
 
           {/* Streaming indicator */}
-          {isStreaming && (
-            <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />
-          )}
+          {isStreaming && <span className="inline-block w-2 h-4 bg-current animate-pulse ml-1" />}
         </div>
 
         {/* Products */}
         {!isUser && message.products && message.products.length > 0 && (
           <div className="w-full space-y-2">
-            {message.products.slice(0, 3).map(product => (
+            {message.products.slice(0, 3).map((product) => (
               <ProductSuggestionCard
                 key={product.id}
                 product={product}
@@ -154,10 +152,7 @@ export const MessageBubble = memo(function MessageBubble({
 
         {/* Suggestions - use parsed or message suggestions */}
         {!isUser && allSuggestions && allSuggestions.length > 0 && !isStreaming && (
-          <SuggestionChips
-            suggestions={allSuggestions}
-            onSelect={onSuggestionClick}
-          />
+          <SuggestionChips suggestions={allSuggestions} onSelect={onSuggestionClick} />
         )}
 
         {/* Timestamp */}
@@ -169,7 +164,7 @@ export const MessageBubble = memo(function MessageBubble({
         </span>
       </div>
     </motion.div>
-  )
-})
+  );
+});
 
-export default MessageBubble
+export default MessageBubble;

@@ -1,45 +1,45 @@
-'use client'
+'use client';
 
-import { useRouter, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { useLocale } from 'next-intl'
-import { useCallback, useTransition } from 'react'
-import { Globe } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { useLocale } from 'next-intl';
+import { useCallback, useTransition } from 'react';
+import { Globe } from 'lucide-react';
 
 interface LanguageSwitcherProps {
-  variant?: 'default' | 'compact'
-  className?: string
+  variant?: 'default' | 'compact';
+  className?: string;
 }
 
 export function LanguageSwitcher({ variant = 'default', className = '' }: LanguageSwitcherProps) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const locale = useLocale()
-  const [isPending, startTransition] = useTransition()
+  const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
+  const [isPending, startTransition] = useTransition();
 
   const switchLanguage = useCallback(() => {
-    const newLocale = locale === 'ar' ? 'en' : 'ar'
-    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
+    const newLocale = locale === 'ar' ? 'en' : 'ar';
+    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`);
 
     // Add no-transition class to prevent flash
-    document.documentElement.classList.add('no-transition')
+    document.documentElement.classList.add('no-transition');
 
     // Update HTML attributes before navigation
-    document.documentElement.lang = newLocale
-    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr'
+    document.documentElement.lang = newLocale;
+    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
 
     // Use startTransition for smoother navigation
     startTransition(() => {
-      router.push(newPathname)
-    })
+      router.push(newPathname);
+    });
 
     // Remove no-transition class after a brief delay
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        document.documentElement.classList.remove('no-transition')
-      })
-    })
-  }, [locale, pathname, router])
+        document.documentElement.classList.remove('no-transition');
+      });
+    });
+  }, [locale, pathname, router]);
 
   if (variant === 'compact') {
     return (
@@ -55,7 +55,7 @@ export function LanguageSwitcher({ variant = 'default', className = '' }: Langua
           {isPending ? '...' : locale === 'ar' ? 'EN' : 'AR'}
         </span>
       </Button>
-    )
+    );
   }
 
   return (
@@ -71,5 +71,5 @@ export function LanguageSwitcher({ variant = 'default', className = '' }: Langua
         {isPending ? '...' : locale === 'ar' ? 'EN' : 'عربي'}
       </span>
     </Button>
-  )
+  );
 }

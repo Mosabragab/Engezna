@@ -18,7 +18,7 @@ export function InteractiveMapPicker({
   onClose,
   onSelect,
   initialPosition,
-  title = 'اختر موقعك على الخريطة'
+  title = 'اختر موقعك على الخريطة',
 }: InteractiveMapPickerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -71,18 +71,20 @@ export function InteractiveMapPicker({
 
       // Custom red marker icon
       const redIcon = L.icon({
-        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        iconUrl:
+          'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
-        shadowSize: [41, 41]
+        shadowSize: [41, 41],
       });
 
       // Add initial marker if position exists
       if (initialPosition) {
-        markerRef.current = L.marker([initialPosition.lat, initialPosition.lng], { icon: redIcon })
-          .addTo(map);
+        markerRef.current = L.marker([initialPosition.lat, initialPosition.lng], {
+          icon: redIcon,
+        }).addTo(map);
         setSelectedPosition(initialPosition);
       }
 
@@ -132,7 +134,7 @@ export function InteractiveMapPicker({
       async (position) => {
         const coords = {
           lat: position.coords.latitude,
-          lng: position.coords.longitude
+          lng: position.coords.longitude,
         };
 
         if (mapInstanceRef.current) {
@@ -145,17 +147,19 @@ export function InteractiveMapPicker({
 
           // Custom red marker icon
           const redIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            iconUrl:
+              'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
             shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
             iconSize: [25, 41],
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
-            shadowSize: [41, 41]
+            shadowSize: [41, 41],
           });
 
           // Add marker and pan to location
-          markerRef.current = L.marker([coords.lat, coords.lng], { icon: redIcon })
-            .addTo(mapInstanceRef.current);
+          markerRef.current = L.marker([coords.lat, coords.lng], { icon: redIcon }).addTo(
+            mapInstanceRef.current
+          );
           mapInstanceRef.current.setView([coords.lat, coords.lng], 16);
           setSelectedPosition(coords);
         }
@@ -237,11 +241,7 @@ export function InteractiveMapPicker({
 
         {/* Footer */}
         <div className="flex gap-3 p-4 border-t bg-gray-50">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={onClose} className="flex-1">
             إلغاء
           </Button>
           <Button

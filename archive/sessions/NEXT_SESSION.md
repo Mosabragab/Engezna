@@ -5,21 +5,26 @@
 ## ✅ Completed Tasks (2025-12-26 - Session 22)
 
 ### 1. Settlement System - Database as Source of Truth ✅
+
 **Status**: Completed
 
 #### What was done:
+
 - Fixed commission display issue (22 vs 17.5 after refund)
 - Fixed trigger conflict between `calculate_order_commission` and `handle_refund_settlement_update`
 - Removed all frontend commission calculations
 - All financial values now come directly from database
 
 #### Key Principle Established:
+
 **مصدر الحقيقة الواحد** - Database is the ONLY source for financial calculations
 
 ### 2. Settlement UI Consistency ✅
+
 **Status**: Completed
 
 #### What was done:
+
 - Redesigned admin settlement details COD/Online cards
 - Updated provider finance settlements tab cards
 - Consistent design across all settlement views:
@@ -29,15 +34,19 @@
   - Final result box with directional arrows
 
 #### Files Modified:
+
 - `src/app/[locale]/admin/settlements/[id]/page.tsx`
 - `src/app/[locale]/provider/finance/page.tsx`
 - `src/components/provider/ProviderSidebar.tsx`
 
 ### 3. Provider Sidebar Update ✅
+
 **Status**: Completed
+
 - Changed label from "المحفظة والتسويات" to "التسويات"
 
 ### 4. Commits This Session
+
 ```
 b9b5493 refactor: Use database values only for settlement COD/Online cards
 a95cf3a style: Match admin settlement COD/Online cards with provider finance design
@@ -52,28 +61,34 @@ a95cf3a style: Match admin settlement COD/Online cards with provider finance des
 ## ✅ Completed Tasks (2025-12-23 - Session 21)
 
 ### 1. Code Polishing - Zero ESLint Errors ✅
+
 **Status**: Completed
 
 #### What was done:
+
 - Fixed 78 hoisting errors by converting functions to `useCallback`
 - Updated ESLint config to handle false-positive warnings
 - Fixed prefer-const, @ts-ignore, require() import errors
 - Created `RoleIconComponent` to fix dynamic component creation error
 
 #### Final ESLint Results:
+
 ```
 ✖ 454 problems (0 errors, 454 warnings)
 ```
 
 ### 2. Build Error Fixes ✅
+
 **Status**: Completed
 
 #### What was done:
+
 - Removed duplicate function definitions in 3 admin pages
 - Fixed Vercel build failures
 - All builds now pass successfully
 
 ### 3. Commits This Session
+
 ```
 89f3e20 fix: Remove duplicate function definitions causing build errors
 e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
@@ -85,18 +100,21 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 ## ✅ Completed Tasks (2025-12-22 - Session 20)
 
 ### 1. App Badge Integration ✅
+
 - Integrated notification count with app icon badge
 - Customer: Shows unread notification count
 - Provider: Shows unread + pending orders + pending refunds
 - Badge clears on sign out
 
 ### 2. E2E Testing Setup ✅
+
 - Playwright framework configured
 - Provider dashboard tests
 - Admin dashboard tests
 - PWA offline tests
 
 ### 3. Legal Pages ✅
+
 - Privacy Policy page (`/privacy`)
 - Terms & Conditions page (`/terms`)
 - Company info: سويفكم للتجارة والتصدير ذ.م.م
@@ -108,9 +126,11 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 ## ✅ Completed Tasks (2025-12-19 - Session 19)
 
 ### 1. Homepage Banners System ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Created `homepage_banners` database table with full schema
 - Built `OffersCarousel.tsx` component with:
   - Auto-play with configurable interval
@@ -121,9 +141,11 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
   - RTL-aware carousel direction
 
 ### 2. Admin Banners Management Page ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Full CRUD for homepage banners at `/admin/banners`
 - Banner form with:
   - Title/Description (AR/EN)
@@ -140,9 +162,11 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 - Responsive design with mobile preview
 
 ### 3. Location-Based Banner Targeting ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Added `governorate_id` and `city_id` columns to banners
 - Created `get_banners_for_location` RPC function
 - 3-level targeting: National → Governorate → City
@@ -150,9 +174,11 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 - Client-side fallback filtering
 
 ### 4. Partner Banner System ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Added `banner_type` enum ('customer' | 'partner')
 - Banner type selector tabs in admin page
 - Created `PartnerBannersCarousel.tsx` component
@@ -162,24 +188,28 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 ### 5. UX Improvements ✅
 
 #### Smooth Animations:
+
 - Replaced spring animations with tween for gentler transitions
 - Reduced scale factors (1.05 → 1.01)
 - Added easeInOut curves for comfort
 - RTL-aware auto-play direction (right to left in Arabic)
 
 #### Admin Enhancements:
+
 - Image specifications guide with optimal dimensions
 - Storage bucket creation for banner images (2MB limit)
 - Success notification toast for save actions
 - Pastel color presets for gradients
 
 #### Partner Page:
+
 - Fixed login button hover effect
 - Added partner banners carousel section
 
 ### 6. Database Migrations Created ✅
 
 #### Files:
+
 - `20251219000002_banner_location_targeting.sql` - Location targeting
 - `20251219000003_banner_type_and_partner_banners.sql` - Banner types + storage bucket
 
@@ -190,12 +220,14 @@ e86c6f4 fix(eslint): Achieve zero ESLint errors for code polishing
 ### 🔴 High Priority (Next Session)
 
 #### 1. Run Database Migrations
+
 ```bash
 supabase db push
 # OR manually run the SQL files in Supabase dashboard
 ```
 
 #### 2. Test Banner System End-to-End
+
 - [ ] Create a new customer banner in admin
 - [ ] Upload an image
 - [ ] Verify it appears on homepage
@@ -204,6 +236,7 @@ supabase db push
 - [ ] Verify it appears on partner page
 
 #### 3. Payment Integration (Kashier) ✅ COMPLETED
+
 - [x] Kashier account setup and API credentials
 - [x] Integrate Kashier Egyptian payment gateway
 - [x] Online payment support for customers
@@ -213,28 +246,33 @@ supabase db push
 ### 🟡 Medium Priority
 
 #### 4. Admin Promo Code UI
+
 - Promo code creation form
 - Manage existing promo codes
 - Track usage statistics
 
 #### 5. Refund Handling
+
 - Refund request workflow
 - Admin approval process
 - Balance/payment method refund
 
 #### 6. SMS Notifications (Twilio)
+
 - Order status SMS notifications
 - OTP verification via SMS
 
 ### 🟢 Low Priority (Polish)
 
 #### 7. Banner System Enhancements
+
 - [ ] Video banner support
 - [ ] A/B testing for banners
 - [ ] Analytics (impressions, clicks)
 - [ ] Scheduling (future activation)
 
 #### 8. Update Remaining Admin Pages
+
 - 26 admin pages still need updating to use new layout pattern
 
 ---
@@ -242,6 +280,7 @@ supabase db push
 ## 🗂️ Files Modified This Session
 
 ### New Files:
+
 - `src/components/customer/home/OffersCarousel.tsx`
 - `src/components/partner/PartnerBannersCarousel.tsx`
 - `src/app/[locale]/admin/banners/page.tsx`
@@ -249,6 +288,7 @@ supabase db push
 - `supabase/migrations/20251219000003_banner_type_and_partner_banners.sql`
 
 ### Modified Files:
+
 - `src/app/[locale]/partner/page.tsx` - Added carousel + fixed login hover
 
 ---
@@ -258,9 +298,11 @@ supabase db push
 ## ✅ Completed Tasks (2025-12-12 - Session 18)
 
 ### 1. Guest Location Support ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Created `useGuestLocation` hook for localStorage location storage
 - Updated governorate selection page to work without login
 - Updated CustomerHeader to display guest location
@@ -268,9 +310,11 @@ supabase db push
 - Added custom event `guestLocationChanged` for reactive updates
 
 ### 2. Customer Welcome/Landing Page ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Created `/welcome` page for first-time visitors
 - Hero section with value proposition
 - Categories showcase (4 categories)
@@ -282,14 +326,17 @@ supabase db push
 - Full Footer component
 
 ### 3. Provider Filtering Bug Fix ✅
+
 **Status**: Fixed
 
 #### What was done:
+
 - Fixed strict filtering by city/governorate (no fallback to all stores)
 - Homepage and providers page now show ONLY stores from selected location
 - Added governorate filtering when city not selected
 
 ### 4. UX Improvements ✅
+
 - Added "Back to Welcome Page" option in governorate dropdown
 - Added separate back button for new visitors
 - PWA install prompt enabled on all customer pages
@@ -301,9 +348,11 @@ supabase db push
 ## ✅ Completed Tasks (2025-12-11 - Session 17)
 
 ### 1. Product Images Import from Excel ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Added `image_url` column pattern detection in `excel-import.ts`
 - Added `image_url` to `ColumnMapping` interface
 - Detect and extract image URLs from Excel during import
@@ -312,25 +361,30 @@ supabase db push
 - Save `image_url` when creating/updating products in database
 
 ### 2. Testing Results ✅
+
 - [x] Verify categories display correctly on customer page
 - [x] Test product detail modal opening (Fixed stopPropagation issue)
 - [x] Test variant selection and add to cart
 - [x] Test all 156 products display correctly
 
 ### 3. Documentation ✅
+
 - [x] Updated Excel import guide with `image_url` column
 - [x] Updated sample Excel table with image_url examples
 - [x] Updated tips section about images
 
 ### 4. Bug Fixes ✅
+
 - Fixed promotion badge showing duplicate % symbol (replaced Percent icon with "خصم" text)
 - Fixed product detail modal not opening (added stopPropagation to buttons in ProductCard)
 - Fixed sorting to include both promotions AND original_price discounts
 
 ### 5. Variants Management in Product Edit Page ✅
+
 **Status**: Implemented
 
 #### What was done:
+
 - Added full variants management UI to `/provider/products/[id]/page.tsx`
 - Provider can toggle variants on/off for any product
 - Add new variants with name (AR/EN), price, original price
@@ -341,13 +395,16 @@ supabase db push
 - Fixed hover effects on variant action buttons
 
 ### 6. Admin Sidebar Navigation Fix ✅
+
 **Status**: Implemented
 
 #### Problem:
+
 - Sidebar disappeared during client-side navigation between admin pages
 - Only appeared after page refresh
 
 #### Solution:
+
 - Moved sidebar rendering to layout level (`src/app/[locale]/admin/layout.tsx`)
 - Sidebar now persists across page navigations
 - Updated dashboard and supervisors pages to use new pattern
@@ -355,6 +412,7 @@ supabase db push
 - Created `AdminPageWrapper` component for future use
 
 #### Files Modified:
+
 - `src/app/[locale]/admin/layout.tsx` - Sidebar now rendered at layout level
 - `src/app/[locale]/admin/loading.tsx` - New loading skeleton
 - `src/app/[locale]/admin/page.tsx` - Updated to new pattern
@@ -363,6 +421,7 @@ supabase db push
 - `src/components/admin/index.ts` - Export updates
 
 #### Files Modified (Previous):
+
 - `src/app/[locale]/provider/products/[id]/page.tsx` - Full variants CRUD UI
 - `src/components/customer/shared/ProductCard.tsx` - stopPropagation + badge fix
 - `src/app/[locale]/provider/products/page.tsx` - Promotion badge fix
@@ -376,6 +435,7 @@ supabase db push
 ## 📊 MVP Progress: ~96% Complete
 
 ### ✅ Recently Completed
+
 - [x] PWA conversion (100/100 PWA Builder score)
 - [x] Legal pages (Privacy, Terms)
 - [x] E2E testing framework (Playwright)
@@ -386,6 +446,7 @@ supabase db push
 ### Remaining MVP Tasks (Technical)
 
 #### High Priority
+
 1. **Payment Integration (Kashier)** ✅ COMPLETED - Online payment gateway
    - [x] Kashier account setup and API credentials
    - [x] Integrate Kashier Egyptian payment gateway
@@ -404,6 +465,7 @@ supabase db push
    - Balance/payment method refund
 
 #### Medium Priority
+
 4. **SMS Notifications** - Twilio or local provider
    - Order status SMS notifications
    - OTP verification via SMS
@@ -413,11 +475,13 @@ supabase db push
    - Performance metrics and trends
 
 #### Low Priority (Code Quality)
+
 6. ~~**Update Remaining Admin Pages**~~ - ✅ Hoisting errors fixed
    - ESLint errors resolved via useCallback conversion
    - Build now passes successfully
 
 ### Non-Technical Tasks (Before Launch)
+
 - End-to-end testing
 - Performance optimization
 - Security audit
@@ -430,10 +494,12 @@ supabase db push
 ## Optional Enhancements (Post-MVP)
 
 ### Image Preview in Import UI
+
 - Show image preview in parsed products table
 - Handle missing/invalid images gracefully
 
 ### Additional Features
+
 - [ ] Image upload to Supabase storage from import UI
 - [ ] Image matching by product name
 - [ ] Bulk image upload
@@ -443,6 +509,7 @@ supabase db push
 ## Completed in Previous Session (2025-12-10)
 
 ### Excel Import System
+
 - [x] 4 pricing types: fixed, per_unit, variants, weight_variants
 - [x] Product variants table and system
 - [x] Provider categories table
@@ -451,6 +518,7 @@ supabase db push
 - [x] Successfully imported 30 categories, 156 products, 203 variants
 
 ### UI Fixes
+
 - [x] Modal z-index fix (z-[60] vs z-50)
 - [x] Add to Cart button visibility
 - [x] Product detail modal component
@@ -462,7 +530,9 @@ supabase db push
 ## Key Technical Notes
 
 ### Supabase JOIN Gotcha
+
 **NEVER use `!foreign_key` syntax for nullable relations!**
+
 ```typescript
 // This creates INNER JOIN - products without category disappear!
 .select(`*, category:provider_categories!category_id (...)`)
@@ -473,17 +543,20 @@ const categories = await supabase.from('provider_categories').select('*')
 ```
 
 ### Pricing Types Reference
-| Type | Description | Example |
-|------|-------------|---------|
-| `fixed` | Single fixed price | Coffee - 25 EGP |
-| `per_unit` | Price per unit/kg | Meat - 250 EGP/kg |
-| `variants` | Size/option variants | Pizza: Small/Medium/Large |
-| `weight_variants` | Weight variants | Lamb: 250g/500g/1kg |
+
+| Type              | Description          | Example                   |
+| ----------------- | -------------------- | ------------------------- |
+| `fixed`           | Single fixed price   | Coffee - 25 EGP           |
+| `per_unit`        | Price per unit/kg    | Meat - 250 EGP/kg         |
+| `variants`        | Size/option variants | Pizza: Small/Medium/Large |
+| `weight_variants` | Weight variants      | Lamb: 250g/500g/1kg       |
 
 ### Variants Format in Excel
+
 ```
 نصف كيلو:480|ربع كيلو:250|كيلو:900
 ```
+
 Format: `name:price|name:price|...`
 
 ---
@@ -491,6 +564,7 @@ Format: `name:price|name:price|...`
 ## Database Tables Reference
 
 ### product_variants
+
 ```sql
 CREATE TABLE product_variants (
   id UUID PRIMARY KEY,
@@ -507,6 +581,7 @@ CREATE TABLE product_variants (
 ```
 
 ### provider_categories
+
 ```sql
 CREATE TABLE provider_categories (
   id UUID PRIMARY KEY,
@@ -524,9 +599,9 @@ CREATE TABLE provider_categories (
 
 ## Test Accounts
 
-| Email | Password | Role |
-|-------|----------|------|
-| provider@test.com | Test123! | سوبر ماركت النجاح |
-| provider2@test.com | Test123! | سلطان بيتزا |
-| customer@test.com | Test123! | Customer |
-| admin@test.com | Test123! | Admin |
+| Email              | Password | Role              |
+| ------------------ | -------- | ----------------- |
+| provider@test.com  | Test123! | سوبر ماركت النجاح |
+| provider2@test.com | Test123! | سلطان بيتزا       |
+| customer@test.com  | Test123! | Customer          |
+| admin@test.com     | Test123! | Admin             |

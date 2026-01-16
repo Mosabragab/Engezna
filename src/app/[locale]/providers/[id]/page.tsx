@@ -1,19 +1,25 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
-import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useCart } from '@/lib/store/cart'
-import { useFavorites } from '@/hooks/customer'
-import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
-import { Button } from '@/components/ui/button'
-import { ProductCard, RatingStars, StatusBadge, EmptyState, ProductDetailModal } from '@/components/customer/shared'
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useCart } from '@/lib/store/cart';
+import { useFavorites } from '@/hooks/customer';
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
+import { Button } from '@/components/ui/button';
+import {
+  ProductCard,
+  RatingStars,
+  StatusBadge,
+  EmptyState,
+  ProductDetailModal,
+} from '@/components/customer/shared';
 // VoiceOrderFAB removed - voice ordering is only available inside custom order modal
-import { ChatFAB, SmartAssistant } from '@/components/customer/chat'
-import { BottomNavigation, CustomerHeader } from '@/components/customer/layout'
-import { CustomOrderWelcomeBanner } from '@/components/custom-order'
+import { ChatFAB, SmartAssistant } from '@/components/customer/chat';
+import { BottomNavigation, CustomerHeader } from '@/components/customer/layout';
+import { CustomOrderWelcomeBanner } from '@/components/custom-order';
 import {
   Clock,
   Truck,
@@ -27,156 +33,172 @@ import {
   User,
   Search,
   X,
-} from 'lucide-react'
+} from 'lucide-react';
 
 type Provider = {
-  id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  category: string
-  logo_url: string | null
-  cover_image_url: string | null
-  phone: string
-  rating: number
-  total_reviews: number
-  delivery_fee: number
-  min_order_amount: number
-  estimated_delivery_time_min: number
-  status: string
-  commission_rate: number
-  city_id: string | null
-  operation_mode?: 'standard' | 'custom' | 'hybrid'
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  phone: string;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: string;
+  commission_rate: number;
+  city_id: string | null;
+  operation_mode?: 'standard' | 'custom' | 'hybrid';
   custom_order_settings?: {
-    accepts_text?: boolean
-    accepts_voice?: boolean
-    accepts_image?: boolean
-    pricing_timeout_hours?: number
-    customer_approval_timeout_hours?: number
-    welcome_banner_enabled?: boolean
-    welcome_banner_text_ar?: string
-    welcome_banner_text_en?: string
-  }
-}
+    accepts_text?: boolean;
+    accepts_voice?: boolean;
+    accepts_image?: boolean;
+    pricing_timeout_hours?: number;
+    customer_approval_timeout_hours?: number;
+    welcome_banner_enabled?: boolean;
+    welcome_banner_text_ar?: string;
+    welcome_banner_text_en?: string;
+  };
+};
 
 type ProductVariant = {
-  id: string
-  variant_type: 'size' | 'weight' | 'option'
-  name_ar: string
-  name_en: string | null
-  price: number
-  original_price: number | null
-  is_default: boolean
-  display_order: number
-  is_available: boolean
-}
+  id: string;
+  variant_type: 'size' | 'weight' | 'option';
+  name_ar: string;
+  name_en: string | null;
+  price: number;
+  original_price: number | null;
+  is_default: boolean;
+  display_order: number;
+  is_available: boolean;
+};
 
 type MenuItem = {
-  id: string
-  provider_id: string
-  name_ar: string
-  name_en: string
-  description_ar: string | null
-  description_en: string | null
-  price: number
-  original_price?: number | null
-  image_url: string | null
-  is_available: boolean
-  is_vegetarian: boolean
-  is_spicy: boolean
-  preparation_time_min: number
-  category_id?: string | null
-  has_variants?: boolean
-  pricing_type?: 'fixed' | 'per_unit' | 'variants'
-  variants?: ProductVariant[]
-}
+  id: string;
+  provider_id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  price: number;
+  original_price?: number | null;
+  image_url: string | null;
+  is_available: boolean;
+  is_vegetarian: boolean;
+  is_spicy: boolean;
+  preparation_time_min: number;
+  category_id?: string | null;
+  has_variants?: boolean;
+  pricing_type?: 'fixed' | 'per_unit' | 'variants';
+  variants?: ProductVariant[];
+};
 
 type MenuCategory = {
-  id: string
-  name_ar: string
-  name_en: string
-  display_order: number
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+  display_order: number;
+};
 
 type Review = {
-  id: string
-  rating: number
-  comment: string | null
-  provider_response: string | null
-  provider_response_at: string | null
-  created_at: string
-  profiles: {
-    full_name: string | null
-  } | { full_name: string | null }[] | null
-}
+  id: string;
+  rating: number;
+  comment: string | null;
+  provider_response: string | null;
+  provider_response_at: string | null;
+  created_at: string;
+  profiles:
+    | {
+        full_name: string | null;
+      }
+    | { full_name: string | null }[]
+    | null;
+};
 
 type Promotion = {
-  id: string
-  type: 'percentage' | 'fixed' | 'buy_x_get_y'
-  discount_value: number
-  name_ar: string
-  name_en: string
-  applies_to: 'all' | 'specific'
-  product_ids?: string[]
-  start_date: string
-  end_date: string
-  is_active: boolean
-}
+  id: string;
+  type: 'percentage' | 'fixed' | 'buy_x_get_y';
+  discount_value: number;
+  name_ar: string;
+  name_en: string;
+  applies_to: 'all' | 'specific';
+  product_ids?: string[];
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+};
 
 export default function ProviderDetailPage() {
-  const params = useParams()
-  const providerId = params.id as string
-  const locale = useLocale()
-  const router = useRouter()
-  const t = useTranslations()
+  const params = useParams();
+  const providerId = params.id as string;
+  const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations();
 
-  const { addItem, removeItem, getItemQuantity, getTotal, getItemCount, confirmProviderSwitch, cancelProviderSwitch, pendingItem } = useCart()
-  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites()
-  const { location: guestLocation } = useGuestLocation()
-  const guestCityId = guestLocation.cityId
+  const {
+    addItem,
+    removeItem,
+    getItemQuantity,
+    getTotal,
+    getItemCount,
+    confirmProviderSwitch,
+    cancelProviderSwitch,
+    pendingItem,
+  } = useCart();
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
+  const { location: guestLocation } = useGuestLocation();
+  const guestCityId = guestLocation.cityId;
 
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [userId, setUserId] = useState<string | undefined>()
-  const [userCityId, setUserCityId] = useState<string | undefined>()
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [categories, setCategories] = useState<MenuCategory[]>([])
-  const [reviews, setReviews] = useState<Review[]>([])
-  const [promotions, setPromotions] = useState<Promotion[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [showAllReviews, setShowAllReviews] = useState(false)
-  const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [providerSwitchInfo, setProviderSwitchInfo] = useState<{show: boolean; currentProvider: string; newProvider: string} | null>(null)
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const categoriesRef = useRef<HTMLDivElement>(null)
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [userId, setUserId] = useState<string | undefined>();
+  const [userCityId, setUserCityId] = useState<string | undefined>();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [selectedProductForDetail, setSelectedProductForDetail] = useState<MenuItem | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [providerSwitchInfo, setProviderSwitchInfo] = useState<{
+    show: boolean;
+    currentProvider: string;
+    newProvider: string;
+  } | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const categoriesRef = useRef<HTMLDivElement>(null);
 
   // Smart Arabic text normalization for search
   const normalizeArabicText = (text: string): string => {
     return text
       .toLowerCase()
-      .replace(/[ةه]/g, 'ه')  // Taa Marbuta and Haa
-      .replace(/[أإآا]/g, 'ا')  // Alef variants
-      .replace(/[يى]/g, 'ي')  // Yaa variants
-      .replace(/[\u064B-\u065F]/g, '')  // Remove Tashkeel
+      .replace(/[ةه]/g, 'ه') // Taa Marbuta and Haa
+      .replace(/[أإآا]/g, 'ا') // Alef variants
+      .replace(/[يى]/g, 'ي') // Yaa variants
+      .replace(/[\u064B-\u065F]/g, '') // Remove Tashkeel
       .replace(/\s+/g, ' ')
-      .trim()
-  }
+      .trim();
+  };
 
   const fetchProviderData = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Fetch provider
     const { data: providerData, error: providerError } = await supabase
       .from('providers')
       .select('*')
       .eq('id', providerId)
-      .single()
+      .single();
 
     if (!providerError) {
-      setProvider(providerData)
+      setProvider(providerData);
     }
 
     // Fetch menu categories from provider_categories table
@@ -185,16 +207,17 @@ export default function ProviderDetailPage() {
       .select('*')
       .eq('provider_id', providerId)
       .eq('is_active', true)
-      .order('display_order')
+      .order('display_order');
 
     if (categoriesData && categoriesData.length > 0) {
-      setCategories(categoriesData)
+      setCategories(categoriesData);
     }
 
     // Fetch menu items with variants
     const { data: menuData, error: menuError } = await supabase
       .from('menu_items')
-      .select(`
+      .select(
+        `
         *,
         product_variants (
           id,
@@ -207,23 +230,25 @@ export default function ProviderDetailPage() {
           display_order,
           is_available
         )
-      `)
+      `
+      )
       .eq('provider_id', providerId)
-      .order('display_order')
+      .order('display_order');
 
     if (!menuError) {
       // Map product_variants to variants for each menu item
-      const itemsWithVariants = (menuData || []).map(item => ({
+      const itemsWithVariants = (menuData || []).map((item) => ({
         ...item,
-        variants: item.product_variants?.filter((v: ProductVariant) => v.is_available) || []
-      }))
-      setMenuItems(itemsWithVariants)
+        variants: item.product_variants?.filter((v: ProductVariant) => v.is_available) || [],
+      }));
+      setMenuItems(itemsWithVariants);
     }
 
     // Fetch reviews for this provider
     const { data: reviewsData, error: reviewsError } = await supabase
       .from('reviews')
-      .select(`
+      .select(
+        `
         id,
         rating,
         comment,
@@ -233,56 +258,59 @@ export default function ProviderDetailPage() {
         profiles:customer_id (
           full_name
         )
-      `)
+      `
+      )
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(10);
 
     if (!reviewsError && reviewsData) {
-      setReviews(reviewsData as Review[])
+      setReviews(reviewsData as Review[]);
     }
 
     // Fetch active promotions for this provider
-    const now = new Date().toISOString()
+    const now = new Date().toISOString();
     const { data: promotionsData } = await supabase
       .from('promotions')
       .select('*')
       .eq('provider_id', providerId)
       .eq('is_active', true)
       .lte('start_date', now)
-      .gte('end_date', now)
+      .gte('end_date', now);
 
     if (promotionsData) {
-      setPromotions(promotionsData)
+      setPromotions(promotionsData);
     }
 
-    setLoading(false)
-  }, [providerId])
+    setLoading(false);
+  }, [providerId]);
 
   useEffect(() => {
-    fetchProviderData()
-  }, [fetchProviderData])
+    fetchProviderData();
+  }, [fetchProviderData]);
 
   // Get user info for SmartAssistant
   useEffect(() => {
     async function fetchUserData() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
-        setUserId(user.id)
+        setUserId(user.id);
         // Get user's city from profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('city_id')
           .eq('id', user.id)
-          .single()
+          .single();
         if (profile?.city_id) {
-          setUserCityId(profile.city_id)
+          setUserCityId(profile.city_id);
         }
       }
     }
-    fetchUserData()
-  }, [])
+    fetchUserData();
+  }, []);
 
   // Get promotion for a specific product
   const getProductPromotion = (productId: string) => {
@@ -293,7 +321,7 @@ export default function ProviderDetailPage() {
           discount_value: promo.discount_value,
           name_ar: promo.name_ar,
           name_en: promo.name_en,
-        }
+        };
       }
       if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
         return {
@@ -301,59 +329,60 @@ export default function ProviderDetailPage() {
           discount_value: promo.discount_value,
           name_ar: promo.name_ar,
           name_en: promo.name_en,
-        }
+        };
       }
     }
-    return null
-  }
+    return null;
+  };
 
   // Check if product has any active promotion or discount
   const hasActivePromotionOrDiscount = (item: MenuItem) => {
     // Check for promotion from promotions table
-    const hasPromotion = promotions.some(promo =>
-      promo.applies_to === 'all' ||
-      (promo.applies_to === 'specific' && promo.product_ids?.includes(item.id))
-    )
+    const hasPromotion = promotions.some(
+      (promo) =>
+        promo.applies_to === 'all' ||
+        (promo.applies_to === 'specific' && promo.product_ids?.includes(item.id))
+    );
     // Check for discount via original_price
-    const hasDiscount = item.original_price != null && item.original_price > item.price
-    return hasPromotion || hasDiscount
-  }
+    const hasDiscount = item.original_price != null && item.original_price > item.price;
+    return hasPromotion || hasDiscount;
+  };
 
   // Filter menu items by category and search query
   const filteredMenuItems = menuItems.filter((item) => {
     // Category filter
     if (selectedCategory && item.category_id !== selectedCategory) {
-      return false
+      return false;
     }
     // Search filter
     if (searchQuery.trim()) {
-      const normalizedSearch = normalizeArabicText(searchQuery)
-      const normalizedNameAr = normalizeArabicText(item.name_ar)
-      const normalizedNameEn = normalizeArabicText(item.name_en || '')
-      const normalizedDescAr = normalizeArabicText(item.description_ar || '')
-      const normalizedDescEn = normalizeArabicText(item.description_en || '')
+      const normalizedSearch = normalizeArabicText(searchQuery);
+      const normalizedNameAr = normalizeArabicText(item.name_ar);
+      const normalizedNameEn = normalizeArabicText(item.name_en || '');
+      const normalizedDescAr = normalizeArabicText(item.description_ar || '');
+      const normalizedDescEn = normalizeArabicText(item.description_en || '');
 
       return (
         normalizedNameAr.includes(normalizedSearch) ||
         normalizedNameEn.includes(normalizedSearch) ||
         normalizedDescAr.includes(normalizedSearch) ||
         normalizedDescEn.includes(normalizedSearch)
-      )
+      );
     }
-    return true
-  })
+    return true;
+  });
 
   // Get available items and sort by promotions/discounts first
   const availableItems = filteredMenuItems
     .filter((item) => item.is_available)
     .sort((a, b) => {
-      const aHasPromo = hasActivePromotionOrDiscount(a)
-      const bHasPromo = hasActivePromotionOrDiscount(b)
-      if (aHasPromo && !bHasPromo) return -1
-      if (!aHasPromo && bHasPromo) return 1
-      return 0
-    })
-  const unavailableItems = filteredMenuItems.filter((item) => !item.is_available)
+      const aHasPromo = hasActivePromotionOrDiscount(a);
+      const bHasPromo = hasActivePromotionOrDiscount(b);
+      if (aHasPromo && !bHasPromo) return -1;
+      if (!aHasPromo && bHasPromo) return 1;
+      return 0;
+    });
+  const unavailableItems = filteredMenuItems.filter((item) => !item.is_available);
 
   const handleAddToCart = (menuItem: MenuItem) => {
     if (provider) {
@@ -366,7 +395,7 @@ export default function ProviderDetailPage() {
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
         category: provider.category,
-      })
+      });
 
       // Show confirmation dialog if switching providers
       if (result.requiresConfirmation) {
@@ -374,12 +403,16 @@ export default function ProviderDetailPage() {
           show: true,
           currentProvider: result.currentProviderName || '',
           newProvider: result.newProviderName || '',
-        })
+        });
       }
     }
-  }
+  };
 
-  const handleAddFromDetail = (product: MenuItem, variant?: ProductVariant, quantity: number = 1) => {
+  const handleAddFromDetail = (
+    product: MenuItem,
+    variant?: ProductVariant,
+    quantity: number = 1
+  ) => {
     if (provider) {
       const providerData = {
         id: provider.id,
@@ -390,28 +423,31 @@ export default function ProviderDetailPage() {
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
         category: provider.category,
-      }
+      };
 
-      let result
+      let result;
       if (variant) {
         // Add item with selected variant price
         for (let i = 0; i < quantity; i++) {
-          result = addItem({
-            ...product,
-            price: variant.price,
-            // Store variant info in the item name for display
-            name_ar: `${product.name_ar} (${variant.name_ar})`,
-            name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
-          }, providerData)
+          result = addItem(
+            {
+              ...product,
+              price: variant.price,
+              // Store variant info in the item name for display
+              name_ar: `${product.name_ar} (${variant.name_ar})`,
+              name_en: `${product.name_en} (${variant.name_en || variant.name_ar})`,
+            },
+            providerData
+          );
           // Only show dialog on first item if there's a provider switch
-          if (result.requiresConfirmation) break
+          if (result.requiresConfirmation) break;
         }
       } else {
         // Add item without variant
         for (let i = 0; i < quantity; i++) {
-          result = addItem(product, providerData)
+          result = addItem(product, providerData);
           // Only show dialog on first item if there's a provider switch
-          if (result.requiresConfirmation) break
+          if (result.requiresConfirmation) break;
         }
       }
 
@@ -421,45 +457,45 @@ export default function ProviderDetailPage() {
           show: true,
           currentProvider: result.currentProviderName || '',
           newProvider: result.newProviderName || '',
-        })
+        });
       }
     }
-  }
+  };
 
   const handleConfirmProviderSwitch = () => {
-    confirmProviderSwitch()
-    setProviderSwitchInfo(null)
-  }
+    confirmProviderSwitch();
+    setProviderSwitchInfo(null);
+  };
 
   const handleCancelProviderSwitch = () => {
-    cancelProviderSwitch()
-    setProviderSwitchInfo(null)
-  }
+    cancelProviderSwitch();
+    setProviderSwitchInfo(null);
+  };
 
   const handleProductClick = (item: MenuItem) => {
-    setSelectedProductForDetail(item)
-  }
+    setSelectedProductForDetail(item);
+  };
 
-  const cartTotal = getTotal()
-  const cartItemCount = getItemCount()
+  const cartTotal = getTotal();
+  const cartItemCount = getItemCount();
 
   const getName = (item: MenuItem | Provider) => {
-    return locale === 'ar' ? item.name_ar : item.name_en
-  }
+    return locale === 'ar' ? item.name_ar : item.name_en;
+  };
 
   const getDescription = (item: MenuItem | Provider) => {
-    return locale === 'ar' ? item.description_ar : item.description_en
-  }
+    return locale === 'ar' ? item.description_ar : item.description_en;
+  };
 
-  const isProviderFavorite = isFavorite(providerId)
+  const isProviderFavorite = isFavorite(providerId);
 
   const handleFavoriteClick = async () => {
     if (!isAuthenticated) {
-      router.push(`/${locale}/auth/login`)
-      return
+      router.push(`/${locale}/auth/login`);
+      return;
     }
-    await toggleFavorite(providerId)
-  }
+    await toggleFavorite(providerId);
+  };
 
   if (loading) {
     return (
@@ -471,7 +507,7 @@ export default function ProviderDetailPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (!provider) {
@@ -481,37 +517,40 @@ export default function ProviderDetailPage() {
           <p className="text-xl text-muted-foreground">
             {locale === 'ar' ? 'المتجر غير موجود' : 'Provider not found'}
           </p>
-          <Link href={`/${locale}/providers`} className="text-primary hover:underline mt-4 inline-block">
+          <Link
+            href={`/${locale}/providers`}
+            className="text-primary hover:underline mt-4 inline-block"
+          >
             {locale === 'ar' ? 'العودة إلى المتاجر' : 'Back to providers'}
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   const handleQuantityChange = (item: MenuItem, quantity: number) => {
-    const currentQty = getItemQuantity(item.id)
+    const currentQty = getItemQuantity(item.id);
     if (quantity > currentQty) {
-      handleAddToCart(item)
+      handleAddToCart(item);
     } else if (quantity < currentQty) {
-      removeItem(item.id)
+      removeItem(item.id);
     }
-  }
+  };
 
   const mapProviderStatus = (status: string): 'open' | 'closed' | 'busy' | 'paused' | 'pending' => {
     switch (status) {
       case 'open':
-        return 'open'
+        return 'open';
       case 'closed':
-        return 'closed'
+        return 'closed';
       case 'temporarily_paused':
-        return 'paused'
+        return 'paused';
       case 'pending_approval':
-        return 'pending'
+        return 'pending';
       default:
-        return 'closed'
+        return 'closed';
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -568,9 +607,7 @@ export default function ProviderDetailPage() {
         <div className="px-4 pt-12 pb-4">
           {/* Name & Status */}
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-slate-900">
-              {getName(provider)}
-            </h1>
+            <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
             <StatusBadge status={mapProviderStatus(provider.status)} size="sm" />
           </div>
 
@@ -578,7 +615,9 @@ export default function ProviderDetailPage() {
           <div className="flex items-center gap-2 mt-2">
             <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-full">
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-sm text-amber-700">{provider.rating.toFixed(1)}</span>
+              <span className="font-semibold text-sm text-amber-700">
+                {provider.rating.toFixed(1)}
+              </span>
             </div>
             <span className="text-sm text-slate-400">
               ({provider.total_reviews} {locale === 'ar' ? 'تقييم' : 'reviews'})
@@ -589,26 +628,34 @@ export default function ProviderDetailPage() {
           <div className="flex flex-wrap gap-2 mt-3">
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
               <Clock className="w-4 h-4 text-primary" />
-              <span>{provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}</span>
+              <span>
+                {provider.estimated_delivery_time_min} {locale === 'ar' ? 'دقيقة' : 'min'}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
               <Truck className="w-4 h-4 text-primary" />
               <span>
                 {provider.delivery_fee === 0
-                  ? (locale === 'ar' ? 'توصيل مجاني' : 'Free delivery')
-                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-                }
+                  ? locale === 'ar'
+                    ? 'توصيل مجاني'
+                    : 'Free delivery'
+                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
               </span>
             </div>
             <div className="flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full text-sm text-slate-600">
               <MapPin className="w-4 h-4 text-primary" />
-              <span>{locale === 'ar' ? 'حد أدنى' : 'Min'} {provider.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span>
+                {locale === 'ar' ? 'حد أدنى' : 'Min'} {provider.min_order_amount}{' '}
+                {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
           </div>
 
           {/* Description */}
           {getDescription(provider) && (
-            <p className="text-sm text-slate-500 mt-3 leading-relaxed">{getDescription(provider)}</p>
+            <p className="text-sm text-slate-500 mt-3 leading-relaxed">
+              {getDescription(provider)}
+            </p>
           )}
         </div>
       </div>
@@ -635,9 +682,7 @@ export default function ProviderDetailPage() {
                 <h2 className="text-lg font-bold text-slate-900">
                   {locale === 'ar' ? 'التقييمات' : 'Reviews'}
                 </h2>
-                <span className="text-sm text-slate-400">
-                  ({provider.total_reviews})
-                </span>
+                <span className="text-sm text-slate-400">({provider.total_reviews})</span>
               </div>
               {reviews.length > 3 && (
                 <button
@@ -645,8 +690,12 @@ export default function ProviderDetailPage() {
                   className="text-primary text-sm font-medium flex items-center gap-1"
                 >
                   {showAllReviews
-                    ? (locale === 'ar' ? 'عرض أقل' : 'Show Less')
-                    : (locale === 'ar' ? 'عرض الكل' : 'View All')}
+                    ? locale === 'ar'
+                      ? 'عرض أقل'
+                      : 'Show Less'
+                    : locale === 'ar'
+                      ? 'عرض الكل'
+                      : 'View All'}
                   {showAllReviews ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -659,7 +708,10 @@ export default function ProviderDetailPage() {
             {/* Reviews List */}
             <div className="space-y-4">
               {(showAllReviews ? reviews : reviews.slice(0, 3)).map((review) => (
-                <div key={review.id} className="border-b border-slate-100 last:border-0 pb-4 last:pb-0">
+                <div
+                  key={review.id}
+                  className="border-b border-slate-100 last:border-0 pb-4 last:pb-0"
+                >
                   {/* Review Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2">
@@ -668,7 +720,10 @@ export default function ProviderDetailPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-900">
-                          {(Array.isArray(review.profiles) ? review.profiles[0]?.full_name : review.profiles?.full_name) || (locale === 'ar' ? 'مستخدم' : 'Customer')}
+                          {(Array.isArray(review.profiles)
+                            ? review.profiles[0]?.full_name
+                            : review.profiles?.full_name) ||
+                            (locale === 'ar' ? 'مستخدم' : 'Customer')}
                         </p>
                         <p className="text-xs text-slate-400">
                           {new Date(review.created_at).toLocaleDateString(
@@ -695,9 +750,7 @@ export default function ProviderDetailPage() {
 
                   {/* Review Comment */}
                   {review.comment && (
-                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                      {review.comment}
-                    </p>
+                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">{review.comment}</p>
                   )}
 
                   {/* Provider Response */}
@@ -721,10 +774,7 @@ export default function ProviderDetailPage() {
 
       {/* Category Navigation - Sticky - Hide for custom-only mode */}
       {categories.length > 0 && provider.operation_mode !== 'custom' && (
-        <div
-          ref={categoriesRef}
-          className="bg-white border-b sticky top-14 z-40 shadow-sm"
-        >
+        <div ref={categoriesRef} className="bg-white border-b sticky top-14 z-40 shadow-sm">
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 px-4 py-3">
               <button
@@ -761,7 +811,9 @@ export default function ProviderDetailPage() {
           {/* Search Bar */}
           <div className="mb-4">
             <div className="relative">
-              <Search className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'right-3' : 'left-3'} w-5 h-5 text-slate-400`} />
+              <Search
+                className={`absolute top-1/2 -translate-y-1/2 ${locale === 'ar' ? 'right-3' : 'left-3'} w-5 h-5 text-slate-400`}
+              />
               <input
                 type="text"
                 value={searchQuery}
@@ -805,8 +857,12 @@ export default function ProviderDetailPage() {
               title={locale === 'ar' ? 'لا توجد عناصر' : 'No items found'}
               description={
                 searchQuery
-                  ? (locale === 'ar' ? `لا توجد نتائج للبحث عن "${searchQuery}"` : `No results found for "${searchQuery}"`)
-                  : (locale === 'ar' ? 'لا توجد عناصر في هذا القسم حالياً' : 'No menu items available in this category')
+                  ? locale === 'ar'
+                    ? `لا توجد نتائج للبحث عن "${searchQuery}"`
+                    : `No results found for "${searchQuery}"`
+                  : locale === 'ar'
+                    ? 'لا توجد عناصر في هذا القسم حالياً'
+                    : 'No menu items available in this category'
               }
             />
           ) : (
@@ -814,12 +870,18 @@ export default function ProviderDetailPage() {
               {/* Available Items */}
               <div className="space-y-3">
                 {availableItems.map((item) => (
-                  <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
+                  <div
+                    key={item.id}
+                    onClick={() => handleProductClick(item)}
+                    className="cursor-pointer"
+                  >
                     <ProductCard
                       product={item}
                       quantity={getItemQuantity(item.id)}
                       onQuantityChange={(qty) => handleQuantityChange(item, qty)}
-                      onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
+                      onSelectVariant={
+                        item.has_variants ? () => handleProductClick(item) : undefined
+                      }
                       variant="horizontal"
                       promotion={getProductPromotion(item.id)}
                     />
@@ -835,12 +897,12 @@ export default function ProviderDetailPage() {
                   </h3>
                   <div className="space-y-3 opacity-50">
                     {unavailableItems.map((item) => (
-                      <div key={item.id} onClick={() => handleProductClick(item)} className="cursor-pointer">
-                        <ProductCard
-                          product={item}
-                          variant="horizontal"
-                          showAddButton={false}
-                        />
+                      <div
+                        key={item.id}
+                        onClick={() => handleProductClick(item)}
+                        className="cursor-pointer"
+                      >
+                        <ProductCard product={item} variant="horizontal" showAddButton={false} />
                       </div>
                     ))}
                   </div>
@@ -854,10 +916,7 @@ export default function ProviderDetailPage() {
       {/* Voice Order FAB removed - voice ordering is only available inside custom order modal */}
 
       {/* AI Smart Assistant - Always available */}
-      <ChatFAB
-        onClick={() => setIsChatOpen(!isChatOpen)}
-        isOpen={isChatOpen}
-      />
+      <ChatFAB onClick={() => setIsChatOpen(!isChatOpen)} isOpen={isChatOpen} />
       <SmartAssistant
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
@@ -934,5 +993,5 @@ export default function ProviderDetailPage() {
       {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
-  )
+  );
 }

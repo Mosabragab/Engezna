@@ -1,441 +1,449 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>مقارنة ألوان البراندينج | Engezna Color Comparison</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>مقارنة ألوان البراندينج | Engezna Color Comparison</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-    body {
-      font-family: 'Noto Sans Arabic', sans-serif;
-      background: #F1F5F9;
-      padding: 40px;
-      color: #0F172A;
-    }
+      body {
+        font-family: 'Noto Sans Arabic', sans-serif;
+        background: #f1f5f9;
+        padding: 40px;
+        color: #0f172a;
+      }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #009DE0;
-    }
+      h1 {
+        text-align: center;
+        margin-bottom: 10px;
+        color: #009de0;
+      }
 
-    .subtitle {
-      text-align: center;
-      color: #64748B;
-      margin-bottom: 40px;
-    }
+      .subtitle {
+        text-align: center;
+        color: #64748b;
+        margin-bottom: 40px;
+      }
 
-    .comparison-section {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      margin-bottom: 30px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+      .comparison-section {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
 
-    .section-title {
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #009DE0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+      .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #009de0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
 
-    .badge {
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      color: white;
-    }
+      .badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        color: white;
+      }
 
-    .badge-error { background: #EF4444; }
-    .badge-warning { background: #FACC15; color: #0F172A; }
-    .badge-success { background: #22C55E; }
+      .badge-error {
+        background: #ef4444;
+      }
+      .badge-warning {
+        background: #facc15;
+        color: #0f172a;
+      }
+      .badge-success {
+        background: #22c55e;
+      }
 
-    .comparison-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
 
-    .color-card {
-      border: 2px solid #E2E8F0;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+      .color-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+      }
 
-    .color-card.wrong {
-      border-color: #EF4444;
-    }
+      .color-card.wrong {
+        border-color: #ef4444;
+      }
 
-    .color-card.correct {
-      border-color: #22C55E;
-    }
+      .color-card.correct {
+        border-color: #22c55e;
+      }
 
-    .color-header {
-      padding: 15px;
-      color: white;
-      text-align: center;
-    }
+      .color-header {
+        padding: 15px;
+        color: white;
+        text-align: center;
+      }
 
-    .color-header.wrong-header {
-      background: #FEE2E2;
-      color: #DC2626;
-    }
+      .color-header.wrong-header {
+        background: #fee2e2;
+        color: #dc2626;
+      }
 
-    .color-header.correct-header {
-      background: #DCFCE7;
-      color: #16A34A;
-    }
+      .color-header.correct-header {
+        background: #dcfce7;
+        color: #16a34a;
+      }
 
-    .color-preview {
-      height: 120px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
+      .color-preview {
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
 
-    .color-info {
-      padding: 15px;
-      background: #F8FAFC;
-    }
+      .color-info {
+        padding: 15px;
+        background: #f8fafc;
+      }
 
-    .color-info p {
-      margin-bottom: 5px;
-    }
+      .color-info p {
+        margin-bottom: 5px;
+      }
 
-    .color-info code {
-      background: #E2E8F0;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-    }
+      .color-info code {
+        background: #e2e8f0;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-family: monospace;
+      }
 
-    .color-info .file {
-      font-size: 0.8rem;
-      color: #64748B;
-    }
+      .color-info .file {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
 
-    /* Individual colors */
-    .bg-black { background: #000000; }
-    .bg-charcoal { background: #0F172A; }
-    .bg-error-old { background: #FF5A5F; }
-    .bg-error-new { background: #EF4444; }
-    .bg-warning { background: #FACC15; }
-    .bg-success { background: #22C55E; }
-    .bg-in-progress { background: #3B82F6; }
-    .bg-primary { background: #009DE0; }
+      /* Individual colors */
+      .bg-black {
+        background: #000000;
+      }
+      .bg-charcoal {
+        background: #0f172a;
+      }
+      .bg-error-old {
+        background: #ff5a5f;
+      }
+      .bg-error-new {
+        background: #ef4444;
+      }
+      .bg-warning {
+        background: #facc15;
+      }
+      .bg-success {
+        background: #22c55e;
+      }
+      .bg-in-progress {
+        background: #3b82f6;
+      }
+      .bg-primary {
+        background: #009de0;
+      }
 
-    .missing-section {
-      margin-top: 40px;
-    }
+      .missing-section {
+        margin-top: 40px;
+      }
 
-    .missing-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 15px;
-    }
+      .missing-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+      }
 
-    .missing-card {
-      border: 2px dashed #FACC15;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #FFFBEB;
-    }
+      .missing-card {
+        border: 2px dashed #facc15;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fffbeb;
+      }
 
-    .missing-card .color-preview {
-      height: 80px;
-    }
+      .missing-card .color-preview {
+        height: 80px;
+      }
 
-    .summary {
-      background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
-      color: white;
-      border-radius: 16px;
-      padding: 30px;
-      margin-top: 40px;
-    }
+      .summary {
+        background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 30px;
+        margin-top: 40px;
+      }
 
-    .summary h2 {
-      margin-bottom: 20px;
-    }
+      .summary h2 {
+        margin-bottom: 20px;
+      }
 
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
 
-    .summary-item {
-      background: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-    }
+      .summary-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+      }
 
-    .summary-item .number {
-      font-size: 2.5rem;
-      font-weight: 700;
-    }
+      .summary-item .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+      }
 
-    .action-buttons {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      margin-top: 30px;
-    }
+      .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+      }
 
-    .btn {
-      padding: 12px 30px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-      transition: transform 0.2s;
-    }
+      .btn {
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: transform 0.2s;
+      }
 
-    .btn:hover {
-      transform: scale(1.05);
-    }
+      .btn:hover {
+        transform: scale(1.05);
+      }
 
-    .btn-primary {
-      background: #22C55E;
-      color: white;
-    }
+      .btn-primary {
+        background: #22c55e;
+        color: white;
+      }
 
-    .btn-secondary {
-      background: white;
-      color: #009DE0;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🎨 مقارنة ألوان البراندينج</h1>
-    <p class="subtitle">مقارنة بين engezna-theme.css (القديم) و brand-colors.css (الصحيح)</p>
+      .btn-secondary {
+        background: white;
+        color: #009de0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎨 مقارنة ألوان البراندينج</h1>
+      <p class="subtitle">مقارنة بين engezna-theme.css (القديم) و brand-colors.css (الصحيح)</p>
 
-    <!-- Section 1: Secondary Color -->
-    <div class="comparison-section">
-      <h2 class="section-title">
-        1. لون Secondary
-        <span class="badge badge-error">خطأ كبير</span>
-      </h2>
+      <!-- Section 1: Secondary Color -->
+      <div class="comparison-section">
+        <h2 class="section-title">
+          1. لون Secondary
+          <span class="badge badge-error">خطأ كبير</span>
+        </h2>
 
-      <div class="comparison-grid">
-        <div class="color-card wrong">
-          <div class="color-header wrong-header">❌ خاطئ - engezna-theme.css</div>
-          <div class="color-preview bg-black" style="color: white;">
-            إنجزنا
+        <div class="comparison-grid">
+          <div class="color-card wrong">
+            <div class="color-header wrong-header">❌ خاطئ - engezna-theme.css</div>
+            <div class="color-preview bg-black" style="color: white">إنجزنا</div>
+            <div class="color-info">
+              <p><strong>اللون:</strong> <code>#000000</code></p>
+              <p><strong>HSL:</strong> <code>0 0% 0%</code></p>
+              <p class="file">📁 branding/engezna-theme.css:22</p>
+              <p style="color: #dc2626; margin-top: 10px">⚠️ أسود مصمت - حاد على العين</p>
+            </div>
           </div>
-          <div class="color-info">
-            <p><strong>اللون:</strong> <code>#000000</code></p>
-            <p><strong>HSL:</strong> <code>0 0% 0%</code></p>
-            <p class="file">📁 branding/engezna-theme.css:22</p>
-            <p style="color: #DC2626; margin-top: 10px;">⚠️ أسود مصمت - حاد على العين</p>
-          </div>
-        </div>
 
-        <div class="color-card correct">
-          <div class="color-header correct-header">✅ صحيح - brand-colors.css</div>
-          <div class="color-preview bg-charcoal" style="color: white;">
-            إنجزنا
-          </div>
-          <div class="color-info">
-            <p><strong>اللون:</strong> <code>#0F172A</code></p>
-            <p><strong>HSL:</strong> <code>222 47% 11%</code></p>
-            <p class="file">📁 src/styles/brand-colors.css:23</p>
-            <p style="color: #16A34A; margin-top: 10px;">✓ Charcoal - احترافي ومريح للعين</p>
+          <div class="color-card correct">
+            <div class="color-header correct-header">✅ صحيح - brand-colors.css</div>
+            <div class="color-preview bg-charcoal" style="color: white">إنجزنا</div>
+            <div class="color-info">
+              <p><strong>اللون:</strong> <code>#0F172A</code></p>
+              <p><strong>HSL:</strong> <code>222 47% 11%</code></p>
+              <p class="file">📁 src/styles/brand-colors.css:23</p>
+              <p style="color: #16a34a; margin-top: 10px">✓ Charcoal - احترافي ومريح للعين</p>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Section 2: Error Color -->
+      <div class="comparison-section">
+        <h2 class="section-title">
+          2. لون Error
+          <span class="badge badge-warning">اختلاف بسيط</span>
+        </h2>
+
+        <div class="comparison-grid">
+          <div class="color-card wrong">
+            <div class="color-header wrong-header">⚠️ قديم - engezna-theme.css</div>
+            <div class="color-preview bg-error-old" style="color: white">خطأ</div>
+            <div class="color-info">
+              <p><strong>اللون:</strong> <code>#FF5A5F</code></p>
+              <p><strong>HSL:</strong> <code>358 100% 68%</code></p>
+              <p class="file">📁 branding/engezna-theme.css:31</p>
+            </div>
+          </div>
+
+          <div class="color-card correct">
+            <div class="color-header correct-header">✅ جديد - brand-colors.css</div>
+            <div class="color-preview bg-error-new" style="color: white">خطأ</div>
+            <div class="color-info">
+              <p><strong>اللون:</strong> <code>#EF4444</code></p>
+              <p><strong>HSL:</strong> <code>0 84% 60%</code></p>
+              <p class="file">📁 src/styles/brand-colors.css:36</p>
+              <p style="color: #16a34a; margin-top: 10px">✓ Tailwind Red-500 - معيار صناعي</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Missing Colors -->
+      <div class="comparison-section missing-section">
+        <h2 class="section-title">
+          3. ألوان ناقصة في engezna-theme.css
+          <span class="badge badge-warning">تحتاج إضافة</span>
+        </h2>
+
+        <div class="missing-grid">
+          <div class="missing-card">
+            <div class="color-preview bg-success" style="color: white">Success</div>
+            <div class="color-info">
+              <p><code>#22C55E</code></p>
+              <p class="file">للطلبات المكتملة</p>
+            </div>
+          </div>
+
+          <div class="missing-card">
+            <div class="color-preview bg-warning" style="color: #0f172a">Warning</div>
+            <div class="color-info">
+              <p><code>#FACC15</code></p>
+              <p class="file">للتحذيرات والانتظار</p>
+            </div>
+          </div>
+
+          <div class="missing-card">
+            <div class="color-preview bg-in-progress" style="color: white">In Progress</div>
+            <div class="color-info">
+              <p><code>#3B82F6</code></p>
+              <p class="file">للطلبات الجارية</p>
+            </div>
+          </div>
+
+          <div class="missing-card">
+            <div
+              class="color-preview"
+              style="
+                background: linear-gradient(135deg, #e0f4ff, #dcfce7, #fef9c3, #fef2f2);
+                color: #0f172a;
+              "
+            >
+              Cards BG
+            </div>
+            <div class="color-info">
+              <p><code>10% tints</code></p>
+              <p class="file">خلفيات البطاقات</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Correct Colors (No changes needed) -->
+      <div class="comparison-section">
+        <h2 class="section-title">
+          4. ألوان صحيحة ✅
+          <span class="badge badge-success">لا تحتاج تعديل</span>
+        </h2>
+
+        <div class="missing-grid">
+          <div class="color-card correct" style="border-width: 1px">
+            <div class="color-preview bg-primary" style="color: white">Primary</div>
+            <div class="color-info">
+              <p><code>#009DE0</code></p>
+              <p class="file">✅ متطابق في كل الملفات</p>
+            </div>
+          </div>
+
+          <div class="color-card correct" style="border-width: 1px">
+            <div class="color-preview" style="background: #00c27a; color: white">Deal</div>
+            <div class="color-info">
+              <p><code>#00C27A</code></p>
+              <p class="file">✅ متطابق</p>
+            </div>
+          </div>
+
+          <div class="color-card correct" style="border-width: 1px">
+            <div class="color-preview" style="background: #ffd166; color: #0f172a">Premium</div>
+            <div class="color-info">
+              <p><code>#FFD166</code></p>
+              <p class="file">✅ متطابق</p>
+            </div>
+          </div>
+
+          <div class="color-card correct" style="border-width: 1px">
+            <div class="color-preview" style="background: #36c5f0; color: white">Info</div>
+            <div class="color-info">
+              <p><code>#36C5F0</code></p>
+              <p class="file">✅ متطابق</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary -->
+      <div class="summary">
+        <h2>📊 ملخص التحديثات المطلوبة</h2>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <div class="number">1</div>
+            <div>خطأ كبير</div>
+            <div style="font-size: 0.8rem; opacity: 0.8">Secondary Color</div>
+          </div>
+          <div class="summary-item">
+            <div class="number">1</div>
+            <div>اختلاف بسيط</div>
+            <div style="font-size: 0.8rem; opacity: 0.8">Error Color</div>
+          </div>
+          <div class="summary-item">
+            <div class="number">4+</div>
+            <div>ألوان ناقصة</div>
+            <div style="font-size: 0.8rem; opacity: 0.8">Success, Warning, etc.</div>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="alert('سيتم تحديث engezna-theme.css')">
+            ✅ تحديث الملفات
+          </button>
+          <button class="btn btn-secondary" onclick="window.print()">🖨️ طباعة التقرير</button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <p style="text-align: center; margin-top: 40px; color: #64748b">
+        © 2026 Engezna - تقرير مقارنة البراندينج
+      </p>
     </div>
-
-    <!-- Section 2: Error Color -->
-    <div class="comparison-section">
-      <h2 class="section-title">
-        2. لون Error
-        <span class="badge badge-warning">اختلاف بسيط</span>
-      </h2>
-
-      <div class="comparison-grid">
-        <div class="color-card wrong">
-          <div class="color-header wrong-header">⚠️ قديم - engezna-theme.css</div>
-          <div class="color-preview bg-error-old" style="color: white;">
-            خطأ
-          </div>
-          <div class="color-info">
-            <p><strong>اللون:</strong> <code>#FF5A5F</code></p>
-            <p><strong>HSL:</strong> <code>358 100% 68%</code></p>
-            <p class="file">📁 branding/engezna-theme.css:31</p>
-          </div>
-        </div>
-
-        <div class="color-card correct">
-          <div class="color-header correct-header">✅ جديد - brand-colors.css</div>
-          <div class="color-preview bg-error-new" style="color: white;">
-            خطأ
-          </div>
-          <div class="color-info">
-            <p><strong>اللون:</strong> <code>#EF4444</code></p>
-            <p><strong>HSL:</strong> <code>0 84% 60%</code></p>
-            <p class="file">📁 src/styles/brand-colors.css:36</p>
-            <p style="color: #16A34A; margin-top: 10px;">✓ Tailwind Red-500 - معيار صناعي</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section 3: Missing Colors -->
-    <div class="comparison-section missing-section">
-      <h2 class="section-title">
-        3. ألوان ناقصة في engezna-theme.css
-        <span class="badge badge-warning">تحتاج إضافة</span>
-      </h2>
-
-      <div class="missing-grid">
-        <div class="missing-card">
-          <div class="color-preview bg-success" style="color: white;">
-            Success
-          </div>
-          <div class="color-info">
-            <p><code>#22C55E</code></p>
-            <p class="file">للطلبات المكتملة</p>
-          </div>
-        </div>
-
-        <div class="missing-card">
-          <div class="color-preview bg-warning" style="color: #0F172A;">
-            Warning
-          </div>
-          <div class="color-info">
-            <p><code>#FACC15</code></p>
-            <p class="file">للتحذيرات والانتظار</p>
-          </div>
-        </div>
-
-        <div class="missing-card">
-          <div class="color-preview bg-in-progress" style="color: white;">
-            In Progress
-          </div>
-          <div class="color-info">
-            <p><code>#3B82F6</code></p>
-            <p class="file">للطلبات الجارية</p>
-          </div>
-        </div>
-
-        <div class="missing-card">
-          <div class="color-preview" style="background: linear-gradient(135deg, #E0F4FF, #DCFCE7, #FEF9C3, #FEF2F2); color: #0F172A;">
-            Cards BG
-          </div>
-          <div class="color-info">
-            <p><code>10% tints</code></p>
-            <p class="file">خلفيات البطاقات</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Section 4: Correct Colors (No changes needed) -->
-    <div class="comparison-section">
-      <h2 class="section-title">
-        4. ألوان صحيحة ✅
-        <span class="badge badge-success">لا تحتاج تعديل</span>
-      </h2>
-
-      <div class="missing-grid">
-        <div class="color-card correct" style="border-width: 1px;">
-          <div class="color-preview bg-primary" style="color: white;">
-            Primary
-          </div>
-          <div class="color-info">
-            <p><code>#009DE0</code></p>
-            <p class="file">✅ متطابق في كل الملفات</p>
-          </div>
-        </div>
-
-        <div class="color-card correct" style="border-width: 1px;">
-          <div class="color-preview" style="background: #00C27A; color: white;">
-            Deal
-          </div>
-          <div class="color-info">
-            <p><code>#00C27A</code></p>
-            <p class="file">✅ متطابق</p>
-          </div>
-        </div>
-
-        <div class="color-card correct" style="border-width: 1px;">
-          <div class="color-preview" style="background: #FFD166; color: #0F172A;">
-            Premium
-          </div>
-          <div class="color-info">
-            <p><code>#FFD166</code></p>
-            <p class="file">✅ متطابق</p>
-          </div>
-        </div>
-
-        <div class="color-card correct" style="border-width: 1px;">
-          <div class="color-preview" style="background: #36C5F0; color: white;">
-            Info
-          </div>
-          <div class="color-info">
-            <p><code>#36C5F0</code></p>
-            <p class="file">✅ متطابق</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Summary -->
-    <div class="summary">
-      <h2>📊 ملخص التحديثات المطلوبة</h2>
-
-      <div class="summary-grid">
-        <div class="summary-item">
-          <div class="number">1</div>
-          <div>خطأ كبير</div>
-          <div style="font-size: 0.8rem; opacity: 0.8;">Secondary Color</div>
-        </div>
-        <div class="summary-item">
-          <div class="number">1</div>
-          <div>اختلاف بسيط</div>
-          <div style="font-size: 0.8rem; opacity: 0.8;">Error Color</div>
-        </div>
-        <div class="summary-item">
-          <div class="number">4+</div>
-          <div>ألوان ناقصة</div>
-          <div style="font-size: 0.8rem; opacity: 0.8;">Success, Warning, etc.</div>
-        </div>
-      </div>
-
-      <div class="action-buttons">
-        <button class="btn btn-primary" onclick="alert('سيتم تحديث engezna-theme.css')">
-          ✅ تحديث الملفات
-        </button>
-        <button class="btn btn-secondary" onclick="window.print()">
-          🖨️ طباعة التقرير
-        </button>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <p style="text-align: center; margin-top: 40px; color: #64748B;">
-      © 2026 Engezna - تقرير مقارنة البراندينج
-    </p>
-  </div>
-</body>
+  </body>
 </html>

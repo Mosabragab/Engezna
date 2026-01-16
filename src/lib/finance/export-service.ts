@@ -63,11 +63,16 @@ function formatCurrency(amount: number, locale: 'ar' | 'en'): string {
   return `${amount.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`;
 }
 
-function formatDate(dateStr: string, locale: 'ar' | 'en', format: 'short' | 'long' = 'short'): string {
+function formatDate(
+  dateStr: string,
+  locale: 'ar' | 'en',
+  format: 'short' | 'long' = 'short'
+): string {
   const date = new Date(dateStr);
-  const options: Intl.DateTimeFormatOptions = format === 'long'
-    ? { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
-    : { year: 'numeric', month: 'short', day: 'numeric' };
+  const options: Intl.DateTimeFormatOptions =
+    format === 'long'
+      ? { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+      : { year: 'numeric', month: 'short', day: 'numeric' };
 
   return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', options);
 }
@@ -423,7 +428,9 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
     </div>
   </div>
 
-  ${settlement.paidAt ? `
+  ${
+    settlement.paidAt
+      ? `
   <div class="info-grid" style="grid-template-columns: repeat(3, 1fr);">
     <div class="info-box">
       <div class="info-label">${labels.paidAt}</div>
@@ -438,9 +445,13 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
       <div class="info-value">${String(settlement.paymentReference || '-')}</div>
     </div>
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
-  ${includeOrders && orders && orders.length > 0 ? `
+  ${
+    includeOrders && orders && orders.length > 0
+      ? `
   <div class="section">
     <div class="section-title">${labels.ordersSection} (${orders.length})</div>
     <table>
@@ -454,21 +465,29 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         </tr>
       </thead>
       <tbody>
-        ${orders.map(order => `
+        ${orders
+          .map(
+            (order) => `
           <tr>
             <td>${order.orderNumber}</td>
             <td>${formatCurrency(order.total, locale)}</td>
             <td>${formatCurrency(order.commission, locale)}</td>
-            <td>${order.paymentMethod === 'cash' ? (locale === 'ar' ? 'نقدي' : 'Cash') : (locale === 'ar' ? 'إلكتروني' : 'Online')}</td>
+            <td>${order.paymentMethod === 'cash' ? (locale === 'ar' ? 'نقدي' : 'Cash') : locale === 'ar' ? 'إلكتروني' : 'Online'}</td>
             <td>${formatDate(order.createdAt, locale, dateFormat)}</td>
           </tr>
-        `).join('')}
+        `
+          )
+          .join('')}
       </tbody>
     </table>
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
-  ${includeAuditLog && auditLog && auditLog.length > 0 ? `
+  ${
+    includeAuditLog && auditLog && auditLog.length > 0
+      ? `
   <div class="section">
     <div class="section-title">${labels.auditSection}</div>
     <table>
@@ -481,18 +500,24 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
         </tr>
       </thead>
       <tbody>
-        ${auditLog.map(entry => `
+        ${auditLog
+          .map(
+            (entry) => `
           <tr>
             <td>${entry.action}</td>
             <td>${entry.adminName || '-'}</td>
             <td>${entry.notes || '-'}</td>
             <td>${formatDate(entry.createdAt, locale, 'long')}</td>
           </tr>
-        `).join('')}
+        `
+          )
+          .join('')}
       </tbody>
     </table>
   </div>
-  ` : ''}
+  `
+      : ''
+  }
 
   <div class="footer">
     <p>${labels.generatedAt}: ${new Date().toLocaleString(locale === 'ar' ? 'ar-EG' : 'en-US')}</p>
@@ -553,22 +578,51 @@ export function exportSettlementsToCSV(
   options: { locale: 'ar' | 'en' }
 ): void {
   const { locale } = options;
-  const headers = locale === 'ar'
-    ? ['رقم التسوية', 'المزود', 'الفترة من', 'الفترة إلى', 'عدد الطلبات', 'الإيرادات', 'العمولة', 'صافي المزود', 'صافي الرصيد', 'الاتجاه', 'الحالة', 'تاريخ الدفع']
-    : ['Settlement ID', 'Provider', 'Period Start', 'Period End', 'Orders', 'Revenue', 'Commission', 'Net Payout', 'Net Balance', 'Direction', 'Status', 'Paid At'];
+  const headers =
+    locale === 'ar'
+      ? [
+          'رقم التسوية',
+          'المزود',
+          'الفترة من',
+          'الفترة إلى',
+          'عدد الطلبات',
+          'الإيرادات',
+          'العمولة',
+          'صافي المزود',
+          'صافي الرصيد',
+          'الاتجاه',
+          'الحالة',
+          'تاريخ الدفع',
+        ]
+      : [
+          'Settlement ID',
+          'Provider',
+          'Period Start',
+          'Period End',
+          'Orders',
+          'Revenue',
+          'Commission',
+          'Net Payout',
+          'Net Balance',
+          'Direction',
+          'Status',
+          'Paid At',
+        ];
 
-  const rows = settlements.map(s => {
+  const rows = settlements.map((s) => {
     // Handle both providerName object and string for backward compatibility
-    const providerNameStr = typeof s.providerName === 'object' && s.providerName
-      ? s.providerName[locale] || ''
-      : String(s.providerName || '');
+    const providerNameStr =
+      typeof s.providerName === 'object' && s.providerName
+        ? s.providerName[locale] || ''
+        : String(s.providerName || '');
 
     // Handle paidAt with null safety
     const paidAtDate = (s as unknown as Record<string, unknown>).paidAt as string | null;
     const paymentDate = s.paymentDate || paidAtDate;
 
     // Handle netPayout which may not exist in strict Settlement type
-    const netPayout = (s as unknown as Record<string, number | undefined>).netPayout ?? s.netAmountDue ?? 0;
+    const netPayout =
+      (s as unknown as Record<string, number | undefined>).netPayout ?? s.netAmountDue ?? 0;
 
     return [
       s.id.slice(0, 8).toUpperCase(),
@@ -588,7 +642,7 @@ export function exportSettlementsToCSV(
 
   const csvContent = [
     headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
   ].join('\n');
 
   // Add BOM for Arabic support

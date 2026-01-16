@@ -1,444 +1,458 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>إنجزنا - شعار متحرك</title>
-    
+
     <!-- خطوط عربية أنيقة -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@700;800;900&display=swap" rel="stylesheet">
-    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Reem+Kufi:wght@400;500;600;700&family=Tajawal:wght@700;800;900&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 3rem;
-            padding: 2rem;
-            background: #ffffff;
-            font-family: 'Tajawal', sans-serif;
-        }
-        
-        h2 {
-            color: #64748b;
-            font-size: 0.875rem;
-            font-weight: 500;
-            letter-spacing: 0.05em;
-        }
-        
-        /* ==========================================
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3rem;
+        padding: 2rem;
+        background: #ffffff;
+        font-family: 'Tajawal', sans-serif;
+      }
+
+      h2 {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 500;
+        letter-spacing: 0.05em;
+      }
+
+      /* ==========================================
            الشعار المتحرك - خط الرقعة
            ========================================== */
-        .logo-container {
-            position: relative;
-            padding: 2rem 4rem;
-        }
-        
-        .logo-text {
-            font-family: 'Aref Ruqaa', serif;
-            font-size: 5rem;
-            font-weight: 700;
-            color: transparent;
-            background: linear-gradient(90deg, #0F172A, #0F172A);
-            -webkit-background-clip: text;
-            background-clip: text;
-            position: relative;
-            display: inline-block;
-        }
-        
-        /* تأثير الكتابة - القناع المتحرك */
-        .logo-text::after {
-            content: 'إنجزنا';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            color: #0F172A;
-            overflow: hidden;
-            animation: reveal 2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
-            border-left: 3px solid #0F172A;
-            animation: typing 2s steps(6) forwards, blink 0.5s step-end 6 forwards;
-        }
-        
-        /* ==========================================
+      .logo-container {
+        position: relative;
+        padding: 2rem 4rem;
+      }
+
+      .logo-text {
+        font-family: 'Aref Ruqaa', serif;
+        font-size: 5rem;
+        font-weight: 700;
+        color: transparent;
+        background: linear-gradient(90deg, #0f172a, #0f172a);
+        -webkit-background-clip: text;
+        background-clip: text;
+        position: relative;
+        display: inline-block;
+      }
+
+      /* تأثير الكتابة - القناع المتحرك */
+      .logo-text::after {
+        content: 'إنجزنا';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        color: #0f172a;
+        overflow: hidden;
+        animation: reveal 2s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+        border-left: 3px solid #0f172a;
+        animation:
+          typing 2s steps(6) forwards,
+          blink 0.5s step-end 6 forwards;
+      }
+
+      /* ==========================================
            النسخة الأفضل - SVG مع stroke
            ========================================== */
-        .logo-svg-container {
-            background: white;
-            padding: 3rem 5rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 25px 80px -20px rgba(15, 23, 42, 0.1);
+      .logo-svg-container {
+        background: white;
+        padding: 3rem 5rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 25px 80px -20px rgba(15, 23, 42, 0.1);
+      }
+
+      .logo-svg {
+        overflow: visible;
+      }
+
+      .logo-stroke {
+        fill: none;
+        stroke: #0f172a;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-dasharray: 1000;
+        stroke-dashoffset: 1000;
+        animation: drawText 2.5s ease-out forwards;
+      }
+
+      .logo-fill {
+        fill: #0f172a;
+        opacity: 0;
+        animation: showFill 0.5s ease-out 2.3s forwards;
+      }
+
+      @keyframes drawText {
+        to {
+          stroke-dashoffset: 0;
         }
-        
-        .logo-svg {
-            overflow: visible;
+      }
+
+      @keyframes showFill {
+        to {
+          opacity: 1;
         }
-        
-        .logo-stroke {
-            fill: none;
-            stroke: #0F172A;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            stroke-dasharray: 1000;
-            stroke-dashoffset: 1000;
-            animation: drawText 2.5s ease-out forwards;
+      }
+
+      @keyframes typing {
+        from {
+          width: 0;
         }
-        
-        .logo-fill {
-            fill: #0F172A;
-            opacity: 0;
-            animation: showFill 0.5s ease-out 2.3s forwards;
+        to {
+          width: 100%;
         }
-        
-        @keyframes drawText {
-            to {
-                stroke-dashoffset: 0;
-            }
+      }
+
+      @keyframes blink {
+        50% {
+          border-color: transparent;
         }
-        
-        @keyframes showFill {
-            to {
-                opacity: 1;
-            }
+      }
+
+      @keyframes reveal {
+        0% {
+          clip-path: inset(0 100% 0 0);
         }
-        
-        @keyframes typing {
-            from {
-                width: 0;
-            }
-            to {
-                width: 100%;
-            }
+        100% {
+          clip-path: inset(0 0 0 0);
         }
-        
-        @keyframes blink {
-            50% {
-                border-color: transparent;
-            }
-        }
-        
-        @keyframes reveal {
-            0% {
-                clip-path: inset(0 100% 0 0);
-            }
-            100% {
-                clip-path: inset(0 0 0 0);
-            }
-        }
-        
-        /* ==========================================
+      }
+
+      /* ==========================================
            النسخة المحسنة - حرف حرف
            ========================================== */
-        .letters-container {
-            display: flex;
-            justify-content: center;
-            direction: rtl;
-            background: white;
-            padding: 2rem 4rem;
-            border-radius: 1.5rem;
-            box-shadow: 0 20px 60px -15px rgba(15, 23, 42, 0.08);
+      .letters-container {
+        display: flex;
+        justify-content: center;
+        direction: rtl;
+        background: white;
+        padding: 2rem 4rem;
+        border-radius: 1.5rem;
+        box-shadow: 0 20px 60px -15px rgba(15, 23, 42, 0.08);
+      }
+
+      .letter {
+        font-family: 'Aref Ruqaa', serif;
+        font-size: 6rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(30px);
+        animation: letterAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      }
+
+      .letter:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .letter:nth-child(2) {
+        animation-delay: 0.25s;
+      }
+      .letter:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      .letter:nth-child(4) {
+        animation-delay: 0.55s;
+      }
+      .letter:nth-child(5) {
+        animation-delay: 0.7s;
+      }
+      .letter:nth-child(6) {
+        animation-delay: 0.85s;
+      }
+
+      @keyframes letterAppear {
+        0% {
+          opacity: 0;
+          transform: translateY(30px) scale(0.9);
         }
-        
-        .letter {
-            font-family: 'Aref Ruqaa', serif;
-            font-size: 6rem;
-            font-weight: 700;
-            color: #0F172A;
-            display: inline-block;
-            opacity: 0;
-            transform: translateY(30px);
-            animation: letterAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        60% {
+          opacity: 1;
+          transform: translateY(-5px) scale(1.05);
         }
-        
-        .letter:nth-child(1) { animation-delay: 0.1s; }
-        .letter:nth-child(2) { animation-delay: 0.25s; }
-        .letter:nth-child(3) { animation-delay: 0.4s; }
-        .letter:nth-child(4) { animation-delay: 0.55s; }
-        .letter:nth-child(5) { animation-delay: 0.7s; }
-        .letter:nth-child(6) { animation-delay: 0.85s; }
-        
-        @keyframes letterAppear {
-            0% {
-                opacity: 0;
-                transform: translateY(30px) scale(0.9);
-            }
-            60% {
-                opacity: 1;
-                transform: translateY(-5px) scale(1.05);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
         }
-        
-        /* ==========================================
+      }
+
+      /* ==========================================
            النسخة 3 - تأثير القلم (الأفضل)
            ========================================== */
-        .pen-effect-container {
-            background: white;
-            padding: 3rem 5rem;
-            border-radius: 2rem;
-            box-shadow: 0 30px 100px -25px rgba(15, 23, 42, 0.12);
-            position: relative;
-            overflow: hidden;
+      .pen-effect-container {
+        background: white;
+        padding: 3rem 5rem;
+        border-radius: 2rem;
+        box-shadow: 0 30px 100px -25px rgba(15, 23, 42, 0.12);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .pen-text {
+        font-family: 'Aref Ruqaa', serif;
+        font-size: 5.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        position: relative;
+        display: inline-block;
+        white-space: nowrap;
+      }
+
+      /* القناع المتحرك */
+      .pen-text::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        background: white;
+        animation: wipeReveal 2s ease-out forwards;
+      }
+
+      /* خط القلم */
+      .pen-text::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 0;
+        width: 4px;
+        height: 80%;
+        background: #0f172a;
+        transform: translateY(-50%);
+        animation: penMove 2s ease-out forwards;
+        border-radius: 2px;
+      }
+
+      @keyframes wipeReveal {
+        0% {
+          width: 100%;
         }
-        
-        .pen-text {
-            font-family: 'Aref Ruqaa', serif;
-            font-size: 5.5rem;
-            font-weight: 700;
-            color: #0F172A;
-            position: relative;
-            display: inline-block;
-            white-space: nowrap;
+        100% {
+          width: 0%;
         }
-        
-        /* القناع المتحرك */
-        .pen-text::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100%;
-            height: 100%;
-            background: white;
-            animation: wipeReveal 2s ease-out forwards;
+      }
+
+      @keyframes penMove {
+        0% {
+          right: 0;
+          opacity: 1;
         }
-        
-        /* خط القلم */
-        .pen-text::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            right: 0;
-            width: 4px;
-            height: 80%;
-            background: #0F172A;
-            transform: translateY(-50%);
-            animation: penMove 2s ease-out forwards;
-            border-radius: 2px;
+        90% {
+          right: 100%;
+          opacity: 1;
         }
-        
-        @keyframes wipeReveal {
-            0% {
-                width: 100%;
-            }
-            100% {
-                width: 0%;
-            }
+        100% {
+          right: 100%;
+          opacity: 0;
         }
-        
-        @keyframes penMove {
-            0% {
-                right: 0;
-                opacity: 1;
-            }
-            90% {
-                right: 100%;
-                opacity: 1;
-            }
-            100% {
-                right: 100%;
-                opacity: 0;
-            }
-        }
-        
-        /* ==========================================
+      }
+
+      /* ==========================================
            أزرار التحكم
            ========================================== */
-        .controls {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .btn {
-            background: #0F172A;
-            color: white;
-            border: none;
-            padding: 0.875rem 1.75rem;
-            border-radius: 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: 'Tajawal', sans-serif;
-        }
-        
-        .btn:hover {
-            background: #1e293b;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
-        }
-        
-        .btn-ghost {
-            background: transparent;
-            color: #64748b;
-            border: 1.5px solid #e2e8f0;
-        }
-        
-        .btn-ghost:hover {
-            background: #f8fafc;
-            border-color: #cbd5e1;
-            box-shadow: none;
-        }
-        
-        /* ==========================================
+      .controls {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .btn {
+        background: #0f172a;
+        color: white;
+        border: none;
+        padding: 0.875rem 1.75rem;
+        border-radius: 0.75rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Tajawal', sans-serif;
+      }
+
+      .btn:hover {
+        background: #1e293b;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: #64748b;
+        border: 1.5px solid #e2e8f0;
+      }
+
+      .btn-ghost:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: none;
+      }
+
+      /* ==========================================
            اختيار الخط
            ========================================== */
-        .font-selector {
-            display: flex;
-            gap: 0.5rem;
-            background: #f8fafc;
-            padding: 0.5rem;
-            border-radius: 0.75rem;
-        }
-        
-        .font-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            background: transparent;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 0.875rem;
-            color: #64748b;
-            transition: all 0.2s;
-        }
-        
-        .font-btn.active {
-            background: white;
-            color: #0F172A;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        
-        .font-btn:hover:not(.active) {
-            color: #0F172A;
-        }
-        
-        /* ==========================================
+      .font-selector {
+        display: flex;
+        gap: 0.5rem;
+        background: #f8fafc;
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+      }
+
+      .font-btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: transparent;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        color: #64748b;
+        transition: all 0.2s;
+      }
+
+      .font-btn.active {
+        background: white;
+        color: #0f172a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+
+      .font-btn:hover:not(.active) {
+        color: #0f172a;
+      }
+
+      /* ==========================================
            أحجام العرض
            ========================================== */
-        .sizes {
-            display: flex;
-            gap: 3rem;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .size-demo {
-            text-align: center;
-        }
-        
-        .size-demo span {
-            font-family: 'Aref Ruqaa', serif;
-            font-weight: 700;
-            color: #0F172A;
-            display: block;
-        }
-        
-        .size-label {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            margin-top: 0.5rem;
-        }
-        
-        /* تسميات */
-        .section-label {
-            font-size: 0.7rem;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            margin-bottom: 1rem;
-        }
-        
-        section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-    </style>
-</head>
-<body>
+      .sizes {
+        display: flex;
+        gap: 3rem;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
 
+      .size-demo {
+        text-align: center;
+      }
+
+      .size-demo span {
+        font-family: 'Aref Ruqaa', serif;
+        font-weight: 700;
+        color: #0f172a;
+        display: block;
+      }
+
+      .size-label {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        margin-top: 0.5rem;
+      }
+
+      /* تسميات */
+      .section-label {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        margin-bottom: 1rem;
+      }
+
+      section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
     <!-- النسخة الرئيسية - تأثير القلم -->
     <section>
-        <div class="section-label">Pen Writing Effect</div>
-        <div class="pen-effect-container" id="penEffect">
-            <div class="pen-text">إنجزنا</div>
-        </div>
+      <div class="section-label">Pen Writing Effect</div>
+      <div class="pen-effect-container" id="penEffect">
+        <div class="pen-text">إنجزنا</div>
+      </div>
     </section>
 
     <!-- النسخة الثانية - حرف حرف -->
     <section>
-        <div class="section-label">Letter by Letter</div>
-        <div class="letters-container" id="lettersContainer">
-            <span class="letter">إ</span>
-            <span class="letter">ن</span>
-            <span class="letter">ج</span>
-            <span class="letter">ز</span>
-            <span class="letter">ن</span>
-            <span class="letter">ا</span>
-        </div>
+      <div class="section-label">Letter by Letter</div>
+      <div class="letters-container" id="lettersContainer">
+        <span class="letter">إ</span>
+        <span class="letter">ن</span>
+        <span class="letter">ج</span>
+        <span class="letter">ز</span>
+        <span class="letter">ن</span>
+        <span class="letter">ا</span>
+      </div>
     </section>
 
     <!-- أزرار التحكم -->
     <div class="controls">
-        <button class="btn" onclick="restartAll()">
-            🔄 إعادة تشغيل
-        </button>
+      <button class="btn" onclick="restartAll()">🔄 إعادة تشغيل</button>
     </div>
 
     <!-- أحجام مختلفة -->
     <section>
-        <div class="section-label">Sizes</div>
-        <div class="sizes">
-            <div class="size-demo">
-                <span style="font-size: 1.5rem;">إنجزنا</span>
-                <div class="size-label">Small</div>
-            </div>
-            <div class="size-demo">
-                <span style="font-size: 2.5rem;">إنجزنا</span>
-                <div class="size-label">Medium</div>
-            </div>
-            <div class="size-demo">
-                <span style="font-size: 4rem;">إنجزنا</span>
-                <div class="size-label">Large</div>
-            </div>
+      <div class="section-label">Sizes</div>
+      <div class="sizes">
+        <div class="size-demo">
+          <span style="font-size: 1.5rem">إنجزنا</span>
+          <div class="size-label">Small</div>
         </div>
+        <div class="size-demo">
+          <span style="font-size: 2.5rem">إنجزنا</span>
+          <div class="size-label">Medium</div>
+        </div>
+        <div class="size-demo">
+          <span style="font-size: 4rem">إنجزنا</span>
+          <div class="size-label">Large</div>
+        </div>
+      </div>
     </section>
 
     <script>
-        function restartAll() {
-            // إعادة تشغيل تأثير القلم
-            const penContainer = document.getElementById('penEffect');
-            const penText = penContainer.querySelector('.pen-text');
-            penText.style.animation = 'none';
-            penText.offsetHeight;
-            penText.style.animation = null;
-            
-            // إعادة تشغيل الحروف
-            const letters = document.querySelectorAll('.letter');
-            letters.forEach(letter => {
-                letter.style.animation = 'none';
-                letter.offsetHeight;
-                letter.style.animation = null;
-            });
-        }
+      function restartAll() {
+        // إعادة تشغيل تأثير القلم
+        const penContainer = document.getElementById('penEffect');
+        const penText = penContainer.querySelector('.pen-text');
+        penText.style.animation = 'none';
+        penText.offsetHeight;
+        penText.style.animation = null;
+
+        // إعادة تشغيل الحروف
+        const letters = document.querySelectorAll('.letter');
+        letters.forEach((letter) => {
+          letter.style.animation = 'none';
+          letter.offsetHeight;
+          letter.style.animation = null;
+        });
+      }
     </script>
-</body>
+  </body>
 </html>

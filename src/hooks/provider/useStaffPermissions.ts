@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 // ============================================================================
 // Types
@@ -9,36 +9,36 @@ import { createClient } from '@/lib/supabase/client'
 
 export interface StaffPermissions {
   // Role Information
-  isOwner: boolean
-  isStaff: boolean
-  userRole: 'owner' | 'staff' | null
+  isOwner: boolean;
+  isStaff: boolean;
+  userRole: 'owner' | 'staff' | null;
 
   // Provider Information
-  providerId: string | null
-  providerName: { ar: string; en: string } | null
-  providerStatus: string | null
+  providerId: string | null;
+  providerName: { ar: string; en: string } | null;
+  providerStatus: string | null;
 
   // User Information
-  userId: string | null
-  userName: string | null
-  userEmail: string | null
+  userId: string | null;
+  userName: string | null;
+  userEmail: string | null;
 
   // Permissions - All permissions (owners always have all)
-  canManageOrders: boolean      // Orders + Refunds
-  canManageMenu: boolean        // Products
-  canManageCustomers: boolean   // Customer data
-  canViewAnalytics: boolean     // Analytics & Reports
-  canManageOffers: boolean      // Promotions & Banners
-  canManageTeam: boolean        // Team management (owner only)
+  canManageOrders: boolean; // Orders + Refunds
+  canManageMenu: boolean; // Products
+  canManageCustomers: boolean; // Customer data
+  canViewAnalytics: boolean; // Analytics & Reports
+  canManageOffers: boolean; // Promotions & Banners
+  canManageTeam: boolean; // Team management (owner only)
 
   // Staff record ID (for updates)
-  staffRecordId: string | null
+  staffRecordId: string | null;
 }
 
 export interface UseStaffPermissionsReturn extends StaffPermissions {
-  loading: boolean
-  error: string | null
-  refetch: () => Promise<void>
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
 }
 
 // ============================================================================
@@ -62,30 +62,32 @@ const defaultPermissions: StaffPermissions = {
   canManageOffers: false,
   canManageTeam: false,
   staffRecordId: null,
-}
+};
 
 // ============================================================================
 // Hook
 // ============================================================================
 
 export function useStaffPermissions(): UseStaffPermissionsReturn {
-  const [permissions, setPermissions] = useState<StaffPermissions>(defaultPermissions)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [permissions, setPermissions] = useState<StaffPermissions>(defaultPermissions);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPermissions = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
-        setPermissions(defaultPermissions)
-        setLoading(false)
-        return
+        setPermissions(defaultPermissions);
+        setLoading(false);
+        return;
       }
 
       // Get user profile
@@ -93,12 +95,12 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
         .from('profiles')
         .select('id, full_name, email, role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (!profile) {
-        setPermissions(defaultPermissions)
-        setLoading(false)
-        return
+        setPermissions(defaultPermissions);
+        setLoading(false);
+        return;
       }
 
       // Check if user is a provider owner
@@ -108,7 +110,7 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
           .select('id, name_ar, name_en, status')
           .eq('owner_id', user.id)
           .limit(1)
-          .single()
+          .single();
 
         if (provider) {
           // Get staff record (owner should have one)
@@ -117,7 +119,7 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
             .select('id')
             .eq('provider_id', provider.id)
             .eq('user_id', user.id)
-            .single()
+            .single();
 
           setPermissions({
             isOwner: true,
@@ -137,7 +139,7 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
             canManageOffers: true,
             canManageTeam: true,
             staffRecordId: staffRecord?.id || null,
-          })
+          });
         } else {
           // Owner without provider (incomplete registration)
           setPermissions({
@@ -147,14 +149,15 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
             userId: user.id,
             userName: profile.full_name,
             userEmail: profile.email,
-          })
+          });
         }
       }
       // Check if user is a staff member
       else if (profile.role === 'provider_staff') {
         const { data: staffData } = await supabase
           .from('provider_staff')
-          .select(`
+          .select(
+            `
             id,
             role,
             is_active,
@@ -169,19 +172,20 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
               name_en,
               status
             )
-          `)
+          `
+          )
           .eq('user_id', user.id)
           .eq('is_active', true)
-          .single()
+          .single();
 
         if (staffData && staffData.providers) {
           // Type assertion for joined provider data (Supabase types this as array)
           const provider = staffData.providers as unknown as {
-            id: string
-            name_ar: string
-            name_en: string
-            status: string
-          }
+            id: string;
+            name_ar: string;
+            name_en: string;
+            status: string;
+          };
 
           setPermissions({
             isOwner: false,
@@ -201,7 +205,7 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
             canManageOffers: staffData.can_manage_offers ?? false,
             canManageTeam: false, // Staff can never manage team
             staffRecordId: staffData.id,
-          })
+          });
         } else {
           // Staff without active assignment
           setPermissions({
@@ -211,32 +215,32 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
             userId: user.id,
             userName: profile.full_name,
             userEmail: profile.email,
-          })
-          setError('لا يوجد لديك صلاحية نشطة على أي متجر')
+          });
+          setError('لا يوجد لديك صلاحية نشطة على أي متجر');
         }
       } else {
         // Not a provider owner or staff
-        setPermissions(defaultPermissions)
+        setPermissions(defaultPermissions);
       }
     } catch (err) {
-      console.error('Error fetching staff permissions:', err)
-      setError('حدث خطأ في جلب الصلاحيات')
-      setPermissions(defaultPermissions)
+      console.error('Error fetching staff permissions:', err);
+      setError('حدث خطأ في جلب الصلاحيات');
+      setPermissions(defaultPermissions);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   // Initial fetch
   useEffect(() => {
-    fetchPermissions()
-  }, [fetchPermissions])
+    fetchPermissions();
+  }, [fetchPermissions]);
 
   // Subscribe to realtime changes in provider_staff
   useEffect(() => {
-    if (!permissions.userId) return
+    if (!permissions.userId) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const channel = supabase
       .channel(`staff-permissions-${permissions.userId}`)
@@ -251,23 +255,23 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
         (payload) => {
           // If staff record was updated or deleted, refetch permissions
           if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-            fetchPermissions()
+            fetchPermissions();
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [permissions.userId, fetchPermissions])
+      supabase.removeChannel(channel);
+    };
+  }, [permissions.userId, fetchPermissions]);
 
   return {
     ...permissions,
     loading,
     error,
     refetch: fetchPermissions,
-  }
+  };
 }
 
 // ============================================================================
@@ -280,19 +284,19 @@ export function hasPermission(
 ): boolean {
   switch (permissionName) {
     case 'orders':
-      return permissions.canManageOrders
+      return permissions.canManageOrders;
     case 'menu':
-      return permissions.canManageMenu
+      return permissions.canManageMenu;
     case 'customers':
-      return permissions.canManageCustomers
+      return permissions.canManageCustomers;
     case 'analytics':
-      return permissions.canViewAnalytics
+      return permissions.canViewAnalytics;
     case 'offers':
-      return permissions.canManageOffers
+      return permissions.canManageOffers;
     case 'team':
-      return permissions.canManageTeam
+      return permissions.canManageTeam;
     default:
-      return false
+      return false;
   }
 }
 
@@ -310,6 +314,6 @@ export function getPermissionLabel(
     customers: { ar: 'العملاء', en: 'Customers' },
     analytics: { ar: 'التحليلات', en: 'Analytics' },
     offers: { ar: 'العروض والبانرات', en: 'Offers & Banners' },
-  }
-  return labels[permissionName][locale]
+  };
+  return labels[permissionName][locale];
 }

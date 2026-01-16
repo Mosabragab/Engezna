@@ -1,127 +1,129 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale, useTranslations } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
-import { Lock, Loader2, Check, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import { Lock, Loader2, Check, AlertCircle } from 'lucide-react';
 
 type Profile = {
-  id: string
-  email: string | null
-}
+  id: string;
+  email: string | null;
+};
 
 export default function PasswordPage() {
-  const locale = useLocale()
-  const t = useTranslations('settings.password')
-  const router = useRouter()
+  const locale = useLocale();
+  const t = useTranslations('settings.password');
+  const router = useRouter();
 
-  const [userId, setUserId] = useState<string | null>(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [profile, setProfile] = useState<Profile | null>(null)
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [validationError, setValidationError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const checkAuthAndLoadProfile = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/password`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/profile/password`);
+      return;
     }
 
-    setUserId(user.id)
-    setAuthLoading(false)
+    setUserId(user.id);
+    setAuthLoading(false);
 
     // Load profile for email
     const { data: profileData } = await supabase
       .from('profiles')
       .select('id, email')
       .eq('id', user.id)
-      .single()
+      .single();
 
     if (profileData) {
-      setProfile(profileData)
+      setProfile(profileData);
     }
-  }, [locale, router])
+  }, [locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadProfile()
-  }, [checkAuthAndLoadProfile])
+    checkAuthAndLoadProfile();
+  }, [checkAuthAndLoadProfile]);
 
   useEffect(() => {
     // Clear validation error when inputs change
-    setValidationError(null)
-  }, [currentPassword, newPassword, confirmPassword])
+    setValidationError(null);
+  }, [currentPassword, newPassword, confirmPassword]);
 
   async function handleUpdatePassword() {
-    if (!userId || !profile?.email) return
+    if (!userId || !profile?.email) return;
 
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setValidationError(t('error'))
-      return
+      setValidationError(t('error'));
+      return;
     }
 
     if (newPassword.length < 8) {
-      setValidationError(t('passwordTooShort'))
-      return
+      setValidationError(t('passwordTooShort'));
+      return;
     }
 
     if (newPassword !== confirmPassword) {
-      setValidationError(t('passwordMismatch'))
-      return
+      setValidationError(t('passwordMismatch'));
+      return;
     }
 
-    setSaving(true)
-    setMessage(null)
-    setValidationError(null)
+    setSaving(true);
+    setMessage(null);
+    setValidationError(null);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Verify current password by attempting to sign in
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: profile.email,
       password: currentPassword,
-    })
+    });
 
     if (signInError) {
-      setValidationError(t('wrongPassword'))
-      setSaving(false)
-      return
+      setValidationError(t('wrongPassword'));
+      setSaving(false);
+      return;
     }
 
     // Update password using Supabase Auth
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
-    })
+    });
 
     if (error) {
-      setMessage({ type: 'error', text: t('error') })
+      setMessage({ type: 'error', text: t('error') });
     } else {
-      setMessage({ type: 'success', text: t('saved') })
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+      setMessage({ type: 'success', text: t('saved') });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
 
       setTimeout(() => {
-        setMessage(null)
-      }, 3000)
+        setMessage(null);
+      }, 3000);
     }
 
-    setSaving(false)
+    setSaving(false);
   }
 
   if (authLoading) {
@@ -131,16 +133,13 @@ export default function PasswordPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
     <CustomerLayout headerTitle={t('title')} showBottomNav={true}>
-
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          {t('title')}
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">{t('title')}</h1>
 
         <Card>
           <CardContent className="pt-6 space-y-4">
@@ -161,9 +160,7 @@ export default function PasswordPage() {
 
             {/* New Password */}
             <div className="space-y-2">
-              <Label htmlFor="newPassword">
-                {t('newPassword')}
-              </Label>
+              <Label htmlFor="newPassword">{t('newPassword')}</Label>
               <Input
                 id="newPassword"
                 type="password"
@@ -175,9 +172,7 @@ export default function PasswordPage() {
 
             {/* Confirm Password */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">
-                {t('confirmPassword')}
-              </Label>
+              <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -197,11 +192,7 @@ export default function PasswordPage() {
 
             {/* Save Button */}
             <div className="flex items-center gap-3 pt-2">
-              <Button
-                onClick={handleUpdatePassword}
-                disabled={saving}
-                className="flex-1"
-              >
+              <Button onClick={handleUpdatePassword} disabled={saving} className="flex-1">
                 {saving ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -232,5 +223,5 @@ export default function PasswordPage() {
         </Card>
       </main>
     </CustomerLayout>
-  )
+  );
 }

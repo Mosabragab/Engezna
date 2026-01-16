@@ -1,10 +1,10 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 /**
  * Custom Order Auto-Expiration Edge Function
@@ -21,22 +21,22 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const now = new Date().toISOString()
+    const now = new Date().toISOString();
     const results = {
       expiredBroadcasts: 0,
       expiredRequests: 0,
       expiredApprovals: 0,
       notificationsSent: 0,
-    }
+    };
 
     // =========================================================================
     // 1. Expire Broadcasts Past Pricing Deadline
@@ -45,10 +45,10 @@ serve(async (req) => {
       .from('custom_order_broadcasts')
       .select('id, customer_id, provider_ids')
       .eq('status', 'active')
-      .lt('pricing_deadline', now)
+      .lt('pricing_deadline', now);
 
     if (broadcastError) {
-      console.error('Error fetching expired broadcasts:', broadcastError)
+      console.error('Error fetching expired broadcasts:', broadcastError);
     } else if (expiredBroadcasts && expiredBroadcasts.length > 0) {
       // Check if any request was priced
       for (const broadcast of expiredBroadcasts) {
@@ -57,7 +57,7 @@ serve(async (req) => {
           .select('id')
           .eq('broadcast_id', broadcast.id)
           .eq('status', 'priced')
-          .limit(1)
+          .limit(1);
 
         if (!pricedRequests || pricedRequests.length === 0) {
           // No pricing received - expire the broadcast
@@ -67,10 +67,10 @@ serve(async (req) => {
               status: 'expired',
               updated_at: now,
             })
-            .eq('id', broadcast.id)
+            .eq('id', broadcast.id);
 
           if (!updateError) {
-            results.expiredBroadcasts++
+            results.expiredBroadcasts++;
 
             // Also expire all pending requests
             await supabase
@@ -80,7 +80,7 @@ serve(async (req) => {
                 updated_at: now,
               })
               .eq('broadcast_id', broadcast.id)
-              .eq('status', 'pending')
+              .eq('status', 'pending');
 
             // Notify customer that no pricing was received
             await sendNotification(supabase, supabaseUrl, supabaseServiceKey, {
@@ -90,8 +90,8 @@ serve(async (req) => {
               body: 'No merchants responded to your custom order',
               body_ar: 'لم يستجب أي تاجر لطلبك المفتوح',
               data: { broadcast_id: broadcast.id, type: 'custom_order_expired' },
-            })
-            results.notificationsSent++
+            });
+            results.notificationsSent++;
           }
         }
       }
@@ -102,17 +102,19 @@ serve(async (req) => {
     // =========================================================================
     const { data: expiredRequests, error: requestError } = await supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         id,
         provider_id,
         broadcast_id,
         broadcast:custom_order_broadcasts(customer_id)
-      `)
+      `
+      )
       .eq('status', 'pending')
-      .lt('pricing_expires_at', now)
+      .lt('pricing_expires_at', now);
 
     if (requestError) {
-      console.error('Error fetching expired requests:', requestError)
+      console.error('Error fetching expired requests:', requestError);
     } else if (expiredRequests && expiredRequests.length > 0) {
       for (const request of expiredRequests) {
         const { error: updateError } = await supabase
@@ -121,10 +123,10 @@ serve(async (req) => {
             status: 'expired',
             updated_at: now,
           })
-          .eq('id', request.id)
+          .eq('id', request.id);
 
         if (!updateError) {
-          results.expiredRequests++
+          results.expiredRequests++;
 
           // Notify merchant that they missed the deadline
           await sendNotification(supabase, supabaseUrl, supabaseServiceKey, {
@@ -134,8 +136,8 @@ serve(async (req) => {
             body: 'A custom order pricing deadline has passed',
             body_ar: 'انتهت مهلة تسعير طلب مفتوح',
             data: { request_id: request.id, type: 'pricing_expired' },
-          })
-          results.notificationsSent++
+          });
+          results.notificationsSent++;
         }
       }
     }
@@ -144,21 +146,23 @@ serve(async (req) => {
     // 3. Expire Customer Approval Windows
     // =========================================================================
     // Find priced requests where customer hasn't responded in time
-    const approvalTimeout = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
+    const approvalTimeout = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2 hours ago
 
     const { data: pendingApprovals, error: approvalError } = await supabase
       .from('custom_order_requests')
-      .select(`
+      .select(
+        `
         id,
         provider_id,
         order_id,
         broadcast:custom_order_broadcasts(customer_id)
-      `)
+      `
+      )
       .eq('status', 'priced')
-      .lt('priced_at', approvalTimeout)
+      .lt('priced_at', approvalTimeout);
 
     if (approvalError) {
-      console.error('Error fetching pending approvals:', approvalError)
+      console.error('Error fetching pending approvals:', approvalError);
     } else if (pendingApprovals && pendingApprovals.length > 0) {
       for (const request of pendingApprovals) {
         // Update request status
@@ -168,10 +172,10 @@ serve(async (req) => {
             status: 'expired',
             updated_at: now,
           })
-          .eq('id', request.id)
+          .eq('id', request.id);
 
         if (!updateError) {
-          results.expiredApprovals++
+          results.expiredApprovals++;
 
           // Also update the order if exists
           if (request.order_id) {
@@ -182,7 +186,7 @@ serve(async (req) => {
                 cancelled_at: now,
                 cancellation_reason: 'Customer approval timeout',
               })
-              .eq('id', request.order_id)
+              .eq('id', request.order_id);
           }
 
           // Notify merchant
@@ -193,13 +197,13 @@ serve(async (req) => {
             body: 'Customer did not respond to your quote',
             body_ar: 'لم يستجب العميل لتسعيرتك',
             data: { request_id: request.id, type: 'approval_expired' },
-          })
-          results.notificationsSent++
+          });
+          results.notificationsSent++;
 
           // Notify customer
           const broadcast = Array.isArray(request.broadcast)
             ? request.broadcast[0]
-            : request.broadcast
+            : request.broadcast;
           if (broadcast?.customer_id) {
             await sendNotification(supabase, supabaseUrl, supabaseServiceKey, {
               user_id: broadcast.customer_id,
@@ -208,8 +212,8 @@ serve(async (req) => {
               body: 'Your quote approval window has expired',
               body_ar: 'انتهت مهلة الموافقة على العرض',
               data: { request_id: request.id, type: 'approval_expired' },
-            })
-            results.notificationsSent++
+            });
+            results.notificationsSent++;
           }
         }
       }
@@ -223,7 +227,7 @@ serve(async (req) => {
       .from('custom_order_broadcasts')
       .select('id')
       .eq('status', 'active')
-      .lt('expires_at', now)
+      .lt('expires_at', now);
 
     if (activeBroadcasts && activeBroadcasts.length > 0) {
       for (const broadcast of activeBroadcasts) {
@@ -233,7 +237,7 @@ serve(async (req) => {
           .select('order_id')
           .eq('broadcast_id', broadcast.id)
           .eq('status', 'customer_approved')
-          .single()
+          .single();
 
         if (winningRequest?.order_id) {
           // Has a winner - mark as completed
@@ -245,7 +249,7 @@ serve(async (req) => {
               completed_at: now,
               updated_at: now,
             })
-            .eq('id', broadcast.id)
+            .eq('id', broadcast.id);
         } else {
           // No winner - mark as expired
           await supabase
@@ -254,7 +258,7 @@ serve(async (req) => {
               status: 'expired',
               updated_at: now,
             })
-            .eq('id', broadcast.id)
+            .eq('id', broadcast.id);
         }
       }
     }
@@ -268,18 +272,15 @@ serve(async (req) => {
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
-    )
+    );
   } catch (error) {
-    console.error('Error in custom-order-expiration:', error)
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    )
+    console.error('Error in custom-order-expiration:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
-})
+});
 
 // Helper function to send notifications
 async function sendNotification(
@@ -287,17 +288,17 @@ async function sendNotification(
   supabaseUrl: string,
   supabaseServiceKey: string,
   payload: {
-    user_id?: string
-    provider_id?: string
-    title: string
-    title_ar: string
-    body: string
-    body_ar: string
-    data: Record<string, string>
+    user_id?: string;
+    provider_id?: string;
+    title: string;
+    title_ar: string;
+    body: string;
+    body_ar: string;
+    data: Record<string, string>;
   }
 ) {
   try {
-    const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`
+    const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
 
     await fetch(sendNotificationUrl, {
       method: 'POST',
@@ -306,8 +307,8 @@ async function sendNotification(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
-    })
+    });
   } catch (error) {
-    console.error('Error sending notification:', error)
+    console.error('Error sending notification:', error);
   }
 }

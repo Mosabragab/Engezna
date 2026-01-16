@@ -1,2 +1,2 @@
-export { InstallPrompt } from './InstallPrompt'
-export { NetworkStatus } from './NetworkStatus'
+export { InstallPrompt } from './InstallPrompt';
+export { NetworkStatus } from './NetworkStatus';

@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   X,
   Mail,
@@ -17,21 +17,26 @@ import {
   Users,
   BarChart3,
   Tag,
-} from 'lucide-react'
+} from 'lucide-react';
 
 interface AddStaffModalProps {
-  locale: string
-  providerId: string
-  onClose: () => void
-  onSuccess: () => void
+  locale: string;
+  providerId: string;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 interface PermissionOption {
-  key: 'can_manage_orders' | 'can_manage_menu' | 'can_manage_customers' | 'can_view_analytics' | 'can_manage_offers'
-  icon: React.ComponentType<{ className?: string }>
-  label: { ar: string; en: string }
-  description: { ar: string; en: string }
-  defaultValue: boolean
+  key:
+    | 'can_manage_orders'
+    | 'can_manage_menu'
+    | 'can_manage_customers'
+    | 'can_view_analytics'
+    | 'can_manage_offers';
+  icon: React.ComponentType<{ className?: string }>;
+  label: { ar: string; en: string };
+  description: { ar: string; en: string };
+  defaultValue: boolean;
 }
 
 const permissionOptions: PermissionOption[] = [
@@ -39,7 +44,10 @@ const permissionOptions: PermissionOption[] = [
     key: 'can_manage_orders',
     icon: ShoppingBag,
     label: { ar: 'إدارة الطلبات والمرتجعات', en: 'Manage Orders & Refunds' },
-    description: { ar: 'قبول ورفض الطلبات، إدارة المرتجعات', en: 'Accept/reject orders, manage refunds' },
+    description: {
+      ar: 'قبول ورفض الطلبات، إدارة المرتجعات',
+      en: 'Accept/reject orders, manage refunds',
+    },
     defaultValue: true,
   },
   {
@@ -53,7 +61,10 @@ const permissionOptions: PermissionOption[] = [
     key: 'can_manage_customers',
     icon: Users,
     label: { ar: 'عرض بيانات العملاء', en: 'View Customer Data' },
-    description: { ar: 'الوصول لبيانات العملاء وسجل الطلبات', en: 'Access customer data and order history' },
+    description: {
+      ar: 'الوصول لبيانات العملاء وسجل الطلبات',
+      en: 'Access customer data and order history',
+    },
     defaultValue: false,
   },
   {
@@ -67,30 +78,33 @@ const permissionOptions: PermissionOption[] = [
     key: 'can_manage_offers',
     icon: Tag,
     label: { ar: 'إدارة العروض والبانرات', en: 'Manage Offers & Banners' },
-    description: { ar: 'إنشاء وتعديل العروض والبانرات', en: 'Create and edit promotions and banners' },
+    description: {
+      ar: 'إنشاء وتعديل العروض والبانرات',
+      en: 'Create and edit promotions and banners',
+    },
     defaultValue: false,
   },
-]
+];
 
 export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddStaffModalProps) {
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState('');
   const [permissions, setPermissions] = useState<Record<string, boolean>>({
     can_manage_orders: true,
     can_manage_menu: true,
     can_manage_customers: false,
     can_view_analytics: false,
     can_manage_offers: false,
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState<{ userExists: boolean; userName?: string } | null>(null)
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState<{ userExists: boolean; userName?: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       const { data, error: rpcError } = await supabase.rpc('create_provider_invitation', {
@@ -101,46 +115,43 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
         p_can_manage_customers: permissions.can_manage_customers,
         p_can_view_analytics: permissions.can_view_analytics,
         p_can_manage_offers: permissions.can_manage_offers,
-      })
+      });
 
-      if (rpcError) throw rpcError
+      if (rpcError) throw rpcError;
 
       if (!data?.success) {
-        setError(data?.error || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'))
-        return
+        setError(data?.error || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'));
+        return;
       }
 
       setSuccess({
         userExists: data.user_exists,
         userName: data.user_name,
-      })
+      });
 
       // Auto-close after 2 seconds on success
       setTimeout(() => {
-        onSuccess()
-      }, 2000)
+        onSuccess();
+      }, 2000);
     } catch (err) {
-      console.error('Error creating invitation:', err)
-      setError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء الدعوة' : 'Error creating invitation')
+      console.error('Error creating invitation:', err);
+      setError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء الدعوة' : 'Error creating invitation');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const togglePermission = (key: string) => {
-    setPermissions(prev => ({
+    setPermissions((prev) => ({
       ...prev,
       [key]: !prev[key],
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
@@ -155,14 +166,13 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
                 {locale === 'ar' ? 'إضافة مشرف جديد' : 'Add New Staff Member'}
               </h2>
               <p className="text-sm text-white/80">
-                {locale === 'ar' ? 'أدخل البريد الإلكتروني والصلاحيات' : 'Enter email and permissions'}
+                {locale === 'ar'
+                  ? 'أدخل البريد الإلكتروني والصلاحيات'
+                  : 'Enter email and permissions'}
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -178,13 +188,12 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
             </h3>
             <p className="text-slate-600">
               {success.userExists
-                ? (locale === 'ar'
+                ? locale === 'ar'
                   ? `تم إرسال دعوة إلى ${success.userName || email}`
-                  : `Invitation sent to ${success.userName || email}`)
-                : (locale === 'ar'
+                  : `Invitation sent to ${success.userName || email}`
+                : locale === 'ar'
                   ? 'تم إرسال رابط دعوة بالبريد الإلكتروني. على المستخدم التسجيل أولاً.'
-                  : 'Invitation link sent via email. User needs to register first.')
-              }
+                  : 'Invitation link sent via email. User needs to register first.'}
             </p>
           </div>
         ) : (
@@ -203,7 +212,9 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
                 {locale === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
               </Label>
               <div className="relative">
-                <Mail className={`absolute ${locale === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Mail
+                  className={`absolute ${locale === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <Input
                   id="email"
                   type="email"
@@ -220,13 +231,11 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
 
             {/* Permissions */}
             <div className="space-y-3">
-              <Label>
-                {locale === 'ar' ? 'الصلاحيات' : 'Permissions'}
-              </Label>
+              <Label>{locale === 'ar' ? 'الصلاحيات' : 'Permissions'}</Label>
               <div className="space-y-2">
                 {permissionOptions.map((option) => {
-                  const Icon = option.icon
-                  const isEnabled = permissions[option.key]
+                  const Icon = option.icon;
+                  const isEnabled = permissions[option.key];
 
                   return (
                     <button
@@ -235,41 +244,43 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
                       onClick={() => togglePermission(option.key)}
                       className={`
                         w-full p-3 rounded-xl border text-start transition-all duration-200
-                        ${isEnabled
-                          ? 'border-primary/30 bg-primary/5'
-                          : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/50'
+                        ${
+                          isEnabled
+                            ? 'border-primary/30 bg-primary/5'
+                            : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/50'
                         }
                       `}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`
+                        <div
+                          className={`
                           w-10 h-10 rounded-lg flex items-center justify-center
                           ${isEnabled ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'}
-                        `}>
+                        `}
+                        >
                           <Icon className="w-5 h-5" />
                         </div>
                         <div className="flex-1">
-                          <p className={`font-medium ${isEnabled ? 'text-slate-900' : 'text-slate-500'}`}>
+                          <p
+                            className={`font-medium ${isEnabled ? 'text-slate-900' : 'text-slate-500'}`}
+                          >
                             {option.label[locale as 'ar' | 'en']}
                           </p>
                           <p className="text-xs text-slate-400">
                             {option.description[locale as 'ar' | 'en']}
                           </p>
                         </div>
-                        <div className={`
+                        <div
+                          className={`
                           w-6 h-6 rounded-full border-2 flex items-center justify-center
-                          ${isEnabled
-                            ? 'border-primary bg-primary'
-                            : 'border-slate-300'
-                          }
-                        `}>
-                          {isEnabled && (
-                            <CheckCircle className="w-4 h-4 text-white" />
-                          )}
+                          ${isEnabled ? 'border-primary bg-primary' : 'border-slate-300'}
+                        `}
+                        >
+                          {isEnabled && <CheckCircle className="w-4 h-4 text-white" />}
                         </div>
                       </div>
                     </button>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -279,8 +290,7 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
               <p className="text-xs text-blue-700">
                 {locale === 'ar'
                   ? 'إذا لم يكن للمستخدم حساب، سيتم إرسال رابط دعوة بالبريد الإلكتروني. الدعوة صالحة لمدة 7 أيام.'
-                  : 'If the user doesn\'t have an account, an invitation link will be sent via email. The invitation is valid for 7 days.'
-                }
+                  : "If the user doesn't have an account, an invitation link will be sent via email. The invitation is valid for 7 days."}
               </p>
             </div>
 
@@ -295,11 +305,7 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
               >
                 {locale === 'ar' ? 'إلغاء' : 'Cancel'}
               </Button>
-              <Button
-                type="submit"
-                disabled={loading || !email.trim()}
-                className="flex-1"
-              >
+              <Button type="submit" disabled={loading || !email.trim()} className="flex-1">
                 {loading ? (
                   <RefreshCw className="w-5 h-5 animate-spin" />
                 ) : (
@@ -314,5 +320,5 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
         )}
       </div>
     </div>
-  )
+  );
 }

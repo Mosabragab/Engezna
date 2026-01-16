@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
-import { RefundConfirmationCard } from '@/components/customer/support'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEffect, useState, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
+import { RefundConfirmationCard } from '@/components/customer/support';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   MessageSquare,
   RefreshCw,
@@ -25,87 +25,124 @@ import {
   Loader2,
   ChevronRight,
   ChevronLeft,
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ar, enUS } from 'date-fns/locale'
-import Link from 'next/link'
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ar, enUS } from 'date-fns/locale';
+import Link from 'next/link';
 
 interface SupportTicket {
-  id: string
-  ticket_number: string
-  type: string
-  subject: string
-  description: string
-  status: string
-  priority: string
-  created_at: string
-  resolved_at: string | null
+  id: string;
+  ticket_number: string;
+  type: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  resolved_at: string | null;
   order?: {
-    order_number: string
-  }
+    order_number: string;
+  };
   provider?: {
-    name_ar: string
-    name_en: string
-  }
+    name_ar: string;
+    name_en: string;
+  };
 }
 
 interface Refund {
-  id: string
-  order_id: string
-  amount: number
-  reason: string
-  reason_ar: string
-  status: string
-  provider_action: string
-  customer_confirmed: boolean
-  confirmation_deadline: string | null
-  provider_notes: string | null
-  created_at: string
-  processed_at: string | null
+  id: string;
+  order_id: string;
+  amount: number;
+  reason: string;
+  reason_ar: string;
+  status: string;
+  provider_action: string;
+  customer_confirmed: boolean;
+  confirmation_deadline: string | null;
+  provider_notes: string | null;
+  created_at: string;
+  processed_at: string | null;
   order?: {
-    order_number: string
-  }
+    order_number: string;
+  };
   provider?: {
-    name_ar: string
-    name_en: string
-  }
+    name_ar: string;
+    name_en: string;
+  };
 }
 
-const TICKET_STATUS_CONFIG: Record<string, { label_ar: string; label_en: string; color: string; icon: typeof Clock }> = {
+const TICKET_STATUS_CONFIG: Record<
+  string,
+  { label_ar: string; label_en: string; color: string; icon: typeof Clock }
+> = {
   open: { label_ar: 'مفتوحة', label_en: 'Open', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  in_progress: { label_ar: 'قيد المعالجة', label_en: 'In Progress', color: 'bg-yellow-100 text-yellow-700', icon: RefreshCw },
-  waiting: { label_ar: 'في انتظار ردك', label_en: 'Waiting for you', color: 'bg-orange-100 text-orange-700', icon: AlertCircle },
-  resolved: { label_ar: 'تم الحل', label_en: 'Resolved', color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-  closed: { label_ar: 'مغلقة', label_en: 'Closed', color: 'bg-slate-100 text-slate-700', icon: XCircle },
-}
+  in_progress: {
+    label_ar: 'قيد المعالجة',
+    label_en: 'In Progress',
+    color: 'bg-yellow-100 text-yellow-700',
+    icon: RefreshCw,
+  },
+  waiting: {
+    label_ar: 'في انتظار ردك',
+    label_en: 'Waiting for you',
+    color: 'bg-orange-100 text-orange-700',
+    icon: AlertCircle,
+  },
+  resolved: {
+    label_ar: 'تم الحل',
+    label_en: 'Resolved',
+    color: 'bg-green-100 text-green-700',
+    icon: CheckCircle2,
+  },
+  closed: {
+    label_ar: 'مغلقة',
+    label_en: 'Closed',
+    color: 'bg-slate-100 text-slate-700',
+    icon: XCircle,
+  },
+};
 
-const REFUND_STATUS_CONFIG: Record<string, { label_ar: string; label_en: string; color: string }> = {
-  pending: { label_ar: 'قيد المراجعة', label_en: 'Pending', color: 'bg-yellow-100 text-yellow-700' },
-  approved: { label_ar: 'تمت الموافقة', label_en: 'Approved', color: 'bg-blue-100 text-blue-700' },
-  rejected: { label_ar: 'مرفوض', label_en: 'Rejected', color: 'bg-red-100 text-red-700' },
-  processed: { label_ar: 'تم التنفيذ', label_en: 'Processed', color: 'bg-green-100 text-green-700' },
-  failed: { label_ar: 'فشل', label_en: 'Failed', color: 'bg-red-100 text-red-700' },
-}
+const REFUND_STATUS_CONFIG: Record<string, { label_ar: string; label_en: string; color: string }> =
+  {
+    pending: {
+      label_ar: 'قيد المراجعة',
+      label_en: 'Pending',
+      color: 'bg-yellow-100 text-yellow-700',
+    },
+    approved: {
+      label_ar: 'تمت الموافقة',
+      label_en: 'Approved',
+      color: 'bg-blue-100 text-blue-700',
+    },
+    rejected: { label_ar: 'مرفوض', label_en: 'Rejected', color: 'bg-red-100 text-red-700' },
+    processed: {
+      label_ar: 'تم التنفيذ',
+      label_en: 'Processed',
+      color: 'bg-green-100 text-green-700',
+    },
+    failed: { label_ar: 'فشل', label_en: 'Failed', color: 'bg-red-100 text-red-700' },
+  };
 
 export default function CustomerSupportPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const isArabic = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const isArabic = locale === 'ar';
 
-  const [tickets, setTickets] = useState<SupportTicket[]>([])
-  const [refunds, setRefunds] = useState<Refund[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('refunds')
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('refunds');
 
   const loadData = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     // Fetch support tickets
     const { data: ticketsData } = await supabase
       .from('support_tickets')
-      .select(`
+      .select(
+        `
         id,
         ticket_number,
         type,
@@ -117,22 +154,26 @@ export default function CustomerSupportPage() {
         resolved_at,
         order:orders(order_number),
         provider:providers(name_ar, name_en)
-      `)
+      `
+      )
       .eq('user_id', user?.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (ticketsData) {
-      setTickets(ticketsData.map(t => ({
-        ...t,
-        order: Array.isArray(t.order) ? t.order[0] : t.order,
-        provider: Array.isArray(t.provider) ? t.provider[0] : t.provider,
-      })))
+      setTickets(
+        ticketsData.map((t) => ({
+          ...t,
+          order: Array.isArray(t.order) ? t.order[0] : t.order,
+          provider: Array.isArray(t.provider) ? t.provider[0] : t.provider,
+        }))
+      );
     }
 
     // Fetch refunds
     const { data: refundsData } = await supabase
       .from('refunds')
-      .select(`
+      .select(
+        `
         id,
         order_id,
         amount,
@@ -147,45 +188,48 @@ export default function CustomerSupportPage() {
         processed_at,
         order:orders(order_number),
         provider:providers(name_ar, name_en)
-      `)
+      `
+      )
       .eq('customer_id', user?.id)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (refundsData) {
-      setRefunds(refundsData.map(r => ({
-        ...r,
-        order: Array.isArray(r.order) ? r.order[0] : r.order,
-        provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
-      })))
+      setRefunds(
+        refundsData.map((r) => ({
+          ...r,
+          order: Array.isArray(r.order) ? r.order[0] : r.order,
+          provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
+        }))
+      );
     }
 
-    setLoading(false)
-  }, [user?.id])
+    setLoading(false);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login?redirect=/profile/support`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/profile/support`);
+      return;
     }
     if (user) {
-      loadData()
+      loadData();
     }
-  }, [user, authLoading, router, locale, loadData])
+  }, [user, authLoading, router, locale, loadData]);
 
   const formatDate = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {
       addSuffix: true,
       locale: isArabic ? ar : enUS,
-    })
-  }
+    });
+  };
 
   // Separate refunds that need confirmation
   const refundsNeedingConfirmation = refunds.filter(
-    r => r.provider_action === 'cash_refund' && !r.customer_confirmed
-  )
+    (r) => r.provider_action === 'cash_refund' && !r.customer_confirmed
+  );
   const otherRefunds = refunds.filter(
-    r => !(r.provider_action === 'cash_refund' && !r.customer_confirmed)
-  )
+    (r) => !(r.provider_action === 'cash_refund' && !r.customer_confirmed)
+  );
 
   if (loading || authLoading) {
     return (
@@ -193,13 +237,11 @@ export default function CustomerSupportPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-slate-500">
-              {isArabic ? 'جاري التحميل...' : 'Loading...'}
-            </p>
+            <p className="text-slate-500">{isArabic ? 'جاري التحميل...' : 'Loading...'}</p>
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -303,7 +345,8 @@ export default function CustomerSupportPage() {
             ) : (
               <div className="space-y-3">
                 {otherRefunds.map((refund) => {
-                  const statusConfig = REFUND_STATUS_CONFIG[refund.status] || REFUND_STATUS_CONFIG.pending
+                  const statusConfig =
+                    REFUND_STATUS_CONFIG[refund.status] || REFUND_STATUS_CONFIG.pending;
 
                   return (
                     <Card key={refund.id} className="overflow-hidden">
@@ -342,12 +385,16 @@ export default function CustomerSupportPage() {
                             className="mt-3 flex items-center justify-center gap-2 text-primary text-sm font-medium hover:underline"
                           >
                             {isArabic ? 'عرض الطلب' : 'View Order'}
-                            {isArabic ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            {isArabic ? (
+                              <ChevronLeft className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
                           </Link>
                         )}
                       </CardContent>
                     </Card>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -372,8 +419,9 @@ export default function CustomerSupportPage() {
             ) : (
               <div className="space-y-3">
                 {tickets.map((ticket) => {
-                  const statusConfig = TICKET_STATUS_CONFIG[ticket.status] || TICKET_STATUS_CONFIG.open
-                  const StatusIcon = statusConfig.icon
+                  const statusConfig =
+                    TICKET_STATUS_CONFIG[ticket.status] || TICKET_STATUS_CONFIG.open;
+                  const StatusIcon = statusConfig.icon;
 
                   return (
                     <Link key={ticket.id} href={`/${locale}/profile/support/${ticket.id}`}>
@@ -390,13 +438,15 @@ export default function CustomerSupportPage() {
                               <Badge className={statusConfig.color}>
                                 {isArabic ? statusConfig.label_ar : statusConfig.label_en}
                               </Badge>
-                              {isArabic ? <ChevronLeft className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                              {isArabic ? (
+                                <ChevronLeft className="w-4 h-4 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                              )}
                             </div>
                           </div>
 
-                          <h4 className="font-semibold text-slate-900 mb-1">
-                            {ticket.subject}
-                          </h4>
+                          <h4 className="font-semibold text-slate-900 mb-1">{ticket.subject}</h4>
 
                           {ticket.description && (
                             <p className="text-sm text-slate-600 mb-3 line-clamp-2">
@@ -416,7 +466,7 @@ export default function CustomerSupportPage() {
                         </CardContent>
                       </Card>
                     </Link>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -424,5 +474,5 @@ export default function CustomerSupportPage() {
         </Tabs>
       </div>
     </CustomerLayout>
-  )
+  );
 }

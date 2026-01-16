@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin'
-import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters'
-import { useAdminFinancialData } from '@/hooks/useFinancialData'
-import type { FinancialFilters, Settlement } from '@/types/finance'
+import { useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar, GeoFilter, useGeoFilter } from '@/components/admin';
+import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters';
+import { useAdminFinancialData } from '@/hooks/useFinancialData';
+import type { FinancialFilters, Settlement } from '@/types/finance';
 import {
   Shield,
   Search,
@@ -33,37 +33,45 @@ import {
   Percent,
   AlertCircle,
   Users,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-type FilterSettlementStatus = 'all' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'disputed' | 'waived'
+type FilterSettlementStatus =
+  | 'all'
+  | 'pending'
+  | 'partially_paid'
+  | 'paid'
+  | 'overdue'
+  | 'disputed'
+  | 'waived';
 
 export default function AdminFinancePage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const { toggle: toggleSidebar } = useAdminSidebar()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { toggle: toggleSidebar } = useAdminSidebar();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Local state for filters
-  const { geoFilter, setGeoFilter } = useGeoFilter()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [settlementStatusFilter, setSettlementStatusFilter] = useState<FilterSettlementStatus>('all')
+  const { geoFilter, setGeoFilter } = useGeoFilter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [settlementStatusFilter, setSettlementStatusFilter] =
+    useState<FilterSettlementStatus>('all');
 
   // Build filters for the hook
-  const [filters, setFilters] = useState<FinancialFilters>({})
+  const [filters, setFilters] = useState<FinancialFilters>({});
 
   // Update filters when geoFilter changes
   useEffect(() => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       governorateId: geoFilter.governorate_id || undefined,
       cityId: geoFilter.city_id || undefined,
-    }))
-  }, [geoFilter])
+    }));
+  }, [geoFilter]);
 
   // Use the financial data hook
   const {
@@ -78,63 +86,73 @@ export default function AdminFinancePage() {
   } = useAdminFinancialData({
     filters,
     refreshInterval: 5 * 60 * 1000, // Auto-refresh every 5 minutes
-  })
+  });
 
   // Load settlements with status filter
   useEffect(() => {
     if (isAdmin) {
-      const statusFilters = settlementStatusFilter !== 'all'
-        ? { ...filters, status: [settlementStatusFilter] as any }
-        : filters
-      loadSettlements(statusFilters)
+      const statusFilters =
+        settlementStatusFilter !== 'all'
+          ? { ...filters, status: [settlementStatusFilter] as any }
+          : filters;
+      loadSettlements(statusFilters);
     }
-  }, [isAdmin, settlementStatusFilter, filters, loadSettlements])
+  }, [isAdmin, settlementStatusFilter, filters, loadSettlements]);
 
   // Filter settlements by search query
-  const filteredSettlements = settlements.filter(s => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
-    const name = locale === 'ar' ? s.providerName?.ar : s.providerName?.en
-    return name?.toLowerCase().includes(query) || s.id.toLowerCase().includes(query)
-  })
+  const filteredSettlements = settlements.filter((s) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const name = locale === 'ar' ? s.providerName?.ar : s.providerName?.en;
+    return name?.toLowerCase().includes(query) || s.id.toLowerCase().includes(query);
+  });
 
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        setLoading(false)
-        return
+        setIsAdmin(true);
+        setLoading(false);
+        return;
       }
     }
 
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   const getSettlementStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'status-success'
-      case 'waived': return 'status-success'
-      case 'pending': return 'status-warning'
-      case 'partially_paid': return 'status-in-progress'
-      case 'overdue': return 'status-error'
-      case 'disputed': return 'status-error'
-      default: return 'bg-slate-100 text-slate-700'
+      case 'paid':
+        return 'status-success';
+      case 'waived':
+        return 'status-success';
+      case 'pending':
+        return 'status-warning';
+      case 'partially_paid':
+        return 'status-in-progress';
+      case 'overdue':
+        return 'status-error';
+      case 'disputed':
+        return 'status-error';
+      default:
+        return 'bg-slate-100 text-slate-700';
     }
-  }
+  };
 
   const getSettlementStatusLabel = (status: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
@@ -144,26 +162,29 @@ export default function AdminFinancePage() {
       overdue: { ar: 'متأخر', en: 'Overdue' },
       disputed: { ar: 'نزاع', en: 'Disputed' },
       waived: { ar: 'معفى', en: 'Waived' },
-    }
-    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status
-  }
+    };
+    return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
+  };
 
   const getDirectionLabel = (direction: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       platform_pays_provider: { ar: 'المنصة تدفع للتاجر', en: 'Platform Pays Provider' },
       provider_pays_platform: { ar: 'التاجر يدفع للمنصة', en: 'Provider Pays Platform' },
       balanced: { ar: 'متوازن', en: 'Balanced' },
-    }
-    return labels[direction]?.[locale === 'ar' ? 'ar' : 'en'] || direction
-  }
+    };
+    return labels[direction]?.[locale === 'ar' ? 'ar' : 'en'] || direction;
+  };
 
   const getDirectionIcon = (direction: string) => {
     switch (direction) {
-      case 'platform_pays_provider': return <ArrowUpRight className="w-4 h-4 text-green-500" />
-      case 'provider_pays_platform': return <ArrowDownRight className="w-4 h-4 text-red-500" />
-      default: return <ArrowRightLeft className="w-4 h-4 text-slate-500" />
+      case 'platform_pays_provider':
+        return <ArrowUpRight className="w-4 h-4 text-green-500" />;
+      case 'provider_pays_platform':
+        return <ArrowDownRight className="w-4 h-4 text-red-500" />;
+      default:
+        return <ArrowRightLeft className="w-4 h-4 text-slate-500" />;
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -173,7 +194,7 @@ export default function AdminFinancePage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
         </main>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -200,7 +221,7 @@ export default function AdminFinancePage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   const summary = adminSummary || {
@@ -221,7 +242,7 @@ export default function AdminFinancePage() {
     eligibleOrders: 0,
     heldOrders: 0,
     settledOrders: 0,
-  }
+  };
 
   return (
     <>
@@ -265,12 +286,20 @@ export default function AdminFinancePage() {
                 </p>
                 <div className="flex items-center gap-3">
                   <Link href={`/${locale}/admin/refunds?status=pending`}>
-                    <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                    >
                       {locale === 'ar' ? 'مراجعة المرتجعات' : 'Review Refunds'}
                     </Button>
                   </Link>
                   <Link href={`/${locale}/admin/resolution-center`}>
-                    <Button variant="outline" size="sm" className="border-amber-300 text-amber-700 hover:bg-amber-100">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                    >
                       {locale === 'ar' ? 'مركز الحلول' : 'Resolution Center'}
                     </Button>
                   </Link>
@@ -285,12 +314,10 @@ export default function AdminFinancePage() {
           <div className="flex flex-col gap-4">
             {/* Geographic Filter */}
             <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-500">{locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}</span>
-              <GeoFilter
-                value={geoFilter}
-                onChange={setGeoFilter}
-                showDistrict={true}
-              />
+              <span className="text-sm text-slate-500">
+                {locale === 'ar' ? 'فلترة جغرافية:' : 'Geographic Filter:'}
+              </span>
+              <GeoFilter value={geoFilter} onChange={setGeoFilter} showDistrict={true} />
               <Button
                 variant="outline"
                 onClick={refresh}
@@ -313,9 +340,16 @@ export default function AdminFinancePage() {
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="text-[#16A34A] text-sm mb-1">{locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}</p>
-            <p className="text-2xl font-bold text-[#16A34A]">{formatCurrency(summary.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-            <p className="text-[#22C55E] text-xs mt-2">{formatNumber(summary.totalOrders, locale)} {locale === 'ar' ? 'طلب مكتمل' : 'delivered orders'}</p>
+            <p className="text-[#16A34A] text-sm mb-1">
+              {locale === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}
+            </p>
+            <p className="text-2xl font-bold text-[#16A34A]">
+              {formatCurrency(summary.totalRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+            </p>
+            <p className="text-[#22C55E] text-xs mt-2">
+              {formatNumber(summary.totalOrders, locale)}{' '}
+              {locale === 'ar' ? 'طلب مكتمل' : 'delivered orders'}
+            </p>
           </div>
 
           {/* Platform Commission */}
@@ -331,11 +365,18 @@ export default function AdminFinancePage() {
                 </div>
               )}
             </div>
-            <p className="text-[#0077B6] text-sm mb-1">{locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}</p>
-            <p className="text-2xl font-bold text-[#0077B6]">{formatCurrency(summary.totalActualCommission, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className="text-[#0077B6] text-sm mb-1">
+              {locale === 'ar' ? 'عمولة المنصة' : 'Platform Commission'}
+            </p>
+            <p className="text-2xl font-bold text-[#0077B6]">
+              {formatCurrency(summary.totalActualCommission, locale)}{' '}
+              {locale === 'ar' ? 'ج.م' : 'EGP'}
+            </p>
             {summary.totalGracePeriodDiscount > 0 && (
               <p className="text-[#009DE0] text-xs mt-2">
-                {locale === 'ar' ? `نظري: ${formatCurrency(summary.totalTheoreticalCommission, locale)} ج.م` : `Theoretical: ${formatCurrency(summary.totalTheoreticalCommission, locale)} EGP`}
+                {locale === 'ar'
+                  ? `نظري: ${formatCurrency(summary.totalTheoreticalCommission, locale)} ج.م`
+                  : `Theoretical: ${formatCurrency(summary.totalTheoreticalCommission, locale)} EGP`}
               </p>
             )}
           </div>
@@ -347,24 +388,50 @@ export default function AdminFinancePage() {
                 <DollarSign className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="text-[#7C3AED] text-sm mb-1">{locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}</p>
-            <p className="text-2xl font-bold text-[#7C3AED]">{formatCurrency(summary.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+            <p className="text-[#7C3AED] text-sm mb-1">
+              {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fees'}
+            </p>
+            <p className="text-2xl font-bold text-[#7C3AED]">
+              {formatCurrency(summary.totalDeliveryFees, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+            </p>
           </div>
 
           {/* Net Balance */}
-          <div className={`rounded-xl p-5 border shadow-sm ${summary.totalNetBalance >= 0 ? 'bg-[#FFF9E6] border-[#F59E0B]/20' : 'bg-[#FDECEC] border-[#EF4444]/20'}`}>
+          <div
+            className={`rounded-xl p-5 border shadow-sm ${summary.totalNetBalance >= 0 ? 'bg-[#FFF9E6] border-[#F59E0B]/20' : 'bg-[#FDECEC] border-[#EF4444]/20'}`}
+          >
             <div className="flex items-center justify-between mb-3">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${summary.totalNetBalance >= 0 ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'}`}>
-                {summary.totalNetBalance >= 0 ? <TrendingUp className="w-6 h-6 text-white" /> : <TrendingDown className="w-6 h-6 text-white" />}
+              <div
+                className={`w-12 h-12 rounded-xl flex items-center justify-center ${summary.totalNetBalance >= 0 ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'}`}
+              >
+                {summary.totalNetBalance >= 0 ? (
+                  <TrendingUp className="w-6 h-6 text-white" />
+                ) : (
+                  <TrendingDown className="w-6 h-6 text-white" />
+                )}
               </div>
             </div>
-            <p className={`text-sm mb-1 ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}>{locale === 'ar' ? 'صافي الرصيد' : 'Net Balance'}</p>
-            <p className={`text-2xl font-bold ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}>{formatCurrency(Math.abs(summary.totalNetBalance), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
-            <p className={`text-xs mt-2 ${summary.totalNetBalance >= 0 ? 'text-[#F59E0B]' : 'text-[#EF4444]'}`}>
+            <p
+              className={`text-sm mb-1 ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}
+            >
+              {locale === 'ar' ? 'صافي الرصيد' : 'Net Balance'}
+            </p>
+            <p
+              className={`text-2xl font-bold ${summary.totalNetBalance >= 0 ? 'text-[#D97706]' : 'text-[#DC2626]'}`}
+            >
+              {formatCurrency(Math.abs(summary.totalNetBalance), locale)}{' '}
+              {locale === 'ar' ? 'ج.م' : 'EGP'}
+            </p>
+            <p
+              className={`text-xs mt-2 ${summary.totalNetBalance >= 0 ? 'text-[#F59E0B]' : 'text-[#EF4444]'}`}
+            >
               {summary.totalNetBalance >= 0
-                ? (locale === 'ar' ? 'المنصة تدفع للتجار' : 'Platform pays providers')
-                : (locale === 'ar' ? 'التجار يدفعون للمنصة' : 'Providers pay platform')
-              }
+                ? locale === 'ar'
+                  ? 'المنصة تدفع للتجار'
+                  : 'Platform pays providers'
+                : locale === 'ar'
+                  ? 'التجار يدفعون للمنصة'
+                  : 'Providers pay platform'}
             </p>
           </div>
         </div>
@@ -378,11 +445,17 @@ export default function AdminFinancePage() {
                 <Banknote className="w-6 h-6 text-success" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'طلبات الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatCurrency(summary.cod.revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'طلبات الدفع عند الاستلام (COD)' : 'Cash on Delivery (COD)'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatCurrency(summary.cod.revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">{formatNumber(summary.cod.orders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                <p className="text-sm text-slate-500">
+                  {formatNumber(summary.cod.orders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}
+                </p>
               </div>
             </div>
             <div className="border-t border-slate-100 pt-4">
@@ -391,7 +464,10 @@ export default function AdminFinancePage() {
                   <ArrowDownRight className="w-4 h-4 text-red-500 inline mr-1" />
                   {locale === 'ar' ? 'العمولة المستحقة من التجار' : 'Commission owed by merchants'}
                 </span>
-                <span className="font-semibold text-red-600">{formatCurrency(summary.cod.commissionOwed, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                <span className="font-semibold text-red-600">
+                  {formatCurrency(summary.cod.commissionOwed, locale)}{' '}
+                  {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
               </div>
             </div>
           </div>
@@ -403,11 +479,17 @@ export default function AdminFinancePage() {
                 <CreditCard className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'طلبات الدفع الإلكتروني' : 'Online Payments'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatCurrency(summary.online.revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'طلبات الدفع الإلكتروني' : 'Online Payments'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatCurrency(summary.online.revenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">{formatNumber(summary.online.orders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}</p>
+                <p className="text-sm text-slate-500">
+                  {formatNumber(summary.online.orders, locale)} {locale === 'ar' ? 'طلب' : 'orders'}
+                </p>
               </div>
             </div>
             <div className="border-t border-slate-100 pt-4">
@@ -416,7 +498,10 @@ export default function AdminFinancePage() {
                   <ArrowUpRight className="w-4 h-4 text-green-500 inline mr-1" />
                   {locale === 'ar' ? 'المستحق للتجار' : 'Payout owed to merchants'}
                 </span>
-                <span className="font-semibold text-green-600">{formatCurrency(summary.online.payoutOwed, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                <span className="font-semibold text-green-600">
+                  {formatCurrency(summary.online.payoutOwed, locale)}{' '}
+                  {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
               </div>
             </div>
           </div>
@@ -430,8 +515,12 @@ export default function AdminFinancePage() {
                 <ArrowUpRight className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'المنصة تدفع لهم' : 'Platform Pays'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.providersToPay, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'المنصة تدفع لهم' : 'Platform Pays'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.providersToPay, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -442,8 +531,12 @@ export default function AdminFinancePage() {
                 <ArrowDownRight className="w-5 h-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'يدفعون للمنصة' : 'Pay Platform'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.providersToCollect, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'يدفعون للمنصة' : 'Pay Platform'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.providersToCollect, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -454,8 +547,12 @@ export default function AdminFinancePage() {
                 <ArrowRightLeft className="w-5 h-5 text-slate-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'متوازنون' : 'Balanced'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.providersBalanced, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'متوازنون' : 'Balanced'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.providersBalanced, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -469,8 +566,12 @@ export default function AdminFinancePage() {
                 <CheckCircle2 className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'طلبات جاهزة للتسوية' : 'Eligible Orders'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.eligibleOrders, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'طلبات جاهزة للتسوية' : 'Eligible Orders'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.eligibleOrders, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -481,8 +582,12 @@ export default function AdminFinancePage() {
                 <Clock className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'طلبات معلقة' : 'Held Orders'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.heldOrders, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'طلبات معلقة' : 'Held Orders'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.heldOrders, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -493,8 +598,12 @@ export default function AdminFinancePage() {
                 <Receipt className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-slate-500">{locale === 'ar' ? 'طلبات تمت تسويتها' : 'Settled Orders'}</p>
-                <p className="text-xl font-bold text-slate-900">{formatNumber(summary.settledOrders, locale)}</p>
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'طلبات تمت تسويتها' : 'Settled Orders'}
+                </p>
+                <p className="text-xl font-bold text-slate-900">
+                  {formatNumber(summary.settledOrders, locale)}
+                </p>
               </div>
             </div>
           </div>
@@ -509,7 +618,9 @@ export default function AdminFinancePage() {
               </h3>
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                 <div className="relative flex-1 sm:flex-initial">
-                  <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`} />
+                  <Search
+                    className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`}
+                  />
                   <input
                     type="text"
                     placeholder={locale === 'ar' ? 'بحث...' : 'Search...'}
@@ -520,12 +631,16 @@ export default function AdminFinancePage() {
                 </div>
                 <select
                   value={settlementStatusFilter}
-                  onChange={(e) => setSettlementStatusFilter(e.target.value as FilterSettlementStatus)}
+                  onChange={(e) =>
+                    setSettlementStatusFilter(e.target.value as FilterSettlementStatus)
+                  }
                   className="px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500"
                 >
                   <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
                   <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
-                  <option value="partially_paid">{locale === 'ar' ? 'مدفوع جزئياً' : 'Partially Paid'}</option>
+                  <option value="partially_paid">
+                    {locale === 'ar' ? 'مدفوع جزئياً' : 'Partially Paid'}
+                  </option>
                   <option value="paid">{locale === 'ar' ? 'مدفوع' : 'Paid'}</option>
                   <option value="overdue">{locale === 'ar' ? 'متأخر' : 'Overdue'}</option>
                   <option value="disputed">{locale === 'ar' ? 'نزاع' : 'Disputed'}</option>
@@ -539,13 +654,27 @@ export default function AdminFinancePage() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'المتجر' : 'Provider'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الفترة' : 'Period'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الإيرادات' : 'Revenue'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الرصيد' : 'Balance'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الاتجاه' : 'Direction'}</th>
-                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'الحالة' : 'Status'}</th>
-                  <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">{locale === 'ar' ? 'إجراءات' : 'Actions'}</th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'المتجر' : 'Provider'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الفترة' : 'Period'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الإيرادات' : 'Revenue'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الرصيد' : 'Balance'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الاتجاه' : 'Direction'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'الحالة' : 'Status'}
+                  </th>
+                  <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'إجراءات' : 'Actions'}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -564,35 +693,54 @@ export default function AdminFinancePage() {
                             <Building className="w-5 h-5 text-slate-500" />
                           </div>
                           <span className="font-medium text-slate-900">
-                            {locale === 'ar' ? settlement.providerName?.ar : settlement.providerName?.en}
+                            {locale === 'ar'
+                              ? settlement.providerName?.ar
+                              : settlement.providerName?.en}
                           </span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="text-sm">
-                          <p className="text-slate-900">{formatDate(settlement.periodStart, locale)}</p>
-                          <p className="text-slate-500">{locale === 'ar' ? 'إلى' : 'to'} {formatDate(settlement.periodEnd, locale)}</p>
+                          <p className="text-slate-900">
+                            {formatDate(settlement.periodStart, locale)}
+                          </p>
+                          <p className="text-slate-500">
+                            {locale === 'ar' ? 'إلى' : 'to'}{' '}
+                            {formatDate(settlement.periodEnd, locale)}
+                          </p>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="font-medium text-slate-900">{formatCurrency(settlement.grossRevenue, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                        <span className="font-medium text-slate-900">
+                          {formatCurrency(settlement.grossRevenue, locale)}{' '}
+                          {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-bold ${settlement.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(Math.abs(settlement.netBalance), locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        <span
+                          className={`font-bold ${settlement.netBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                        >
+                          {formatCurrency(Math.abs(settlement.netBalance), locale)}{' '}
+                          {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {getDirectionIcon(settlement.settlementDirection)}
-                          <span className="text-sm text-slate-600">{getDirectionLabel(settlement.settlementDirection)}</span>
+                          <span className="text-sm text-slate-600">
+                            {getDirectionLabel(settlement.settlementDirection)}
+                          </span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getSettlementStatusColor(settlement.status)}`}>
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full ${getSettlementStatusColor(settlement.status)}`}
+                        >
                           {settlement.status === 'paid' && <CheckCircle2 className="w-3 h-3" />}
                           {settlement.status === 'pending' && <Clock className="w-3 h-3" />}
-                          {settlement.status === 'partially_paid' && <RefreshCw className="w-3 h-3" />}
+                          {settlement.status === 'partially_paid' && (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
                           {settlement.status === 'disputed' && <XCircle className="w-3 h-3" />}
                           {settlement.status === 'overdue' && <XCircle className="w-3 h-3" />}
                           {getSettlementStatusLabel(settlement.status)}
@@ -625,5 +773,5 @@ export default function AdminFinancePage() {
         </div>
       </main>
     </>
-  )
+  );
 }

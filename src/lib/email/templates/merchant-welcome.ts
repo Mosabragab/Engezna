@@ -1,4 +1,4 @@
-import type { MerchantWelcomeData } from '../resend'
+import type { MerchantWelcomeData } from '../resend';
 
 export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
   return `<!DOCTYPE html>
@@ -111,5 +111,5 @@ export function merchantWelcomeTemplate(data: MerchantWelcomeData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

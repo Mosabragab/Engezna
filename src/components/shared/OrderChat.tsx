@@ -1,28 +1,28 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { MessageCircle, Send, X, Loader2 } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { MessageCircle, Send, X, Loader2 } from 'lucide-react';
 
 interface Message {
-  id: string
-  order_id: string
-  sender_type: 'customer' | 'provider'
-  sender_id: string
-  message: string
-  is_read: boolean
-  created_at: string
+  id: string;
+  order_id: string;
+  sender_type: 'customer' | 'provider';
+  sender_id: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 interface OrderChatProps {
-  orderId: string
-  userType: 'customer' | 'provider'
-  userId: string
-  locale: string
-  providerName?: string
-  customerName?: string
-  isInline?: boolean // New prop for inline mode
-  defaultOpen?: boolean // Open chat automatically
+  orderId: string;
+  userType: 'customer' | 'provider';
+  userId: string;
+  locale: string;
+  providerName?: string;
+  customerName?: string;
+  isInline?: boolean; // New prop for inline mode
+  defaultOpen?: boolean; // Open chat automatically
 }
 
 export function OrderChat({
@@ -35,60 +35,58 @@ export function OrderChat({
   isInline = false,
   defaultOpen = false,
 }: OrderChatProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
-  const [messages, setMessages] = useState<Message[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [sending, setSending] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   // Load messages
   const loadMessages = async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('order_messages')
       .select('*')
       .eq('order_id', orderId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true });
 
     if (!error && data) {
-      setMessages(data)
+      setMessages(data);
       // Count unread messages from the other party
-      const unread = data.filter(
-        (m) => m.sender_type !== userType && !m.is_read
-      ).length
-      setUnreadCount(unread)
+      const unread = data.filter((m) => m.sender_type !== userType && !m.is_read).length;
+      setUnreadCount(unread);
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   // Mark messages as read
   const markAsRead = async () => {
-    const supabase = createClient()
+    const supabase = createClient();
     await supabase
       .from('order_messages')
       .update({ is_read: true })
       .eq('order_id', orderId)
       .neq('sender_type', userType)
-      .eq('is_read', false)
+      .eq('is_read', false);
 
-    setUnreadCount(0)
-  }
+    setUnreadCount(0);
+  };
 
   // Send message
   const handleSend = async () => {
-    if (!newMessage.trim() || sending) return
+    if (!newMessage.trim() || sending) return;
 
-    setSending(true)
-    const supabase = createClient()
+    setSending(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('order_messages')
@@ -99,12 +97,12 @@ export function OrderChat({
         message: newMessage.trim(),
       })
       .select()
-      .single()
+      .single();
 
     if (!error && data) {
-      setMessages((prev) => [...prev, data])
-      setNewMessage('')
-      setTimeout(scrollToBottom, 100)
+      setMessages((prev) => [...prev, data]);
+      setNewMessage('');
+      setTimeout(scrollToBottom, 100);
 
       // If provider is sending, create notification for customer
       if (userType === 'provider') {
@@ -113,36 +111,35 @@ export function OrderChat({
           .from('orders')
           .select('customer_id, order_number')
           .eq('id', orderId)
-          .single()
+          .single();
 
         if (orderData?.customer_id) {
           // Create customer notification with actual store name
-          const storeName = providerName || 'المتجر'
-          const storeNameEn = providerName || 'Store'
-          const messagePreview = data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message
+          const storeName = providerName || 'المتجر';
+          const storeNameEn = providerName || 'Store';
+          const messagePreview =
+            data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message;
 
-          await supabase
-            .from('customer_notifications')
-            .insert({
-              customer_id: orderData.customer_id,
-              type: 'order_message',
-              title_ar: `رسالة جديدة من ${storeName}`,
-              title_en: `New Message from ${storeNameEn}`,
-              body_ar: `${storeName}: ${messagePreview}`,
-              body_en: `${storeNameEn}: ${messagePreview}`,
-              related_order_id: orderId,
-            })
+          await supabase.from('customer_notifications').insert({
+            customer_id: orderData.customer_id,
+            type: 'order_message',
+            title_ar: `رسالة جديدة من ${storeName}`,
+            title_en: `New Message from ${storeNameEn}`,
+            body_ar: `${storeName}: ${messagePreview}`,
+            body_en: `${storeNameEn}: ${messagePreview}`,
+            related_order_id: orderId,
+          });
         }
       }
     }
-    setSending(false)
-  }
+    setSending(false);
+  };
 
   // Realtime subscription
   useEffect(() => {
-    if (!orderId) return
+    if (!orderId) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const channel = supabase
       .channel(`chat-${orderId}`)
@@ -155,22 +152,22 @@ export function OrderChat({
           filter: `order_id=eq.${orderId}`,
         },
         (payload) => {
-          const newMsg = payload.new as Message
+          const newMsg = payload.new as Message;
           // Only add if not already in messages (avoid duplicates from own sends)
           setMessages((prev) => {
-            if (prev.find((m) => m.id === newMsg.id)) return prev
-            return [...prev, newMsg]
-          })
+            if (prev.find((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
           // Update unread count if message is from other party
           if (newMsg.sender_type !== userType) {
             if (isOpen) {
               // Mark as read immediately if chat is open
-              markAsRead()
+              markAsRead();
             } else {
-              setUnreadCount((prev) => prev + 1)
+              setUnreadCount((prev) => prev + 1);
             }
           }
-          setTimeout(scrollToBottom, 100)
+          setTimeout(scrollToBottom, 100);
         }
       )
       .on(
@@ -183,46 +180,44 @@ export function OrderChat({
         },
         (payload) => {
           // Update message read status when other party opens chat
-          const updatedMsg = payload.new as Message
+          const updatedMsg = payload.new as Message;
           setMessages((prev) =>
-            prev.map((m) =>
-              m.id === updatedMsg.id ? { ...m, is_read: updatedMsg.is_read } : m
-            )
-          )
+            prev.map((m) => (m.id === updatedMsg.id ? { ...m, is_read: updatedMsg.is_read } : m))
+          );
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [orderId, userType, isOpen])
+      supabase.removeChannel(channel);
+    };
+  }, [orderId, userType, isOpen]);
 
   // Load messages on mount
   useEffect(() => {
-    loadMessages()
-  }, [orderId])
+    loadMessages();
+  }, [orderId]);
 
   // Mark as read when opening chat
   useEffect(() => {
     if (isOpen && unreadCount > 0) {
-      markAsRead()
+      markAsRead();
     }
     if (isOpen) {
-      setTimeout(scrollToBottom, 100)
-      inputRef.current?.focus()
+      setTimeout(scrollToBottom, 100);
+      inputRef.current?.focus();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString)
+    const date = new Date(dateString);
     return date.toLocaleTimeString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
-  const otherPartyName = userType === 'customer' ? providerName : customerName
+  const otherPartyName = userType === 'customer' ? providerName : customerName;
 
   // Inline button for placing next to other buttons
   if (isInline && !isOpen) {
@@ -235,16 +230,14 @@ export function OrderChat({
           <MessageCircle className="w-5 h-5" />
           <span>{locale === 'ar' ? 'محادثة' : 'Chat'}</span>
         </div>
-        {otherPartyName && (
-          <span className="text-xs text-primary/70">{otherPartyName}</span>
-        )}
+        {otherPartyName && <span className="text-xs text-primary/70">{otherPartyName}</span>}
         {unreadCount > 0 && (
           <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
             {unreadCount}
           </span>
         )}
       </button>
-    )
+    );
   }
 
   return (
@@ -274,9 +267,7 @@ export function OrderChat({
             {/* Header */}
             <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0 safe-area-top">
               <div>
-                <h3 className="font-bold">
-                  {locale === 'ar' ? 'محادثة الطلب' : 'Order Chat'}
-                </h3>
+                <h3 className="font-bold">{locale === 'ar' ? 'محادثة الطلب' : 'Order Chat'}</h3>
                 <p className="text-sm opacity-80">
                   {otherPartyName || (locale === 'ar' ? 'محادثة' : 'Chat')}
                 </p>
@@ -299,34 +290,35 @@ export function OrderChat({
                 <div className="flex flex-col items-center justify-center h-full text-slate-400">
                   <MessageCircle className="w-12 h-12 mb-2" />
                   <p className="text-sm">
-                    {locale === 'ar'
-                      ? 'لا توجد رسائل بعد'
-                      : 'No messages yet'}
+                    {locale === 'ar' ? 'لا توجد رسائل بعد' : 'No messages yet'}
                   </p>
                   <p className="text-xs">
-                    {locale === 'ar'
-                      ? 'ابدأ المحادثة الآن'
-                      : 'Start the conversation'}
+                    {locale === 'ar' ? 'ابدأ المحادثة الآن' : 'Start the conversation'}
                   </p>
                 </div>
               ) : (
                 messages.map((msg) => {
-                  const isOwn = msg.sender_type === userType
-                  const isRTL = locale === 'ar'
+                  const isOwn = msg.sender_type === userType;
+                  const isRTL = locale === 'ar';
                   // In RTL: own messages on RIGHT (justify-start), others on LEFT (justify-end)
                   // In LTR: own messages on RIGHT (justify-end), others on LEFT (justify-start)
                   const justifyClass = isRTL
-                    ? (isOwn ? 'justify-start' : 'justify-end')
-                    : (isOwn ? 'justify-end' : 'justify-start')
+                    ? isOwn
+                      ? 'justify-start'
+                      : 'justify-end'
+                    : isOwn
+                      ? 'justify-end'
+                      : 'justify-start';
                   // Bubble corner: smaller corner on the side where the bubble connects to bottom
                   const bubbleCorner = isRTL
-                    ? (isOwn ? 'rounded-bl-sm' : 'rounded-br-sm')
-                    : (isOwn ? 'rounded-br-sm' : 'rounded-bl-sm')
+                    ? isOwn
+                      ? 'rounded-bl-sm'
+                      : 'rounded-br-sm'
+                    : isOwn
+                      ? 'rounded-br-sm'
+                      : 'rounded-bl-sm';
                   return (
-                    <div
-                      key={msg.id}
-                      className={`flex ${justifyClass}`}
-                    >
+                    <div key={msg.id} className={`flex ${justifyClass}`}>
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                           isOwn
@@ -336,34 +328,33 @@ export function OrderChat({
                       >
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                         <div
-                          className={`flex items-center gap-1 mt-1 ${
-                            isOwn ? 'justify-end' : ''
-                          }`}
+                          className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : ''}`}
                         >
-                          <span
-                            className={`text-xs ${
-                              isOwn ? 'text-white/70' : 'text-slate-400'
-                            }`}
-                          >
+                          <span className={`text-xs ${isOwn ? 'text-white/70' : 'text-slate-400'}`}>
                             {formatTime(msg.created_at)}
                           </span>
                           {/* Show checkmarks for own messages: ✓ sent, ✓✓ read */}
                           {isOwn && (
-                            <span className={`text-xs ${msg.is_read ? 'text-blue-300' : 'text-white/70'}`}>
+                            <span
+                              className={`text-xs ${msg.is_read ? 'text-blue-300' : 'text-white/70'}`}
+                            >
                               {msg.is_read ? '✓✓' : '✓'}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })
               )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Input - Fixed at bottom with safe area padding */}
-            <div className="p-4 border-t border-slate-200 bg-white flex-shrink-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+            <div
+              className="p-4 border-t border-slate-200 bg-white flex-shrink-0"
+              style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+            >
               <div className="flex gap-3">
                 <input
                   ref={inputRef}
@@ -372,13 +363,11 @@ export function OrderChat({
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      handleSend()
+                      e.preventDefault();
+                      handleSend();
                     }
                   }}
-                  placeholder={
-                    locale === 'ar' ? 'اكتب رسالتك...' : 'Type a message...'
-                  }
+                  placeholder={locale === 'ar' ? 'اكتب رسالتك...' : 'Type a message...'}
                   className="flex-1 px-4 py-3 border-2 border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-base bg-slate-50"
                   disabled={sending}
                 />
@@ -399,5 +388,5 @@ export function OrderChat({
         </div>
       )}
     </>
-  )
+  );
 }

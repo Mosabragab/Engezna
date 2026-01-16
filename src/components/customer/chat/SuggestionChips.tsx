@@ -2,16 +2,16 @@
  * SuggestionChips - Quick reply suggestions
  */
 
-'use client'
+'use client';
 
-import { memo } from 'react'
-import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
+import { memo } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface SuggestionChipsProps {
-  suggestions: string[]
-  onSelect?: (suggestion: string) => void
-  className?: string
+  suggestions: string[];
+  onSelect?: (suggestion: string) => void;
+  className?: string;
 }
 
 export const SuggestionChips = memo(function SuggestionChips({
@@ -19,7 +19,7 @@ export const SuggestionChips = memo(function SuggestionChips({
   onSelect,
   className,
 }: SuggestionChipsProps) {
-  if (!suggestions || suggestions.length === 0) return null
+  if (!suggestions || suggestions.length === 0) return null;
 
   return (
     <motion.div
@@ -49,7 +49,7 @@ export const SuggestionChips = memo(function SuggestionChips({
         </motion.button>
       ))}
     </motion.div>
-  )
-})
+  );
+});
 
-export default SuggestionChips
+export default SuggestionChips;

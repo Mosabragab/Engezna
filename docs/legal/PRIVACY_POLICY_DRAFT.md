@@ -1,4 +1,5 @@
 # Privacy Policy Draft | مسودة سياسة الخصوصية
+
 ## Engezna - إنجزنا
 
 > **Status:** DRAFT - For Review Before Implementation
@@ -21,18 +22,21 @@ By using Engezna, you agree to the collection and use of information in accordan
 ### 2. Information We Collect
 
 #### 2.1 Personal Information
+
 We collect only the minimum information necessary to provide our services:
 
-| Data Type | Purpose | Required |
-|-----------|---------|----------|
-| **Full Name** | Account identification and order processing | Yes |
-| **Email Address** | Account verification, communications, and receipts | Yes |
-| **Phone Number** | Order confirmation, delivery coordination, and account recovery | Yes |
-| **Delivery Addresses** | Order fulfillment and delivery | Yes |
-| **Governorate & City** | Displaying relevant stores in your area | Yes |
+| Data Type              | Purpose                                                         | Required |
+| ---------------------- | --------------------------------------------------------------- | -------- |
+| **Full Name**          | Account identification and order processing                     | Yes      |
+| **Email Address**      | Account verification, communications, and receipts              | Yes      |
+| **Phone Number**       | Order confirmation, delivery coordination, and account recovery | Yes      |
+| **Delivery Addresses** | Order fulfillment and delivery                                  | Yes      |
+| **Governorate & City** | Displaying relevant stores in your area                         | Yes      |
 
 #### 2.2 Non-Personal Information
+
 We may automatically collect:
+
 - Device type and operating system
 - App usage statistics (anonymized)
 - Crash reports and performance data
@@ -40,6 +44,7 @@ We may automatically collect:
 #### 2.3 What We DO NOT Collect
 
 **Important:** Engezna does NOT use real-time GPS tracking. We do not:
+
 - Track your live location
 - Monitor your movements
 - Access your device's GPS continuously
@@ -69,7 +74,9 @@ We use the collected information for:
 ### 4. Information Sharing
 
 #### 4.1 With Service Providers (Stores/Merchants)
+
 We share the following information with stores to fulfill your orders:
+
 - Your name
 - Delivery address
 - Phone number
@@ -78,9 +85,11 @@ We share the following information with stores to fulfill your orders:
 **Note:** Service providers are contractually obligated to use this information solely for order fulfillment and are prohibited from using it for marketing or other purposes.
 
 #### 4.2 We DO NOT Sell Your Data
+
 Engezna never sells, rents, or trades your personal information to third parties for marketing purposes.
 
 #### 4.3 Legal Requirements
+
 We may disclose your information if required by law or in response to valid requests by public authorities (e.g., court orders).
 
 ### 5. Data Security
@@ -99,6 +108,7 @@ We retain your personal information for as long as your account is active or as 
 ### 7. Your Rights
 
 You have the right to:
+
 - **Access:** Request a copy of your personal data
 - **Correction:** Update or correct inaccurate information
 - **Deletion:** Request deletion of your account and data
@@ -113,6 +123,7 @@ Engezna is not intended for children under 16 years of age. We do not knowingly 
 ### 9. Changes to This Policy
 
 We may update this Privacy Policy from time to time. We will notify you of any changes by:
+
 - Posting the new policy on this page
 - Updating the "Last Updated" date
 - Sending an in-app notification for significant changes
@@ -142,18 +153,21 @@ If you have questions about this Privacy Policy, please contact us:
 ### ٢. المعلومات التي نجمعها
 
 #### ٢.١ المعلومات الشخصية
+
 نجمع فقط الحد الأدنى من المعلومات اللازمة لتقديم خدماتنا:
 
-| نوع البيانات | الغرض | مطلوب |
-|--------------|-------|-------|
-| **الاسم الكامل** | تعريف الحساب ومعالجة الطلبات | نعم |
-| **البريد الإلكتروني** | التحقق من الحساب والتواصل وإيصالات الطلبات | نعم |
-| **رقم الهاتف** | تأكيد الطلبات وتنسيق التوصيل واسترداد الحساب | نعم |
-| **عناوين التوصيل** | تنفيذ الطلبات والتوصيل | نعم |
-| **المحافظة والمدينة** | عرض المتاجر المتاحة في منطقتك | نعم |
+| نوع البيانات          | الغرض                                        | مطلوب |
+| --------------------- | -------------------------------------------- | ----- |
+| **الاسم الكامل**      | تعريف الحساب ومعالجة الطلبات                 | نعم   |
+| **البريد الإلكتروني** | التحقق من الحساب والتواصل وإيصالات الطلبات   | نعم   |
+| **رقم الهاتف**        | تأكيد الطلبات وتنسيق التوصيل واسترداد الحساب | نعم   |
+| **عناوين التوصيل**    | تنفيذ الطلبات والتوصيل                       | نعم   |
+| **المحافظة والمدينة** | عرض المتاجر المتاحة في منطقتك                | نعم   |
 
 #### ٢.٢ المعلومات غير الشخصية
+
 قد نجمع تلقائياً:
+
 - نوع الجهاز ونظام التشغيل
 - إحصائيات استخدام التطبيق (مجهولة الهوية)
 - تقارير الأعطال وبيانات الأداء
@@ -161,6 +175,7 @@ If you have questions about this Privacy Policy, please contact us:
 #### ٢.٣ ما لا نجمعه
 
 **هام:** إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا:
+
 - نتتبع موقعك المباشر
 - نراقب تحركاتك
 - نصل إلى GPS جهازك بشكل مستمر
@@ -173,24 +188,29 @@ If you have questions about this Privacy Policy, please contact us:
 نستخدم المعلومات المجمعة من أجل:
 
 ١. **معالجة الطلبات**
-   - إنشاء وإدارة حسابك
-   - معالجة وتنفيذ طلباتك
-   - إرسال تأكيدات وتحديثات الطلبات
+
+- إنشاء وإدارة حسابك
+- معالجة وتنفيذ طلباتك
+- إرسال تأكيدات وتحديثات الطلبات
 
 ٢. **تحسين الخدمة**
-   - تحليل أنماط الاستخدام لتحسين منصتنا
-   - معالجة المشكلات التقنية
-   - تطوير ميزات جديدة
+
+- تحليل أنماط الاستخدام لتحسين منصتنا
+- معالجة المشكلات التقنية
+- تطوير ميزات جديدة
 
 ٣. **التواصل**
-   - إرسال العروض الترويجية (بموافقتك)
-   - الرد على استفسارات الدعم الفني
-   - تقديم إعلانات الخدمة المهمة
+
+- إرسال العروض الترويجية (بموافقتك)
+- الرد على استفسارات الدعم الفني
+- تقديم إعلانات الخدمة المهمة
 
 ### ٤. مشاركة المعلومات
 
 #### ٤.١ مع مقدمي الخدمة (المتاجر)
+
 نشارك المعلومات التالية مع المتاجر لتنفيذ طلباتك:
+
 - اسمك
 - عنوان التوصيل
 - رقم الهاتف
@@ -199,9 +219,11 @@ If you have questions about this Privacy Policy, please contact us:
 **ملاحظة:** مقدمو الخدمة ملزمون تعاقدياً باستخدام هذه المعلومات فقط لتنفيذ الطلبات، ويُحظر عليهم استخدامها للتسويق أو أي أغراض أخرى.
 
 #### ٤.٢ نحن لا نبيع بياناتك
+
 إنجزنا لا تبيع أو تؤجر أو تتاجر بمعلوماتك الشخصية لأطراف ثالثة لأغراض تسويقية.
 
 #### ٤.٣ المتطلبات القانونية
+
 قد نفصح عن معلوماتك إذا طُلب ذلك بموجب القانون أو استجابة لطلبات صالحة من السلطات العامة (مثل أوامر المحكمة).
 
 ### ٥. أمان البيانات
@@ -220,6 +242,7 @@ If you have questions about this Privacy Policy, please contact us:
 ### ٧. حقوقك
 
 لديك الحق في:
+
 - **الوصول:** طلب نسخة من بياناتك الشخصية
 - **التصحيح:** تحديث أو تصحيح المعلومات غير الدقيقة
 - **الحذف:** طلب حذف حسابك وبياناتك
@@ -234,6 +257,7 @@ If you have questions about this Privacy Policy, please contact us:
 ### ٩. التغييرات على هذه السياسة
 
 قد نحدّث سياسة الخصوصية هذه من وقت لآخر. سنُخطرك بأي تغييرات عن طريق:
+
 - نشر السياسة الجديدة على هذه الصفحة
 - تحديث تاريخ "آخر تحديث"
 - إرسال إشعار داخل التطبيق للتغييرات الجوهرية
@@ -253,13 +277,17 @@ If you have questions about this Privacy Policy, please contact us:
 ## Compliance Notes | ملاحظات الامتثال
 
 ### Egyptian Law Compliance
+
 This privacy policy is designed to comply with:
+
 - Egyptian Consumer Protection Law (Law No. 181 of 2018)
 - Egyptian Personal Data Protection Law (Law No. 151 of 2020)
 - Telecommunications Regulation Law
 
 ### GDPR Considerations
+
 While primarily serving Egypt, this policy incorporates GDPR-inspired principles for best practices:
+
 - Data minimization
 - Purpose limitation
 - User rights (access, rectification, erasure)
@@ -269,6 +297,7 @@ While primarily serving Egypt, this policy incorporates GDPR-inspired principles
 
 **Document Status:** Ready for Legal Review
 **Next Steps:**
+
 1. Legal team review
 2. Stakeholder approval
 3. Implementation in app

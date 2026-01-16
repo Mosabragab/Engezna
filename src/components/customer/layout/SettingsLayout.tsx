@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import { ReactNode } from 'react'
-import Link from 'next/link'
-import { useLocale } from 'next-intl'
-import { User } from 'lucide-react'
-import { BottomNavigation } from './BottomNavigation'
+import { ReactNode } from 'react';
+import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { User } from 'lucide-react';
+import { BottomNavigation } from './BottomNavigation';
 
 interface SettingsLayoutProps {
-  children: ReactNode
-  title?: string
+  children: ReactNode;
+  title?: string;
 }
 
 export function SettingsLayout({ children, title }: SettingsLayoutProps) {
-  const locale = useLocale()
+  const locale = useLocale();
 
   return (
     <div className="min-h-screen bg-muted pb-20">
@@ -40,12 +40,10 @@ export function SettingsLayout({ children, title }: SettingsLayoutProps) {
       </header>
 
       {/* Main Content */}
-      <main>
-        {children}
-      </main>
+      <main>{children}</main>
 
       {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
-  )
+  );
 }

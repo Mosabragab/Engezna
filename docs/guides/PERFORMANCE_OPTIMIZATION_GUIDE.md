@@ -1,4 +1,5 @@
 # 📊 دليل تحسين الأداء - Engezna
+
 # Performance Optimization Guide
 
 **الإصدار:** 1.0
@@ -28,13 +29,13 @@
 
 ### متى نبدأ بتحسين الأداء؟
 
-| المؤشر | القيمة الحرجة | الإجراء |
-|--------|---------------|---------|
-| زمن تحميل الصفحة | > 3 ثواني | ابدأ التحسين |
-| زمن استجابة API | > 500ms | راجع الاستعلامات |
-| معدل الخطأ | > 1% | تحقق من السجلات |
-| استخدام الذاكرة | > 80% | راجع التسريبات |
-| شكاوى المستخدمين | > 5 يومياً | أولوية قصوى |
+| المؤشر           | القيمة الحرجة | الإجراء          |
+| ---------------- | ------------- | ---------------- |
+| زمن تحميل الصفحة | > 3 ثواني     | ابدأ التحسين     |
+| زمن استجابة API  | > 500ms       | راجع الاستعلامات |
+| معدل الخطأ       | > 1%          | تحقق من السجلات  |
+| استخدام الذاكرة  | > 80%         | راجع التسريبات   |
+| شكاوى المستخدمين | > 5 يومياً    | أولوية قصوى      |
 
 ### ⚠️ قاعدة ذهبية
 
@@ -68,11 +69,13 @@
 ```
 
 **ما نبحث عنه:**
+
 - ✅ الاستعلامات الأبطأ (Sort by: Mean Time DESC)
 - ✅ الاستعلامات الأكثر تكراراً (Sort by: Calls DESC)
 - ✅ الاستعلامات التي تستهلك وقتاً إجمالياً (Sort by: Total Time DESC)
 
 **مثال على استعلام مشكل:**
+
 ```sql
 -- ❌ استعلام بطيء (> 100ms)
 SELECT * FROM orders WHERE customer_id = $1
@@ -101,6 +104,7 @@ SELECT * FROM orders WHERE customer_id = $1
 ```
 
 **ما نراقبه:**
+
 - ✅ Core Web Vitals (LCP, FID, CLS)
 - ✅ Page Load Time per Route
 - ✅ Error Rate by Endpoint
@@ -111,7 +115,7 @@ SELECT * FROM orders WHERE customer_id = $1
 
 ```javascript
 // في Console للتحقق من عدد الطلبات
-performance.getEntriesByType('resource').length
+performance.getEntriesByType('resource').length;
 ```
 
 #### Lighthouse Audit
@@ -127,9 +131,7 @@ performance.getEntriesByType('resource').length
 // إضافة قياس الوقت للاستعلامات الحرجة
 const startTime = performance.now();
 
-const { data, error } = await supabase
-  .from('providers')
-  .select('*');
+const { data, error } = await supabase.from('providers').select('*');
 
 const endTime = performance.now();
 console.log(`Query took ${endTime - startTime}ms`);
@@ -152,26 +154,29 @@ if (endTime - startTime > 200) {
 ## Performance Baseline - [التاريخ]
 
 ### API Response Times
-| Endpoint | Current | Target |
-|----------|---------|--------|
-| GET /api/providers | ___ms | <200ms |
-| GET /api/orders | ___ms | <300ms |
-| POST /api/orders | ___ms | <500ms |
+
+| Endpoint           | Current  | Target |
+| ------------------ | -------- | ------ |
+| GET /api/providers | \_\_\_ms | <200ms |
+| GET /api/orders    | \_\_\_ms | <300ms |
+| POST /api/orders   | \_\_\_ms | <500ms |
 
 ### Page Load Times
-| Page | Current | Target |
-|------|---------|--------|
-| / (Home) | ___s | <2s |
-| /providers | ___s | <2s |
-| /providers/[id] | ___s | <2.5s |
-| /checkout | ___s | <2s |
+
+| Page            | Current | Target |
+| --------------- | ------- | ------ |
+| / (Home)        | \_\_\_s | <2s    |
+| /providers      | \_\_\_s | <2s    |
+| /providers/[id] | \_\_\_s | <2.5s  |
+| /checkout       | \_\_\_s | <2s    |
 
 ### Database Metrics
-| Metric | Current | Target |
-|--------|---------|--------|
-| Avg Query Time | ___ms | <50ms |
-| Cache Hit Ratio | ___% | >99% |
-| Active Connections | ___ | <50 |
+
+| Metric             | Current  | Target |
+| ------------------ | -------- | ------ |
+| Avg Query Time     | \_\_\_ms | <50ms  |
+| Cache Hit Ratio    | \_\_\_%  | >99%   |
+| Active Connections | \_\_\_   | <50    |
 ```
 
 ### 1.2 تحديد الاستعلامات البطيئة
@@ -179,7 +184,7 @@ if (endTime - startTime > 200) {
 ```sql
 -- تشغيل في Supabase SQL Editor
 -- جلب أبطأ 20 استعلام
-SELECT 
+SELECT
   query,
   calls,
   mean_time,
@@ -196,16 +201,16 @@ LIMIT 20;
 // إضافة مؤقتة في _app.tsx أو layout.tsx
 useEffect(() => {
   const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-  
+
   if (navigation) {
     const pageLoadTime = navigation.loadEventEnd - navigation.startTime;
-    
+
     // إرسال للـ Analytics أو Console
     console.log('Page Load Metrics:', {
       page: window.location.pathname,
       loadTime: pageLoadTime,
       domContentLoaded: navigation.domContentLoadedEventEnd - navigation.startTime,
-      firstPaint: performance.getEntriesByType('paint')[0]?.startTime
+      firstPaint: performance.getEntriesByType('paint')[0]?.startTime,
     });
   }
 }, []);
@@ -222,10 +227,7 @@ useEffect(() => {
 const providers = await supabase.from('providers').select('*'); // 1 استعلام
 
 for (const provider of providers.data) {
-  const products = await supabase
-    .from('menu_items')
-    .select('*')
-    .eq('provider_id', provider.id); // N استعلام (10 استعلامات)
+  const products = await supabase.from('menu_items').select('*').eq('provider_id', provider.id); // N استعلام (10 استعلامات)
 }
 
 // ✅ الحل - استعلامين فقط
@@ -233,7 +235,10 @@ const providers = await supabase.from('providers').select('*');
 const products = await supabase
   .from('menu_items')
   .select('*')
-  .in('provider_id', providers.data.map(p => p.id));
+  .in(
+    'provider_id',
+    providers.data.map((p) => p.id)
+  );
 ```
 
 ### 2.2 أنماط الحل في Supabase
@@ -244,7 +249,8 @@ const products = await supabase
 // ✅ جلب المتجر مع المنتجات في استعلام واحد
 const { data: provider } = await supabase
   .from('providers')
-  .select(`
+  .select(
+    `
     *,
     menu_items (
       id,
@@ -259,7 +265,8 @@ const { data: provider } = await supabase
       comment,
       profiles (full_name)
     )
-  `)
+  `
+  )
   .eq('id', providerId)
   .single();
 ```
@@ -273,14 +280,14 @@ const { data: provider } = await supabase
 const [providersResult, productsResult, categoriesResult] = await Promise.all([
   supabase.from('providers').select('*').eq('status', 'approved'),
   supabase.from('menu_items').select('*'),
-  supabase.from('provider_categories').select('*')
+  supabase.from('provider_categories').select('*'),
 ]);
 
 // ربط البيانات يدوياً
-const providersWithProducts = providersResult.data.map(provider => ({
+const providersWithProducts = providersResult.data.map((provider) => ({
   ...provider,
-  products: productsResult.data.filter(p => p.provider_id === provider.id),
-  categories: categoriesResult.data.filter(c => c.provider_id === provider.id)
+  products: productsResult.data.filter((p) => p.provider_id === provider.id),
+  categories: categoriesResult.data.filter((c) => c.provider_id === provider.id),
 }));
 ```
 
@@ -289,7 +296,7 @@ const providersWithProducts = providersResult.data.map(provider => ({
 ```sql
 -- إنشاء View يجمع البيانات المتكررة
 CREATE OR REPLACE VIEW provider_with_stats AS
-SELECT 
+SELECT
   p.*,
   COUNT(DISTINCT m.id) as products_count,
   COUNT(DISTINCT o.id) as orders_count,
@@ -309,14 +316,14 @@ const { data } = await supabase
 
 ### 2.3 العلاقات الحرجة في Engezna
 
-| العلاقة | السيناريو | الحل المقترح |
-|---------|----------|--------------|
-| `providers → menu_items` | صفحة المتجر | Eager Loading |
-| `menu_items → product_variants` | عرض المنتج | Eager Loading |
-| `orders → order_items` | تفاصيل الطلب | Eager Loading |
-| `providers → reviews` | تقييمات المتجر | Eager Loading + Pagination |
-| `settlements → orders` | تفاصيل التسوية | Batch Loading |
-| `admin → providers (stats)` | لوحة الإدارة | Database View |
+| العلاقة                         | السيناريو      | الحل المقترح               |
+| ------------------------------- | -------------- | -------------------------- |
+| `providers → menu_items`        | صفحة المتجر    | Eager Loading              |
+| `menu_items → product_variants` | عرض المنتج     | Eager Loading              |
+| `orders → order_items`          | تفاصيل الطلب   | Eager Loading              |
+| `providers → reviews`           | تقييمات المتجر | Eager Loading + Pagination |
+| `settlements → orders`          | تفاصيل التسوية | Batch Loading              |
+| `admin → providers (stats)`     | لوحة الإدارة   | Database View              |
 
 ### 2.4 إنشاء Data Access Layer (DAL)
 
@@ -341,39 +348,37 @@ interface GetProvidersOptions {
 export async function getProviders(options: GetProvidersOptions = {}) {
   const supabase = createClient();
   const { include = [], filters = {}, pagination } = options;
-  
+
   // بناء الـ Select بناءً على ما نحتاجه
   let selectQuery = '*';
-  
+
   if (include.includes('products')) {
     selectQuery += ', menu_items(id, name_ar, name_en, price, image_url)';
   }
-  
+
   if (include.includes('reviews')) {
     selectQuery += ', reviews(id, rating, comment, created_at)';
   }
-  
+
   if (include.includes('categories')) {
     selectQuery += ', provider_categories(id, name_ar, name_en)';
   }
-  
-  let query = supabase
-    .from('providers')
-    .select(selectQuery, { count: 'exact' });
-  
+
+  let query = supabase.from('providers').select(selectQuery, { count: 'exact' });
+
   // تطبيق الفلاتر
   if (filters.status) {
     query = query.eq('status', filters.status);
   }
-  
+
   if (filters.category) {
     query = query.eq('category', filters.category);
   }
-  
+
   if (filters.cityId) {
     query = query.eq('city_id', filters.cityId);
   }
-  
+
   // تطبيق الـ Pagination
   if (pagination) {
     const { page, limit } = pagination;
@@ -381,11 +386,11 @@ export async function getProviders(options: GetProvidersOptions = {}) {
     const to = from + limit - 1;
     query = query.range(from, to);
   }
-  
+
   const { data, error, count } = await query;
-  
+
   if (error) throw error;
-  
+
   return { data, count };
 }
 
@@ -393,7 +398,7 @@ export async function getProviders(options: GetProvidersOptions = {}) {
 const { data: providers } = await getProviders({
   include: ['products', 'reviews'],
   filters: { status: 'approved', cityId: 'city-123' },
-  pagination: { page: 1, limit: 10 }
+  pagination: { page: 1, limit: 10 },
 });
 ```
 
@@ -409,20 +414,21 @@ const providers = await supabase.from('providers').select('*');
 // بعد التحسين - استعلام واحد
 const { data: providers } = await supabase
   .from('providers')
-  .select(`
+  .select(
+    `
     id, name_ar, name_en, logo_url, category, status,
     delivery_fee, delivery_time, minimum_order,
     reviews (rating)
-  `)
+  `
+  )
   .eq('status', 'approved')
   .eq('city_id', userCityId);
 
 // حساب متوسط التقييم في الـ Frontend
-const providersWithRating = providers.map(p => ({
+const providersWithRating = providers.map((p) => ({
   ...p,
-  avgRating: p.reviews.length > 0 
-    ? p.reviews.reduce((sum, r) => sum + r.rating, 0) / p.reviews.length 
-    : 0
+  avgRating:
+    p.reviews.length > 0 ? p.reviews.reduce((sum, r) => sum + r.rating, 0) / p.reviews.length : 0,
 }));
 ```
 
@@ -432,7 +438,8 @@ const providersWithRating = providers.map(p => ({
 // استعلام واحد شامل
 const { data: provider } = await supabase
   .from('providers')
-  .select(`
+  .select(
+    `
     *,
     menu_items (
       *,
@@ -443,7 +450,8 @@ const { data: provider } = await supabase
       *,
       profiles (full_name, avatar_url)
     )
-  `)
+  `
+  )
   .eq('id', providerId)
   .single();
 ```
@@ -454,14 +462,16 @@ const { data: provider } = await supabase
 // استعلام واحد مع العناصر
 const { data: orders } = await supabase
   .from('orders')
-  .select(`
+  .select(
+    `
     *,
     order_items (
       *,
       menu_items (name_ar, name_en, image_url)
     ),
     profiles (full_name, phone)
-  `)
+  `
+  )
   .eq('provider_id', providerId)
   .order('created_at', { ascending: false });
 ```
@@ -499,10 +509,10 @@ CREATE INDEX IF NOT EXISTS idx_settlements_provider_id ON settlements(provider_i
 CREATE INDEX IF NOT EXISTS idx_settlements_status ON settlements(status);
 
 -- Composite Indexes للاستعلامات المتكررة
-CREATE INDEX IF NOT EXISTS idx_orders_provider_status 
+CREATE INDEX IF NOT EXISTS idx_orders_provider_status
   ON orders(provider_id, status);
-  
-CREATE INDEX IF NOT EXISTS idx_providers_city_status 
+
+CREATE INDEX IF NOT EXISTS idx_providers_city_status
   ON providers(city_id, status);
 ```
 
@@ -510,22 +520,22 @@ CREATE INDEX IF NOT EXISTS idx_providers_city_status
 
 ```sql
 -- قبل: استعلام بطيء لإحصائيات المتجر
-SELECT 
+SELECT
   COUNT(*) as total_orders,
   SUM(total) as total_revenue
-FROM orders 
-WHERE provider_id = $1 
-  AND created_at >= $2 
+FROM orders
+WHERE provider_id = $1
+  AND created_at >= $2
   AND created_at <= $3;
 
 -- بعد: استخدام Partial Index
-CREATE INDEX idx_orders_provider_date 
-  ON orders(provider_id, created_at) 
+CREATE INDEX idx_orders_provider_date
+  ON orders(provider_id, created_at)
   WHERE status = 'delivered';
 
 -- أو إنشاء Materialized View للإحصائيات
 CREATE MATERIALIZED VIEW provider_daily_stats AS
-SELECT 
+SELECT
   provider_id,
   DATE(created_at) as date,
   COUNT(*) as orders_count,
@@ -555,12 +565,12 @@ REFRESH MATERIALIZED VIEW provider_daily_stats;
 
 ```sql
 -- حذف الإشعارات القديمة (أكثر من 30 يوم)
-DELETE FROM customer_notifications 
-WHERE created_at < NOW() - INTERVAL '30 days' 
+DELETE FROM customer_notifications
+WHERE created_at < NOW() - INTERVAL '30 days'
   AND is_read = true;
 
 -- حذف سجلات النشاط القديمة (أكثر من 90 يوم)
-DELETE FROM activity_log 
+DELETE FROM activity_log
 WHERE created_at < NOW() - INTERVAL '90 days';
 
 -- جدولة التنظيف التلقائي
@@ -652,10 +662,10 @@ import { NextResponse } from 'next/server';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cityId = searchParams.get('cityId');
-  
+
   // جلب البيانات
   const providers = await getProviders({ cityId });
-  
+
   // إضافة Cache Headers
   return NextResponse.json(providers, {
     headers: {
@@ -669,7 +679,7 @@ export async function GET(request: Request) {
 // للبيانات الثابتة (المحافظات، المدن)
 export async function GET_STATIC(request: Request) {
   const governorates = await getGovernorates();
-  
+
   return NextResponse.json(governorates, {
     headers: {
       'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
@@ -694,17 +704,17 @@ export async function getCachedData<T>(
 ): Promise<T> {
   const now = Date.now();
   const cached = cache.get(key);
-  
+
   if (cached && cached.expiry > now) {
     return cached.data as T;
   }
-  
+
   const data = await fetcher();
   cache.set(key, {
     data,
     expiry: now + ttlMinutes * 60 * 1000,
   });
-  
+
   return data;
 }
 
@@ -732,11 +742,7 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
   return data ? JSON.parse(data) : null;
 }
 
-export async function setInCache(
-  key: string, 
-  data: any, 
-  ttlSeconds: number = 300
-): Promise<void> {
+export async function setInCache(key: string, data: any, ttlSeconds: number = 300): Promise<void> {
   await redis.setex(key, ttlSeconds, JSON.stringify(data));
 }
 
@@ -777,7 +783,7 @@ import dynamic from 'next/dynamic';
 
 const AdminDashboard = dynamic(
   () => import('@/components/admin/AdminDashboard'),
-  { 
+  {
     loading: () => <DashboardSkeleton />,
     ssr: false // إذا لم نحتاج SSR
   }
@@ -806,9 +812,9 @@ const MapComponent = dynamic(
 // استخدام React.memo للمكونات الثابتة
 import { memo } from 'react';
 
-export const ProductCard = memo(function ProductCard({ 
-  product, 
-  onAddToCart 
+export const ProductCard = memo(function ProductCard({
+  product,
+  onAddToCart
 }: ProductCardProps) {
   return (
     // ...
@@ -837,14 +843,14 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 function ProductList({ products }: { products: Product[] }) {
   const parentRef = useRef<HTMLDivElement>(null);
-  
+
   const virtualizer = useVirtualizer({
     count: products.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 120, // ارتفاع كل عنصر
     overscan: 5, // عدد العناصر الإضافية للتحميل
   });
-  
+
   return (
     <div ref={parentRef} className="h-[600px] overflow-auto">
       <div
@@ -952,24 +958,24 @@ export function getOptimizedImageUrl(
   } = {}
 ): string {
   const { width = 400, height, quality = 75 } = options;
-  
+
   // Supabase Image Transformation
   const params = new URLSearchParams({
     width: width.toString(),
     quality: quality.toString(),
   });
-  
+
   if (height) {
     params.set('height', height.toString());
   }
-  
+
   return `${SUPABASE_URL}/storage/v1/render/image/public/${path}?${params}`;
 }
 
 // الاستخدام
 const imageUrl = getOptimizedImageUrl('products/image.jpg', {
   width: 300,
-  quality: 70
+  quality: 70,
 });
 ```
 
@@ -984,7 +990,7 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
     triggerOnce: true,
     rootMargin: '200px', // تحميل قبل الوصول بـ 200px
   });
-  
+
   return (
     <div ref={ref}>
       {inView ? (
@@ -1047,30 +1053,30 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 
 ### Core Web Vitals
 
-| المؤشر | الهدف | الحد الأقصى المقبول |
-|--------|-------|---------------------|
-| LCP (Largest Contentful Paint) | < 2.5s | < 4s |
-| FID (First Input Delay) | < 100ms | < 300ms |
-| CLS (Cumulative Layout Shift) | < 0.1 | < 0.25 |
-| TTFB (Time to First Byte) | < 200ms | < 600ms |
+| المؤشر                         | الهدف   | الحد الأقصى المقبول |
+| ------------------------------ | ------- | ------------------- |
+| LCP (Largest Contentful Paint) | < 2.5s  | < 4s                |
+| FID (First Input Delay)        | < 100ms | < 300ms             |
+| CLS (Cumulative Layout Shift)  | < 0.1   | < 0.25              |
+| TTFB (Time to First Byte)      | < 200ms | < 600ms             |
 
 ### API Performance
 
-| نوع الـ Endpoint | الهدف | الحد الأقصى |
-|------------------|-------|-------------|
-| GET (قائمة) | < 200ms | < 500ms |
-| GET (تفاصيل) | < 100ms | < 300ms |
-| POST (إنشاء) | < 300ms | < 700ms |
-| PUT (تحديث) | < 200ms | < 500ms |
+| نوع الـ Endpoint | الهدف   | الحد الأقصى |
+| ---------------- | ------- | ----------- |
+| GET (قائمة)      | < 200ms | < 500ms     |
+| GET (تفاصيل)     | < 100ms | < 300ms     |
+| POST (إنشاء)     | < 300ms | < 700ms     |
+| PUT (تحديث)      | < 200ms | < 500ms     |
 
 ### Database Performance
 
-| المؤشر | الهدف | الحد الأقصى |
-|--------|-------|-------------|
-| Average Query Time | < 50ms | < 100ms |
-| Cache Hit Ratio | > 99% | > 95% |
-| Connection Pool Usage | < 50% | < 80% |
-| Database Size Growth | < 10%/month | < 25%/month |
+| المؤشر                | الهدف       | الحد الأقصى |
+| --------------------- | ----------- | ----------- |
+| Average Query Time    | < 50ms      | < 100ms     |
+| Cache Hit Ratio       | > 99%       | > 95%       |
+| Connection Pool Usage | < 50%       | < 80%       |
+| Database Size Growth  | < 10%/month | < 25%/month |
 
 ---
 
@@ -1080,7 +1086,7 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 
 ```
 الأعراض: بطء طفيف (< 500ms إضافية)
-الإجراء: 
+الإجراء:
 1. تحديد الاستعلام البطيء
 2. إضافة Index أو تحسين Query
 3. إضافة Caching إذا لزم
@@ -1115,11 +1121,11 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 ### جهات الاتصال للتصعيد
 
 ```markdown
-| المستوى | المسؤول | التواصل |
-|---------|---------|---------|
-| 1 | المطور | [Slack/Email] |
-| 2 | قائد الفريق | [Slack/Phone] |
-| 3 | CTO | [Phone - طوارئ] |
+| المستوى | المسؤول     | التواصل         |
+| ------- | ----------- | --------------- |
+| 1       | المطور      | [Slack/Email]   |
+| 2       | قائد الفريق | [Slack/Phone]   |
+| 3       | CTO         | [Phone - طوارئ] |
 ```
 
 ---
@@ -1145,10 +1151,10 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 ## 📝 سجل التحسينات
 
 ```markdown
-| التاريخ | المشكلة | الحل | النتيجة |
-|---------|---------|------|---------|
-| 2025-12-21 | ~50+ استعلامات مكررة لكل صفحة admin | AdminRegionContext مع sessionStorage caching (3 ساعات) | ~5 استعلامات فقط |
-| 2025-12-21 | تحميل بطيء لصفحات Admin Dashboard | تخزين مؤقت لبيانات المنطقة والمحافظات | تحسن ملحوظ في سرعة التحميل |
+| التاريخ    | المشكلة                             | الحل                                                   | النتيجة                    |
+| ---------- | ----------------------------------- | ------------------------------------------------------ | -------------------------- |
+| 2025-12-21 | ~50+ استعلامات مكررة لكل صفحة admin | AdminRegionContext مع sessionStorage caching (3 ساعات) | ~5 استعلامات فقط           |
+| 2025-12-21 | تحميل بطيء لصفحات Admin Dashboard   | تخزين مؤقت لبيانات المنطقة والمحافظات                  | تحسن ملحوظ في سرعة التحميل |
 ```
 
 ---
@@ -1158,6 +1164,7 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 ### المشكلة
 
 كانت صفحات Admin Dashboard تقوم بـ ~50+ استعلامات مكررة لكل تنقل:
+
 - `admin_users` - 30+ مرة
 - `governorates` - 20+ مرة
 - `providers` (للحصول على regionProviderIds) - متعددة
@@ -1167,20 +1174,20 @@ function LazyImage({ src, alt, ...props }: ImageProps) {
 ```typescript
 // src/lib/contexts/AdminRegionContext.tsx
 
-const CACHE_KEY = 'admin_region_cache'
-const CACHE_TTL = 3 * 60 * 60 * 1000 // 3 ساعات
+const CACHE_KEY = 'admin_region_cache';
+const CACHE_TTL = 3 * 60 * 60 * 1000; // 3 ساعات
 
 interface AdminRegionData {
-  adminId: string | null
-  userId: string | null
-  role: string | null
-  assignedRegions: Array<{ governorate_id?: string; city_id?: string }>
-  isSuperAdmin: boolean
-  isRegionalAdmin: boolean
-  allowedGovernorateIds: string[]
-  regionProviderIds: string[]
-  governorates: Governorate[]
-  cities: City[]
+  adminId: string | null;
+  userId: string | null;
+  role: string | null;
+  assignedRegions: Array<{ governorate_id?: string; city_id?: string }>;
+  isSuperAdmin: boolean;
+  isRegionalAdmin: boolean;
+  allowedGovernorateIds: string[];
+  regionProviderIds: string[];
+  governorates: Governorate[];
+  cities: City[];
 }
 ```
 
@@ -1198,7 +1205,7 @@ interface AdminRegionData {
 
 ```typescript
 // في أي component داخل Admin Layout
-import { useAdminRegion, useRegionFilter } from '@/lib/contexts/AdminRegionContext'
+import { useAdminRegion, useRegionFilter } from '@/lib/contexts/AdminRegionContext';
 
 function MyAdminPage() {
   const {
@@ -1208,22 +1215,22 @@ function MyAdminPage() {
     loading,
     governorates,
     cities,
-  } = useAdminRegion()
+  } = useAdminRegion();
 
   // أو استخدم useRegionFilter للـ helpers
-  const { applyProviderFilter, applyGovernorateFilter } = useRegionFilter()
+  const { applyProviderFilter, applyGovernorateFilter } = useRegionFilter();
 
   // تطبيق الفلتر على query
-  let query = supabase.from('orders').select('*')
-  query = applyProviderFilter(query, 'provider_id')
+  let query = supabase.from('orders').select('*');
+  query = applyProviderFilter(query, 'provider_id');
 }
 ```
 
 ### Hooks المتاحة
 
-| Hook | الاستخدام |
-|------|----------|
-| `useAdminRegion()` | الوصول لكل البيانات المخزنة |
+| Hook                | الاستخدام                          |
+| ------------------- | ---------------------------------- |
+| `useAdminRegion()`  | الوصول لكل البيانات المخزنة        |
 | `useRegionFilter()` | helpers لتطبيق الفلاتر على queries |
 
 ### ملاحظات مهمة
@@ -1241,6 +1248,7 @@ function MyAdminPage() {
 ---
 
 > 💡 **ملاحظة:** هذا الدليل مرجع للاستخدام عند الحاجة. لا تبدأ بالتحسين إلا بعد:
+>
 > 1. إطلاق المنتج
 > 2. جمع بيانات استخدام حقيقية
 > 3. تحديد مشاكل أداء فعلية ومُقاسة

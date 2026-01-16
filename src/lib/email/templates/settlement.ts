@@ -1,16 +1,16 @@
-import type { SettlementData } from '../resend'
+import type { SettlementData } from '../resend';
 
 export function settlementTemplate(data: SettlementData): string {
   const formattedAmount = new Intl.NumberFormat('ar-EG', {
     style: 'currency',
     currency: 'EGP',
-  }).format(data.amount)
+  }).format(data.amount);
 
   const formattedDate = new Intl.DateTimeFormat('ar-EG', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  }).format(new Date(data.settlementDate))
+  }).format(new Date(data.settlementDate));
 
   return `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -137,5 +137,5 @@ export function settlementTemplate(data: SettlementData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

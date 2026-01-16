@@ -1,32 +1,26 @@
-'use client'
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
-import { Plus, X, Trash2, GripVertical, Sparkles, ListOrdered } from 'lucide-react'
-import { motion, AnimatePresence, Reorder } from 'framer-motion'
-import { Button } from '@/components/ui/button'
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { Plus, X, Trash2, GripVertical, Sparkles, ListOrdered } from 'lucide-react';
+import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 export interface OrderItem {
-  id: string
-  text: string
+  id: string;
+  text: string;
 }
 
 interface NotepadOrderInputProps {
-  items: OrderItem[]
-  onItemsChange: (items: OrderItem[]) => void
-  disabled?: boolean
-  className?: string
-  maxItems?: number
+  items: OrderItem[];
+  onItemsChange: (items: OrderItem[]) => void;
+  disabled?: boolean;
+  className?: string;
+  maxItems?: number;
 }
 
-const EXAMPLE_ITEMS_AR = [
-  'كيلو طماطم',
-  '2 كيلو بطاطس',
-  'زجاجة زيت كبيرة',
-  'عبوة حليب',
-  '6 بيض',
-]
+const EXAMPLE_ITEMS_AR = ['كيلو طماطم', '2 كيلو بطاطس', 'زجاجة زيت كبيرة', 'عبوة حليب', '6 بيض'];
 
 const EXAMPLE_ITEMS_EN = [
   '1 kg tomatoes',
@@ -34,7 +28,7 @@ const EXAMPLE_ITEMS_EN = [
   'Large cooking oil bottle',
   'Milk carton',
   '6 eggs',
-]
+];
 
 export function NotepadOrderInput({
   items,
@@ -43,108 +37,118 @@ export function NotepadOrderInput({
   className,
   maxItems = 50,
 }: NotepadOrderInputProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map())
-  const [showExamples, setShowExamples] = useState(false)
-  const [focusedItemId, setFocusedItemId] = useState<string | null>(null)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+  const [showExamples, setShowExamples] = useState(false);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
 
-  const examples = isRTL ? EXAMPLE_ITEMS_AR : EXAMPLE_ITEMS_EN
+  const examples = isRTL ? EXAMPLE_ITEMS_AR : EXAMPLE_ITEMS_EN;
 
   // Generate unique ID
-  const generateId = () => crypto.randomUUID()
+  const generateId = () => crypto.randomUUID();
 
   // Add new item
-  const addItem = useCallback((text: string = '') => {
-    if (items.length >= maxItems) return
+  const addItem = useCallback(
+    (text: string = '') => {
+      if (items.length >= maxItems) return;
 
-    const newItem: OrderItem = {
-      id: generateId(),
-      text,
-    }
-    onItemsChange([...items, newItem])
+      const newItem: OrderItem = {
+        id: generateId(),
+        text,
+      };
+      onItemsChange([...items, newItem]);
 
-    // Focus the new item after render
-    setTimeout(() => {
-      inputRefs.current.get(newItem.id)?.focus()
-    }, 50)
-  }, [items, maxItems, onItemsChange])
+      // Focus the new item after render
+      setTimeout(() => {
+        inputRefs.current.get(newItem.id)?.focus();
+      }, 50);
+    },
+    [items, maxItems, onItemsChange]
+  );
 
   // Update item text
-  const updateItem = useCallback((id: string, text: string) => {
-    onItemsChange(items.map(item =>
-      item.id === id ? { ...item, text } : item
-    ))
-  }, [items, onItemsChange])
+  const updateItem = useCallback(
+    (id: string, text: string) => {
+      onItemsChange(items.map((item) => (item.id === id ? { ...item, text } : item)));
+    },
+    [items, onItemsChange]
+  );
 
   // Remove item
-  const removeItem = useCallback((id: string) => {
-    if (items.length <= 1) {
-      // Don't remove the last item, just clear it
-      onItemsChange([{ id: items[0].id, text: '' }])
-      return
-    }
-    onItemsChange(items.filter(item => item.id !== id))
-  }, [items, onItemsChange])
+  const removeItem = useCallback(
+    (id: string) => {
+      if (items.length <= 1) {
+        // Don't remove the last item, just clear it
+        onItemsChange([{ id: items[0].id, text: '' }]);
+        return;
+      }
+      onItemsChange(items.filter((item) => item.id !== id));
+    },
+    [items, onItemsChange]
+  );
 
   // Handle Enter key - add new item
-  const handleKeyDown = useCallback((e: React.KeyboardEvent, id: string, index: number) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      // Add new item after current
-      if (items.length < maxItems) {
-        const newItem: OrderItem = { id: generateId(), text: '' }
-        const newItems = [...items]
-        newItems.splice(index + 1, 0, newItem)
-        onItemsChange(newItems)
-        setTimeout(() => {
-          inputRefs.current.get(newItem.id)?.focus()
-        }, 50)
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, id: string, index: number) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Add new item after current
+        if (items.length < maxItems) {
+          const newItem: OrderItem = { id: generateId(), text: '' };
+          const newItems = [...items];
+          newItems.splice(index + 1, 0, newItem);
+          onItemsChange(newItems);
+          setTimeout(() => {
+            inputRefs.current.get(newItem.id)?.focus();
+          }, 50);
+        }
+      } else if (e.key === 'Backspace' && items[index].text === '' && items.length > 1) {
+        e.preventDefault();
+        removeItem(id);
+        // Focus previous item
+        if (index > 0) {
+          const prevItem = items[index - 1];
+          setTimeout(() => {
+            inputRefs.current.get(prevItem.id)?.focus();
+          }, 50);
+        }
+      } else if (e.key === 'ArrowUp' && index > 0) {
+        e.preventDefault();
+        const prevItem = items[index - 1];
+        inputRefs.current.get(prevItem.id)?.focus();
+      } else if (e.key === 'ArrowDown' && index < items.length - 1) {
+        e.preventDefault();
+        const nextItem = items[index + 1];
+        inputRefs.current.get(nextItem.id)?.focus();
       }
-    } else if (e.key === 'Backspace' && items[index].text === '' && items.length > 1) {
-      e.preventDefault()
-      removeItem(id)
-      // Focus previous item
-      if (index > 0) {
-        const prevItem = items[index - 1]
-        setTimeout(() => {
-          inputRefs.current.get(prevItem.id)?.focus()
-        }, 50)
-      }
-    } else if (e.key === 'ArrowUp' && index > 0) {
-      e.preventDefault()
-      const prevItem = items[index - 1]
-      inputRefs.current.get(prevItem.id)?.focus()
-    } else if (e.key === 'ArrowDown' && index < items.length - 1) {
-      e.preventDefault()
-      const nextItem = items[index + 1]
-      inputRefs.current.get(nextItem.id)?.focus()
-    }
-  }, [items, maxItems, onItemsChange, removeItem])
+    },
+    [items, maxItems, onItemsChange, removeItem]
+  );
 
   // Add example item
   const handleExampleClick = (example: string) => {
     // Find first empty item or add new one
-    const emptyItem = items.find(item => !item.text.trim())
+    const emptyItem = items.find((item) => !item.text.trim());
     if (emptyItem) {
-      updateItem(emptyItem.id, example)
+      updateItem(emptyItem.id, example);
     } else if (items.length < maxItems) {
-      addItem(example)
+      addItem(example);
     }
-    setShowExamples(false)
-  }
+    setShowExamples(false);
+  };
 
   // Set ref for input
   const setInputRef = (id: string, el: HTMLInputElement | null) => {
     if (el) {
-      inputRefs.current.set(id, el)
+      inputRefs.current.set(id, el);
     } else {
-      inputRefs.current.delete(id)
+      inputRefs.current.delete(id);
     }
-  }
+  };
 
   // Count non-empty items
-  const filledItemsCount = items.filter(item => item.text.trim()).length
+  const filledItemsCount = items.filter((item) => item.text.trim()).length;
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -176,14 +180,10 @@ export function NotepadOrderInput({
               </p>
               <ul className="mt-1 space-y-0.5 text-xs">
                 <li>
-                  {isRTL
-                    ? '• اكتب كل صنف في خانة منفصلة'
-                    : '• Write each item in a separate field'}
+                  {isRTL ? '• اكتب كل صنف في خانة منفصلة' : '• Write each item in a separate field'}
                 </li>
                 <li>
-                  {isRTL
-                    ? '• اضغط Enter لإضافة صنف جديد'
-                    : '• Press Enter to add a new item'}
+                  {isRTL ? '• اضغط Enter لإضافة صنف جديد' : '• Press Enter to add a new item'}
                 </li>
                 <li>
                   {isRTL
@@ -209,10 +209,7 @@ export function NotepadOrderInput({
               <Reorder.Item
                 key={item.id}
                 value={item}
-                className={cn(
-                  'relative group',
-                  focusedItemId === item.id && 'bg-primary/5'
-                )}
+                className={cn('relative group', focusedItemId === item.id && 'bg-primary/5')}
               >
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
@@ -286,9 +283,7 @@ export function NotepadOrderInput({
           )}
         >
           <Plus className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            {isRTL ? 'إضافة صنف' : 'Add item'}
-          </span>
+          <span className="text-sm font-medium">{isRTL ? 'إضافة صنف' : 'Add item'}</span>
         </button>
       </div>
 
@@ -337,11 +332,7 @@ export function NotepadOrderInput({
 
       {/* Clear All Button */}
       {filledItemsCount > 1 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex justify-end"
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-end">
           <button
             type="button"
             onClick={() => onItemsChange([{ id: generateId(), text: '' }])}
@@ -354,25 +345,25 @@ export function NotepadOrderInput({
         </motion.div>
       )}
     </div>
-  )
+  );
 }
 
 // Helper function to convert items to text format for submission
 export function itemsToText(items: OrderItem[]): string {
   return items
-    .filter(item => item.text.trim())
-    .map(item => item.text.trim())
-    .join('\n')
+    .filter((item) => item.text.trim())
+    .map((item) => item.text.trim())
+    .join('\n');
 }
 
 // Helper function to convert text to items format
 export function textToItems(text: string): OrderItem[] {
-  const lines = text.split('\n').filter(line => line.trim())
+  const lines = text.split('\n').filter((line) => line.trim());
   if (lines.length === 0) {
-    return [{ id: crypto.randomUUID(), text: '' }]
+    return [{ id: crypto.randomUUID(), text: '' }];
   }
-  return lines.map(line => ({
+  return lines.map((line) => ({
     id: crypto.randomUUID(),
     text: line.replace(/^[-•]\s*/, '').trim(), // Remove bullet points
-  }))
+  }));
 }

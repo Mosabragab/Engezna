@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useLocale } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,24 +20,24 @@ import {
   Phone,
   Mail,
   Search,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import Link from 'next/link'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface FAQItem {
-  id: string
-  question_ar: string
-  question_en: string
-  answer_ar: string
-  answer_en: string
-  category: string
+  id: string;
+  question_ar: string;
+  question_en: string;
+  answer_ar: string;
+  answer_en: string;
+  category: string;
 }
 
 interface FAQCategory {
-  id: string
-  name_ar: string
-  name_en: string
-  icon: typeof HelpCircle
+  id: string;
+  name_ar: string;
+  name_en: string;
+  icon: typeof HelpCircle;
 }
 
 const FAQ_CATEGORIES: FAQCategory[] = [
@@ -47,7 +47,7 @@ const FAQ_CATEGORIES: FAQCategory[] = [
   { id: 'payments', name_ar: 'الدفع', name_en: 'Payments', icon: CreditCard },
   { id: 'complaints', name_ar: 'الشكاوى', name_en: 'Complaints', icon: MessageSquare },
   { id: 'general', name_ar: 'أسئلة عامة', name_en: 'General', icon: HelpCircle },
-]
+];
 
 const FAQ_ITEMS: FAQItem[] = [
   // Orders
@@ -55,24 +55,30 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '1',
     question_ar: 'كيف أقدم طلب جديد؟',
     question_en: 'How do I place a new order?',
-    answer_ar: 'يمكنك تصفح المتاجر المتاحة من الصفحة الرئيسية، اختر المتجر المناسب، ثم أضف المنتجات إلى السلة وأكمل الطلب. يمكنك أيضاً استخدام المساعد الذكي للطلب بالدردشة.',
-    answer_en: 'Browse available stores from the homepage, select a store, add products to cart and complete your order. You can also use the smart assistant to order via chat.',
+    answer_ar:
+      'يمكنك تصفح المتاجر المتاحة من الصفحة الرئيسية، اختر المتجر المناسب، ثم أضف المنتجات إلى السلة وأكمل الطلب. يمكنك أيضاً استخدام المساعد الذكي للطلب بالدردشة.',
+    answer_en:
+      'Browse available stores from the homepage, select a store, add products to cart and complete your order. You can also use the smart assistant to order via chat.',
     category: 'orders',
   },
   {
     id: '2',
     question_ar: 'كيف أتابع حالة طلبي؟',
     question_en: 'How do I track my order?',
-    answer_ar: 'اذهب إلى "طلباتي" من القائمة السفلية، واختر الطلب المراد متابعته. ستظهر لك حالة الطلب الحالية وجميع التفاصيل.',
-    answer_en: 'Go to "My Orders" from the bottom navigation, select the order you want to track. You will see the current order status and all details.',
+    answer_ar:
+      'اذهب إلى "طلباتي" من القائمة السفلية، واختر الطلب المراد متابعته. ستظهر لك حالة الطلب الحالية وجميع التفاصيل.',
+    answer_en:
+      'Go to "My Orders" from the bottom navigation, select the order you want to track. You will see the current order status and all details.',
     category: 'orders',
   },
   {
     id: '3',
     question_ar: 'هل يمكنني إلغاء طلبي؟',
     question_en: 'Can I cancel my order?',
-    answer_ar: 'يمكنك إلغاء الطلب قبل أن يبدأ التاجر في تحضيره. بمجرد بدء التحضير، لا يمكن الإلغاء ولكن يمكنك طلب استرداد بعد الاستلام.',
-    answer_en: 'You can cancel the order before the merchant starts preparing it. Once preparation starts, cancellation is not possible but you can request a refund after receiving.',
+    answer_ar:
+      'يمكنك إلغاء الطلب قبل أن يبدأ التاجر في تحضيره. بمجرد بدء التحضير، لا يمكن الإلغاء ولكن يمكنك طلب استرداد بعد الاستلام.',
+    answer_en:
+      'You can cancel the order before the merchant starts preparing it. Once preparation starts, cancellation is not possible but you can request a refund after receiving.',
     category: 'orders',
   },
   // Delivery
@@ -80,24 +86,30 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '4',
     question_ar: 'كم يستغرق التوصيل؟',
     question_en: 'How long does delivery take?',
-    answer_ar: 'يختلف وقت التوصيل حسب المتجر والمسافة، عادة من 30 إلى 60 دقيقة. يظهر الوقت المتوقع في صفحة المتجر وعند الطلب.',
-    answer_en: 'Delivery time varies by store and distance, usually 30-60 minutes. Expected time is shown on the store page and during ordering.',
+    answer_ar:
+      'يختلف وقت التوصيل حسب المتجر والمسافة، عادة من 30 إلى 60 دقيقة. يظهر الوقت المتوقع في صفحة المتجر وعند الطلب.',
+    answer_en:
+      'Delivery time varies by store and distance, usually 30-60 minutes. Expected time is shown on the store page and during ordering.',
     category: 'delivery',
   },
   {
     id: '5',
     question_ar: 'ما هي رسوم التوصيل؟',
     question_en: 'What are the delivery fees?',
-    answer_ar: 'تختلف رسوم التوصيل حسب المتجر والمسافة. تظهر الرسوم بوضوح قبل تأكيد الطلب. بعض المتاجر تقدم توصيل مجاني للطلبات الكبيرة.',
-    answer_en: 'Delivery fees vary by store and distance. Fees are clearly shown before confirming the order. Some stores offer free delivery for large orders.',
+    answer_ar:
+      'تختلف رسوم التوصيل حسب المتجر والمسافة. تظهر الرسوم بوضوح قبل تأكيد الطلب. بعض المتاجر تقدم توصيل مجاني للطلبات الكبيرة.',
+    answer_en:
+      'Delivery fees vary by store and distance. Fees are clearly shown before confirming the order. Some stores offer free delivery for large orders.',
     category: 'delivery',
   },
   {
     id: '6',
     question_ar: 'ماذا لو تأخر الطلب؟',
     question_en: 'What if my order is delayed?',
-    answer_ar: 'إذا تأخر الطلب بشكل ملحوظ، يمكنك التواصل مع التاجر من صفحة تفاصيل الطلب أو تقديم شكوى من صفحة الدعم.',
-    answer_en: 'If your order is significantly delayed, you can contact the merchant from the order details page or submit a complaint from the support page.',
+    answer_ar:
+      'إذا تأخر الطلب بشكل ملحوظ، يمكنك التواصل مع التاجر من صفحة تفاصيل الطلب أو تقديم شكوى من صفحة الدعم.',
+    answer_en:
+      'If your order is significantly delayed, you can contact the merchant from the order details page or submit a complaint from the support page.',
     category: 'delivery',
   },
   // Refunds
@@ -105,24 +117,30 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '7',
     question_ar: 'كيف أطلب استرداد أموالي؟',
     question_en: 'How do I request a refund?',
-    answer_ar: 'بعد استلام الطلب، اذهب إلى صفحة تفاصيل الطلب واضغط على "طلب مساعدة". اختر المشكلة واطلب الاسترداد. سيراجع التاجر الطلب ويتخذ إجراء.',
-    answer_en: 'After receiving your order, go to order details and click "Get Help". Select the issue and request a refund. The merchant will review and take action.',
+    answer_ar:
+      'بعد استلام الطلب، اذهب إلى صفحة تفاصيل الطلب واضغط على "طلب مساعدة". اختر المشكلة واطلب الاسترداد. سيراجع التاجر الطلب ويتخذ إجراء.',
+    answer_en:
+      'After receiving your order, go to order details and click "Get Help". Select the issue and request a refund. The merchant will review and take action.',
     category: 'refunds',
   },
   {
     id: '8',
     question_ar: 'كيف يتم الاسترداد؟',
     question_en: 'How is the refund processed?',
-    answer_ar: 'حالياً يتم الاسترداد نقداً عن طريق مندوب التوصيل. سيتم إخطارك بموعد استلام المبلغ وعليك تأكيد الاستلام من التطبيق.',
-    answer_en: 'Currently refunds are processed as cash via delivery rider. You will be notified of the collection time and must confirm receipt in the app.',
+    answer_ar:
+      'حالياً يتم الاسترداد نقداً عن طريق مندوب التوصيل. سيتم إخطارك بموعد استلام المبلغ وعليك تأكيد الاستلام من التطبيق.',
+    answer_en:
+      'Currently refunds are processed as cash via delivery rider. You will be notified of the collection time and must confirm receipt in the app.',
     category: 'refunds',
   },
   {
     id: '9',
     question_ar: 'ماذا لو لم أستلم المبلغ المسترد؟',
     question_en: 'What if I did not receive the refund?',
-    answer_ar: 'إذا لم تستلم المبلغ خلال المهلة المحددة (48 ساعة)، اضغط على "لم أستلم" وسيتم تصعيد الشكوى للإدارة للتحقيق.',
-    answer_en: 'If you did not receive the amount within the deadline (48 hours), click "Not Received" and the complaint will be escalated to admin for investigation.',
+    answer_ar:
+      'إذا لم تستلم المبلغ خلال المهلة المحددة (48 ساعة)، اضغط على "لم أستلم" وسيتم تصعيد الشكوى للإدارة للتحقيق.',
+    answer_en:
+      'If you did not receive the amount within the deadline (48 hours), click "Not Received" and the complaint will be escalated to admin for investigation.',
     category: 'refunds',
   },
   // Payments
@@ -131,15 +149,18 @@ const FAQ_ITEMS: FAQItem[] = [
     question_ar: 'ما هي طرق الدفع المتاحة؟',
     question_en: 'What payment methods are available?',
     answer_ar: 'حالياً الدفع عند الاستلام نقداً فقط. قريباً سنضيف خيارات الدفع الإلكتروني.',
-    answer_en: 'Currently only cash on delivery is available. Electronic payment options coming soon.',
+    answer_en:
+      'Currently only cash on delivery is available. Electronic payment options coming soon.',
     category: 'payments',
   },
   {
     id: '11',
     question_ar: 'هل يوجد حد أدنى للطلب؟',
     question_en: 'Is there a minimum order amount?',
-    answer_ar: 'نعم، كل متجر له حد أدنى للطلب يظهر في صفحة المتجر. لا يمكن إتمام الطلب إذا كان أقل من الحد الأدنى.',
-    answer_en: 'Yes, each store has a minimum order amount shown on the store page. Orders below minimum cannot be completed.',
+    answer_ar:
+      'نعم، كل متجر له حد أدنى للطلب يظهر في صفحة المتجر. لا يمكن إتمام الطلب إذا كان أقل من الحد الأدنى.',
+    answer_en:
+      'Yes, each store has a minimum order amount shown on the store page. Orders below minimum cannot be completed.',
     category: 'payments',
   },
   // Complaints
@@ -147,16 +168,20 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '12',
     question_ar: 'كيف أقدم شكوى؟',
     question_en: 'How do I submit a complaint?',
-    answer_ar: 'من صفحة تفاصيل الطلب، اضغط على "طلب مساعدة" واختر نوع المشكلة. يمكنك أيضاً الوصول لصفحة الدعم من الحساب الشخصي أو من زر المساعدة في المساعد الذكي.',
-    answer_en: 'From order details page, click "Get Help" and select the issue type. You can also access support page from profile or via the help button in smart assistant.',
+    answer_ar:
+      'من صفحة تفاصيل الطلب، اضغط على "طلب مساعدة" واختر نوع المشكلة. يمكنك أيضاً الوصول لصفحة الدعم من الحساب الشخصي أو من زر المساعدة في المساعد الذكي.',
+    answer_en:
+      'From order details page, click "Get Help" and select the issue type. You can also access support page from profile or via the help button in smart assistant.',
     category: 'complaints',
   },
   {
     id: '13',
     question_ar: 'كم يستغرق حل الشكوى؟',
     question_en: 'How long does complaint resolution take?',
-    answer_ar: 'عادة يتم الرد على الشكاوى خلال 24 ساعة. الشكاوى العاجلة (مثل الطلبات الناقصة) تُعالج أسرع.',
-    answer_en: 'Complaints are usually responded to within 24 hours. Urgent complaints (like missing items) are processed faster.',
+    answer_ar:
+      'عادة يتم الرد على الشكاوى خلال 24 ساعة. الشكاوى العاجلة (مثل الطلبات الناقصة) تُعالج أسرع.',
+    answer_en:
+      'Complaints are usually responded to within 24 hours. Urgent complaints (like missing items) are processed faster.',
     category: 'complaints',
   },
   // General
@@ -164,45 +189,54 @@ const FAQ_ITEMS: FAQItem[] = [
     id: '14',
     question_ar: 'ما هي مناطق التغطية؟',
     question_en: 'What areas do you cover?',
-    answer_ar: 'نغطي عدة محافظات مصرية ونتوسع باستمرار. يمكنك رؤية المتاجر المتاحة في منطقتك من الصفحة الرئيسية بعد تحديد موقعك.',
-    answer_en: 'We cover multiple Egyptian governorates and are continuously expanding. You can see available stores in your area from the homepage after setting your location.',
+    answer_ar:
+      'نغطي عدة محافظات مصرية ونتوسع باستمرار. يمكنك رؤية المتاجر المتاحة في منطقتك من الصفحة الرئيسية بعد تحديد موقعك.',
+    answer_en:
+      'We cover multiple Egyptian governorates and are continuously expanding. You can see available stores in your area from the homepage after setting your location.',
     category: 'general',
   },
   {
     id: '15',
     question_ar: 'كيف أستخدم المساعد الذكي؟',
     question_en: 'How do I use the smart assistant?',
-    answer_ar: 'اضغط على زر المساعد الذكي (الأيقونة اللامعة) في أسفل الشاشة. يمكنك الكتابة بالعامية المصرية مثل "عايز 2 برجر" وسيساعدك في الطلب.',
-    answer_en: 'Click the smart assistant button (sparkle icon) at the bottom of the screen. You can type in Egyptian Arabic like "عايز 2 برجر" and it will help you order.',
+    answer_ar:
+      'اضغط على زر المساعد الذكي (الأيقونة اللامعة) في أسفل الشاشة. يمكنك الكتابة بالعامية المصرية مثل "عايز 2 برجر" وسيساعدك في الطلب.',
+    answer_en:
+      'Click the smart assistant button (sparkle icon) at the bottom of the screen. You can type in Egyptian Arabic like "عايز 2 برجر" and it will help you order.',
     category: 'general',
   },
   {
     id: '16',
     question_ar: 'كيف أتواصل مع الدعم الفني؟',
     question_en: 'How do I contact support?',
-    answer_ar: 'يمكنك التواصل عبر واتساب على الرقم الموجود في التطبيق، أو إرسال بريد إلكتروني إلى support@engezna.com، أو تقديم شكوى من صفحة الدعم.',
-    answer_en: 'You can contact via WhatsApp using the number in the app, email support@engezna.com, or submit a complaint from the support page.',
+    answer_ar:
+      'يمكنك التواصل عبر واتساب على الرقم الموجود في التطبيق، أو إرسال بريد إلكتروني إلى support@engezna.com، أو تقديم شكوى من صفحة الدعم.',
+    answer_en:
+      'You can contact via WhatsApp using the number in the app, email support@engezna.com, or submit a complaint from the support page.',
     category: 'general',
   },
-]
+];
 
 export default function HelpPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isArabic = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isArabic = locale === 'ar';
 
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Filter FAQs based on search and category
   const filteredFAQs = FAQ_ITEMS.filter((faq) => {
-    const matchesCategory = !selectedCategory || faq.category === selectedCategory
-    const matchesSearch = !searchQuery ||
-      (isArabic ? faq.question_ar : faq.question_en).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (isArabic ? faq.answer_ar : faq.answer_en).toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
+    const matchesCategory = !selectedCategory || faq.category === selectedCategory;
+    const matchesSearch =
+      !searchQuery ||
+      (isArabic ? faq.question_ar : faq.question_en)
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      (isArabic ? faq.answer_ar : faq.answer_en).toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <CustomerLayout showBottomNav={true}>
@@ -227,19 +261,21 @@ export default function HelpPage() {
 
         {/* Search */}
         <div className="relative mb-6">
-          <Search className={cn(
-            "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400",
-            isArabic ? "right-3" : "left-3"
-          )} />
+          <Search
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400',
+              isArabic ? 'right-3' : 'left-3'
+            )}
+          />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={isArabic ? 'ابحث عن سؤالك...' : 'Search for your question...'}
             className={cn(
-              "w-full py-3 bg-slate-100 rounded-xl text-slate-900 placeholder:text-slate-400",
-              "focus:outline-none focus:ring-2 focus:ring-primary/30",
-              isArabic ? "pr-11 pl-4" : "pl-11 pr-4"
+              'w-full py-3 bg-slate-100 rounded-xl text-slate-900 placeholder:text-slate-400',
+              'focus:outline-none focus:ring-2 focus:ring-primary/30',
+              isArabic ? 'pr-11 pl-4' : 'pl-11 pr-4'
             )}
           />
         </div>
@@ -291,31 +327,31 @@ export default function HelpPage() {
             <button
               onClick={() => setSelectedCategory(null)}
               className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                'px-4 py-2 rounded-full text-sm font-medium transition-colors',
                 !selectedCategory
-                  ? "bg-primary text-white"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? 'bg-primary text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               )}
             >
               {isArabic ? 'الكل' : 'All'}
             </button>
             {FAQ_CATEGORIES.map((category) => {
-              const Icon = category.icon
+              const Icon = category.icon;
               return (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors",
+                    'flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors',
                     selectedCategory === category.id
-                      ? "bg-primary text-white"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? 'bg-primary text-white'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   )}
                 >
                   <Icon className="w-4 h-4" />
                   {isArabic ? category.name_ar : category.name_en}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
@@ -361,10 +397,12 @@ export default function HelpPage() {
                           </p>
                         )}
                       </div>
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
-                        expandedId === faq.id ? "bg-primary/10" : "bg-slate-100"
-                      )}>
+                      <div
+                        className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors',
+                          expandedId === faq.id ? 'bg-primary/10' : 'bg-slate-100'
+                        )}
+                      >
                         {expandedId === faq.id ? (
                           <ChevronUp className="w-4 h-4 text-primary" />
                         ) : (
@@ -386,9 +424,7 @@ export default function HelpPage() {
             {isArabic ? 'لم تجد إجابتك؟' : "Didn't find your answer?"}
           </h3>
           <p className="text-sm text-slate-600 mb-4">
-            {isArabic
-              ? 'تواصل معنا مباشرة وسنساعدك'
-              : 'Contact us directly and we will help you'}
+            {isArabic ? 'تواصل معنا مباشرة وسنساعدك' : 'Contact us directly and we will help you'}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
@@ -411,5 +447,5 @@ export default function HelpPage() {
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

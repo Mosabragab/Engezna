@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 // Dynamic import for InteractiveMapPicker to avoid SSR issues
 const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
   ssr: false,
-  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96" />
+  loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-96" />,
 });
 
 interface LocationPickerProps {
@@ -32,7 +32,7 @@ export function LocationPicker({
   className,
   required = false,
   disabled = false,
-  showMap = true
+  showMap = true,
 }: LocationPickerProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<HereSearchResult[]>([]);
@@ -50,7 +50,7 @@ export function LocationPicker({
   // Reverse geocode when value changes externally
   useEffect(() => {
     if (value && !selectedAddress) {
-      reverseGeocode(value).then(address => {
+      reverseGeocode(value).then((address) => {
         if (address) {
           setSelectedAddress(formatAddress(address));
         }
@@ -59,40 +59,46 @@ export function LocationPicker({
   }, [value, selectedAddress, reverseGeocode, formatAddress]);
 
   // Handle search input with debounce
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      setSearchQuery(query);
 
-    if (searchTimeout.current) {
-      clearTimeout(searchTimeout.current);
-    }
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
 
-    if (query.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      return;
-    }
+      if (query.length < 2) {
+        setSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
 
-    setIsSearching(true);
-    setShowSuggestions(true);
+      setIsSearching(true);
+      setShowSuggestions(true);
 
-    searchTimeout.current = setTimeout(async () => {
-      const results = await autosuggest(query, value || undefined);
-      setSuggestions(results);
-      setIsSearching(false);
-    }, 300);
-  }, [autosuggest, value]);
+      searchTimeout.current = setTimeout(async () => {
+        const results = await autosuggest(query, value || undefined);
+        setSuggestions(results);
+        setIsSearching(false);
+      }, 300);
+    },
+    [autosuggest, value]
+  );
 
   // Handle suggestion selection
-  const handleSelectSuggestion = useCallback(async (suggestion: HereSearchResult) => {
-    setSearchQuery('');
-    setSuggestions([]);
-    setShowSuggestions(false);
+  const handleSelectSuggestion = useCallback(
+    async (suggestion: HereSearchResult) => {
+      setSearchQuery('');
+      setSuggestions([]);
+      setShowSuggestions(false);
 
-    if (suggestion.position.lat && suggestion.position.lng) {
-      setSelectedAddress(suggestion.title);
-      onChange(suggestion.position, suggestion.title);
-    }
-  }, [onChange]);
+      if (suggestion.position.lat && suggestion.position.lng) {
+        setSelectedAddress(suggestion.title);
+        onChange(suggestion.position, suggestion.title);
+      }
+    },
+    [onChange]
+  );
 
   // Handle GPS location
   const handleGetCurrentLocation = useCallback(async () => {
@@ -121,17 +127,20 @@ export function LocationPicker({
   }, []);
 
   // Handle map picker selection
-  const handleMapSelect = useCallback(async (coords: { lat: number; lng: number }) => {
-    const address = await reverseGeocode(coords);
-    if (address) {
-      const formattedAddress = formatAddress(address);
-      setSelectedAddress(formattedAddress);
-      onChange(coords, formattedAddress);
-    } else {
-      setSelectedAddress('موقع محدد على الخريطة');
-      onChange(coords, 'موقع محدد على الخريطة');
-    }
-  }, [reverseGeocode, formatAddress, onChange]);
+  const handleMapSelect = useCallback(
+    async (coords: { lat: number; lng: number }) => {
+      const address = await reverseGeocode(coords);
+      if (address) {
+        const formattedAddress = formatAddress(address);
+        setSelectedAddress(formattedAddress);
+        onChange(coords, formattedAddress);
+      } else {
+        setSelectedAddress('موقع محدد على الخريطة');
+        onChange(coords, 'موقع محدد على الخريطة');
+      }
+    },
+    [reverseGeocode, formatAddress, onChange]
+  );
 
   // Close suggestions on click outside
   useEffect(() => {
@@ -149,9 +158,7 @@ export function LocationPicker({
     return (
       <div className={cn('p-4 bg-yellow-50 border border-yellow-200 rounded-lg', className)}>
         <p className="text-sm text-yellow-700">{error}</p>
-        <p className="text-xs text-yellow-600 mt-1">
-          يمكنك إدخال العنوان يدوياً بدلاً من ذلك
-        </p>
+        <p className="text-xs text-yellow-600 mt-1">يمكنك إدخال العنوان يدوياً بدلاً من ذلك</p>
       </div>
     );
   }
@@ -281,11 +288,7 @@ export function LocationPicker({
       )}
 
       {/* Required indicator */}
-      {required && !value && (
-        <p className="text-xs text-red-500">
-          * يرجى تحديد موقعك
-        </p>
-      )}
+      {required && !value && <p className="text-xs text-red-500">* يرجى تحديد موقعك</p>}
 
       {/* Interactive Map Picker Modal */}
       <InteractiveMapPicker

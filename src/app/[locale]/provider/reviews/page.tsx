@@ -1,72 +1,71 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ProviderLayout } from '@/components/provider'
-import {
-  Star,
-  MessageSquare,
-  User,
-  Send,
-  X,
-  TrendingUp,
-  Filter,
-} from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ProviderLayout } from '@/components/provider';
+import { Star, MessageSquare, User, Send, X, TrendingUp, Filter } from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 type Review = {
-  id: string
-  order_id: string
-  customer_id: string
-  rating: number
-  comment: string | null
-  provider_response: string | null
-  provider_response_at: string | null
-  created_at: string
-  profiles: {
-    full_name: string | null
-  } | { full_name: string | null }[] | null
-  orders: {
-    order_number: string
-  } | { order_number: string }[] | null
-}
+  id: string;
+  order_id: string;
+  customer_id: string;
+  rating: number;
+  comment: string | null;
+  provider_response: string | null;
+  provider_response_at: string | null;
+  created_at: string;
+  profiles:
+    | {
+        full_name: string | null;
+      }
+    | { full_name: string | null }[]
+    | null;
+  orders:
+    | {
+        order_number: string;
+      }
+    | { order_number: string }[]
+    | null;
+};
 
 type RatingStats = {
-  average: number
-  total: number
-  distribution: { [key: number]: number }
-}
+  average: number;
+  total: number;
+  distribution: { [key: number]: number };
+};
 
 export default function ProviderReviewsPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [ratingStats, setRatingStats] = useState<RatingStats>({
     average: 0,
     total: 0,
     distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-  })
-  const [filterRating, setFilterRating] = useState<number | null>(null)
-  const [showResponseModal, setShowResponseModal] = useState(false)
-  const [selectedReview, setSelectedReview] = useState<Review | null>(null)
-  const [responseText, setResponseText] = useState('')
-  const [submitting, setSubmitting] = useState(false)
+  });
+  const [filterRating, setFilterRating] = useState<number | null>(null);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [responseText, setResponseText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const loadReviews = useCallback(async (provId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { data: reviewsData, error } = await supabase
       .from('reviews')
-      .select(`
+      .select(
+        `
         id,
         order_id,
         customer_id,
@@ -81,75 +80,78 @@ export default function ProviderReviewsPage() {
         orders:order_id (
           order_number
         )
-      `)
+      `
+      )
       .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    if (error) return
+    if (error) return;
 
     if (reviewsData) {
-      setReviews(reviewsData as Review[])
+      setReviews(reviewsData as Review[]);
 
       // Calculate stats
-      const total = reviewsData.length
-      const distribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-      let sum = 0
+      const total = reviewsData.length;
+      const distribution: { [key: number]: number } = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+      let sum = 0;
 
       reviewsData.forEach((r: any) => {
-        distribution[r.rating] = (distribution[r.rating] || 0) + 1
-        sum += r.rating
-      })
+        distribution[r.rating] = (distribution[r.rating] || 0) + 1;
+        sum += r.rating;
+      });
 
       setRatingStats({
         average: total > 0 ? sum / total : 0,
         total,
         distribution,
-      })
+      });
     }
-  }, [])
+  }, []);
 
   const checkAuthAndLoadReviews = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/reviews`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/reviews`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || provider.status === 'pending_approval') {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
-    await loadReviews(provider.id)
-    setLoading(false)
-  }, [loadReviews, locale, router])
+    setProviderId(provider.id);
+    await loadReviews(provider.id);
+    setLoading(false);
+  }, [loadReviews, locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadReviews()
-  }, [checkAuthAndLoadReviews])
+    checkAuthAndLoadReviews();
+  }, [checkAuthAndLoadReviews]);
 
   const handleOpenResponseModal = (review: Review) => {
-    setSelectedReview(review)
-    setResponseText(review.provider_response || '')
-    setShowResponseModal(true)
-  }
+    setSelectedReview(review);
+    setResponseText(review.provider_response || '');
+    setShowResponseModal(true);
+  };
 
   const handleSubmitResponse = async () => {
-    if (!selectedReview || !responseText.trim()) return
+    if (!selectedReview || !responseText.trim()) return;
 
-    setSubmitting(true)
-    const supabase = createClient()
+    setSubmitting(true);
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('reviews')
@@ -157,42 +159,46 @@ export default function ProviderReviewsPage() {
         provider_response: responseText.trim(),
         provider_response_at: new Date().toISOString(),
       })
-      .eq('id', selectedReview.id)
+      .eq('id', selectedReview.id);
 
     if (error) {
-      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرد' : 'Error submitting response')
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال الرد' : 'Error submitting response');
     } else {
       // Update local state
-      setReviews(reviews.map(r =>
-        r.id === selectedReview.id
-          ? { ...r, provider_response: responseText.trim(), provider_response_at: new Date().toISOString() }
-          : r
-      ))
-      setShowResponseModal(false)
-      setSelectedReview(null)
-      setResponseText('')
+      setReviews(
+        reviews.map((r) =>
+          r.id === selectedReview.id
+            ? {
+                ...r,
+                provider_response: responseText.trim(),
+                provider_response_at: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+      setShowResponseModal(false);
+      setSelectedReview(null);
+      setResponseText('');
     }
 
-    setSubmitting(false)
-  }
+    setSubmitting(false);
+  };
 
-  const filteredReviews = filterRating
-    ? reviews.filter(r => r.rating === filterRating)
-    : reviews
+  const filteredReviews = filterRating ? reviews.filter((r) => r.rating === filterRating) : reviews;
 
   const getCustomerName = (review: Review) => {
     if (Array.isArray(review.profiles)) {
-      return review.profiles[0]?.full_name || (locale === 'ar' ? 'عميل' : 'Customer')
+      return review.profiles[0]?.full_name || (locale === 'ar' ? 'عميل' : 'Customer');
     }
-    return review.profiles?.full_name || (locale === 'ar' ? 'عميل' : 'Customer')
-  }
+    return review.profiles?.full_name || (locale === 'ar' ? 'عميل' : 'Customer');
+  };
 
   const getOrderNumber = (review: Review) => {
     if (Array.isArray(review.orders)) {
-      return review.orders[0]?.order_number || review.order_id.slice(0, 8)
+      return review.orders[0]?.order_number || review.order_id.slice(0, 8);
     }
-    return review.orders?.order_number || review.order_id.slice(0, 8)
-  }
+    return review.orders?.order_number || review.order_id.slice(0, 8);
+  };
 
   if (loading) {
     return (
@@ -204,7 +210,7 @@ export default function ProviderReviewsPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -247,8 +253,12 @@ export default function ProviderReviewsPage() {
               <TrendingUp className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
               <p className="text-3xl font-bold text-emerald-600 font-numbers">
                 {ratingStats.total > 0
-                  ? ((reviews.filter(r => r.provider_response).length / ratingStats.total) * 100).toFixed(0)
-                  : 0}%
+                  ? (
+                      (reviews.filter((r) => r.provider_response).length / ratingStats.total) *
+                      100
+                    ).toFixed(0)
+                  : 0}
+                %
               </p>
               <p className="text-sm text-slate-500">
                 {locale === 'ar' ? 'معدل الرد' : 'Response Rate'}
@@ -267,8 +277,8 @@ export default function ProviderReviewsPage() {
           <CardContent>
             <div className="space-y-3">
               {[5, 4, 3, 2, 1].map((rating) => {
-                const count = ratingStats.distribution[rating] || 0
-                const percentage = ratingStats.total > 0 ? (count / ratingStats.total) * 100 : 0
+                const count = ratingStats.distribution[rating] || 0;
+                const percentage = ratingStats.total > 0 ? (count / ratingStats.total) * 100 : 0;
                 return (
                   <button
                     key={rating}
@@ -287,11 +297,9 @@ export default function ProviderReviewsPage() {
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-sm text-slate-500 w-12 text-end">
-                      {count}
-                    </span>
+                    <span className="text-sm text-slate-500 w-12 text-end">{count}</span>
                   </button>
-                )
+                );
               })}
             </div>
             {filterRating && (
@@ -334,10 +342,7 @@ export default function ProviderReviewsPage() {
             ) : (
               <div className="space-y-4">
                 {filteredReviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="border border-slate-100 rounded-xl p-4"
-                  >
+                  <div key={review.id} className="border border-slate-100 rounded-xl p-4">
                     {/* Review Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -345,9 +350,7 @@ export default function ProviderReviewsPage() {
                           <User className="w-5 h-5 text-slate-400" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900">
-                            {getCustomerName(review)}
-                          </p>
+                          <p className="font-medium text-slate-900">{getCustomerName(review)}</p>
                           <p className="text-xs text-slate-500">
                             {locale === 'ar' ? 'طلب رقم:' : 'Order:'} #{getOrderNumber(review)}
                             <span className="mx-2">•</span>
@@ -375,9 +378,7 @@ export default function ProviderReviewsPage() {
 
                     {/* Review Comment */}
                     {review.comment && (
-                      <p className="text-slate-600 mb-3 leading-relaxed">
-                        {review.comment}
-                      </p>
+                      <p className="text-slate-600 mb-3 leading-relaxed">{review.comment}</p>
                     )}
 
                     {/* Provider Response */}
@@ -421,14 +422,18 @@ export default function ProviderReviewsPage() {
             <div className="flex items-center justify-between p-4 border-b">
               <h3 className="text-lg font-bold text-slate-900">
                 {selectedReview.provider_response
-                  ? (locale === 'ar' ? 'تعديل الرد' : 'Edit Response')
-                  : (locale === 'ar' ? 'إضافة رد' : 'Add Response')}
+                  ? locale === 'ar'
+                    ? 'تعديل الرد'
+                    : 'Edit Response'
+                  : locale === 'ar'
+                    ? 'إضافة رد'
+                    : 'Add Response'}
               </h3>
               <button
                 onClick={() => {
-                  setShowResponseModal(false)
-                  setSelectedReview(null)
-                  setResponseText('')
+                  setShowResponseModal(false);
+                  setSelectedReview(null);
+                  setResponseText('');
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200"
               >
@@ -451,9 +456,7 @@ export default function ProviderReviewsPage() {
                     />
                   ))}
                 </div>
-                <span className="text-sm text-slate-500">
-                  {getCustomerName(selectedReview)}
-                </span>
+                <span className="text-sm text-slate-500">{getCustomerName(selectedReview)}</span>
               </div>
               {selectedReview.comment && (
                 <p className="text-sm text-slate-600">&quot;{selectedReview.comment}&quot;</p>
@@ -476,18 +479,16 @@ export default function ProviderReviewsPage() {
                 className="w-full p-3 border border-slate-200 rounded-xl resize-none h-32 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 maxLength={500}
               />
-              <p className="text-xs text-slate-400 text-end mt-1">
-                {responseText.length}/500
-              </p>
+              <p className="text-xs text-slate-400 text-end mt-1">{responseText.length}/500</p>
             </div>
 
             {/* Modal Footer */}
             <div className="flex gap-3 p-4 border-t">
               <button
                 onClick={() => {
-                  setShowResponseModal(false)
-                  setSelectedReview(null)
-                  setResponseText('')
+                  setShowResponseModal(false);
+                  setSelectedReview(null);
+                  setResponseText('');
                 }}
                 className="flex-1 bg-slate-100 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-200 transition-colors"
               >
@@ -515,5 +516,5 @@ export default function ProviderReviewsPage() {
         </div>
       )}
     </ProviderLayout>
-  )
+  );
 }

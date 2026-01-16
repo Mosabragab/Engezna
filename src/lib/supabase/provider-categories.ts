@@ -3,24 +3,24 @@
  * Handles CRUD operations for provider_categories table
  */
 
-import { createClient } from './client'
-import type { DBProviderCategory, ExtractedCategory } from '@/types/menu-import'
+import { createClient } from './client';
+import type { DBProviderCategory, ExtractedCategory } from '@/types/menu-import';
 
 // Create a single category
 export async function createProviderCategory(data: {
-  providerId: string
-  nameAr: string
-  nameEn?: string | null
-  descriptionAr?: string | null
-  descriptionEn?: string | null
-  icon?: string | null
-  displayOrder?: number
-  importId?: string | null
+  providerId: string;
+  nameAr: string;
+  nameEn?: string | null;
+  descriptionAr?: string | null;
+  descriptionEn?: string | null;
+  icon?: string | null;
+  displayOrder?: number;
+  importId?: string | null;
 }): Promise<{
-  data: DBProviderCategory | null
-  error: string | null
+  data: DBProviderCategory | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data: category, error } = await supabase
     .from('provider_categories')
@@ -36,14 +36,14 @@ export async function createProviderCategory(data: {
       import_id: data.importId || null,
     })
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error creating provider category:', error)
-    return { data: null, error: error.message }
+    console.error('Error creating provider category:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: category as DBProviderCategory, error: null }
+  return { data: category as DBProviderCategory, error: null };
 }
 
 // Create multiple categories (batch)
@@ -52,13 +52,13 @@ export async function createProviderCategories(
   categories: ExtractedCategory[],
   importId?: string
 ): Promise<{
-  data: DBProviderCategory[] | null
-  error: string | null
+  data: DBProviderCategory[] | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const insertData = categories
-    .filter(cat => !cat.isDeleted)
+    .filter((cat) => !cat.isDeleted)
     .map((cat, index) => ({
       provider_id: providerId,
       name_ar: cat.name_ar,
@@ -69,119 +69,116 @@ export async function createProviderCategories(
       display_order: cat.display_order || index,
       is_active: true,
       import_id: importId || null,
-    }))
+    }));
 
   if (insertData.length === 0) {
-    return { data: [], error: null }
+    return { data: [], error: null };
   }
 
-  const { data, error } = await supabase
-    .from('provider_categories')
-    .insert(insertData)
-    .select()
+  const { data, error } = await supabase.from('provider_categories').insert(insertData).select();
 
   if (error) {
-    console.error('Error creating provider categories:', error)
-    return { data: null, error: error.message }
+    console.error('Error creating provider categories:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as DBProviderCategory[], error: null }
+  return { data: data as DBProviderCategory[], error: null };
 }
 
 // Get all categories for a provider
 export async function getProviderCategories(providerId: string): Promise<{
-  data: DBProviderCategory[] | null
-  error: string | null
+  data: DBProviderCategory[] | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('provider_categories')
     .select('*')
     .eq('provider_id', providerId)
     .eq('is_active', true)
-    .order('display_order', { ascending: true })
+    .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching provider categories:', error)
-    return { data: null, error: error.message }
+    console.error('Error fetching provider categories:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as DBProviderCategory[], error: null }
+  return { data: data as DBProviderCategory[], error: null };
 }
 
 // Get single category
 export async function getProviderCategory(categoryId: string): Promise<{
-  data: DBProviderCategory | null
-  error: string | null
+  data: DBProviderCategory | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('provider_categories')
     .select('*')
     .eq('id', categoryId)
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error fetching provider category:', error)
-    return { data: null, error: error.message }
+    console.error('Error fetching provider category:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as DBProviderCategory, error: null }
+  return { data: data as DBProviderCategory, error: null };
 }
 
 // Update category
 export async function updateProviderCategory(
   categoryId: string,
   updates: {
-    nameAr?: string
-    nameEn?: string | null
-    descriptionAr?: string | null
-    descriptionEn?: string | null
-    icon?: string | null
-    displayOrder?: number
-    isActive?: boolean
+    nameAr?: string;
+    nameEn?: string | null;
+    descriptionAr?: string | null;
+    descriptionEn?: string | null;
+    icon?: string | null;
+    displayOrder?: number;
+    isActive?: boolean;
   }
 ): Promise<{
-  data: DBProviderCategory | null
-  error: string | null
+  data: DBProviderCategory | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
-  }
+  };
 
-  if (updates.nameAr !== undefined) updateData.name_ar = updates.nameAr
-  if (updates.nameEn !== undefined) updateData.name_en = updates.nameEn
-  if (updates.descriptionAr !== undefined) updateData.description_ar = updates.descriptionAr
-  if (updates.descriptionEn !== undefined) updateData.description_en = updates.descriptionEn
-  if (updates.icon !== undefined) updateData.icon = updates.icon
-  if (updates.displayOrder !== undefined) updateData.display_order = updates.displayOrder
-  if (updates.isActive !== undefined) updateData.is_active = updates.isActive
+  if (updates.nameAr !== undefined) updateData.name_ar = updates.nameAr;
+  if (updates.nameEn !== undefined) updateData.name_en = updates.nameEn;
+  if (updates.descriptionAr !== undefined) updateData.description_ar = updates.descriptionAr;
+  if (updates.descriptionEn !== undefined) updateData.description_en = updates.descriptionEn;
+  if (updates.icon !== undefined) updateData.icon = updates.icon;
+  if (updates.displayOrder !== undefined) updateData.display_order = updates.displayOrder;
+  if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
 
   const { data, error } = await supabase
     .from('provider_categories')
     .update(updateData)
     .eq('id', categoryId)
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error updating provider category:', error)
-    return { data: null, error: error.message }
+    console.error('Error updating provider category:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as DBProviderCategory, error: null }
+  return { data: data as DBProviderCategory, error: null };
 }
 
 // Delete category (soft delete)
 export async function deleteProviderCategory(categoryId: string): Promise<{
-  success: boolean
-  error: string | null
+  success: boolean;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('provider_categories')
@@ -189,14 +186,14 @@ export async function deleteProviderCategory(categoryId: string): Promise<{
       is_active: false,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', categoryId)
+    .eq('id', categoryId);
 
   if (error) {
-    console.error('Error deleting provider category:', error)
-    return { success: false, error: error.message }
+    console.error('Error deleting provider category:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Reorder categories
@@ -204,10 +201,10 @@ export async function reorderProviderCategories(
   providerId: string,
   categoryIds: string[]
 ): Promise<{
-  success: boolean
-  error: string | null
+  success: boolean;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Update each category's display order
   const updates = categoryIds.map((id, index) =>
@@ -216,17 +213,17 @@ export async function reorderProviderCategories(
       .update({ display_order: index, updated_at: new Date().toISOString() })
       .eq('id', id)
       .eq('provider_id', providerId)
-  )
+  );
 
-  const results = await Promise.all(updates)
-  const errors = results.filter(r => r.error)
+  const results = await Promise.all(updates);
+  const errors = results.filter((r) => r.error);
 
   if (errors.length > 0) {
-    console.error('Error reordering categories:', errors)
-    return { success: false, error: 'Failed to reorder some categories' }
+    console.error('Error reordering categories:', errors);
+    return { success: false, error: 'Failed to reorder some categories' };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Check if category name exists for provider
@@ -235,20 +232,20 @@ export async function categoryNameExists(
   nameAr: string,
   excludeCategoryId?: string
 ): Promise<boolean> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   let query = supabase
     .from('provider_categories')
     .select('id')
     .eq('provider_id', providerId)
     .eq('name_ar', nameAr)
-    .eq('is_active', true)
+    .eq('is_active', true);
 
   if (excludeCategoryId) {
-    query = query.neq('id', excludeCategoryId)
+    query = query.neq('id', excludeCategoryId);
   }
 
-  const { data } = await query.single()
+  const { data } = await query.single();
 
-  return !!data
+  return !!data;
 }

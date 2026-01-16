@@ -6,7 +6,7 @@ import {
   validateHereApiKey,
   Coordinates,
   HereAddress,
-  HereSearchResult
+  HereSearchResult,
 } from '@/lib/here-maps/config';
 
 interface UseHereMapsReturn {
@@ -49,7 +49,7 @@ export function useHereMaps(): UseHereMapsReturn {
         q: address,
         in: `countryCode:${HERE_CONFIG.countryCode}`,
         lang: HERE_CONFIG.language,
-        apiKey: HERE_CONFIG.apiKey
+        apiKey: HERE_CONFIG.apiKey,
       });
 
       const response = await fetch(`${HERE_CONFIG.endpoints.geocode}?${params}`);
@@ -74,7 +74,7 @@ export function useHereMaps(): UseHereMapsReturn {
       const params = new URLSearchParams({
         at: `${coords.lat},${coords.lng}`,
         lang: HERE_CONFIG.language,
-        apiKey: HERE_CONFIG.apiKey
+        apiKey: HERE_CONFIG.apiKey,
       });
 
       const response = await fetch(`${HERE_CONFIG.endpoints.reverseGeocode}?${params}`);
@@ -90,7 +90,7 @@ export function useHereMaps(): UseHereMapsReturn {
           district: item.address?.district,
           governorate: item.address?.state || item.address?.county,
           postalCode: item.address?.postalCode,
-          countryCode: item.address?.countryCode
+          countryCode: item.address?.countryCode,
         };
       }
       return null;
@@ -101,105 +101,107 @@ export function useHereMaps(): UseHereMapsReturn {
   }, []);
 
   // Autosuggest addresses
-  const autosuggest = useCallback(async (
-    query: string,
-    coords?: Coordinates
-  ): Promise<HereSearchResult[]> => {
-    if (!HERE_CONFIG.apiKey || query.length < 2) return [];
+  const autosuggest = useCallback(
+    async (query: string, coords?: Coordinates): Promise<HereSearchResult[]> => {
+      if (!HERE_CONFIG.apiKey || query.length < 2) return [];
 
-    try {
-      const params = new URLSearchParams({
-        q: query,
-        in: `countryCode:${HERE_CONFIG.countryCode}`,
-        lang: HERE_CONFIG.language,
-        limit: '10',
-        apiKey: HERE_CONFIG.apiKey
-      });
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          in: `countryCode:${HERE_CONFIG.countryCode}`,
+          lang: HERE_CONFIG.language,
+          limit: '10',
+          apiKey: HERE_CONFIG.apiKey,
+        });
 
-      // Add location bias if provided
-      if (coords) {
-        params.set('at', `${coords.lat},${coords.lng}`);
+        // Add location bias if provided
+        if (coords) {
+          params.set('at', `${coords.lat},${coords.lng}`);
+        }
+
+        const response = await fetch(`${HERE_CONFIG.endpoints.autosuggest}?${params}`);
+        const data = await response.json();
+
+        return (data.items || []).map((item: any) => ({
+          title: item.title,
+          id: item.id,
+          position: item.position || { lat: 0, lng: 0 },
+          address: {
+            label: item.title,
+            street: item.address?.street,
+            houseNumber: item.address?.houseNumber,
+            city: item.address?.city,
+            district: item.address?.district,
+            governorate: item.address?.state || item.address?.county,
+            postalCode: item.address?.postalCode,
+          },
+          distance: item.distance,
+        }));
+      } catch (err) {
+        console.error('Autosuggest error:', err);
+        return [];
       }
-
-      const response = await fetch(`${HERE_CONFIG.endpoints.autosuggest}?${params}`);
-      const data = await response.json();
-
-      return (data.items || []).map((item: any) => ({
-        title: item.title,
-        id: item.id,
-        position: item.position || { lat: 0, lng: 0 },
-        address: {
-          label: item.title,
-          street: item.address?.street,
-          houseNumber: item.address?.houseNumber,
-          city: item.address?.city,
-          district: item.address?.district,
-          governorate: item.address?.state || item.address?.county,
-          postalCode: item.address?.postalCode
-        },
-        distance: item.distance
-      }));
-    } catch (err) {
-      console.error('Autosuggest error:', err);
-      return [];
-    }
-  }, []);
+    },
+    []
+  );
 
   // Search for places/addresses
-  const search = useCallback(async (
-    query: string,
-    coords?: Coordinates
-  ): Promise<HereSearchResult[]> => {
-    if (!HERE_CONFIG.apiKey) return [];
+  const search = useCallback(
+    async (query: string, coords?: Coordinates): Promise<HereSearchResult[]> => {
+      if (!HERE_CONFIG.apiKey) return [];
 
-    try {
-      const params = new URLSearchParams({
-        q: query,
-        in: `countryCode:${HERE_CONFIG.countryCode}`,
-        lang: HERE_CONFIG.language,
-        limit: '20',
-        apiKey: HERE_CONFIG.apiKey
-      });
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          in: `countryCode:${HERE_CONFIG.countryCode}`,
+          lang: HERE_CONFIG.language,
+          limit: '20',
+          apiKey: HERE_CONFIG.apiKey,
+        });
 
-      if (coords) {
-        params.set('at', `${coords.lat},${coords.lng}`);
+        if (coords) {
+          params.set('at', `${coords.lat},${coords.lng}`);
+        }
+
+        const response = await fetch(`${HERE_CONFIG.endpoints.geocode}?${params}`);
+        const data = await response.json();
+
+        return (data.items || []).map((item: any) => ({
+          title: item.title,
+          id: item.id,
+          position: item.position,
+          address: {
+            label: item.title,
+            street: item.address?.street,
+            houseNumber: item.address?.houseNumber,
+            city: item.address?.city,
+            district: item.address?.district,
+            governorate: item.address?.state || item.address?.county,
+            postalCode: item.address?.postalCode,
+          },
+          distance: item.distance,
+          categories: item.categories,
+        }));
+      } catch (err) {
+        console.error('Search error:', err);
+        return [];
       }
-
-      const response = await fetch(`${HERE_CONFIG.endpoints.geocode}?${params}`);
-      const data = await response.json();
-
-      return (data.items || []).map((item: any) => ({
-        title: item.title,
-        id: item.id,
-        position: item.position,
-        address: {
-          label: item.title,
-          street: item.address?.street,
-          houseNumber: item.address?.houseNumber,
-          city: item.address?.city,
-          district: item.address?.district,
-          governorate: item.address?.state || item.address?.county,
-          postalCode: item.address?.postalCode
-        },
-        distance: item.distance,
-        categories: item.categories
-      }));
-    } catch (err) {
-      console.error('Search error:', err);
-      return [];
-    }
-  }, []);
+    },
+    []
+  );
 
   // Calculate distance between two points (Haversine formula)
   const calculateDistance = useCallback((from: Coordinates, to: Coordinates): number => {
     const R = 6371; // Earth's radius in km
-    const dLat = (to.lat - from.lat) * Math.PI / 180;
-    const dLng = (to.lng - from.lng) * Math.PI / 180;
+    const dLat = ((to.lat - from.lat) * Math.PI) / 180;
+    const dLng = ((to.lng - from.lng) * Math.PI) / 180;
 
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(from.lat * Math.PI / 180) * Math.cos(to.lat * Math.PI / 180) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.cos((from.lat * Math.PI) / 180) *
+        Math.cos((to.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
@@ -226,7 +228,7 @@ export function useHereMaps(): UseHereMapsReturn {
     autosuggest,
     search,
     calculateDistance,
-    formatAddress
+    formatAddress,
   };
 }
 
@@ -250,7 +252,7 @@ export function useGeolocation() {
         (position) => {
           const coords = {
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           };
           setLocation(coords);
           setLoading(false);
@@ -276,7 +278,7 @@ export function useGeolocation() {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 0
+          maximumAge: 0,
         }
       );
     });
@@ -286,6 +288,6 @@ export function useGeolocation() {
     location,
     error,
     loading,
-    getCurrentLocation
+    getCurrentLocation,
   };
 }

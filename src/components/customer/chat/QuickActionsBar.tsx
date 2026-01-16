@@ -2,18 +2,18 @@
  * QuickActionsBar - Quick action buttons for common tasks
  */
 
-'use client'
+'use client';
 
-import { memo } from 'react'
-import { motion } from 'framer-motion'
-import { cn } from '@/lib/utils'
-import type { QuickAction } from '@/types/chat'
+import { memo } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import type { QuickAction } from '@/types/chat';
 
 interface QuickActionsBarProps {
-  actions: QuickAction[]
-  onActionClick: (action: string) => void
-  disabled?: boolean
-  className?: string
+  actions: QuickAction[];
+  onActionClick: (action: string) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 export const QuickActionsBar = memo(function QuickActionsBar({
@@ -51,7 +51,7 @@ export const QuickActionsBar = memo(function QuickActionsBar({
         ))}
       </div>
     </div>
-  )
-})
+  );
+});
 
-export default QuickActionsBar
+export default QuickActionsBar;

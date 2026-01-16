@@ -14,23 +14,23 @@
  * @date January 2026
  */
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const BUCKET_NAME = 'custom-orders'
+const BUCKET_NAME = 'custom-orders';
 
 interface BroadcastToCleanup {
-  broadcast_id: string
-  voice_url: string | null
-  image_urls: string[] | null
+  broadcast_id: string;
+  voice_url: string | null;
+  image_urls: string[] | null;
 }
 
 interface CleanupStats {
-  broadcastsProcessed: number
-  voiceFilesDeleted: number
-  imageFilesDeleted: number
-  storageFreedMb: number
-  errors: string[]
+  broadcastsProcessed: number;
+  voiceFilesDeleted: number;
+  imageFilesDeleted: number;
+  storageFreedMb: number;
+  errors: string[];
 }
 
 serve(async (req: Request) => {
@@ -43,26 +43,27 @@ serve(async (req: Request) => {
           'Access-Control-Allow-Methods': 'POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         },
-      })
+      });
     }
 
     // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false }
-    })
+      auth: { persistSession: false },
+    });
 
-    console.log('Starting custom order files cleanup...')
+    console.log('Starting custom order files cleanup...');
 
     // Get broadcasts marked for cleanup
-    const { data: broadcasts, error: fetchError } = await supabase
-      .rpc('mark_broadcasts_for_cleanup')
+    const { data: broadcasts, error: fetchError } = await supabase.rpc(
+      'mark_broadcasts_for_cleanup'
+    );
 
     if (fetchError) {
-      console.error('Error fetching broadcasts for cleanup:', fetchError)
-      throw new Error(`Failed to fetch broadcasts: ${fetchError.message}`)
+      console.error('Error fetching broadcasts for cleanup:', fetchError);
+      throw new Error(`Failed to fetch broadcasts: ${fetchError.message}`);
     }
 
     const stats: CleanupStats = {
@@ -71,10 +72,10 @@ serve(async (req: Request) => {
       imageFilesDeleted: 0,
       storageFreedMb: 0,
       errors: [],
-    }
+    };
 
     if (!broadcasts || broadcasts.length === 0) {
-      console.log('No broadcasts to clean up')
+      console.log('No broadcasts to clean up');
 
       // Log empty run
       await supabase.rpc('log_cleanup_result', {
@@ -82,7 +83,7 @@ serve(async (req: Request) => {
         p_voice_files: 0,
         p_image_files: 0,
         p_storage_mb: 0,
-      })
+      });
 
       return new Response(
         JSON.stringify({
@@ -93,32 +94,32 @@ serve(async (req: Request) => {
         {
           headers: { 'Content-Type': 'application/json' },
         }
-      )
+      );
     }
 
-    console.log(`Found ${broadcasts.length} broadcasts to clean up`)
+    console.log(`Found ${broadcasts.length} broadcasts to clean up`);
 
     // Process each broadcast
     for (const broadcast of broadcasts as BroadcastToCleanup[]) {
       try {
-        const filesToDelete: string[] = []
+        const filesToDelete: string[] = [];
 
         // Extract path from voice URL
         if (broadcast.voice_url) {
-          const voicePath = extractPathFromUrl(broadcast.voice_url)
+          const voicePath = extractPathFromUrl(broadcast.voice_url);
           if (voicePath) {
-            filesToDelete.push(voicePath)
-            stats.voiceFilesDeleted++
+            filesToDelete.push(voicePath);
+            stats.voiceFilesDeleted++;
           }
         }
 
         // Extract paths from image URLs
         if (broadcast.image_urls && broadcast.image_urls.length > 0) {
           for (const imageUrl of broadcast.image_urls) {
-            const imagePath = extractPathFromUrl(imageUrl)
+            const imagePath = extractPathFromUrl(imageUrl);
             if (imagePath) {
-              filesToDelete.push(imagePath)
-              stats.imageFilesDeleted++
+              filesToDelete.push(imagePath);
+              stats.imageFilesDeleted++;
             }
           }
         }
@@ -127,26 +128,31 @@ serve(async (req: Request) => {
         if (filesToDelete.length > 0) {
           const { error: deleteError } = await supabase.storage
             .from(BUCKET_NAME)
-            .remove(filesToDelete)
+            .remove(filesToDelete);
 
           if (deleteError) {
-            console.error(`Error deleting files for broadcast ${broadcast.broadcast_id}:`, deleteError)
-            stats.errors.push(`Broadcast ${broadcast.broadcast_id}: ${deleteError.message}`)
+            console.error(
+              `Error deleting files for broadcast ${broadcast.broadcast_id}:`,
+              deleteError
+            );
+            stats.errors.push(`Broadcast ${broadcast.broadcast_id}: ${deleteError.message}`);
           } else {
-            console.log(`Deleted ${filesToDelete.length} files for broadcast ${broadcast.broadcast_id}`)
+            console.log(
+              `Deleted ${filesToDelete.length} files for broadcast ${broadcast.broadcast_id}`
+            );
           }
         }
 
         // Clear file URLs from database
         await supabase.rpc('clear_broadcast_file_urls', {
           p_broadcast_id: broadcast.broadcast_id,
-        })
+        });
 
-        stats.broadcastsProcessed++
+        stats.broadcastsProcessed++;
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err)
-        console.error(`Error processing broadcast ${broadcast.broadcast_id}:`, errorMessage)
-        stats.errors.push(`Broadcast ${broadcast.broadcast_id}: ${errorMessage}`)
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error(`Error processing broadcast ${broadcast.broadcast_id}:`, errorMessage);
+        stats.errors.push(`Broadcast ${broadcast.broadcast_id}: ${errorMessage}`);
       }
     }
 
@@ -157,9 +163,9 @@ serve(async (req: Request) => {
       p_image_files: stats.imageFilesDeleted,
       p_storage_mb: stats.storageFreedMb,
       p_errors: stats.errors.length > 0 ? stats.errors : null,
-    })
+    });
 
-    console.log('Cleanup completed:', stats)
+    console.log('Cleanup completed:', stats);
 
     return new Response(
       JSON.stringify({
@@ -170,10 +176,10 @@ serve(async (req: Request) => {
       {
         headers: { 'Content-Type': 'application/json' },
       }
-    )
+    );
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
-    console.error('Cleanup error:', errorMessage)
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('Cleanup error:', errorMessage);
 
     return new Response(
       JSON.stringify({
@@ -184,9 +190,9 @@ serve(async (req: Request) => {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       }
-    )
+    );
   }
-})
+});
 
 /**
  * Extract storage path from public URL
@@ -194,18 +200,18 @@ serve(async (req: Request) => {
 function extractPathFromUrl(url: string): string | null {
   try {
     // URL format: https://{project}.supabase.co/storage/v1/object/public/{bucket}/{path}
-    const match = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)/)
+    const match = url.match(/\/storage\/v1\/object\/public\/[^/]+\/(.+)/);
     if (match && match[1]) {
-      return decodeURIComponent(match[1])
+      return decodeURIComponent(match[1]);
     }
 
     // Alternative format: direct path
     if (url.startsWith('broadcasts/') || url.startsWith('requests/')) {
-      return url
+      return url;
     }
 
-    return null
+    return null;
   } catch {
-    return null
+    return null;
   }
 }

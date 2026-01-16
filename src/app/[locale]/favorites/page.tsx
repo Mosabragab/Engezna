@@ -1,24 +1,19 @@
-'use client'
+'use client';
 
-import { useLocale, useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import { Heart } from 'lucide-react'
-import { useFavorites } from '@/hooks/customer'
-import { CustomerLayout } from '@/components/customer/layout'
-import { ProviderCard } from '@/components/customer/shared'
-import { VoiceOrderFAB } from '@/components/customer/voice'
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { Heart } from 'lucide-react';
+import { useFavorites } from '@/hooks/customer';
+import { CustomerLayout } from '@/components/customer/layout';
+import { ProviderCard } from '@/components/customer/shared';
+import { VoiceOrderFAB } from '@/components/customer/voice';
 
 export default function FavoritesPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const t = useTranslations('favorites')
+  const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations('favorites');
 
-  const {
-    favoriteProviders,
-    isLoading,
-    isAuthenticated,
-    toggleFavorite,
-  } = useFavorites()
+  const { favoriteProviders, isLoading, isAuthenticated, toggleFavorite } = useFavorites();
 
   // If not authenticated, show login prompt
   if (!isAuthenticated && !isLoading) {
@@ -32,7 +27,9 @@ export default function FavoritesPage() {
             {locale === 'ar' ? 'سجل دخولك أولاً' : 'Login Required'}
           </h2>
           <p className="text-slate-500 text-center mb-6">
-            {locale === 'ar' ? 'سجل دخولك لعرض المتاجر المفضلة' : 'Login to view your favorite stores'}
+            {locale === 'ar'
+              ? 'سجل دخولك لعرض المتاجر المفضلة'
+              : 'Login to view your favorite stores'}
           </p>
           <button
             onClick={() => router.push(`/${locale}/auth/login`)}
@@ -42,7 +39,7 @@ export default function FavoritesPage() {
           </button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Loading state
@@ -64,7 +61,7 @@ export default function FavoritesPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Empty state
@@ -86,7 +83,7 @@ export default function FavoritesPage() {
         </div>
         <VoiceOrderFAB />
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -128,5 +125,5 @@ export default function FavoritesPage() {
 
       <VoiceOrderFAB />
     </CustomerLayout>
-  )
+  );
 }

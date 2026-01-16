@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { Minus, Plus } from 'lucide-react'
+import { Minus, Plus } from 'lucide-react';
 
 interface QuantitySelectorProps {
-  quantity: number
-  onIncrease: () => void
-  onDecrease: () => void
-  min?: number
-  max?: number
-  size?: 'sm' | 'md' | 'lg'
-  className?: string
+  quantity: number;
+  onIncrease: () => void;
+  onDecrease: () => void;
+  min?: number;
+  max?: number;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
 }
 
 export function QuantitySelector({
@@ -21,8 +21,8 @@ export function QuantitySelector({
   size = 'md',
   className = '',
 }: QuantitySelectorProps) {
-  const canDecrease = quantity > min
-  const canIncrease = quantity < max
+  const canDecrease = quantity > min;
+  const canIncrease = quantity < max;
 
   const sizeClasses = {
     sm: {
@@ -40,9 +40,9 @@ export function QuantitySelector({
       icon: 'w-6 h-6',
       text: 'w-12 text-lg',
     },
-  }
+  };
 
-  const classes = sizeClasses[size]
+  const classes = sizeClasses[size];
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -58,9 +58,7 @@ export function QuantitySelector({
         <Minus className={classes.icon} />
       </button>
 
-      <span className={`${classes.text} text-center font-semibold tabular-nums`}>
-        {quantity}
-      </span>
+      <span className={`${classes.text} text-center font-semibold tabular-nums`}>{quantity}</span>
 
       <button
         onClick={onIncrease}
@@ -74,5 +72,5 @@ export function QuantitySelector({
         <Plus className={classes.icon} />
       </button>
     </div>
-  )
+  );
 }

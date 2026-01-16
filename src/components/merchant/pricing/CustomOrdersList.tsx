@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
 import {
   Clock,
   FileText,
@@ -22,22 +22,22 @@ import {
   SortAsc,
   SortDesc,
   RefreshCw,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from '@/components/ui/select';
 import type {
   CustomOrderRequest,
   CustomRequestStatus,
   CustomOrderInputType,
-} from '@/types/custom-order'
+} from '@/types/custom-order';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -45,73 +45,67 @@ import type {
 
 interface CustomOrderWithCustomer extends CustomOrderRequest {
   customer?: {
-    id: string
-    full_name: string
-    phone: string | null
-  }
+    id: string;
+    full_name: string;
+    phone: string | null;
+  };
 }
 
 interface CustomOrdersListProps {
-  orders: CustomOrderWithCustomer[]
-  onSelectOrder: (orderId: string) => void
-  onRefresh?: () => Promise<void>
-  loading?: boolean
-  className?: string
+  orders: CustomOrderWithCustomer[];
+  onSelectOrder: (orderId: string) => void;
+  onRefresh?: () => Promise<void>;
+  loading?: boolean;
+  className?: string;
 }
 
-type SortOption = 'deadline' | 'created' | 'status'
-type FilterOption = 'all' | 'pending' | 'priced' | 'expired'
+type SortOption = 'deadline' | 'created' | 'status';
+type FilterOption = 'all' | 'pending' | 'priced' | 'expired';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Helper Components
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function CountdownTimer({
-  deadline,
-  className,
-}: {
-  deadline: string
-  className?: string
-}) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+function CountdownTimer({ deadline, className }: { deadline: string; className?: string }) {
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const [timeLeft, setTimeLeft] = useState<{
-    hours: number
-    minutes: number
-    seconds: number
-    isExpired: boolean
-    isUrgent: boolean
-  }>({ hours: 0, minutes: 0, seconds: 0, isExpired: false, isUrgent: false })
+    hours: number;
+    minutes: number;
+    seconds: number;
+    isExpired: boolean;
+    isUrgent: boolean;
+  }>({ hours: 0, minutes: 0, seconds: 0, isExpired: false, isUrgent: false });
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const now = new Date().getTime()
-      const deadlineTime = new Date(deadline).getTime()
-      const difference = deadlineTime - now
+      const now = new Date().getTime();
+      const deadlineTime = new Date(deadline).getTime();
+      const difference = deadlineTime - now;
 
       if (difference <= 0) {
-        return { hours: 0, minutes: 0, seconds: 0, isExpired: true, isUrgent: true }
+        return { hours: 0, minutes: 0, seconds: 0, isExpired: true, isUrgent: true };
       }
 
-      const hours = Math.floor(difference / (1000 * 60 * 60))
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000)
+      const hours = Math.floor(difference / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
 
       // Urgent if less than 30 minutes
-      const isUrgent = difference < 30 * 60 * 1000
+      const isUrgent = difference < 30 * 60 * 1000;
 
-      return { hours, minutes, seconds, isExpired: false, isUrgent }
-    }
+      return { hours, minutes, seconds, isExpired: false, isUrgent };
+    };
 
-    setTimeLeft(calculateTimeLeft())
+    setTimeLeft(calculateTimeLeft());
 
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft())
-    }, 1000)
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
 
-    return () => clearInterval(timer)
-  }, [deadline])
+    return () => clearInterval(timer);
+  }, [deadline]);
 
   if (timeLeft.isExpired) {
     return (
@@ -124,10 +118,10 @@ function CountdownTimer({
         <XCircle className="w-4 h-4" />
         {isRTL ? 'انتهت المهلة' : 'Expired'}
       </span>
-    )
+    );
   }
 
-  const formatTime = (value: number) => value.toString().padStart(2, '0')
+  const formatTime = (value: number) => value.toString().padStart(2, '0');
 
   return (
     <div
@@ -141,16 +135,15 @@ function CountdownTimer({
     >
       <Timer className="w-4 h-4" />
       <span>
-        {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:
-        {formatTime(timeLeft.seconds)}
+        {formatTime(timeLeft.hours)}:{formatTime(timeLeft.minutes)}:{formatTime(timeLeft.seconds)}
       </span>
     </div>
-  )
+  );
 }
 
 function InputTypeBadge({ type }: { type: CustomOrderInputType }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const config = {
     text: {
@@ -161,24 +154,21 @@ function InputTypeBadge({ type }: { type: CustomOrderInputType }) {
     voice: {
       icon: Mic,
       label: isRTL ? 'صوت' : 'Voice',
-      className:
-        'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+      className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     },
     image: {
       icon: ImageIcon,
       label: isRTL ? 'صور' : 'Images',
-      className:
-        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
     },
     mixed: {
       icon: Package,
       label: isRTL ? 'متعدد' : 'Mixed',
-      className:
-        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     },
-  }
+  };
 
-  const { icon: Icon, label, className } = config[type]
+  const { icon: Icon, label, className } = config[type];
 
   return (
     <span
@@ -190,12 +180,12 @@ function InputTypeBadge({ type }: { type: CustomOrderInputType }) {
       <Icon className="w-3 h-3" />
       {label}
     </span>
-  )
+  );
 }
 
 function StatusBadge({ status }: { status: CustomRequestStatus }) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const config: Record<
     CustomRequestStatus,
@@ -203,26 +193,22 @@ function StatusBadge({ status }: { status: CustomRequestStatus }) {
   > = {
     pending: {
       label: isRTL ? 'بانتظار التسعير' : 'Awaiting Pricing',
-      className:
-        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
       icon: Clock,
     },
     pricing_in_progress: {
       label: isRTL ? 'قيد التسعير' : 'Pricing...',
-      className:
-        'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
       icon: Clock,
     },
     priced: {
       label: isRTL ? 'تم التسعير' : 'Priced',
-      className:
-        'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
       icon: CheckCircle2,
     },
     customer_approved: {
       label: isRTL ? 'تمت الموافقة' : 'Approved',
-      className:
-        'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
       icon: CheckCircle2,
     },
     customer_rejected: {
@@ -232,19 +218,17 @@ function StatusBadge({ status }: { status: CustomRequestStatus }) {
     },
     expired: {
       label: isRTL ? 'منتهي' : 'Expired',
-      className:
-        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
+      className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
       icon: XCircle,
     },
     cancelled: {
       label: isRTL ? 'ملغي' : 'Cancelled',
-      className:
-        'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
+      className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
       icon: XCircle,
     },
-  }
+  };
 
-  const { label, className, icon: Icon } = config[status]
+  const { label, className, icon: Icon } = config[status];
 
   return (
     <span
@@ -256,7 +240,7 @@ function StatusBadge({ status }: { status: CustomRequestStatus }) {
       <Icon className="w-3 h-3" />
       {label}
     </span>
-  )
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -264,21 +248,19 @@ function StatusBadge({ status }: { status: CustomRequestStatus }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface OrderCardProps {
-  order: CustomOrderWithCustomer
-  onSelect: () => void
-  isUrgent?: boolean
+  order: CustomOrderWithCustomer;
+  onSelect: () => void;
+  isUrgent?: boolean;
 }
 
 function OrderCard({ order, onSelect, isUrgent }: OrderCardProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const previewText =
-    order.original_text?.substring(0, 100) ||
-    order.transcribed_text?.substring(0, 100) ||
-    ''
+    order.original_text?.substring(0, 100) || order.transcribed_text?.substring(0, 100) || '';
 
-  const isPending = order.status === 'pending'
+  const isPending = order.status === 'pending';
 
   return (
     <motion.button
@@ -295,8 +277,8 @@ function OrderCard({ order, onSelect, isUrgent }: OrderCardProps) {
         isPending && isUrgent
           ? 'border-red-300 dark:border-red-800 shadow-red-100 dark:shadow-red-900/20'
           : isPending
-          ? 'border-amber-200 dark:border-amber-800 shadow-amber-50'
-          : 'border-slate-200 dark:border-slate-700',
+            ? 'border-amber-200 dark:border-amber-800 shadow-amber-50'
+            : 'border-slate-200 dark:border-slate-700',
         'hover:shadow-lg hover:border-primary/30'
       )}
     >
@@ -359,13 +341,13 @@ function OrderCard({ order, onSelect, isUrgent }: OrderCardProps) {
               ? 'تسعير الآن'
               : 'Price Now'
             : isRTL
-            ? 'عرض التفاصيل'
-            : 'View Details'}
+              ? 'عرض التفاصيل'
+              : 'View Details'}
           <ChevronRight className="w-4 h-4 rtl:rotate-180" />
         </div>
       </div>
     </motion.button>
-  )
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -379,41 +361,36 @@ export function CustomOrdersList({
   loading = false,
   className,
 }: CustomOrdersListProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const [sortBy, setSortBy] = useState<SortOption>('deadline')
-  const [filterBy, setFilterBy] = useState<FilterOption>('all')
-  const [sortDesc, setSortDesc] = useState(false)
+  const [sortBy, setSortBy] = useState<SortOption>('deadline');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [sortDesc, setSortDesc] = useState(false);
 
   // Filter and sort orders
   const filteredOrders = useMemo(() => {
-    let result = [...orders]
+    let result = [...orders];
 
     // Apply filter
     if (filterBy !== 'all') {
       result = result.filter((order) => {
-        if (filterBy === 'pending') return order.status === 'pending'
-        if (filterBy === 'priced') return order.status === 'priced'
-        if (filterBy === 'expired') return order.status === 'expired'
-        return true
-      })
+        if (filterBy === 'pending') return order.status === 'pending';
+        if (filterBy === 'priced') return order.status === 'priced';
+        if (filterBy === 'expired') return order.status === 'expired';
+        return true;
+      });
     }
 
     // Apply sort
     result.sort((a, b) => {
-      let comparison = 0
+      let comparison = 0;
       if (sortBy === 'deadline') {
-        const aTime = a.pricing_expires_at
-          ? new Date(a.pricing_expires_at).getTime()
-          : Infinity
-        const bTime = b.pricing_expires_at
-          ? new Date(b.pricing_expires_at).getTime()
-          : Infinity
-        comparison = aTime - bTime
+        const aTime = a.pricing_expires_at ? new Date(a.pricing_expires_at).getTime() : Infinity;
+        const bTime = b.pricing_expires_at ? new Date(b.pricing_expires_at).getTime() : Infinity;
+        comparison = aTime - bTime;
       } else if (sortBy === 'created') {
-        comparison =
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        comparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       } else if (sortBy === 'status') {
         const statusOrder: Record<string, number> = {
           pending: 0,
@@ -423,26 +400,26 @@ export function CustomOrdersList({
           customer_rejected: 3,
           expired: 4,
           cancelled: 5,
-        }
-        comparison = (statusOrder[a.status] ?? 6) - (statusOrder[b.status] ?? 6)
+        };
+        comparison = (statusOrder[a.status] ?? 6) - (statusOrder[b.status] ?? 6);
       }
-      return sortDesc ? -comparison : comparison
-    })
+      return sortDesc ? -comparison : comparison;
+    });
 
-    return result
-  }, [orders, sortBy, filterBy, sortDesc])
+    return result;
+  }, [orders, sortBy, filterBy, sortDesc]);
 
   // Check if order is urgent (less than 30 minutes)
   const isOrderUrgent = (order: CustomOrderWithCustomer): boolean => {
-    if (order.status !== 'pending' || !order.pricing_expires_at) return false
-    const now = new Date().getTime()
-    const deadline = new Date(order.pricing_expires_at).getTime()
-    return deadline - now < 30 * 60 * 1000
-  }
+    if (order.status !== 'pending' || !order.pricing_expires_at) return false;
+    const now = new Date().getTime();
+    const deadline = new Date(order.pricing_expires_at).getTime();
+    return deadline - now < 30 * 60 * 1000;
+  };
 
   // Count by status
-  const pendingCount = orders.filter((o) => o.status === 'pending').length
-  const urgentCount = orders.filter(isOrderUrgent).length
+  const pendingCount = orders.filter((o) => o.status === 'pending').length;
+  const urgentCount = orders.filter(isOrderUrgent).length;
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
@@ -484,18 +461,13 @@ export function CustomOrdersList({
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <div className="flex items-center gap-1">
           <Filter className="w-4 h-4 text-slate-400" />
-          <Select
-            value={filterBy}
-            onValueChange={(v) => setFilterBy(v as FilterOption)}
-          >
+          <Select value={filterBy} onValueChange={(v) => setFilterBy(v as FilterOption)}>
             <SelectTrigger className="w-32 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{isRTL ? 'الكل' : 'All'}</SelectItem>
-              <SelectItem value="pending">
-                {isRTL ? 'بانتظار التسعير' : 'Pending'}
-              </SelectItem>
+              <SelectItem value="pending">{isRTL ? 'بانتظار التسعير' : 'Pending'}</SelectItem>
               <SelectItem value="priced">{isRTL ? 'تم التسعير' : 'Priced'}</SelectItem>
               <SelectItem value="expired">{isRTL ? 'منتهي' : 'Expired'}</SelectItem>
             </SelectContent>
@@ -503,20 +475,13 @@ export function CustomOrdersList({
         </div>
 
         <div className="flex items-center gap-1">
-          <Select
-            value={sortBy}
-            onValueChange={(v) => setSortBy(v as SortOption)}
-          >
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
             <SelectTrigger className="w-32 h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="deadline">
-                {isRTL ? 'المهلة' : 'Deadline'}
-              </SelectItem>
-              <SelectItem value="created">
-                {isRTL ? 'تاريخ الإنشاء' : 'Created'}
-              </SelectItem>
+              <SelectItem value="deadline">{isRTL ? 'المهلة' : 'Deadline'}</SelectItem>
+              <SelectItem value="created">{isRTL ? 'تاريخ الإنشاء' : 'Created'}</SelectItem>
               <SelectItem value="status">{isRTL ? 'الحالة' : 'Status'}</SelectItem>
             </SelectContent>
           </Select>
@@ -526,11 +491,7 @@ export function CustomOrdersList({
             className="h-8 w-8"
             onClick={() => setSortDesc(!sortDesc)}
           >
-            {sortDesc ? (
-              <SortDesc className="w-4 h-4" />
-            ) : (
-              <SortAsc className="w-4 h-4" />
-            )}
+            {sortDesc ? <SortDesc className="w-4 h-4" /> : <SortAsc className="w-4 h-4" />}
           </Button>
         </div>
       </div>
@@ -550,8 +511,8 @@ export function CustomOrdersList({
                   ? 'لا توجد طلبات تطابق الفلتر'
                   : 'No orders match the filter'
                 : isRTL
-                ? 'لا توجد طلبات خاصة حالياً'
-                : 'No custom orders yet'}
+                  ? 'لا توجد طلبات خاصة حالياً'
+                  : 'No custom orders yet'}
             </p>
           </div>
         ) : (
@@ -571,13 +532,11 @@ export function CustomOrdersList({
       {/* Summary */}
       {filteredOrders.length > 0 && (
         <div className="pt-3 border-t border-slate-200 dark:border-slate-700 text-sm text-slate-500 dark:text-slate-400 text-center">
-          {isRTL
-            ? `${filteredOrders.length} طلب معروض`
-            : `Showing ${filteredOrders.length} orders`}
+          {isRTL ? `${filteredOrders.length} طلب معروض` : `Showing ${filteredOrders.length} orders`}
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default CustomOrdersList
+export default CustomOrdersList;

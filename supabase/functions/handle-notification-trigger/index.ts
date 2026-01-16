@@ -1,10 +1,10 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 // Notification templates
 const NOTIFICATION_TEMPLATES = {
@@ -167,50 +167,50 @@ const NOTIFICATION_TEMPLATES = {
     body_ar: 'تم تصعيد المرتجع للطلب #{order_number}',
     type: 'refund_escalated',
   },
-}
+};
 
 // Replace template variables
 function formatTemplate(template: string, variables: Record<string, string>): string {
-  let result = template
+  let result = template;
   for (const [key, value] of Object.entries(variables)) {
-    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value)
-    result = result.replace(new RegExp(`#\\{${key}\\}`, 'g'), `#${value}`)
+    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
+    result = result.replace(new RegExp(`#\\{${key}\\}`, 'g'), `#${value}`);
   }
-  return result
+  return result;
 }
 
 interface WebhookPayload {
-  type: 'INSERT' | 'UPDATE' | 'DELETE'
-  table: string
-  record: Record<string, unknown>
-  old_record?: Record<string, unknown>
-  schema: string
+  type: 'INSERT' | 'UPDATE' | 'DELETE';
+  table: string;
+  record: Record<string, unknown>;
+  old_record?: Record<string, unknown>;
+  schema: string;
 }
 
 interface NotificationPayload {
-  user_id?: string
-  user_ids?: string[]
-  provider_id?: string
-  admin_notify?: boolean
-  template: keyof typeof NOTIFICATION_TEMPLATES
-  variables: Record<string, string>
-  data: Record<string, string>
+  user_id?: string;
+  user_ids?: string[];
+  provider_id?: string;
+  admin_notify?: boolean;
+  template: keyof typeof NOTIFICATION_TEMPLATES;
+  variables: Record<string, string>;
+  data: Record<string, string>;
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const payload: WebhookPayload = await req.json()
+    const payload: WebhookPayload = await req.json();
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const notifications: NotificationPayload[] = []
+    const notifications: NotificationPayload[] = [];
 
     // Handle different tables/events
     switch (payload.table) {
@@ -219,12 +219,12 @@ serve(async (req) => {
       // ============================================================================
       case 'orders': {
         const order = payload.record as {
-          id: string
-          order_number: string
-          customer_id: string
-          provider_id: string
-          status: string
-        }
+          id: string;
+          order_number: string;
+          customer_id: string;
+          provider_id: string;
+          status: string;
+        };
 
         if (payload.type === 'INSERT') {
           // New order - notify provider
@@ -233,9 +233,9 @@ serve(async (req) => {
             template: 'new_order',
             variables: { order_number: order.order_number },
             data: { order_id: order.id, type: 'new_order' },
-          })
+          });
         } else if (payload.type === 'UPDATE' && payload.old_record) {
-          const oldOrder = payload.old_record as { status: string }
+          const oldOrder = payload.old_record as { status: string };
 
           if (oldOrder.status !== order.status) {
             const statusTemplateMap: Record<string, keyof typeof NOTIFICATION_TEMPLATES> = {
@@ -246,18 +246,27 @@ serve(async (req) => {
               delivered: 'order_delivered',
               rejected: 'order_rejected',
               cancelled: 'order_cancelled',
-            }
+            };
 
-            const template = statusTemplateMap[order.status]
+            const template = statusTemplateMap[order.status];
             if (template) {
-              if (['accepted', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'rejected'].includes(order.status)) {
+              if (
+                [
+                  'accepted',
+                  'preparing',
+                  'ready',
+                  'out_for_delivery',
+                  'delivered',
+                  'rejected',
+                ].includes(order.status)
+              ) {
                 // Notify customer
                 notifications.push({
                   user_id: order.customer_id,
                   template,
                   variables: { order_number: order.order_number },
                   data: { order_id: order.id, type: 'order_update' },
-                })
+                });
               } else if (order.status === 'cancelled') {
                 // Notify provider
                 notifications.push({
@@ -265,12 +274,12 @@ serve(async (req) => {
                   template,
                   variables: { order_number: order.order_number },
                   data: { order_id: order.id, type: 'order_cancelled' },
-                })
+                });
               }
             }
           }
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -279,19 +288,19 @@ serve(async (req) => {
       case 'reviews': {
         if (payload.type === 'INSERT') {
           const review = payload.record as {
-            id: string
-            provider_id: string
-            rating: number
-          }
+            id: string;
+            provider_id: string;
+            rating: number;
+          };
 
           notifications.push({
             provider_id: review.provider_id,
             template: 'new_review',
             variables: { stars: String(review.rating) },
             data: { review_id: review.id, type: 'new_review' },
-          })
+          });
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -300,18 +309,18 @@ serve(async (req) => {
       case 'chat_messages': {
         if (payload.type === 'INSERT') {
           const message = payload.record as {
-            id: string
-            conversation_id: string
-            sender_id: string
-            content: string
-          }
+            id: string;
+            conversation_id: string;
+            sender_id: string;
+            content: string;
+          };
 
           // Get conversation to find recipient
           const { data: conversation } = await supabase
             .from('chat_conversations')
             .select('customer_id, provider_id')
             .eq('id', message.conversation_id)
-            .single()
+            .single();
 
           if (conversation) {
             // Get sender name
@@ -319,10 +328,10 @@ serve(async (req) => {
               .from('profiles')
               .select('full_name')
               .eq('id', message.sender_id)
-              .single()
+              .single();
 
-            const senderName = sender?.full_name || 'مستخدم'
-            const messagePreview = message.content?.substring(0, 50) || ''
+            const senderName = sender?.full_name || 'مستخدم';
+            const messagePreview = message.content?.substring(0, 50) || '';
 
             // Determine recipient and notify
             if (message.sender_id === conversation.customer_id) {
@@ -332,7 +341,7 @@ serve(async (req) => {
                 template: 'new_message',
                 variables: { sender_name: senderName, message_preview: messagePreview },
                 data: { conversation_id: message.conversation_id, type: 'chat_message' },
-              })
+              });
             } else {
               // Provider sent message - notify customer
               notifications.push({
@@ -340,11 +349,11 @@ serve(async (req) => {
                 template: 'new_message',
                 variables: { sender_name: senderName, message_preview: messagePreview },
                 data: { conversation_id: message.conversation_id, type: 'chat_message' },
-              })
+              });
             }
           }
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -352,14 +361,14 @@ serve(async (req) => {
       // ============================================================================
       case 'support_tickets': {
         const ticket = payload.record as {
-          id: string
-          ticket_number: string
-          user_id: string
-          provider_id: string
-          subject: string
-          status: string
-          assigned_to: string
-        }
+          id: string;
+          ticket_number: string;
+          user_id: string;
+          provider_id: string;
+          subject: string;
+          status: string;
+          assigned_to: string;
+        };
 
         if (payload.type === 'INSERT') {
           // New ticket - notify admins
@@ -368,12 +377,12 @@ serve(async (req) => {
             template: 'new_support_ticket',
             variables: {
               ticket_number: ticket.ticket_number,
-              subject: ticket.subject || 'تذكرة دعم'
+              subject: ticket.subject || 'تذكرة دعم',
             },
             data: { ticket_id: ticket.id, type: 'new_ticket' },
-          })
+          });
         } else if (payload.type === 'UPDATE' && payload.old_record) {
-          const oldTicket = payload.old_record as { status: string }
+          const oldTicket = payload.old_record as { status: string };
 
           if (oldTicket.status !== ticket.status) {
             // Status changed - notify customer
@@ -383,18 +392,18 @@ serve(async (req) => {
                 template: 'ticket_resolved',
                 variables: { ticket_number: ticket.ticket_number },
                 data: { ticket_id: ticket.id, type: 'ticket_update' },
-              })
+              });
             } else if (ticket.status === 'closed') {
               notifications.push({
                 user_id: ticket.user_id,
                 template: 'ticket_closed',
                 variables: { ticket_number: ticket.ticket_number },
                 data: { ticket_id: ticket.id, type: 'ticket_update' },
-              })
+              });
             }
           }
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -403,23 +412,23 @@ serve(async (req) => {
       case 'ticket_messages': {
         if (payload.type === 'INSERT') {
           const message = payload.record as {
-            id: string
-            ticket_id: string
-            sender_type: string
-            sender_id: string
-            message: string
-            is_internal: boolean
-          }
+            id: string;
+            ticket_id: string;
+            sender_type: string;
+            sender_id: string;
+            message: string;
+            is_internal: boolean;
+          };
 
           // Don't notify for internal messages
-          if (message.is_internal) break
+          if (message.is_internal) break;
 
           // Get ticket info
           const { data: ticket } = await supabase
             .from('support_tickets')
             .select('ticket_number, user_id')
             .eq('id', message.ticket_id)
-            .single()
+            .single();
 
           if (ticket && message.sender_type !== 'customer') {
             // Admin replied - notify customer
@@ -428,10 +437,10 @@ serve(async (req) => {
               template: 'ticket_reply',
               variables: { ticket_number: ticket.ticket_number },
               data: { ticket_id: message.ticket_id, type: 'ticket_update' },
-            })
+            });
           }
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -439,23 +448,23 @@ serve(async (req) => {
       // ============================================================================
       case 'refunds': {
         const refund = payload.record as {
-          id: string
-          order_id: string
-          customer_id: string
-          provider_id: string
-          amount: number
-          status: string
-          escalated_to_admin: boolean
-        }
+          id: string;
+          order_id: string;
+          customer_id: string;
+          provider_id: string;
+          amount: number;
+          status: string;
+          escalated_to_admin: boolean;
+        };
 
         // Get order number
         const { data: order } = await supabase
           .from('orders')
           .select('order_number')
           .eq('id', refund.order_id)
-          .single()
+          .single();
 
-        const orderNumber = order?.order_number || refund.order_id
+        const orderNumber = order?.order_number || refund.order_id;
 
         if (payload.type === 'INSERT') {
           // New refund request - notify provider and admin
@@ -464,19 +473,19 @@ serve(async (req) => {
             template: 'new_refund_request_provider',
             variables: { order_number: orderNumber },
             data: { refund_id: refund.id, order_id: refund.order_id, type: 'refund_request' },
-          })
+          });
 
           notifications.push({
             admin_notify: true,
             template: 'new_refund_request_admin',
             variables: {
               order_number: orderNumber,
-              amount: String(refund.amount)
+              amount: String(refund.amount),
             },
             data: { refund_id: refund.id, order_id: refund.order_id, type: 'refund_request' },
-          })
+          });
         } else if (payload.type === 'UPDATE' && payload.old_record) {
-          const oldRefund = payload.old_record as { status: string; escalated_to_admin: boolean }
+          const oldRefund = payload.old_record as { status: string; escalated_to_admin: boolean };
 
           // Status changed
           if (oldRefund.status !== refund.status) {
@@ -486,24 +495,24 @@ serve(async (req) => {
                 template: 'refund_approved',
                 variables: { order_number: orderNumber },
                 data: { refund_id: refund.id, type: 'refund_update' },
-              })
+              });
             } else if (refund.status === 'rejected') {
               notifications.push({
                 user_id: refund.customer_id,
                 template: 'refund_rejected',
                 variables: { order_number: orderNumber },
                 data: { refund_id: refund.id, type: 'refund_update' },
-              })
+              });
             } else if (refund.status === 'processed' || refund.status === 'completed') {
               notifications.push({
                 user_id: refund.customer_id,
                 template: 'refund_processed',
                 variables: {
                   order_number: orderNumber,
-                  amount: String(refund.amount)
+                  amount: String(refund.amount),
                 },
                 data: { refund_id: refund.id, type: 'refund_update' },
-              })
+              });
             }
           }
 
@@ -514,10 +523,10 @@ serve(async (req) => {
               template: 'refund_escalated',
               variables: { order_number: orderNumber },
               data: { refund_id: refund.id, type: 'refund_escalated' },
-            })
+            });
           }
         }
-        break
+        break;
       }
 
       // ============================================================================
@@ -528,21 +537,21 @@ serve(async (req) => {
       case 'admin_notifications': {
         if (payload.type === 'INSERT') {
           const notification = payload.record as {
-            id: string
-            user_id?: string
-            customer_id?: string
-            provider_id?: string
-            admin_id?: string
-            title?: string
-            title_ar?: string
-            title_en?: string
-            body?: string
-            body_ar?: string
-            body_en?: string
-            type: string
-          }
+            id: string;
+            user_id?: string;
+            customer_id?: string;
+            provider_id?: string;
+            admin_id?: string;
+            title?: string;
+            title_ar?: string;
+            title_en?: string;
+            body?: string;
+            body_ar?: string;
+            body_en?: string;
+            type: string;
+          };
 
-          const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`
+          const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
 
           await fetch(sendNotificationUrl, {
             method: 'POST',
@@ -562,33 +571,33 @@ serve(async (req) => {
                 type: notification.type,
               },
             }),
-          })
+          });
 
           return new Response(JSON.stringify({ success: true, synced: true }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          })
+          });
         }
-        break
+        break;
       }
     }
 
     // Send all notifications
-    const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`
-    const results = []
+    const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
+    const results = [];
 
     for (const notif of notifications) {
-      const template = NOTIFICATION_TEMPLATES[notif.template]
+      const template = NOTIFICATION_TEMPLATES[notif.template];
 
       // For admin notifications, get admin user IDs
-      let targetUserIds: string[] = []
+      let targetUserIds: string[] = [];
       if (notif.admin_notify) {
         const { data: admins } = await supabase
           .from('admin_users')
           .select('user_id')
           .eq('is_active', true)
-          .limit(50)
+          .limit(50);
 
-        targetUserIds = admins?.map(a => a.user_id) || []
+        targetUserIds = admins?.map((a) => a.user_id) || [];
       }
 
       const response = await fetch(sendNotificationUrl, {
@@ -610,24 +619,26 @@ serve(async (req) => {
             type: template.type,
           },
         }),
-      })
+      });
 
-      results.push(await response.json())
+      results.push(await response.json());
     }
 
-    return new Response(JSON.stringify({
-      success: true,
-      notifications_sent: notifications.length,
-      results
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-
+    return new Response(
+      JSON.stringify({
+        success: true,
+        notifications_sent: notifications.length,
+        results,
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    });
   }
-})
+});

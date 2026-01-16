@@ -1,4 +1,5 @@
 # Engezna – Visual Assets Guide (For Designers)
+
 Version: 2.0
 Last Updated: 2025-12-03
 
@@ -33,6 +34,7 @@ Last Updated: 2025-12-03
 ### 1.2 Animated Logo (NEW! - v2.0)
 
 **Primary Animated Logo:**
+
 - Font: **Aref Ruqaa** (Arabic Calligraphy Style)
 - Text: "إنجزنا"
 - Color: **#0F172A (Charcoal)** - NOT the brand blue
@@ -41,11 +43,13 @@ Last Updated: 2025-12-03
 
 **Animation Concept:**
 The animated logo reveals the Arabic text "إنجزنا" character by character from right to left, as if being written by an invisible pen. This creates an elegant calligraphic effect that:
+
 - Respects Arabic reading direction (RTL)
 - Creates a memorable brand impression
 - Conveys sophistication and authenticity
 
 **When to Use Animated Logo:**
+
 - App splash screens
 - Website hero sections
 - Marketing videos intro/outro
@@ -53,6 +57,7 @@ The animated logo reveals the Arabic text "إنجزنا" character by character 
 - Loading screens
 
 **When to Use Static Logo:**
+
 - Navigation headers
 - Footer
 - App icons
@@ -61,16 +66,17 @@ The animated logo reveals the Arabic text "إنجزنا" character by character 
 
 **Size Specifications:**
 
-| Context | Size | Font Size | With Pen |
-|---------|------|-----------|----------|
-| Splash Screen | 2xl | 72px | Yes |
-| Hero Section | xl | 56px | Optional |
-| Large Display | lg | 42px | Optional |
-| Standard | md | 30px | No |
-| Header/Nav | sm | 24px | No |
-| Minimal | xs | 18px | No |
+| Context       | Size | Font Size | With Pen |
+| ------------- | ---- | --------- | -------- |
+| Splash Screen | 2xl  | 72px      | Yes      |
+| Hero Section  | xl   | 56px      | Optional |
+| Large Display | lg   | 42px      | Optional |
+| Standard      | md   | 30px      | No       |
+| Header/Nav    | sm   | 24px      | No       |
+| Minimal       | xs   | 18px      | No       |
 
 **Optional Pen Decoration:**
+
 - A small pen icon (🖊️ or similar) can appear on the left side of the logo
 - Only use with sizes `lg` and above
 - Adds a calligraphy/writing visual metaphor
@@ -109,12 +115,14 @@ The goal: recognisable at 48x48px on low-end Android screens.
 See main palette in `BRAND_IDENTITY_GUIDE.md`.
 
 **Safe Combinations:**
+
 - Primary blue on white.
 - White on primary blue (for large text and buttons).
 - Deals green on dark or white.
 - Gold for premium highlights on both black and white.
 
 **Avoid:**
+
 - Using all accents at once in a single screen.
 - Using primary blue on bright sky blue (lack of contrast).
 - Reintroducing old orange as a brand primary.
@@ -146,6 +154,7 @@ See main palette in `BRAND_IDENTITY_GUIDE.md`.
 - Use muted greys for dividers, cards, and backgrounds.
 
 **Example usage:**
+
 - Login screen:
   - White background
   - Blue primary CTA
@@ -186,6 +195,7 @@ See main palette in `BRAND_IDENTITY_GUIDE.md`.
   - Real food, fresh produce, daily life scenes.
 
 Illustrations:
+
 - Simple, flat, friendly.
 - Use brand blue as anchor.
 

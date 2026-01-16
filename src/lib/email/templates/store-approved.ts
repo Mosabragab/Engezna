@@ -1,4 +1,4 @@
-import type { StoreApprovedData } from '../resend'
+import type { StoreApprovedData } from '../resend';
 
 export function storeApprovedTemplate(data: StoreApprovedData): string {
   return `<!DOCTYPE html>
@@ -122,5 +122,5 @@ export function storeApprovedTemplate(data: StoreApprovedData): string {
         </tr>
     </table>
 </body>
-</html>`
+</html>`;
 }

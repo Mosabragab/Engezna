@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useLocale } from 'next-intl'
-import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useLocale } from 'next-intl';
+import { useParams, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   MessageSquare,
   RefreshCw,
@@ -22,128 +22,157 @@ import {
   Store,
   User as UserIcon,
   Info,
-} from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { ar, enUS } from 'date-fns/locale'
+} from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ar, enUS } from 'date-fns/locale';
 
 interface TicketMessage {
-  id: string
-  ticket_id: string
-  sender_id: string
-  sender_type: 'customer' | 'provider' | 'admin' | 'system'
-  recipient_type?: string
-  message: string
-  created_at: string
-  is_internal: boolean
+  id: string;
+  ticket_id: string;
+  sender_id: string;
+  sender_type: 'customer' | 'provider' | 'admin' | 'system';
+  recipient_type?: string;
+  message: string;
+  created_at: string;
+  is_internal: boolean;
   sender?: {
-    full_name: string
-  } | null
+    full_name: string;
+  } | null;
 }
 
 interface SupportTicket {
-  id: string
-  ticket_number: string
-  subject: string
-  description: string
-  status: string
-  priority: string
-  created_at: string
-  resolved_at: string | null
-  provider_id: string | null
-  order_id: string | null
+  id: string;
+  ticket_number: string;
+  subject: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  resolved_at: string | null;
+  provider_id: string | null;
+  order_id: string | null;
   order?: {
-    order_number: string
-  } | null
+    order_number: string;
+  } | null;
   provider?: {
-    name_ar: string
-    name_en: string
-  } | null
+    name_ar: string;
+    name_en: string;
+  } | null;
 }
 
-const STATUS_CONFIG: Record<string, { label_ar: string; label_en: string; color: string; icon: typeof Clock }> = {
+const STATUS_CONFIG: Record<
+  string,
+  { label_ar: string; label_en: string; color: string; icon: typeof Clock }
+> = {
   open: { label_ar: 'مفتوحة', label_en: 'Open', color: 'bg-blue-100 text-blue-700', icon: Clock },
-  in_progress: { label_ar: 'قيد المعالجة', label_en: 'In Progress', color: 'bg-yellow-100 text-yellow-700', icon: RefreshCw },
-  waiting: { label_ar: 'في انتظار ردك', label_en: 'Waiting for you', color: 'bg-orange-100 text-orange-700', icon: AlertCircle },
-  resolved: { label_ar: 'تم الحل', label_en: 'Resolved', color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
-  closed: { label_ar: 'مغلقة', label_en: 'Closed', color: 'bg-slate-100 text-slate-700', icon: XCircle },
-}
+  in_progress: {
+    label_ar: 'قيد المعالجة',
+    label_en: 'In Progress',
+    color: 'bg-yellow-100 text-yellow-700',
+    icon: RefreshCw,
+  },
+  waiting: {
+    label_ar: 'في انتظار ردك',
+    label_en: 'Waiting for you',
+    color: 'bg-orange-100 text-orange-700',
+    icon: AlertCircle,
+  },
+  resolved: {
+    label_ar: 'تم الحل',
+    label_en: 'Resolved',
+    color: 'bg-green-100 text-green-700',
+    icon: CheckCircle2,
+  },
+  closed: {
+    label_ar: 'مغلقة',
+    label_en: 'Closed',
+    color: 'bg-slate-100 text-slate-700',
+    icon: XCircle,
+  },
+};
 
 export default function CustomerTicketDetailPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const params = useParams()
-  const ticketId = params.id as string
-  const { user, loading: authLoading } = useAuth()
-  const isArabic = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const params = useParams();
+  const ticketId = params.id as string;
+  const { user, loading: authLoading } = useAuth();
+  const isArabic = locale === 'ar';
 
-  const [ticket, setTicket] = useState<SupportTicket | null>(null)
-  const [messages, setMessages] = useState<TicketMessage[]>([])
-  const [loading, setLoading] = useState(true)
-  const [newMessage, setNewMessage] = useState('')
-  const [sendingMessage, setSendingMessage] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [ticket, setTicket] = useState<SupportTicket | null>(null);
+  const [messages, setMessages] = useState<TicketMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const loadTicket = useCallback(async () => {
-    if (!user) return
+    if (!user) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Load ticket
     const { data: ticketData, error } = await supabase
       .from('support_tickets')
-      .select(`
+      .select(
+        `
         *,
         order:orders(order_number),
         provider:providers(name_ar, name_en)
-      `)
+      `
+      )
       .eq('id', ticketId)
       .eq('user_id', user.id)
-      .single()
+      .single();
 
     if (error || !ticketData) {
-      console.error('Error loading ticket:', error)
-      router.push(`/${locale}/profile/support`)
-      return
+      console.error('Error loading ticket:', error);
+      router.push(`/${locale}/profile/support`);
+      return;
     }
 
-    setTicket(ticketData as SupportTicket)
+    setTicket(ticketData as SupportTicket);
 
     // Load messages (excluding internal notes)
     const { data: messagesData } = await supabase
       .from('ticket_messages')
-      .select(`
+      .select(
+        `
         *,
         sender:profiles(full_name)
-      `)
+      `
+      )
       .eq('ticket_id', ticketId)
       .eq('is_internal', false)
-      .or('recipient_type.is.null,recipient_type.eq.customer,recipient_type.eq.admin,sender_type.eq.customer')
-      .order('created_at', { ascending: true })
+      .or(
+        'recipient_type.is.null,recipient_type.eq.customer,recipient_type.eq.admin,sender_type.eq.customer'
+      )
+      .order('created_at', { ascending: true });
 
     if (messagesData) {
-      setMessages(messagesData as TicketMessage[])
+      setMessages(messagesData as TicketMessage[]);
     }
 
-    setLoading(false)
-  }, [user, ticketId, locale, router])
+    setLoading(false);
+  }, [user, ticketId, locale, router]);
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadTicket()
+      loadTicket();
     } else if (!authLoading && !user) {
-      router.push(`/${locale}/auth/login`)
+      router.push(`/${locale}/auth/login`);
     }
-  }, [authLoading, user, loadTicket, locale, router])
+  }, [authLoading, user, loadTicket, locale, router]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Real-time subscription for new messages
   useEffect(() => {
-    if (!ticketId || !user) return
+    if (!ticketId || !user) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
     const channel = supabase
       .channel(`customer-ticket-${ticketId}`)
       .on(
@@ -156,69 +185,64 @@ export default function CustomerTicketDetailPage() {
         },
         async (payload) => {
           // Only add if not internal and relevant to customer
-          if (payload.new.is_internal) return
-          if (payload.new.recipient_type === 'provider') return
+          if (payload.new.is_internal) return;
+          if (payload.new.recipient_type === 'provider') return;
 
           const { data: newMsg } = await supabase
             .from('ticket_messages')
             .select(`*, sender:profiles(full_name)`)
             .eq('id', payload.new.id)
-            .single()
+            .single();
 
           if (newMsg) {
-            setMessages(prev => [...prev, newMsg as TicketMessage])
+            setMessages((prev) => [...prev, newMsg as TicketMessage]);
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [ticketId, user])
+      supabase.removeChannel(channel);
+    };
+  }, [ticketId, user]);
 
   async function handleSendMessage() {
-    if (!newMessage.trim() || !user || !ticket) return
+    if (!newMessage.trim() || !user || !ticket) return;
 
-    setSendingMessage(true)
-    const supabase = createClient()
+    setSendingMessage(true);
+    const supabase = createClient();
 
-    const { error } = await supabase
-      .from('ticket_messages')
-      .insert({
-        ticket_id: ticketId,
-        sender_id: user.id,
-        sender_type: 'customer',
-        recipient_type: 'admin',
-        message: newMessage.trim(),
-        is_internal: false,
-      })
+    const { error } = await supabase.from('ticket_messages').insert({
+      ticket_id: ticketId,
+      sender_id: user.id,
+      sender_type: 'customer',
+      recipient_type: 'admin',
+      message: newMessage.trim(),
+      is_internal: false,
+    });
 
     if (error) {
-      console.error('Error sending message:', error)
-      alert(isArabic ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message')
+      console.error('Error sending message:', error);
+      alert(isArabic ? 'حدث خطأ أثناء إرسال الرسالة' : 'Error sending message');
     } else {
-      setNewMessage('')
+      setNewMessage('');
 
       // Update ticket status to in_progress if it was waiting
       if (ticket.status === 'waiting') {
-        await supabase
-          .from('support_tickets')
-          .update({ status: 'in_progress' })
-          .eq('id', ticketId)
-        await loadTicket()
+        await supabase.from('support_tickets').update({ status: 'in_progress' }).eq('id', ticketId);
+        await loadTicket();
       }
     }
 
-    setSendingMessage(false)
+    setSendingMessage(false);
   }
 
   const formatDate = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {
       addSuffix: true,
       locale: isArabic ? ar : enUS,
-    })
-  }
+    });
+  };
 
   if (authLoading || loading) {
     return (
@@ -227,7 +251,7 @@ export default function CustomerTicketDetailPage() {
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   if (!ticket) {
@@ -245,11 +269,11 @@ export default function CustomerTicketDetailPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
-  const statusConfig = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open
-  const StatusIcon = statusConfig.icon
+  const statusConfig = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.open;
+  const StatusIcon = statusConfig.icon;
 
   return (
     <CustomerLayout showBottomNav={true}>
@@ -284,7 +308,9 @@ export default function CustomerTicketDetailPage() {
         {/* Ticket Info Card */}
         <div className="px-4 py-3 bg-white border-b border-slate-100">
           <p className="text-sm text-slate-600 mb-2">{ticket.description}</p>
-          <div className={`flex items-center gap-4 text-xs text-slate-500 ${isArabic ? 'flex-row-reverse' : ''}`}>
+          <div
+            className={`flex items-center gap-4 text-xs text-slate-500 ${isArabic ? 'flex-row-reverse' : ''}`}
+          >
             {ticket.provider && (
               <div className={`flex items-center gap-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
                 <Store className="w-3 h-3" />
@@ -294,7 +320,10 @@ export default function CustomerTicketDetailPage() {
             {ticket.order && (
               <div className={`flex items-center gap-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
                 <Info className="w-3 h-3" />
-                <span>{isArabic ? 'طلب #' : 'Order #'}{ticket.order.order_number}</span>
+                <span>
+                  {isArabic ? 'طلب #' : 'Order #'}
+                  {ticket.order.order_number}
+                </span>
               </div>
             )}
             <span>{formatDate(ticket.created_at)}</span>
@@ -313,31 +342,37 @@ export default function CustomerTicketDetailPage() {
             </div>
           ) : (
             messages.map((msg) => {
-              const isMyMessage = msg.sender_type === 'customer'
-              const isAdmin = msg.sender_type === 'admin'
-              const isProvider = msg.sender_type === 'provider'
+              const isMyMessage = msg.sender_type === 'customer';
+              const isAdmin = msg.sender_type === 'admin';
+              const isProvider = msg.sender_type === 'provider';
 
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isMyMessage ? (isArabic ? 'justify-start' : 'justify-end') : (isArabic ? 'justify-end' : 'justify-start')}`}
+                  className={`flex ${isMyMessage ? (isArabic ? 'justify-start' : 'justify-end') : isArabic ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
                       isMyMessage
                         ? 'bg-primary text-white'
                         : isAdmin
-                        ? 'bg-blue-100 text-blue-900 border border-blue-200'
-                        : isProvider
-                        ? 'bg-purple-100 text-purple-900 border border-purple-200'
-                        : 'bg-white text-slate-900 border border-slate-200'
+                          ? 'bg-blue-100 text-blue-900 border border-blue-200'
+                          : isProvider
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : 'bg-white text-slate-900 border border-slate-200'
                     }`}
                   >
                     {/* Sender label for non-customer messages */}
                     {!isMyMessage && (
-                      <div className={`flex items-center gap-1 mb-1 text-xs ${
-                        isAdmin ? 'text-blue-600' : isProvider ? 'text-purple-600' : 'text-slate-500'
-                      }`}>
+                      <div
+                        className={`flex items-center gap-1 mb-1 text-xs ${
+                          isAdmin
+                            ? 'text-blue-600'
+                            : isProvider
+                              ? 'text-purple-600'
+                              : 'text-slate-500'
+                        }`}
+                      >
                         {isAdmin ? (
                           <>
                             <UserIcon className="w-3 h-3" />
@@ -352,12 +387,14 @@ export default function CustomerTicketDetailPage() {
                       </div>
                     )}
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.message}</p>
-                    <div className={`text-xs mt-1 ${isMyMessage ? 'text-white/70' : 'text-slate-400'}`}>
+                    <div
+                      className={`text-xs mt-1 ${isMyMessage ? 'text-white/70' : 'text-slate-400'}`}
+                    >
                       {formatDate(msg.created_at)}
                     </div>
                   </div>
                 </div>
-              )
+              );
             })
           )}
           <div ref={messagesEndRef} />
@@ -378,8 +415,8 @@ export default function CustomerTicketDetailPage() {
                 dir={isArabic ? 'rtl' : 'ltr'}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    handleSendMessage()
+                    e.preventDefault();
+                    handleSendMessage();
                   }
                 }}
               />
@@ -411,5 +448,5 @@ export default function CustomerTicketDetailPage() {
         )}
       </div>
     </CustomerLayout>
-  )
+  );
 }

@@ -5,86 +5,86 @@
  * Character: "أحمد" - A friendly, natural Egyptian assistant
  */
 
-import type { ToolContext } from './agentTools'
+import type { ToolContext } from './agentTools';
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 export interface AgentContext extends ToolContext {
-  customerName?: string
+  customerName?: string;
   providerContext?: {
-    id: string
-    name: string
-  }
+    id: string;
+    name: string;
+  };
   // Selected category (restaurant_cafe, grocery, vegetables_fruits, coffee_sweets)
-  selectedCategory?: string
+  selectedCategory?: string;
   cartItems?: Array<{
-    id: string
-    name: string
-    quantity: number
-    price: number
-    variant_id?: string  // For deduplication
-  }>
-  cartProviderId?: string
-  cartTotal?: number
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    variant_id?: string; // For deduplication
+  }>;
+  cartProviderId?: string;
+  cartTotal?: number;
   // Customer Memory (long-term from database)
-  customerMemory?: CustomerMemory
+  customerMemory?: CustomerMemory;
   // Session Memory (short-term for current conversation)
   sessionMemory?: {
     pending_item?: {
-      id: string
-      name_ar: string
-      price: number
-      provider_id: string
-      provider_name_ar?: string
-      has_variants?: boolean
+      id: string;
+      name_ar: string;
+      price: number;
+      provider_id: string;
+      provider_name_ar?: string;
+      has_variants?: boolean;
       variants?: Array<{
-        id: string
-        name_ar: string
-        price: number
-      }>
-    }
+        id: string;
+        name_ar: string;
+        price: number;
+      }>;
+    };
     // NEW: Store ALL items from search results for multi-item orders
     pending_items?: Array<{
-      id: string
-      name_ar: string
-      price: number
-      provider_id: string
-      provider_name_ar?: string
-      has_variants?: boolean
+      id: string;
+      name_ar: string;
+      price: number;
+      provider_id: string;
+      provider_name_ar?: string;
+      has_variants?: boolean;
       variants?: Array<{
-        id: string
-        name_ar: string
-        price: number
-      }>
-    }>
+        id: string;
+        name_ar: string;
+        price: number;
+      }>;
+    }>;
     pending_variant?: {
-      id: string
-      name_ar: string
-      price: number
-    }
-    pending_quantity?: number
-    awaiting_quantity?: boolean
-    awaiting_confirmation?: boolean
-  }
+      id: string;
+      name_ar: string;
+      price: number;
+    };
+    pending_quantity?: number;
+    awaiting_quantity?: boolean;
+    awaiting_confirmation?: boolean;
+  };
 }
 
 export interface CustomerMemory {
   lastOrders?: Array<{
-    providerId: string
-    providerName: string
-    items: string[]
-    date: string
-  }>
-  favoriteItems?: string[]
+    providerId: string;
+    providerName: string;
+    items: string[];
+    date: string;
+  }>;
+  favoriteItems?: string[];
   preferences?: {
-    spicy?: boolean
-    vegetarian?: boolean
-    notes?: string[]
-  }
-  orderCount?: number
-  lastVisit?: string
+    spicy?: boolean;
+    vegetarian?: boolean;
+    notes?: string[];
+  };
+  orderCount?: number;
+  lastVisit?: string;
 }
 
 // =============================================================================
@@ -92,32 +92,32 @@ export interface CustomerMemory {
 // =============================================================================
 
 function getTimeBasedGreeting(): { period: string; greeting: string; suggestion: string } {
-  const hour = new Date().getHours()
+  const hour = new Date().getHours();
 
   if (hour >= 5 && hour < 12) {
     return {
       period: 'morning',
       greeting: 'صباح الفل! ☀️',
-      suggestion: 'فطار ولا قهوة الصبح؟'
-    }
+      suggestion: 'فطار ولا قهوة الصبح؟',
+    };
   } else if (hour >= 12 && hour < 17) {
     return {
       period: 'afternoon',
       greeting: 'أهلاً! 🌤️',
-      suggestion: 'وقت الغدا! جعان؟'
-    }
+      suggestion: 'وقت الغدا! جعان؟',
+    };
   } else if (hour >= 17 && hour < 21) {
     return {
       period: 'evening',
       greeting: 'مساء الخير! 🌆',
-      suggestion: 'عشا ولا حاجة خفيفة؟'
-    }
+      suggestion: 'عشا ولا حاجة خفيفة؟',
+    };
   } else {
     return {
       period: 'night',
       greeting: 'أهلاً بيك! 🌙',
-      suggestion: 'سهران؟ عايز تسالي ولا حاجة تاكلها؟'
-    }
+      suggestion: 'سهران؟ عايز تسالي ولا حاجة تاكلها؟',
+    };
   }
 }
 
@@ -126,12 +126,12 @@ function getTimeBasedGreeting(): { period: string; greeting: string; suggestion:
 // =============================================================================
 
 export function buildSystemPrompt(context: AgentContext): string {
-  const isOnProviderPage = !!context.providerContext
-  const hasCart = context.cartItems && context.cartItems.length > 0
-  const isLoggedIn = !!context.customerId
-  const timeInfo = getTimeBasedGreeting()
-  const hasMemory = !!context.customerMemory
-  const isReturningCustomer = (context.customerMemory?.orderCount || 0) > 0
+  const isOnProviderPage = !!context.providerContext;
+  const hasCart = context.cartItems && context.cartItems.length > 0;
+  const isLoggedIn = !!context.customerId;
+  const timeInfo = getTimeBasedGreeting();
+  const hasMemory = !!context.customerMemory;
+  const isReturningCustomer = (context.customerMemory?.orderCount || 0) > 0;
 
   return `أنت "أحمد" من إنجزنا - مش بوت، أنت زي الشخص اللي بيساعد الناس تطلب من أي مكان.
 
@@ -289,36 +289,61 @@ ${context.selectedCategory ? `📂 القسم: ${context.selectedCategory === 'r
 ${hasCart ? `🛒 السلة: ${context.cartItems?.length} صنف (${context.cartTotal} ج.م)` : '🛒 السلة: فاضية'}
 ${isLoggedIn ? '✅ مسجل دخول' : '👋 زائر'}
 
-${hasMemory && context.customerMemory?.lastOrders?.length ? `
+${
+  hasMemory && context.customerMemory?.lastOrders?.length
+    ? `
 📝 آخر طلباته:
-${context.customerMemory.lastOrders.slice(0, 3).map(o => `   • ${o.providerName}: ${o.items.slice(0, 2).join('، ')}`).join('\n')}
-` : ''}
-${context.sessionMemory?.pending_items?.length ? `
+${context.customerMemory.lastOrders
+  .slice(0, 3)
+  .map((o) => `   • ${o.providerName}: ${o.items.slice(0, 2).join('، ')}`)
+  .join('\n')}
+`
+    : ''
+}
+${
+  context.sessionMemory?.pending_items?.length
+    ? `
 🔴🔴🔴 منتجات معلقة من البحث السابق (استخدم الـ IDs دي!) 🔴🔴🔴
-${context.sessionMemory.pending_items.map((item, i) => `
+${context.sessionMemory.pending_items
+  .map(
+    (item, i) => `
 ${i + 1}️⃣ ${item.name_ar}
    - item_id: "${item.id}"
    - provider_id: "${item.provider_id}"
    - price: ${item.price} ج.م
-${item.variants?.length ? `   - variants:
-${item.variants.map(v => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}` : '   - has_variants: false'}`).join('\n')}
+${
+  item.variants?.length
+    ? `   - variants:
+${item.variants.map((v) => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}`
+    : '   - has_variants: false'
+}`
+  )
+  .join('\n')}
 
 ⚠️ لما العميل يقول "ضيف" أو يختار منتج/حجم، استخدم الـ IDs من القائمة أعلاه!
 ⚠️ ماتبحثش تاني - عندك كل البيانات!
 ⚠️ لو العميل طلب أكتر من منتج، استخدم الـ item_id الصح لكل منتج!
-` : context.sessionMemory?.pending_item ? `
+`
+    : context.sessionMemory?.pending_item
+      ? `
 🔴🔴🔴 منتج معلق من الرسالة السابقة (استخدم الـ IDs دي!) 🔴🔴🔴
 📦 المنتج: ${context.sessionMemory.pending_item.name_ar}
    - item_id: "${context.sessionMemory.pending_item.id}"
    - provider_id: "${context.sessionMemory.pending_item.provider_id}"
    - provider_name: "${context.sessionMemory.pending_item.provider_name_ar || ''}"
    - price: ${context.sessionMemory.pending_item.price} ج.م
-${context.sessionMemory.pending_item.variants?.length ? `   - variants:
-${context.sessionMemory.pending_item.variants.map(v => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}` : '   - has_variants: false'}
+${
+  context.sessionMemory.pending_item.variants?.length
+    ? `   - variants:
+${context.sessionMemory.pending_item.variants.map((v) => `     • "${v.name_ar}" (id: "${v.id}", price: ${v.price} ج.م)`).join('\n')}`
+    : '   - has_variants: false'
+}
 
 ⚠️ لما العميل يقول "ضيف" أو يختار حجم، استخدم الـ IDs دي مباشرة!
 ⚠️ ماتبحثش تاني - عندك كل البيانات!
-` : ''}
+`
+      : ''
+}
 ═══════════════════════════════════════════════════════════════════════════════
 💬 سيناريوهات المحادثة (اتبعها بالظبط)
 ═══════════════════════════════════════════════════════════════════════════════
@@ -781,7 +806,7 @@ add_to_cart(item_id="[UUID حقيقي]", item_name="حواوشي مكس", provid
 "تمام يا باشا! ✅ ضفت [المنتج] للسلة.
 
 كده عندك:
-${hasCart ? context.cartItems?.map(i => `• ${i.quantity}x ${i.name}`).join('\n') : '• [المنتج الجديد]'}
+${hasCart ? context.cartItems?.map((i) => `• ${i.quantity}x ${i.name}`).join('\n') : '• [المنتج الجديد]'}
 
 المجموع: [الإجمالي] ج.م
 
@@ -791,7 +816,7 @@ ${hasCart ? context.cartItems?.map(i => `• ${i.quantity}x ${i.name}`).join('\n
 [استخدم get_cart_summary]
 "تمام، السلة فيها:
 
-${hasCart ? context.cartItems?.map(i => `🔸 ${i.quantity}x ${i.name} - ${i.price * i.quantity} ج.م`).join('\n') : '(فاضية)'}
+${hasCart ? context.cartItems?.map((i) => `🔸 ${i.quantity}x ${i.name} - ${i.price * i.quantity} ج.م`).join('\n') : '(فاضية)'}
 
 💰 الإجمالي: ${context.cartTotal || 0} ج.م
 🚗 + التوصيل
@@ -1248,7 +1273,7 @@ ${hasCart && (context.cartItems?.length || 0) > 1 ? 'لسه عندك باقي ا
 
 ═══════════════════════════════════════════════════════════════════════════════
 
-ابدأ بالرد على العميل بناءً على رسالته. استخدم الأدوات المتاحة ليك وقدم رد مفيد وودود.`
+ابدأ بالرد على العميل بناءً على رسالته. استخدم الأدوات المتاحة ليك وقدم رد مفيد وودود.`;
 }
 
 // =============================================================================
@@ -1256,77 +1281,77 @@ ${hasCart && (context.cartItems?.length || 0) > 1 ? 'لسه عندك باقي ا
 // =============================================================================
 
 export interface CartAction {
-  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' | 'UPDATE_QUANTITY'
-  provider_id: string
-  menu_item_id: string
-  menu_item_name_ar: string
-  quantity: number
-  unit_price: number
-  variant_id?: string
-  variant_name_ar?: string
-  quantity_change?: number // For UPDATE_QUANTITY: +2 to add, -1 to remove
+  type: 'ADD_ITEM' | 'CLEAR_AND_ADD' | 'CLEAR_CART' | 'REMOVE_ITEM' | 'UPDATE_QUANTITY';
+  provider_id: string;
+  menu_item_id: string;
+  menu_item_name_ar: string;
+  quantity: number;
+  unit_price: number;
+  variant_id?: string;
+  variant_name_ar?: string;
+  quantity_change?: number; // For UPDATE_QUANTITY: +2 to add, -1 to remove
 }
 
 export interface AgentResponse {
-  content: string
-  suggestions?: string[]
+  content: string;
+  suggestions?: string[];
   quickReplies?: Array<{
-    title: string
-    payload: string
-  }>
+    title: string;
+    payload: string;
+  }>;
   products?: Array<{
-    id: string
-    name: string
-    price: number
-    image?: string
-    hasVariants?: boolean
-    providerId?: string
-    providerName?: string
-  }>
-  navigateTo?: string
-  cartAction?: CartAction
-  cartActions?: CartAction[]  // Multiple cart actions (for adding multiple items at once)
+    id: string;
+    name: string;
+    price: number;
+    image?: string;
+    hasVariants?: boolean;
+    providerId?: string;
+    providerName?: string;
+  }>;
+  navigateTo?: string;
+  cartAction?: CartAction;
+  cartActions?: CartAction[]; // Multiple cart actions (for adding multiple items at once)
   // FIX: Provider discovered during search - frontend should store this for subsequent requests
-  discoveredProviderId?: string
-  discoveredProviderName?: string
+  discoveredProviderId?: string;
+  discoveredProviderName?: string;
   // Session memory for pending items - frontend should store and send back in next request
   sessionMemory?: {
     pending_item?: {
-      id: string
-      name_ar: string
-      price: number
-      provider_id: string
-      provider_name_ar?: string
-      has_variants?: boolean
+      id: string;
+      name_ar: string;
+      price: number;
+      provider_id: string;
+      provider_name_ar?: string;
+      has_variants?: boolean;
       variants?: Array<{
-        id: string
-        name_ar: string
-        price: number
-      }>
-    }
+        id: string;
+        name_ar: string;
+        price: number;
+      }>;
+    };
     // NEW: Store ALL items from search results for multi-item orders
     pending_items?: Array<{
-      id: string
-      name_ar: string
-      price: number
-      provider_id: string
-      provider_name_ar?: string
-      has_variants?: boolean
+      id: string;
+      name_ar: string;
+      price: number;
+      provider_id: string;
+      provider_name_ar?: string;
+      has_variants?: boolean;
       variants?: Array<{
-        id: string
-        name_ar: string
-        price: number
-      }>
-    }>
+        id: string;
+        name_ar: string;
+        price: number;
+      }>;
+    }>;
     pending_variant?: {
-      id: string
-      name_ar: string
-      price: number
-    }
-    pending_quantity?: number
-    awaiting_quantity?: boolean
-    awaiting_confirmation?: boolean
-  }
+      id: string;
+      name_ar: string;
+      price: number;
+    };
+    pending_quantity?: number;
+    awaiting_quantity?: boolean;
+    awaiting_confirmation?: boolean;
+  };
 }
 
 /**
@@ -1337,25 +1362,25 @@ export function parseAgentResponse(rawResponse: string): AgentResponse {
   const response: AgentResponse = {
     content: rawResponse,
     suggestions: [],
-    quickReplies: []
-  }
+    quickReplies: [],
+  };
 
   // Try to extract JSON if present
-  const jsonMatch = rawResponse.match(/```json\n?([\s\S]*?)\n?```/)
+  const jsonMatch = rawResponse.match(/```json\n?([\s\S]*?)\n?```/);
   if (jsonMatch) {
     try {
-      const parsed = JSON.parse(jsonMatch[1])
-      response.content = parsed.content || rawResponse.replace(/```json[\s\S]*?```/g, '').trim()
-      response.suggestions = parsed.suggestions || []
-      response.quickReplies = parsed.quickReplies || []
-      response.products = parsed.products || []
-      response.navigateTo = parsed.navigateTo
+      const parsed = JSON.parse(jsonMatch[1]);
+      response.content = parsed.content || rawResponse.replace(/```json[\s\S]*?```/g, '').trim();
+      response.suggestions = parsed.suggestions || [];
+      response.quickReplies = parsed.quickReplies || [];
+      response.products = parsed.products || [];
+      response.navigateTo = parsed.navigateTo;
     } catch {
       // Keep default response
     }
   }
 
-  return response
+  return response;
 }
 
 // =============================================================================
@@ -1363,41 +1388,43 @@ export function parseAgentResponse(rawResponse: string): AgentResponse {
 // =============================================================================
 
 export interface ConversationTurn {
-  role: 'user' | 'assistant' | 'tool'
-  content: string
-  toolName?: string
-  toolResult?: unknown
-  timestamp: Date
+  role: 'user' | 'assistant' | 'tool';
+  content: string;
+  toolName?: string;
+  toolResult?: unknown;
+  timestamp: Date;
 }
 
 export interface ConversationMemory {
-  turns: ConversationTurn[]
-  context: AgentContext
+  turns: ConversationTurn[];
+  context: AgentContext;
   pendingItem?: {
-    id: string
-    name: string
-    price: number
-    providerId: string
-  }
-  lastIntent?: string
+    id: string;
+    name: string;
+    price: number;
+    providerId: string;
+  };
+  lastIntent?: string;
 }
 
 /**
  * Build conversation history for AI context
  */
 export function buildConversationHistory(memory: ConversationMemory): string {
-  const recentTurns = memory.turns.slice(-10) // Keep last 10 turns
+  const recentTurns = memory.turns.slice(-10); // Keep last 10 turns
 
-  return recentTurns.map(turn => {
-    if (turn.role === 'user') {
-      return `👤 العميل: ${turn.content}`
-    } else if (turn.role === 'assistant') {
-      return `🤖 أنت: ${turn.content}`
-    } else if (turn.role === 'tool') {
-      return `🔧 [${turn.toolName}]: ${JSON.stringify(turn.toolResult).slice(0, 500)}...`
-    }
-    return ''
-  }).join('\n\n')
+  return recentTurns
+    .map((turn) => {
+      if (turn.role === 'user') {
+        return `👤 العميل: ${turn.content}`;
+      } else if (turn.role === 'assistant') {
+        return `🤖 أنت: ${turn.content}`;
+      } else if (turn.role === 'tool') {
+        return `🔧 [${turn.toolName}]: ${JSON.stringify(turn.toolResult).slice(0, 500)}...`;
+      }
+      return '';
+    })
+    .join('\n\n');
 }
 
 // =============================================================================
@@ -1418,20 +1445,20 @@ export const COMMON_INTENTS = {
   CANCEL: ['الغي', 'مش عايز', 'الغاء'],
   GREETING: ['السلام', 'صباح', 'مساء', 'أهلا', 'هاي', 'ازيك'],
   THANKS: ['شكرا', 'متشكر', 'تمام'],
-  COMPLAINT: ['مشكلة', 'شكوى', 'اتأخر', 'غلط']
-}
+  COMPLAINT: ['مشكلة', 'شكوى', 'اتأخر', 'غلط'],
+};
 
 /**
  * Detect primary intent from user message
  */
 export function detectIntent(message: string): string {
-  const lowerMessage = message.toLowerCase()
+  const lowerMessage = message.toLowerCase();
 
   for (const [intent, keywords] of Object.entries(COMMON_INTENTS)) {
-    if (keywords.some(keyword => lowerMessage.includes(keyword))) {
-      return intent
+    if (keywords.some((keyword) => lowerMessage.includes(keyword))) {
+      return intent;
     }
   }
 
-  return 'GENERAL'
+  return 'GENERAL';
 }

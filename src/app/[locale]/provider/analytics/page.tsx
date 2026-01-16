@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ProviderLayout } from '@/components/provider'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { ProviderLayout } from '@/components/provider';
 import {
   TrendingUp,
   TrendingDown,
@@ -22,61 +22,61 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 type TopProduct = {
-  id: string
-  name_ar: string
-  name_en: string
-  total_quantity: number
-  total_revenue: number
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+  total_quantity: number;
+  total_revenue: number;
+};
 
 type AnalyticsData = {
   // Revenue
-  todayRevenue: number
-  weekRevenue: number
-  monthRevenue: number
-  lastMonthRevenue: number
+  todayRevenue: number;
+  weekRevenue: number;
+  monthRevenue: number;
+  lastMonthRevenue: number;
 
   // Orders
-  totalOrders: number
-  completedOrders: number
-  pendingOrders: number
-  cancelledOrders: number
+  totalOrders: number;
+  completedOrders: number;
+  pendingOrders: number;
+  cancelledOrders: number;
 
   // Payment Methods
-  codOrders: number
-  codRevenue: number
-  onlineOrders: number
-  onlineRevenue: number
+  codOrders: number;
+  codRevenue: number;
+  onlineOrders: number;
+  onlineRevenue: number;
 
   // Other
-  totalCustomers: number
-  avgOrderValue: number
+  totalCustomers: number;
+  avgOrderValue: number;
 
   // Top Products
-  topProducts: TopProduct[]
-}
+  topProducts: TopProduct[];
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Component
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function AnalyticsPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [data, setData] = useState<AnalyticsData>({
     todayRevenue: 0,
@@ -94,33 +94,33 @@ export default function AnalyticsPage() {
     totalCustomers: 0,
     avgOrderValue: 0,
     topProducts: [],
-  })
+  });
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Data Loading
   // ═══════════════════════════════════════════════════════════════════════════
 
   const loadAnalytics = useCallback(async (provId: string) => {
-    const supabase = createClient()
-    const now = new Date()
+    const supabase = createClient();
+    const now = new Date();
 
     // Date helpers
     const getDateStr = (date: Date): string => {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-    }
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
 
-    const todayStr = getDateStr(now)
-    const weekAgo = new Date(now)
-    weekAgo.setDate(weekAgo.getDate() - 6)
-    const weekStartStr = getDateStr(weekAgo)
+    const todayStr = getDateStr(now);
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 6);
+    const weekStartStr = getDateStr(weekAgo);
 
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const monthStartStr = getDateStr(monthStart)
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthStartStr = getDateStr(monthStart);
 
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
-    const lastMonthStartStr = getDateStr(lastMonthStart)
-    const lastMonthEndStr = getDateStr(lastMonthEnd)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    const lastMonthStartStr = getDateStr(lastMonthStart);
+    const lastMonthEndStr = getDateStr(lastMonthEnd);
 
     // Fetch orders and order items
     const [ordersResult, orderItemsResult] = await Promise.all([
@@ -130,64 +130,73 @@ export default function AnalyticsPage() {
         .eq('provider_id', provId),
       supabase
         .from('order_items')
-        .select(`
+        .select(
+          `
           quantity,
           unit_price,
           menu_item_id,
           menu_items!inner(id, name_ar, name_en, provider_id)
-        `)
+        `
+        )
         .eq('menu_items.provider_id', provId),
-    ])
+    ]);
 
-    const orders = ordersResult.data || []
-    const orderItems = orderItemsResult.data || []
+    const orders = ordersResult.data || [];
+    const orderItems = orderItemsResult.data || [];
 
     // Order counts
-    const completedOrders = orders.filter(o => o.status === 'delivered').length
-    const cancelledOrders = orders.filter(o => ['cancelled', 'rejected'].includes(o.status)).length
-    const pendingOrders = orders.filter(o => !['delivered', 'cancelled', 'rejected'].includes(o.status)).length
+    const completedOrders = orders.filter((o) => o.status === 'delivered').length;
+    const cancelledOrders = orders.filter((o) =>
+      ['cancelled', 'rejected'].includes(o.status)
+    ).length;
+    const pendingOrders = orders.filter(
+      (o) => !['delivered', 'cancelled', 'rejected'].includes(o.status)
+    ).length;
 
     // Confirmed orders for revenue
-    const confirmedOrders = orders.filter(o => o.status === 'delivered' && o.payment_status === 'completed')
+    const confirmedOrders = orders.filter(
+      (o) => o.status === 'delivered' && o.payment_status === 'completed'
+    );
 
     // Revenue by period
-    let todayRevenue = 0
-    let weekRevenue = 0
-    let monthRevenue = 0
-    let lastMonthRevenue = 0
+    let todayRevenue = 0;
+    let weekRevenue = 0;
+    let monthRevenue = 0;
+    let lastMonthRevenue = 0;
 
-    confirmedOrders.forEach(o => {
-      const dateStr = getDateStr(new Date(o.created_at))
-      const amount = o.total || 0
+    confirmedOrders.forEach((o) => {
+      const dateStr = getDateStr(new Date(o.created_at));
+      const amount = o.total || 0;
 
-      if (dateStr === todayStr) todayRevenue += amount
-      if (dateStr >= weekStartStr && dateStr <= todayStr) weekRevenue += amount
-      if (dateStr >= monthStartStr && dateStr <= todayStr) monthRevenue += amount
-      if (dateStr >= lastMonthStartStr && dateStr <= lastMonthEndStr) lastMonthRevenue += amount
-    })
+      if (dateStr === todayStr) todayRevenue += amount;
+      if (dateStr >= weekStartStr && dateStr <= todayStr) weekRevenue += amount;
+      if (dateStr >= monthStartStr && dateStr <= todayStr) monthRevenue += amount;
+      if (dateStr >= lastMonthStartStr && dateStr <= lastMonthEndStr) lastMonthRevenue += amount;
+    });
 
     // COD vs Online (this month)
-    const monthOrders = orders.filter(o => {
-      const d = new Date(o.created_at)
-      return d >= monthStart && o.status === 'delivered'
-    })
-    const codOrders = monthOrders.filter(o => o.payment_method === 'cash')
-    const onlineOrders = monthOrders.filter(o => o.payment_method !== 'cash')
+    const monthOrders = orders.filter((o) => {
+      const d = new Date(o.created_at);
+      return d >= monthStart && o.status === 'delivered';
+    });
+    const codOrders = monthOrders.filter((o) => o.payment_method === 'cash');
+    const onlineOrders = monthOrders.filter((o) => o.payment_method !== 'cash');
 
     // Average order value
-    const avgOrderValue = confirmedOrders.length > 0
-      ? confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0) / confirmedOrders.length
-      : 0
+    const avgOrderValue =
+      confirmedOrders.length > 0
+        ? confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0) / confirmedOrders.length
+        : 0;
 
     // Unique customers
-    const totalCustomers = new Set(orders.map(o => o.customer_id)).size
+    const totalCustomers = new Set(orders.map((o) => o.customer_id)).size;
 
     // Top products
-    const productStats: { [key: string]: TopProduct } = {}
+    const productStats: { [key: string]: TopProduct } = {};
     orderItems.forEach((item: any) => {
-      const menuItem = item.menu_items
-      if (!menuItem) return
-      const id = menuItem.id
+      const menuItem = item.menu_items;
+      if (!menuItem) return;
+      const id = menuItem.id;
       if (!productStats[id]) {
         productStats[id] = {
           id,
@@ -195,14 +204,14 @@ export default function AnalyticsPage() {
           name_en: menuItem.name_en,
           total_quantity: 0,
           total_revenue: 0,
-        }
+        };
       }
-      productStats[id].total_quantity += item.quantity || 0
-      productStats[id].total_revenue += (item.quantity || 0) * (item.unit_price || 0)
-    })
+      productStats[id].total_quantity += item.quantity || 0;
+      productStats[id].total_revenue += (item.quantity || 0) * (item.unit_price || 0);
+    });
     const topProducts = Object.values(productStats)
       .sort((a, b) => b.total_quantity - a.total_quantity)
-      .slice(0, 5)
+      .slice(0, 5);
 
     setData({
       todayRevenue,
@@ -214,69 +223,74 @@ export default function AnalyticsPage() {
       pendingOrders,
       cancelledOrders,
       codOrders: codOrders.length,
-      codRevenue: codOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+      codRevenue: codOrders
+        .filter((o) => o.payment_status === 'completed')
+        .reduce((sum, o) => sum + (o.total || 0), 0),
       onlineOrders: onlineOrders.length,
-      onlineRevenue: onlineOrders.filter(o => o.payment_status === 'completed').reduce((sum, o) => sum + (o.total || 0), 0),
+      onlineRevenue: onlineOrders
+        .filter((o) => o.payment_status === 'completed')
+        .reduce((sum, o) => sum + (o.total || 0), 0),
       totalCustomers,
       avgOrderValue,
       topProducts,
-    })
-  }, [])
+    });
+  }, []);
 
   const checkAuthAndLoad = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/analytics`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/analytics`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || provider.status === 'pending_approval') {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
-    await loadAnalytics(provider.id)
-    setLoading(false)
-  }, [loadAnalytics, locale, router])
+    setProviderId(provider.id);
+    await loadAnalytics(provider.id);
+    setLoading(false);
+  }, [loadAnalytics, locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoad()
-  }, [checkAuthAndLoad])
+    checkAuthAndLoad();
+  }, [checkAuthAndLoad]);
 
   const handleRefresh = async () => {
-    if (!providerId) return
-    setRefreshing(true)
-    await loadAnalytics(providerId)
-    setRefreshing(false)
-  }
+    if (!providerId) return;
+    setRefreshing(true);
+    await loadAnalytics(providerId);
+    setRefreshing(false);
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Helpers
   // ═══════════════════════════════════════════════════════════════════════════
 
   const formatCurrency = (amount: number) => {
-    return `${Math.round(amount).toLocaleString()} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-  }
+    return `${Math.round(amount).toLocaleString()} ${locale === 'ar' ? 'ج.م' : 'EGP'}`;
+  };
 
   const getGrowthPercent = () => {
-    if (data.lastMonthRevenue === 0) return data.monthRevenue > 0 ? 100 : 0
-    return ((data.monthRevenue - data.lastMonthRevenue) / data.lastMonthRevenue * 100)
-  }
+    if (data.lastMonthRevenue === 0) return data.monthRevenue > 0 ? 100 : 0;
+    return ((data.monthRevenue - data.lastMonthRevenue) / data.lastMonthRevenue) * 100;
+  };
 
-  const completionRate = data.totalOrders > 0
-    ? Math.round((data.completedOrders / data.totalOrders) * 100)
-    : 0
+  const completionRate =
+    data.totalOrders > 0 ? Math.round((data.completedOrders / data.totalOrders) * 100) : 0;
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Loading
@@ -292,7 +306,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
       </div>
-    )
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -302,10 +316,12 @@ export default function AnalyticsPage() {
   return (
     <ProviderLayout
       pageTitle={{ ar: 'التحليلات', en: 'Analytics' }}
-      pageSubtitle={{ ar: 'نظرة سريعة على أداء متجرك', en: 'Quick overview of your store performance' }}
+      pageSubtitle={{
+        ar: 'نظرة سريعة على أداء متجرك',
+        en: 'Quick overview of your store performance',
+      }}
     >
       <div className="max-w-4xl mx-auto space-y-6">
-
         {/* ╔═══════════════════════════════════════════════════════════════════╗ */}
         {/* ║ HERO CARD - Today's Revenue (Most Important for Merchants)        ║ */}
         {/* ╚═══════════════════════════════════════════════════════════════════╝ */}
@@ -347,15 +363,22 @@ export default function AnalyticsPage() {
                 <span className="font-semibold ml-1">{formatCurrency(data.monthRevenue)}</span>
               </div>
               {getGrowthPercent() !== 0 && (
-                <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-                  getGrowthPercent() >= 0 ? 'bg-green-500/20 text-green-100' : 'bg-red-500/20 text-red-100'
-                }`}>
+                <div
+                  className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+                    getGrowthPercent() >= 0
+                      ? 'bg-green-500/20 text-green-100'
+                      : 'bg-red-500/20 text-red-100'
+                  }`}
+                >
                   {getGrowthPercent() >= 0 ? (
                     <TrendingUp className="w-3 h-3" />
                   ) : (
                     <TrendingDown className="w-3 h-3" />
                   )}
-                  <span>{getGrowthPercent() >= 0 ? '+' : ''}{getGrowthPercent().toFixed(0)}%</span>
+                  <span>
+                    {getGrowthPercent() >= 0 ? '+' : ''}
+                    {getGrowthPercent().toFixed(0)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -370,7 +393,9 @@ export default function AnalyticsPage() {
             <CardContent className="pt-5 pb-5 text-center">
               <ShoppingBag className="w-7 h-7 text-primary mx-auto mb-2" />
               <p className="text-2xl font-bold text-slate-900 font-numbers">{data.totalOrders}</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'إجمالي الطلبات' : 'Total Orders'}
+              </p>
             </CardContent>
           </Card>
 
@@ -378,14 +403,18 @@ export default function AnalyticsPage() {
             <CardContent className="pt-5 pb-5 text-center">
               <CheckCircle2 className="w-7 h-7 text-green-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600 font-numbers">{completionRate}%</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'معدل الإكمال' : 'Completion Rate'}
+              </p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <Users className="w-7 h-7 text-blue-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900 font-numbers">{data.totalCustomers}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">
+                {data.totalCustomers}
+              </p>
               <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء' : 'Customers'}</p>
             </CardContent>
           </Card>
@@ -393,8 +422,12 @@ export default function AnalyticsPage() {
           <Card className="bg-white border-slate-200 shadow-elegant-sm card-hover">
             <CardContent className="pt-5 pb-5 text-center">
               <DollarSign className="w-7 h-7 text-amber-500 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-slate-900 font-numbers">{formatCurrency(data.avgOrderValue)}</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}</p>
+              <p className="text-2xl font-bold text-slate-900 font-numbers">
+                {formatCurrency(data.avgOrderValue)}
+              </p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'متوسط الطلب' : 'Avg Order'}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -414,10 +447,14 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-amber-700">
                     {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
                   </p>
-                  <p className="text-2xl font-bold text-amber-900 font-numbers">{formatCurrency(data.codRevenue)}</p>
+                  <p className="text-2xl font-bold text-amber-900 font-numbers">
+                    {formatCurrency(data.codRevenue)}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-amber-800 font-numbers">{data.codOrders}</p>
+                  <p className="text-lg font-semibold text-amber-800 font-numbers">
+                    {data.codOrders}
+                  </p>
                   <p className="text-xs text-amber-600">{locale === 'ar' ? 'طلب' : 'orders'}</p>
                 </div>
               </div>
@@ -435,10 +472,14 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-blue-700">
                     {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                   </p>
-                  <p className="text-2xl font-bold text-blue-900 font-numbers">{formatCurrency(data.onlineRevenue)}</p>
+                  <p className="text-2xl font-bold text-blue-900 font-numbers">
+                    {formatCurrency(data.onlineRevenue)}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-blue-800 font-numbers">{data.onlineOrders}</p>
+                  <p className="text-lg font-semibold text-blue-800 font-numbers">
+                    {data.onlineOrders}
+                  </p>
                   <p className="text-xs text-blue-600">{locale === 'ar' ? 'طلب' : 'orders'}</p>
                 </div>
               </div>
@@ -524,12 +565,17 @@ export default function AnalyticsPage() {
                     key={product.id}
                     className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                      index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                      index === 1 ? 'bg-slate-300 text-slate-700' :
-                      index === 2 ? 'bg-amber-600 text-white' :
-                      'bg-slate-100 text-slate-600'
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                        index === 0
+                          ? 'bg-yellow-400 text-yellow-900'
+                          : index === 1
+                            ? 'bg-slate-300 text-slate-700'
+                            : index === 2
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-slate-100 text-slate-600'
+                      }`}
+                    >
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -541,7 +587,9 @@ export default function AnalyticsPage() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-bold text-primary">{formatCurrency(product.total_revenue)}</p>
+                      <p className="font-bold text-primary">
+                        {formatCurrency(product.total_revenue)}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -564,25 +612,27 @@ export default function AnalyticsPage() {
                   {formatCurrency(data.lastMonthRevenue)}
                 </p>
               </div>
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
-                getGrowthPercent() >= 0
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-red-100 text-red-700'
-              }`}>
+              <div
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
+                  getGrowthPercent() >= 0
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-red-100 text-red-700'
+                }`}
+              >
                 {getGrowthPercent() >= 0 ? (
                   <TrendingUp className="w-5 h-5" />
                 ) : (
                   <TrendingDown className="w-5 h-5" />
                 )}
                 <span className="font-bold text-lg font-numbers">
-                  {getGrowthPercent() >= 0 ? '+' : ''}{getGrowthPercent().toFixed(0)}%
+                  {getGrowthPercent() >= 0 ? '+' : ''}
+                  {getGrowthPercent().toFixed(0)}%
                 </span>
               </div>
             </div>
           </CardContent>
         </Card>
-
       </div>
     </ProviderLayout>
-  )
+  );
 }

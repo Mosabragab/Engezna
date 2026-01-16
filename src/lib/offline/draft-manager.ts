@@ -11,14 +11,8 @@
  * @date January 2026
  */
 
-import type {
-  CustomOrderDraft,
-  CustomOrderInputType,
-} from '@/types/custom-order';
-import {
-  DRAFT_KEY_PREFIX,
-  DRAFT_EXPIRY_HOURS,
-} from '@/types/custom-order';
+import type { CustomOrderDraft, CustomOrderInputType } from '@/types/custom-order';
+import { DRAFT_KEY_PREFIX, DRAFT_EXPIRY_HOURS } from '@/types/custom-order';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -35,8 +29,8 @@ export interface DraftInput {
 }
 
 export interface DraftManagerConfig {
-  autoSaveInterval?: number;  // Default: 30000ms (30 seconds)
-  expiryHours?: number;       // Default: 72 hours
+  autoSaveInterval?: number; // Default: 30000ms (30 seconds)
+  expiryHours?: number; // Default: 72 hours
 }
 
 export interface SavedDraftInfo {
@@ -53,7 +47,7 @@ export interface SavedDraftInfo {
 // Constants
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const DEFAULT_AUTO_SAVE_INTERVAL = 30000;  // 30 seconds
+const DEFAULT_AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 const ALL_DRAFTS_KEY = 'custom_order_drafts_index';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -171,10 +165,7 @@ export class DraftManager {
    * Start auto-save timer for a provider
    * بدء الحفظ التلقائي
    */
-  startAutoSave(
-    providerId: string,
-    getDraftData: () => DraftInput | null
-  ): void {
+  startAutoSave(providerId: string, getDraftData: () => DraftInput | null): void {
     // Stop existing timer if any
     this.stopAutoSave(providerId);
 

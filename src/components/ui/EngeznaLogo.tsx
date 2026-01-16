@@ -33,7 +33,7 @@ export function EngeznaLogo({
   const [animationKey, setAnimationKey] = useState(0);
 
   const restart = useCallback(() => {
-    setAnimationKey(k => k + 1);
+    setAnimationKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
@@ -77,9 +77,7 @@ export function EngeznaLogo({
           إنجزنا
         </span>
 
-        {showPen && (
-          <div className={`pen-cursor-${uniqueId}`} />
-        )}
+        {showPen && <div className={`pen-cursor-${uniqueId}`} />}
       </div>
 
       <style>{`

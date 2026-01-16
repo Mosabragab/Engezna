@@ -1,4 +1,5 @@
 # 🎯 خطة شاملة: إصلاح Sidebar وتحسين تجربة المستخدم
+
 ## للأدمن والتاجر - منصة إنجزنا
 
 ---
@@ -6,11 +7,13 @@
 ## 📋 ملخص تنفيذي
 
 ### المشكلة الحالية:
+
 - بعد تسجيل الدخول، لا يظهر Sidebar حتى يتم تحديث الصفحة (refresh)
 - المشكلة موجودة في كل من: **لوحة الأدمن** و **لوحة التاجر**
 - السبب: Race Condition بين Auth State و Component Tree في Next.js
 
 ### الحل المقترح:
+
 1. **إصلاح فوري**: `router.refresh()` بعد Login
 2. **تحسين معماري**: إعادة هيكلة State Management
 3. **تحسين براندي**: Skeleton Screens + Animations
@@ -22,32 +25,35 @@
 ### الملفات المطلوب تعديلها:
 
 #### 1.1 صفحة تسجيل دخول الأدمن
+
 **الملف:** `src/app/[locale]/admin/login/page.tsx`
 
 ```tsx
 // السطر 262 - بعد نجاح تسجيل الدخول
 // قبل:
-router.push(`/${locale}/admin`)
+router.push(`/${locale}/admin`);
 
 // بعد:
-router.push(`/${locale}/admin`)
-router.refresh() // ← إضافة هذا السطر
+router.push(`/${locale}/admin`);
+router.refresh(); // ← إضافة هذا السطر
 ```
 
 #### 1.2 صفحة تسجيل دخول التاجر
+
 **الملف:** `src/app/[locale]/provider/login/page.tsx`
 
 ```tsx
 // السطر 126 - بعد نجاح تسجيل الدخول
 // قبل:
-router.push(`/${locale}/provider`)
+router.push(`/${locale}/provider`);
 
 // بعد:
-router.push(`/${locale}/provider`)
-router.refresh() // ← إضافة هذا السطر
+router.push(`/${locale}/provider`);
+router.refresh(); // ← إضافة هذا السطر
 ```
 
 #### 1.3 صفحة تسجيل دخول العميل (للتأكد من الاتساق)
+
 **الملف:** `src/app/[locale]/auth/login/page.tsx`
 
 ```tsx
@@ -63,26 +69,29 @@ router.refresh() // ← إضافة هذا السطر
 **الملف:** `src/components/admin/AdminSidebarContext.tsx`
 
 **التعديلات:**
+
 1. إضافة listener لـ Auth State Changes
 2. ضمان sync فوري عند تغيير حالة المستخدم
 
 ```tsx
 // إضافة useEffect جديد
 useEffect(() => {
-  const supabase = createClient()
+  const supabase = createClient();
 
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event) => {
     if (event === 'SIGNED_IN') {
       // إعادة تهيئة حالة Sidebar
-      const mediaQuery = window.matchMedia('(min-width: 1024px)')
+      const mediaQuery = window.matchMedia('(min-width: 1024px)');
       if (mediaQuery.matches) {
-        setIsOpen(true)
+        setIsOpen(true);
       }
     }
-  })
+  });
 
-  return () => subscription.unsubscribe()
-}, [])
+  return () => subscription.unsubscribe();
+}, []);
 ```
 
 ### 2.2 تحسين Admin Layout
@@ -90,6 +99,7 @@ useEffect(() => {
 **الملف:** `src/app/[locale]/admin/layout.tsx`
 
 **التعديلات:**
+
 1. Render Sidebar دائماً (حتى في صفحة Login) ولكن مخفي
 2. استخدام CSS للإخفاء بدلاً من Conditional Rendering
 
@@ -119,6 +129,7 @@ return (
 **الملف:** `src/components/provider/ProviderLayout.tsx`
 
 **التعديلات:**
+
 1. إضافة listener لـ Auth State للتحديث التلقائي
 2. إضافة حالة mounted لمنع flash
 
@@ -143,6 +154,7 @@ useEffect(() => {
 ### 3.1 Skeleton Screens للـ Sidebar
 
 #### Admin Sidebar Skeleton
+
 **ملف جديد:** `src/components/admin/AdminSidebarSkeleton.tsx`
 
 ```tsx
@@ -157,7 +169,7 @@ export function AdminSidebarSkeleton() {
 
       {/* Navigation Skeleton */}
       <div className="space-y-3">
-        {[1,2,3,4,5].map(i => (
+        {[1, 2, 3, 4, 5].map((i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2">
             <div className="w-5 h-5 bg-slate-200 rounded animate-pulse" />
             <div className="h-4 flex-1 bg-slate-200 rounded animate-pulse" />
@@ -170,7 +182,7 @@ export function AdminSidebarSkeleton() {
 
       {/* More Items */}
       <div className="space-y-3">
-        {[1,2,3].map(i => (
+        {[1, 2, 3].map((i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2">
             <div className="w-5 h-5 bg-slate-200 rounded animate-pulse" />
             <div className="h-4 flex-1 bg-slate-200 rounded animate-pulse" />
@@ -178,11 +190,12 @@ export function AdminSidebarSkeleton() {
         ))}
       </div>
     </aside>
-  )
+  );
 }
 ```
 
 #### Provider Sidebar Skeleton
+
 **ملف جديد:** `src/components/provider/ProviderSidebarSkeleton.tsx`
 
 ```tsx
@@ -200,7 +213,7 @@ export function ProviderSidebarSkeleton() {
 
       {/* Navigation Skeleton */}
       <div className="p-3 space-y-2">
-        {[1,2,3,4,5,6].map(i => (
+        {[1, 2, 3, 4, 5, 6].map((i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl">
             <div className="w-5 h-5 bg-slate-200 rounded animate-pulse" />
             <div className="h-4 flex-1 bg-slate-200 rounded animate-pulse" />
@@ -208,18 +221,20 @@ export function ProviderSidebarSkeleton() {
         ))}
       </div>
     </aside>
-  )
+  );
 }
 ```
 
 ### 3.2 Animated Entrance (Framer Motion)
 
 #### تثبيت Framer Motion (إذا لم يكن مثبتاً)
+
 ```bash
 npm install framer-motion
 ```
 
 #### إضافة Animation للـ Admin Sidebar
+
 **الملف:** `src/components/admin/AdminSidebar.tsx`
 
 ```tsx
@@ -237,10 +252,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 ```
 
 #### إضافة Animation للـ Provider Sidebar
+
 **الملف:** `src/components/provider/ProviderSidebar.tsx`
 
 ```tsx
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion';
 
 // نفس التعديلات
 ```
@@ -250,10 +266,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 **ملف جديد:** `src/components/shared/BrandTransition.tsx`
 
 ```tsx
-'use client'
+'use client';
 
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { motion } from 'framer-motion'
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { motion } from 'framer-motion';
 
 export function BrandTransition() {
   return (
@@ -270,7 +286,7 @@ export function BrandTransition() {
         <EngeznaLogo size="xl" showPen={true} />
       </motion.div>
     </motion.div>
-  )
+  );
 }
 ```
 
@@ -279,40 +295,45 @@ export function BrandTransition() {
 ## 📁 ملخص الملفات المتأثرة
 
 ### ملفات يتم تعديلها:
-| # | الملف | نوع التعديل |
-|---|-------|-------------|
-| 1 | `src/app/[locale]/admin/login/page.tsx` | إضافة `router.refresh()` |
-| 2 | `src/app/[locale]/provider/login/page.tsx` | إضافة `router.refresh()` |
-| 3 | `src/app/[locale]/auth/login/page.tsx` | التحقق والتعديل إذا لزم |
-| 4 | `src/components/admin/AdminSidebarContext.tsx` | Auth State Listener |
-| 5 | `src/app/[locale]/admin/layout.tsx` | Always Render Sidebar |
-| 6 | `src/components/admin/AdminSidebar.tsx` | Animation + Skeleton |
-| 7 | `src/components/provider/ProviderLayout.tsx` | Auth State Listener |
-| 8 | `src/components/provider/ProviderSidebar.tsx` | Animation + Skeleton |
+
+| #   | الملف                                          | نوع التعديل              |
+| --- | ---------------------------------------------- | ------------------------ |
+| 1   | `src/app/[locale]/admin/login/page.tsx`        | إضافة `router.refresh()` |
+| 2   | `src/app/[locale]/provider/login/page.tsx`     | إضافة `router.refresh()` |
+| 3   | `src/app/[locale]/auth/login/page.tsx`         | التحقق والتعديل إذا لزم  |
+| 4   | `src/components/admin/AdminSidebarContext.tsx` | Auth State Listener      |
+| 5   | `src/app/[locale]/admin/layout.tsx`            | Always Render Sidebar    |
+| 6   | `src/components/admin/AdminSidebar.tsx`        | Animation + Skeleton     |
+| 7   | `src/components/provider/ProviderLayout.tsx`   | Auth State Listener      |
+| 8   | `src/components/provider/ProviderSidebar.tsx`  | Animation + Skeleton     |
 
 ### ملفات جديدة:
-| # | الملف | الوصف |
-|---|-------|-------|
-| 1 | `src/components/admin/AdminSidebarSkeleton.tsx` | Skeleton للأدمن |
-| 2 | `src/components/provider/ProviderSidebarSkeleton.tsx` | Skeleton للتاجر |
-| 3 | `src/components/shared/BrandTransition.tsx` | شاشة انتقال براندية |
+
+| #   | الملف                                                 | الوصف               |
+| --- | ----------------------------------------------------- | ------------------- |
+| 1   | `src/components/admin/AdminSidebarSkeleton.tsx`       | Skeleton للأدمن     |
+| 2   | `src/components/provider/ProviderSidebarSkeleton.tsx` | Skeleton للتاجر     |
+| 3   | `src/components/shared/BrandTransition.tsx`           | شاشة انتقال براندية |
 
 ---
 
 ## ⏱️ ترتيب التنفيذ
 
 ### الجولة 1: الإصلاح الفوري (الأولوية القصوى)
+
 - [ ] إضافة `router.refresh()` لصفحة Admin Login
 - [ ] إضافة `router.refresh()` لصفحة Provider Login
 - [ ] اختبار الإصلاح
 
 ### الجولة 2: التحسين المعماري
+
 - [ ] تحديث AdminSidebarContext
 - [ ] تحديث Admin Layout
 - [ ] تحديث ProviderLayout
 - [ ] اختبار شامل
 
 ### الجولة 3: التحسينات البراندية
+
 - [ ] إنشاء Skeleton Components
 - [ ] إضافة Framer Motion Animations
 - [ ] إنشاء Brand Transition (اختياري)
@@ -323,18 +344,21 @@ export function BrandTransition() {
 ## ✅ معايير القبول
 
 ### للأدمن:
+
 1. ✅ بعد تسجيل الدخول، يظهر Sidebar فوراً بدون refresh
 2. ✅ Skeleton يظهر أثناء تحميل الصلاحيات
 3. ✅ Animation ناعم عند ظهور Sidebar
 4. ✅ لا يوجد Layout Shift
 
 ### للتاجر:
+
 1. ✅ بعد تسجيل الدخول، يظهر Sidebar فوراً بدون refresh
 2. ✅ Skeleton يظهر أثناء تحميل بيانات المتجر
 3. ✅ Animation ناعم عند ظهور Sidebar
 4. ✅ لا يوجد Layout Shift
 
 ### عام:
+
 1. ✅ تناسق التجربة بين الأدمن والتاجر
 2. ✅ أداء سريع (< 300ms للظهور)
 3. ✅ دعم RTL كامل

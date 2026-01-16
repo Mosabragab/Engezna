@@ -197,7 +197,10 @@ export function formatCommissionRate(rate: number, locale: 'ar' | 'en' = 'ar'): 
  * @param locale - 'ar' or 'en'
  * @returns Localized status label
  */
-export function getCommissionStatusLabel(status: CommissionStatus, locale: 'ar' | 'en' = 'ar'): string {
+export function getCommissionStatusLabel(
+  status: CommissionStatus,
+  locale: 'ar' | 'en' = 'ar'
+): string {
   const labels = {
     in_grace_period: {
       ar: 'فترة مجانية',

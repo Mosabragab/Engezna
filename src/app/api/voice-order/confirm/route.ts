@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
 
 // This endpoint handles the confirmation of voice orders
 // The actual cart state management happens on the client side with Zustand
@@ -6,35 +6,31 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { items, locale } = body
+    const body = await request.json();
+    const { items, locale } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json(
-        { error: 'No items to confirm' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'No items to confirm' }, { status: 400 });
     }
 
     // Validate items structure
-    const validItems = items.every((item: Record<string, unknown>) =>
-      item.productId &&
-      item.providerId &&
-      typeof item.quantity === 'number' &&
-      typeof item.price === 'number'
-    )
+    const validItems = items.every(
+      (item: Record<string, unknown>) =>
+        item.productId &&
+        item.providerId &&
+        typeof item.quantity === 'number' &&
+        typeof item.price === 'number'
+    );
 
     if (!validItems) {
-      return NextResponse.json(
-        { error: 'Invalid item structure' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid item structure' }, { status: 400 });
     }
 
     // Calculate total
-    const total = items.reduce((sum: number, item: { quantity: number; price: number }) =>
-      sum + (item.quantity * item.price), 0
-    )
+    const total = items.reduce(
+      (sum: number, item: { quantity: number; price: number }) => sum + item.quantity * item.price,
+      0
+    );
 
     // Here you could:
     // 1. Log the order for analytics
@@ -46,15 +42,10 @@ export async function POST(request: NextRequest) {
       success: true,
       itemCount: items.length,
       total,
-      message: locale === 'ar'
-        ? 'تم تأكيد الطلب بنجاح'
-        : 'Order confirmed successfully',
-    })
+      message: locale === 'ar' ? 'تم تأكيد الطلب بنجاح' : 'Order confirmed successfully',
+    });
   } catch (error) {
-    console.error('Error in confirm route:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Error in confirm route:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

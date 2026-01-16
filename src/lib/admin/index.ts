@@ -70,20 +70,7 @@ export {
 } from './statistics';
 
 // User functions
-export {
-  getUsers,
-  getUserById,
-  banUser,
-  unbanUser,
-  changeUserRole,
-  getUserStats,
-} from './users';
+export { getUsers, getUserById, banUser, unbanUser, changeUserRole, getUserStats } from './users';
 
 // Audit functions
-export {
-  logAuditAction,
-  logDeniedAction,
-  logActivity,
-  getAuditLog,
-  AUDIT_ACTIONS,
-} from './audit';
+export { logAuditAction, logDeniedAction, logActivity, getAuditLog, AUDIT_ACTIONS } from './audit';

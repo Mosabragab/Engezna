@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatDate } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatDate } from '@/lib/utils/formatters';
 import {
   Shield,
   Image as ImageIcon,
@@ -28,38 +28,38 @@ import {
   Calendar,
   Megaphone,
   ChevronDown,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
-type DurationType = '1_day' | '3_days' | '1_week' | '1_month'
+type DurationType = '1_day' | '3_days' | '1_week' | '1_month';
 
 interface PendingBanner {
-  id: string
-  title_ar: string
-  title_en: string
-  description_ar: string | null
-  description_en: string | null
-  image_url: string | null
-  gradient_start: string
-  gradient_end: string
-  badge_text_ar: string | null
-  badge_text_en: string | null
-  cta_text_ar: string | null
-  cta_text_en: string | null
-  starts_at: string
-  ends_at: string | null
-  duration_type: DurationType
-  submitted_at: string
-  provider_id: string
-  provider_name_ar: string
-  provider_name_en: string
-  provider_logo: string | null
-  governorate_name_ar: string
-  governorate_name_en: string
-  city_name_ar: string | null
-  city_name_en: string | null
+  id: string;
+  title_ar: string;
+  title_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  image_url: string | null;
+  gradient_start: string;
+  gradient_end: string;
+  badge_text_ar: string | null;
+  badge_text_en: string | null;
+  cta_text_ar: string | null;
+  cta_text_en: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  duration_type: DurationType;
+  submitted_at: string;
+  provider_id: string;
+  provider_name_ar: string;
+  provider_name_en: string;
+  provider_logo: string | null;
+  governorate_name_ar: string;
+  governorate_name_en: string;
+  city_name_ar: string | null;
+  city_name_en: string | null;
 }
 
 const DURATION_LABELS: Record<DurationType, { ar: string; en: string }> = {
@@ -67,67 +67,69 @@ const DURATION_LABELS: Record<DurationType, { ar: string; en: string }> = {
   '3_days': { ar: '3 أيام', en: '3 Days' },
   '1_week': { ar: 'أسبوع', en: '1 Week' },
   '1_month': { ar: 'شهر', en: '1 Month' },
-}
+};
 
 export default function AdminBannerApprovalsPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const { toggle: toggleSidebar } = useAdminSidebar()
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const { toggle: toggleSidebar } = useAdminSidebar();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [pendingBanners, setPendingBanners] = useState<PendingBanner[]>([])
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [showRejectModal, setShowRejectModal] = useState<string | null>(null)
-  const [rejectReason, setRejectReason] = useState('')
-  const [showCancelModal, setShowCancelModal] = useState<string | null>(null)
-  const [cancelReason, setCancelReason] = useState('')
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [expandedBanner, setExpandedBanner] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pendingBanners, setPendingBanners] = useState<PendingBanner[]>([]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showCancelModal, setShowCancelModal] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [expandedBanner, setExpandedBanner] = useState<string | null>(null);
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        await loadPendingBanners()
+        setIsAdmin(true);
+        await loadPendingBanners();
       }
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   async function loadPendingBanners() {
-    const supabase = createClient()
+    const supabase = createClient();
 
-    const { data, error } = await supabase.rpc('get_pending_banners_for_approval')
+    const { data, error } = await supabase.rpc('get_pending_banners_for_approval');
 
     if (error) {
-      console.error('Error loading pending banners:', error)
-      setPendingBanners([])
-      return
+      console.error('Error loading pending banners:', error);
+      setPendingBanners([]);
+      return;
     }
 
-    setPendingBanners(data || [])
+    setPendingBanners(data || []);
   }
 
   async function handleApprove(bannerId: string) {
-    setActionLoading(bannerId)
-    const supabase = createClient()
+    setActionLoading(bannerId);
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -138,29 +140,29 @@ export default function AdminBannerApprovalsPage() {
           reviewed_at: new Date().toISOString(),
           reviewed_by: user?.id,
         })
-        .eq('id', bannerId)
+        .eq('id', bannerId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      setSuccessMessage(locale === 'ar' ? 'تم قبول البانر بنجاح' : 'Banner approved successfully')
-      await loadPendingBanners()
+      setSuccessMessage(locale === 'ar' ? 'تم قبول البانر بنجاح' : 'Banner approved successfully');
+      await loadPendingBanners();
     } catch (error) {
-      console.error('Error approving banner:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء قبول البانر' : 'Error approving banner')
+      console.error('Error approving banner:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء قبول البانر' : 'Error approving banner');
     } finally {
-      setActionLoading(null)
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setActionLoading(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
     }
   }
 
   async function handleReject(bannerId: string) {
     if (!rejectReason.trim()) {
-      alert(locale === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason')
-      return
+      alert(locale === 'ar' ? 'يرجى إدخال سبب الرفض' : 'Please enter rejection reason');
+      return;
     }
 
-    setActionLoading(bannerId)
-    const supabase = createClient()
+    setActionLoading(bannerId);
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -172,31 +174,31 @@ export default function AdminBannerApprovalsPage() {
           reviewed_at: new Date().toISOString(),
           reviewed_by: user?.id,
         })
-        .eq('id', bannerId)
+        .eq('id', bannerId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      setSuccessMessage(locale === 'ar' ? 'تم رفض البانر' : 'Banner rejected')
-      setShowRejectModal(null)
-      setRejectReason('')
-      await loadPendingBanners()
+      setSuccessMessage(locale === 'ar' ? 'تم رفض البانر' : 'Banner rejected');
+      setShowRejectModal(null);
+      setRejectReason('');
+      await loadPendingBanners();
     } catch (error) {
-      console.error('Error rejecting banner:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء رفض البانر' : 'Error rejecting banner')
+      console.error('Error rejecting banner:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء رفض البانر' : 'Error rejecting banner');
     } finally {
-      setActionLoading(null)
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setActionLoading(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
     }
   }
 
   async function handleCancel(bannerId: string) {
     if (!cancelReason.trim()) {
-      alert(locale === 'ar' ? 'يرجى إدخال سبب الإلغاء' : 'Please enter cancellation reason')
-      return
+      alert(locale === 'ar' ? 'يرجى إدخال سبب الإلغاء' : 'Please enter cancellation reason');
+      return;
     }
 
-    setActionLoading(bannerId)
-    const supabase = createClient()
+    setActionLoading(bannerId);
+    const supabase = createClient();
 
     try {
       const { error } = await supabase
@@ -208,42 +210,42 @@ export default function AdminBannerApprovalsPage() {
           reviewed_at: new Date().toISOString(),
           reviewed_by: user?.id,
         })
-        .eq('id', bannerId)
+        .eq('id', bannerId);
 
-      if (error) throw error
+      if (error) throw error;
 
-      setSuccessMessage(locale === 'ar' ? 'تم إلغاء البانر' : 'Banner cancelled')
-      setShowCancelModal(null)
-      setCancelReason('')
-      await loadPendingBanners()
+      setSuccessMessage(locale === 'ar' ? 'تم إلغاء البانر' : 'Banner cancelled');
+      setShowCancelModal(null);
+      setCancelReason('');
+      await loadPendingBanners();
     } catch (error) {
-      console.error('Error cancelling banner:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء البانر' : 'Error cancelling banner')
+      console.error('Error cancelling banner:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إلغاء البانر' : 'Error cancelling banner');
     } finally {
-      setActionLoading(null)
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setActionLoading(null);
+      setTimeout(() => setSuccessMessage(null), 3000);
     }
   }
 
   const formatDateTime = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   const formatDateOnly = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   if (loading) {
     return (
@@ -255,7 +257,7 @@ export default function AdminBannerApprovalsPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </main>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -282,7 +284,7 @@ export default function AdminBannerApprovalsPage() {
           </div>
         </main>
       </>
-    )
+    );
   }
 
   return (
@@ -334,9 +336,12 @@ export default function AdminBannerApprovalsPage() {
               </h1>
               <p className="text-sm text-slate-500">
                 {pendingBanners.length > 0
-                  ? (locale === 'ar' ? `${pendingBanners.length} طلب في انتظار المراجعة` : `${pendingBanners.length} request(s) pending review`)
-                  : (locale === 'ar' ? 'لا توجد طلبات معلقة' : 'No pending requests')
-                }
+                  ? locale === 'ar'
+                    ? `${pendingBanners.length} طلب في انتظار المراجعة`
+                    : `${pendingBanners.length} request(s) pending review`
+                  : locale === 'ar'
+                    ? 'لا توجد طلبات معلقة'
+                    : 'No pending requests'}
               </p>
             </div>
           </div>
@@ -396,8 +401,7 @@ export default function AdminBannerApprovalsPage() {
                           <MapPin className="w-3.5 h-3.5" />
                           {locale === 'ar'
                             ? `${banner.city_name_ar || banner.governorate_name_ar}${banner.city_name_ar ? ` - ${banner.governorate_name_ar}` : ''}`
-                            : `${banner.city_name_en || banner.governorate_name_en}${banner.city_name_en ? ` - ${banner.governorate_name_en}` : ''}`
-                          }
+                            : `${banner.city_name_en || banner.governorate_name_en}${banner.city_name_en ? ` - ${banner.governorate_name_en}` : ''}`}
                         </div>
                       </div>
                     </div>
@@ -465,14 +469,21 @@ export default function AdminBannerApprovalsPage() {
                 {/* Banner Details (Expandable) */}
                 <div className="border-t border-slate-100">
                   <button
-                    onClick={() => setExpandedBanner(expandedBanner === banner.id ? null : banner.id)}
+                    onClick={() =>
+                      setExpandedBanner(expandedBanner === banner.id ? null : banner.id)
+                    }
                     className="w-full p-3 flex items-center justify-center gap-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
                   >
-                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedBanner === banner.id ? 'rotate-180' : ''}`} />
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${expandedBanner === banner.id ? 'rotate-180' : ''}`}
+                    />
                     {expandedBanner === banner.id
-                      ? (locale === 'ar' ? 'إخفاء التفاصيل' : 'Hide Details')
-                      : (locale === 'ar' ? 'عرض التفاصيل' : 'Show Details')
-                    }
+                      ? locale === 'ar'
+                        ? 'إخفاء التفاصيل'
+                        : 'Hide Details'
+                      : locale === 'ar'
+                        ? 'عرض التفاصيل'
+                        : 'Show Details'}
                   </button>
 
                   <AnimatePresence>
@@ -510,8 +521,7 @@ export default function AdminBannerApprovalsPage() {
                               <Timer className="w-4 h-4" />
                               {locale === 'ar'
                                 ? DURATION_LABELS[banner.duration_type]?.ar
-                                : DURATION_LABELS[banner.duration_type]?.en
-                              }
+                                : DURATION_LABELS[banner.duration_type]?.en}
                             </span>
                           </div>
                           <div>
@@ -519,9 +529,13 @@ export default function AdminBannerApprovalsPage() {
                               {locale === 'ar' ? 'الأولوية' : 'Priority'}
                             </span>
                             <span className="text-slate-700 font-medium">
-                              {banner.duration_type === '1_day' ? '1 (' + (locale === 'ar' ? 'أعلى' : 'Highest') + ')' :
-                               banner.duration_type === '3_days' ? '2' :
-                               banner.duration_type === '1_week' ? '3' : '4'}
+                              {banner.duration_type === '1_day'
+                                ? '1 (' + (locale === 'ar' ? 'أعلى' : 'Highest') + ')'
+                                : banner.duration_type === '3_days'
+                                  ? '2'
+                                  : banner.duration_type === '1_week'
+                                    ? '3'
+                                    : '4'}
                             </span>
                           </div>
                         </div>
@@ -600,7 +614,9 @@ export default function AdminBannerApprovalsPage() {
                     onChange={(e) => setRejectReason(e.target.value)}
                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary resize-none"
                     rows={3}
-                    placeholder={locale === 'ar' ? 'أدخل سبب الرفض...' : 'Enter rejection reason...'}
+                    placeholder={
+                      locale === 'ar' ? 'أدخل سبب الرفض...' : 'Enter rejection reason...'
+                    }
                     dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </div>
@@ -620,8 +636,8 @@ export default function AdminBannerApprovalsPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowRejectModal(null)
-                      setRejectReason('')
+                      setShowRejectModal(null);
+                      setRejectReason('');
                     }}
                   >
                     {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -672,7 +688,9 @@ export default function AdminBannerApprovalsPage() {
                     onChange={(e) => setCancelReason(e.target.value)}
                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary resize-none"
                     rows={3}
-                    placeholder={locale === 'ar' ? 'أدخل سبب الإلغاء...' : 'Enter cancellation reason...'}
+                    placeholder={
+                      locale === 'ar' ? 'أدخل سبب الإلغاء...' : 'Enter cancellation reason...'
+                    }
                     dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </div>
@@ -692,8 +710,8 @@ export default function AdminBannerApprovalsPage() {
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setShowCancelModal(null)
-                      setCancelReason('')
+                      setShowCancelModal(null);
+                      setCancelReason('');
                     }}
                   >
                     {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -705,5 +723,5 @@ export default function AdminBannerApprovalsPage() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }

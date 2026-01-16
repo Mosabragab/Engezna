@@ -1,29 +1,22 @@
-'use client'
+'use client';
 
-import { useState, useRef, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
-import {
-  Camera,
-  ImagePlus,
-  X,
-  ZoomIn,
-  Upload,
-  AlertCircle,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import type { ImageOrderInputProps } from '@/types/custom-order'
-import { MAX_ORDER_IMAGES } from '@/types/custom-order'
+import { useState, useRef, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { Camera, ImagePlus, X, ZoomIn, Upload, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import type { ImageOrderInputProps } from '@/types/custom-order';
+import { MAX_ORDER_IMAGES } from '@/types/custom-order';
 
 interface ExtendedImageOrderInputProps extends ImageOrderInputProps {
-  className?: string
+  className?: string;
 }
 
 interface PreviewImage {
-  file: File
-  dataUrl: string
+  file: File;
+  dataUrl: string;
 }
 
 export function ImageOrderInput({
@@ -33,122 +26,112 @@ export function ImageOrderInput({
   disabled = false,
   className,
 }: ExtendedImageOrderInputProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const [previews, setPreviews] = useState<PreviewImage[]>([])
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [selectedPreview, setSelectedPreview] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const [previews, setPreviews] = useState<PreviewImage[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [selectedPreview, setSelectedPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const canAddMore = images.length < maxImages
+  const canAddMore = images.length < maxImages;
 
   // Process files
   const processFiles = useCallback(
     async (files: FileList | File[]) => {
-      setError(null)
+      setError(null);
 
-      const fileArray = Array.from(files)
-      const validFiles: File[] = []
-      const newPreviews: PreviewImage[] = []
+      const fileArray = Array.from(files);
+      const validFiles: File[] = [];
+      const newPreviews: PreviewImage[] = [];
 
       for (const file of fileArray) {
         // Check file type
         if (!file.type.startsWith('image/')) {
-          setError(
-            isRTL
-              ? 'يرجى اختيار صور فقط'
-              : 'Please select images only'
-          )
-          continue
+          setError(isRTL ? 'يرجى اختيار صور فقط' : 'Please select images only');
+          continue;
         }
 
         // Check file size (5MB)
         if (file.size > 5 * 1024 * 1024) {
           setError(
-            isRTL
-              ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت'
-              : 'Image size must be less than 5MB'
-          )
-          continue
+            isRTL ? 'حجم الصورة يجب أن يكون أقل من 5 ميجابايت' : 'Image size must be less than 5MB'
+          );
+          continue;
         }
 
         // Check limit
         if (images.length + validFiles.length >= maxImages) {
-          setError(
-            isRTL
-              ? `الحد الأقصى ${maxImages} صور`
-              : `Maximum ${maxImages} images`
-          )
-          break
+          setError(isRTL ? `الحد الأقصى ${maxImages} صور` : `Maximum ${maxImages} images`);
+          break;
         }
 
-        validFiles.push(file)
+        validFiles.push(file);
 
         // Create preview
         const dataUrl = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.readAsDataURL(file)
-        })
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(file);
+        });
 
-        newPreviews.push({ file, dataUrl })
+        newPreviews.push({ file, dataUrl });
       }
 
       if (validFiles.length > 0) {
-        onImagesChange([...images, ...validFiles])
-        setPreviews([...previews, ...newPreviews])
+        onImagesChange([...images, ...validFiles]);
+        setPreviews([...previews, ...newPreviews]);
       }
     },
     [images, previews, maxImages, onImagesChange, isRTL]
-  )
+  );
 
   // Handle file input
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      processFiles(e.target.files)
+      processFiles(e.target.files);
     }
     // Reset input so same file can be selected again
-    e.target.value = ''
-  }
+    e.target.value = '';
+  };
 
   // Handle drag events
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
+    e.preventDefault();
+    setIsDragging(true);
+  };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
+    e.preventDefault();
+    setIsDragging(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFiles(e.dataTransfer.files)
+      processFiles(e.dataTransfer.files);
     }
-  }
+  };
 
   // Remove image
   const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index)
-    const newPreviews = previews.filter((_, i) => i !== index)
-    onImagesChange(newImages)
-    setPreviews(newPreviews)
-    setError(null)
-  }
+    const newImages = images.filter((_, i) => i !== index);
+    const newPreviews = previews.filter((_, i) => i !== index);
+    onImagesChange(newImages);
+    setPreviews(newPreviews);
+    setError(null);
+  };
 
   // Open preview
   const openPreview = (dataUrl: string) => {
-    setSelectedPreview(dataUrl)
-    setPreviewOpen(true)
-  }
+    setSelectedPreview(dataUrl);
+    setPreviewOpen(true);
+  };
 
   return (
     <div className={cn('flex flex-col gap-4', className)}>
@@ -162,8 +145,8 @@ export function ImageOrderInput({
           isDragging
             ? 'border-primary bg-primary/5'
             : canAddMore
-            ? 'border-slate-300 hover:border-primary/50'
-            : 'border-slate-200 bg-slate-50',
+              ? 'border-slate-300 hover:border-primary/50'
+              : 'border-slate-200 bg-slate-50',
           disabled && 'opacity-50 cursor-not-allowed'
         )}
       >
@@ -174,12 +157,7 @@ export function ImageOrderInput({
               isDragging ? 'bg-primary/10' : 'bg-slate-100'
             )}
           >
-            <ImagePlus
-              className={cn(
-                'w-8 h-8',
-                isDragging ? 'text-primary' : 'text-slate-400'
-              )}
-            />
+            <ImagePlus className={cn('w-8 h-8', isDragging ? 'text-primary' : 'text-slate-400')} />
           </div>
 
           <div>
@@ -345,5 +323,5 @@ export function ImageOrderInput({
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

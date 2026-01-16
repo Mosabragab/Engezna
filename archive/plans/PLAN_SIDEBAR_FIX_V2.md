@@ -1,4 +1,5 @@
 # 🎯 خطة إصلاح Sidebar v2.0 + تحسينات براندية
+
 ## الحل "النووي" + Elegant UI
 
 ---
@@ -26,11 +27,11 @@ router.push() + router.refresh() ← لا يزال أسرع من استجابة 
 
 ```tsx
 // قبل:
-router.push(`/${locale}/admin`)
-router.refresh()
+router.push(`/${locale}/admin`);
+router.refresh();
 
 // بعد:
-window.location.href = `/${locale}/admin`
+window.location.href = `/${locale}/admin`;
 ```
 
 **B. صفحة Provider Login:**
@@ -38,15 +39,16 @@ window.location.href = `/${locale}/admin`
 
 ```tsx
 // قبل:
-router.push(`/${locale}/provider`)
-router.refresh()
+router.push(`/${locale}/provider`);
+router.refresh();
 
 // بعد:
-window.location.href = `/${locale}/provider`
+window.location.href = `/${locale}/provider`;
 ```
 
 **C. صفحة Customer Login (للاتساق):**
 `src/app/[locale]/auth/login/page.tsx`
+
 - التحقق وتطبيق نفس النهج إذا لزم
 
 ---
@@ -56,15 +58,16 @@ window.location.href = `/${locale}/provider`
 ### 2.1 Glassmorphism للـ Sidebar
 
 **الملفات:**
+
 - `src/components/admin/AdminSidebar.tsx`
 - `src/components/provider/ProviderSidebar.tsx`
 
 ```tsx
 // قبل:
-className="w-64 bg-white shadow-sm"
+className = 'w-64 bg-white shadow-sm';
 
 // بعد:
-className="w-64 bg-white/80 backdrop-blur-md border-r border-slate-200/50 shadow-elegant"
+className = 'w-64 bg-white/80 backdrop-blur-md border-r border-slate-200/50 shadow-elegant';
 ```
 
 ### 2.2 Active State محسّن في Navigation
@@ -125,13 +128,13 @@ className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant
 
 ```tsx
 // إضافة Inter font للأرقام
-import { Inter } from 'next/font/google'
+import { Inter } from 'next/font/google';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
-})
+});
 ```
 
 **الملف:** `src/app/globals.css`
@@ -140,7 +143,9 @@ const inter = Inter({
 /* Numbers with Inter */
 .font-numbers {
   font-family: var(--font-inter), system-ui, sans-serif;
-  font-feature-settings: 'tnum' on, 'lnum' on;
+  font-feature-settings:
+    'tnum' on,
+    'lnum' on;
 }
 ```
 
@@ -160,40 +165,46 @@ const inter = Inter({
 ## 📁 ملخص الملفات
 
 ### ملفات الإصلاح (الأولوية القصوى):
-| # | الملف | التغيير |
-|---|-------|---------|
-| 1 | `admin/login/page.tsx` | `window.location.href` |
-| 2 | `provider/login/page.tsx` | `window.location.href` |
-| 3 | `auth/login/page.tsx` | التحقق والتعديل |
+
+| #   | الملف                     | التغيير                |
+| --- | ------------------------- | ---------------------- |
+| 1   | `admin/login/page.tsx`    | `window.location.href` |
+| 2   | `provider/login/page.tsx` | `window.location.href` |
+| 3   | `auth/login/page.tsx`     | التحقق والتعديل        |
 
 ### ملفات التحسين البراندي:
-| # | الملف | التغيير |
-|---|-------|---------|
-| 4 | `AdminSidebar.tsx` | Glassmorphism + Active State |
-| 5 | `ProviderSidebar.tsx` | Glassmorphism + Active State |
-| 6 | `admin/page.tsx` | Floating Cards |
-| 7 | `globals.css` | Shadow utilities |
-| 8 | `layout.tsx` | Inter font |
-| 9 | `manifest.json` | Theme color |
+
+| #   | الملف                 | التغيير                      |
+| --- | --------------------- | ---------------------------- |
+| 4   | `AdminSidebar.tsx`    | Glassmorphism + Active State |
+| 5   | `ProviderSidebar.tsx` | Glassmorphism + Active State |
+| 6   | `admin/page.tsx`      | Floating Cards               |
+| 7   | `globals.css`         | Shadow utilities             |
+| 8   | `layout.tsx`          | Inter font                   |
+| 9   | `manifest.json`       | Theme color                  |
 
 ---
 
 ## ⏱️ ترتيب التنفيذ
 
 ### الجولة 1: الإصلاح النهائي
+
 - [ ] تغيير Admin Login إلى `window.location.href`
 - [ ] تغيير Provider Login إلى `window.location.href`
 - [ ] اختبار سريع
 
 ### الجولة 2: CSS Utilities
+
 - [ ] إضافة shadow-elegant إلى globals.css
 - [ ] إضافة Inter font
 
 ### الجولة 3: Sidebar Glassmorphism
+
 - [ ] تحديث AdminSidebar
 - [ ] تحديث ProviderSidebar
 
 ### الجولة 4: Dashboard Cards
+
 - [ ] تحديث Admin Dashboard cards
 - [ ] تحديث Provider Dashboard cards (إذا لزم)
 

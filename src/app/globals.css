@@ -36,167 +36,302 @@
 
   :root {
     /* PRIMARY BRAND COLORS - Engezna Blue */
-    --primary: 198 100% 44%;            /* #009DE0 Engezna Blue */
-    --primary-light: 198 100% 54%;      /* Lighter Blue */
-    --primary-dark: 198 100% 34%;       /* Darker Blue */
-    --primary-foreground: 0 0% 100%;    /* White */
+    --primary: 198 100% 44%; /* #009DE0 Engezna Blue */
+    --primary-light: 198 100% 54%; /* Lighter Blue */
+    --primary-dark: 198 100% 34%; /* Darker Blue */
+    --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 222 47% 11%;           /* #0F172A Charcoal */
+    --secondary: 222 47% 11%; /* #0F172A Charcoal */
     --secondary-foreground: 0 0% 100%;
 
     /* ACCENT COLORS - Harmonized with #009DE0 */
-    --deal: 158 100% 38%;               /* #00C27A Green-Cyan (Deals/Discounts) */
-    --premium: 42 100% 70%;             /* #FFD166 Soft Gold (Premium/Highlight) */
-    --info: 198 100% 44%;               /* Same as Primary - Engezna Blue */
-    --in-progress: 217 91% 60%;         /* #3B82F6 Blue for in-progress states */
+    --deal: 158 100% 38%; /* #00C27A Green-Cyan (Deals/Discounts) */
+    --premium: 42 100% 70%; /* #FFD166 Soft Gold (Premium/Highlight) */
+    --info: 198 100% 44%; /* Same as Primary - Engezna Blue */
+    --in-progress: 217 91% 60%; /* #3B82F6 Blue for in-progress states */
 
     /* SEMANTIC COLORS - Professional Dashboard Standards */
-    --success: 142 71% 45%;             /* #22C55E Green - Completed/Success */
-    --error: 0 84% 60%;                 /* #EF4444 Red - Errors/Cancelled */
-    --warning: 45 93% 47%;              /* #CA8A04 yellow-600 - Warnings/Pending */
+    --success: 142 71% 45%; /* #22C55E Green - Completed/Success */
+    --error: 0 84% 60%; /* #EF4444 Red - Errors/Cancelled */
+    --warning: 45 93% 47%; /* #CA8A04 yellow-600 - Warnings/Pending */
 
     /* EXTENDED SEMANTIC COLORS - Additional Dashboard States */
-    --amber: 38 92% 50%;                /* #F59E0B Amber - Pending/Attention */
-    --purple: 271 81% 56%;              /* #8B5CF6 Purple - Premium/Reports */
-    --emerald: 160 84% 39%;             /* #10B981 Emerald - High Value */
-    --orange: 25 95% 53%;               /* #F97316 Orange - High Priority */
+    --amber: 38 92% 50%; /* #F59E0B Amber - Pending/Attention */
+    --purple: 271 81% 56%; /* #8B5CF6 Purple - Premium/Reports */
+    --emerald: 160 84% 39%; /* #10B981 Emerald - High Value */
+    --orange: 25 95% 53%; /* #F97316 Orange - High Priority */
 
     /* CONTRAST SYSTEM - Text Hierarchy */
-    --text-primary: 222 47% 11%;        /* #0F172A Main text - highest contrast */
-    --text-secondary: 215 16% 47%;      /* #475569 Secondary text */
-    --text-muted: 215 16% 65%;          /* #94A3B8 Muted/disabled text */
+    --text-primary: 222 47% 11%; /* #0F172A Main text - highest contrast */
+    --text-secondary: 215 16% 47%; /* #475569 Secondary text */
+    --text-muted: 215 16% 65%; /* #94A3B8 Muted/disabled text */
 
     /* NEUTRAL TONES (Light Mode) */
-    --background: 0 0% 100%;            /* White */
-    --foreground: 222 47% 11%;          /* #0F172A - Updated for better contrast */
-    --muted: 210 40% 96%;               /* #F1F5F9 - Slightly blue-tinted */
-    --muted-foreground: 215 16% 47%;    /* #475569 */
-    --border: 214 32% 91%;              /* #E2E8F0 Slate border */
-    --input: 214 32% 91%;               /* #E2E8F0 */
-    --ring: 198 100% 44%;               /* Engezna Blue */
+    --background: 0 0% 100%; /* White */
+    --foreground: 222 47% 11%; /* #0F172A - Updated for better contrast */
+    --muted: 210 40% 96%; /* #F1F5F9 - Slightly blue-tinted */
+    --muted-foreground: 215 16% 47%; /* #475569 */
+    --border: 214 32% 91%; /* #E2E8F0 Slate border */
+    --input: 214 32% 91%; /* #E2E8F0 */
+    --ring: 198 100% 44%; /* Engezna Blue */
 
     /* LIGHT BACKGROUNDS FOR CARDS */
-    --card-bg-primary: 198 100% 97%;    /* Blue 10% - #E0F4FF */
-    --card-bg-success: 142 76% 95%;     /* Green 10% - #DCFCE7 */
-    --card-bg-info: 198 100% 97%;       /* Cyan 10% - #E0F4FF */
-    --card-bg-warning: 55 97% 88%;      /* yellow-100 - #FEF9C3 */
-    --card-bg-error: 0 86% 97%;         /* Red 10% - #FEF2F2 */
-    --card-bg-amber: 38 100% 95%;       /* Amber 10% - #FFFBEB */
-    --card-bg-purple: 271 91% 97%;      /* Purple 10% - #F5F3FF */
-    --card-bg-emerald: 160 84% 95%;     /* Emerald 10% - #D1FAE5 */
-    --card-bg-orange: 25 100% 95%;      /* Orange 10% - #FFF7ED */
+    --card-bg-primary: 198 100% 97%; /* Blue 10% - #E0F4FF */
+    --card-bg-success: 142 76% 95%; /* Green 10% - #DCFCE7 */
+    --card-bg-info: 198 100% 97%; /* Cyan 10% - #E0F4FF */
+    --card-bg-warning: 55 97% 88%; /* yellow-100 - #FEF9C3 */
+    --card-bg-error: 0 86% 97%; /* Red 10% - #FEF2F2 */
+    --card-bg-amber: 38 100% 95%; /* Amber 10% - #FFFBEB */
+    --card-bg-purple: 271 91% 97%; /* Purple 10% - #F5F3FF */
+    --card-bg-emerald: 160 84% 95%; /* Emerald 10% - #D1FAE5 */
+    --card-bg-orange: 25 100% 95%; /* Orange 10% - #FFF7ED */
 
     /* CARD & POPOVER */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;     /* Updated */
+    --card-foreground: 222 47% 11%; /* Updated */
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;  /* Updated */
+    --popover-foreground: 222 47% 11%; /* Updated */
 
     /* ACCENT & DESTRUCTIVE */
-    --accent: 198 100% 44%;             /* Engezna Blue */
+    --accent: 198 100% 44%; /* Engezna Blue */
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;           /* #EF4444 Red */
+    --destructive: 0 84% 60%; /* #EF4444 Red */
     --destructive-foreground: 0 0% 100%;
 
     /* CHART COLORS */
-    --chart-1: 198 100% 44%;            /* Engezna Blue */
-    --chart-2: 217 91% 60%;             /* Blue #3B82F6 */
-    --chart-3: 142 71% 45%;             /* Green #22C55E */
-    --chart-4: 48 97% 53%;              /* Yellow #FACC15 */
-    --chart-5: 280 65% 60%;             /* Purple */
+    --chart-1: 198 100% 44%; /* Engezna Blue */
+    --chart-2: 217 91% 60%; /* Blue #3B82F6 */
+    --chart-3: 142 71% 45%; /* Green #22C55E */
+    --chart-4: 48 97% 53%; /* Yellow #FACC15 */
+    --chart-5: 280 65% 60%; /* Purple */
 
     /* UTILITY */
     --radius: 0.5rem;
   }
-
 }
 
 /* UTILITY CLASSES */
 @layer utilities {
   /* Backgrounds - Primary */
-  .bg-primary { background-color: hsl(var(--primary)); }
-  .bg-deal { background-color: hsl(var(--deal)); }
-  .bg-premium { background-color: hsl(var(--premium)); }
-  .bg-info { background-color: hsl(var(--info)); }
-  .bg-error { background-color: hsl(var(--error)); }
-  .bg-success { background-color: hsl(var(--success)); }
-  .bg-warning { background-color: hsl(var(--warning)); }
-  .bg-in-progress { background-color: hsl(var(--in-progress)); }
+  .bg-primary {
+    background-color: hsl(var(--primary));
+  }
+  .bg-deal {
+    background-color: hsl(var(--deal));
+  }
+  .bg-premium {
+    background-color: hsl(var(--premium));
+  }
+  .bg-info {
+    background-color: hsl(var(--info));
+  }
+  .bg-error {
+    background-color: hsl(var(--error));
+  }
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  .bg-warning {
+    background-color: hsl(var(--warning));
+  }
+  .bg-in-progress {
+    background-color: hsl(var(--in-progress));
+  }
 
   /* Backgrounds - Card Tints (10% opacity) */
-  .bg-card-primary { background-color: hsl(var(--card-bg-primary)); }
-  .bg-card-success { background-color: hsl(var(--card-bg-success)); }
-  .bg-card-info { background-color: hsl(var(--card-bg-info)); }
-  .bg-card-warning { background-color: hsl(var(--card-bg-warning)); }
-  .bg-card-error { background-color: hsl(var(--card-bg-error)); }
-  .bg-card-amber { background-color: hsl(var(--card-bg-amber)); }
-  .bg-card-purple { background-color: hsl(var(--card-bg-purple)); }
-  .bg-card-emerald { background-color: hsl(var(--card-bg-emerald)); }
-  .bg-card-orange { background-color: hsl(var(--card-bg-orange)); }
+  .bg-card-primary {
+    background-color: hsl(var(--card-bg-primary));
+  }
+  .bg-card-success {
+    background-color: hsl(var(--card-bg-success));
+  }
+  .bg-card-info {
+    background-color: hsl(var(--card-bg-info));
+  }
+  .bg-card-warning {
+    background-color: hsl(var(--card-bg-warning));
+  }
+  .bg-card-error {
+    background-color: hsl(var(--card-bg-error));
+  }
+  .bg-card-amber {
+    background-color: hsl(var(--card-bg-amber));
+  }
+  .bg-card-purple {
+    background-color: hsl(var(--card-bg-purple));
+  }
+  .bg-card-emerald {
+    background-color: hsl(var(--card-bg-emerald));
+  }
+  .bg-card-orange {
+    background-color: hsl(var(--card-bg-orange));
+  }
 
   /* Extended semantic backgrounds */
-  .bg-amber { background-color: hsl(var(--amber)); }
-  .bg-purple { background-color: hsl(var(--purple)); }
-  .bg-emerald { background-color: hsl(var(--emerald)); }
-  .bg-orange { background-color: hsl(var(--orange)); }
+  .bg-amber {
+    background-color: hsl(var(--amber));
+  }
+  .bg-purple {
+    background-color: hsl(var(--purple));
+  }
+  .bg-emerald {
+    background-color: hsl(var(--emerald));
+  }
+  .bg-orange {
+    background-color: hsl(var(--orange));
+  }
 
   /* Text Colors - Brand */
-  .text-primary { color: hsl(var(--primary)); }
-  .text-deal { color: hsl(var(--deal)); }
-  .text-premium { color: hsl(var(--premium)); }
-  .text-info { color: hsl(var(--info)); }
-  .text-error { color: hsl(var(--error)); }
-  .text-success { color: hsl(var(--success)); }
-  .text-warning { color: hsl(var(--warning)); }
-  .text-in-progress { color: hsl(var(--in-progress)); }
-  .text-amber { color: hsl(var(--amber)); }
-  .text-purple { color: hsl(var(--purple)); }
-  .text-emerald { color: hsl(var(--emerald)); }
-  .text-orange { color: hsl(var(--orange)); }
+  .text-primary {
+    color: hsl(var(--primary));
+  }
+  .text-deal {
+    color: hsl(var(--deal));
+  }
+  .text-premium {
+    color: hsl(var(--premium));
+  }
+  .text-info {
+    color: hsl(var(--info));
+  }
+  .text-error {
+    color: hsl(var(--error));
+  }
+  .text-success {
+    color: hsl(var(--success));
+  }
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+  .text-in-progress {
+    color: hsl(var(--in-progress));
+  }
+  .text-amber {
+    color: hsl(var(--amber));
+  }
+  .text-purple {
+    color: hsl(var(--purple));
+  }
+  .text-emerald {
+    color: hsl(var(--emerald));
+  }
+  .text-orange {
+    color: hsl(var(--orange));
+  }
 
   /* Text Colors - Hierarchy */
-  .text-body { color: hsl(var(--text-primary)); }
-  .text-secondary-text { color: hsl(var(--text-secondary)); }
-  .text-muted-text { color: hsl(var(--text-muted)); }
+  .text-body {
+    color: hsl(var(--text-primary));
+  }
+  .text-secondary-text {
+    color: hsl(var(--text-secondary));
+  }
+  .text-muted-text {
+    color: hsl(var(--text-muted));
+  }
 
   /* Legacy naming support - DEPRECATED (use new names) */
-  .text-brand-orange { color: hsl(var(--primary)); }
-  .text-brand-orange-accent { color: hsl(var(--deal)); }
-  .text-brand-gold { color: hsl(var(--premium)); }
-  .text-brand-blue { color: hsl(var(--info)); }
-  .text-orange-accent { color: hsl(var(--deal)); }
-  .text-gold { color: hsl(var(--premium)); }
-  .text-blue { color: hsl(var(--info)); }
+  .text-brand-orange {
+    color: hsl(var(--primary));
+  }
+  .text-brand-orange-accent {
+    color: hsl(var(--deal));
+  }
+  .text-brand-gold {
+    color: hsl(var(--premium));
+  }
+  .text-brand-blue {
+    color: hsl(var(--info));
+  }
+  .text-orange-accent {
+    color: hsl(var(--deal));
+  }
+  .text-gold {
+    color: hsl(var(--premium));
+  }
+  .text-blue {
+    color: hsl(var(--info));
+  }
 
-  .bg-brand-orange { background-color: hsl(var(--primary)); }
-  .bg-brand-orange-accent { background-color: hsl(var(--deal)); }
-  .bg-brand-gold { background-color: hsl(var(--premium)); }
-  .bg-brand-blue { background-color: hsl(var(--info)); }
-  .bg-orange-accent { background-color: hsl(var(--deal)); }
-  .bg-gold { background-color: hsl(var(--premium)); }
-  .bg-blue { background-color: hsl(var(--info)); }
+  .bg-brand-orange {
+    background-color: hsl(var(--primary));
+  }
+  .bg-brand-orange-accent {
+    background-color: hsl(var(--deal));
+  }
+  .bg-brand-gold {
+    background-color: hsl(var(--premium));
+  }
+  .bg-brand-blue {
+    background-color: hsl(var(--info));
+  }
+  .bg-orange-accent {
+    background-color: hsl(var(--deal));
+  }
+  .bg-gold {
+    background-color: hsl(var(--premium));
+  }
+  .bg-blue {
+    background-color: hsl(var(--info));
+  }
 
   /* Border Colors */
-  .border-primary { border-color: hsl(var(--primary)); }
-  .border-deal { border-color: hsl(var(--deal)); }
-  .border-success { border-color: hsl(var(--success)); }
-  .border-error { border-color: hsl(var(--error)); }
-  .border-warning { border-color: hsl(var(--warning)); }
-  .border-amber { border-color: hsl(var(--amber)); }
-  .border-purple { border-color: hsl(var(--purple)); }
-  .border-emerald { border-color: hsl(var(--emerald)); }
-  .border-orange { border-color: hsl(var(--orange)); }
-  .border-brand-orange { border-color: hsl(var(--primary)); }
-  .border-orange-accent { border-color: hsl(var(--deal)); }
+  .border-primary {
+    border-color: hsl(var(--primary));
+  }
+  .border-deal {
+    border-color: hsl(var(--deal));
+  }
+  .border-success {
+    border-color: hsl(var(--success));
+  }
+  .border-error {
+    border-color: hsl(var(--error));
+  }
+  .border-warning {
+    border-color: hsl(var(--warning));
+  }
+  .border-amber {
+    border-color: hsl(var(--amber));
+  }
+  .border-purple {
+    border-color: hsl(var(--purple));
+  }
+  .border-emerald {
+    border-color: hsl(var(--emerald));
+  }
+  .border-orange {
+    border-color: hsl(var(--orange));
+  }
+  .border-brand-orange {
+    border-color: hsl(var(--primary));
+  }
+  .border-orange-accent {
+    border-color: hsl(var(--deal));
+  }
 
   /* Hover variants with proper transitions */
-  .hover\:border-success:hover { border-color: hsl(var(--success)); }
-  .hover\:border-error:hover { border-color: hsl(var(--error)); }
-  .hover\:border-warning:hover { border-color: hsl(var(--warning)); }
-  .hover\:border-amber:hover { border-color: hsl(var(--amber)); }
-  .hover\:border-purple:hover { border-color: hsl(var(--purple)); }
-  .hover\:border-emerald:hover { border-color: hsl(var(--emerald)); }
-  .hover\:border-primary:hover { border-color: hsl(var(--primary)); }
+  .hover\:border-success:hover {
+    border-color: hsl(var(--success));
+  }
+  .hover\:border-error:hover {
+    border-color: hsl(var(--error));
+  }
+  .hover\:border-warning:hover {
+    border-color: hsl(var(--warning));
+  }
+  .hover\:border-amber:hover {
+    border-color: hsl(var(--amber));
+  }
+  .hover\:border-purple:hover {
+    border-color: hsl(var(--purple));
+  }
+  .hover\:border-emerald:hover {
+    border-color: hsl(var(--emerald));
+  }
+  .hover\:border-primary:hover {
+    border-color: hsl(var(--primary));
+  }
 
   /* Hide scrollbar utility */
   .scrollbar-hide {
@@ -213,7 +348,8 @@
   }
 
   @keyframes pulse-badge {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
       transform: scale(1);
       box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
@@ -241,7 +377,6 @@
   .gradient-brand {
     background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(198 100% 54%) 100%);
   }
-
 }
 
 /* SEMANTIC COMPONENTS */
@@ -322,11 +457,11 @@
 }
 
 /* RTL Support for Arabic */
-[dir="rtl"] {
+[dir='rtl'] {
   direction: rtl;
 }
 
-[dir="ltr"] {
+[dir='ltr'] {
   direction: ltr;
 }
 
@@ -364,7 +499,7 @@
 }
 
 /* Smooth transitions - exclude html and body to prevent flash on navigation */
-*:not(html):not(body):not([data-theme-transition="false"]) {
+*:not(html):not(body):not([data-theme-transition='false']) {
   @apply transition-colors duration-200;
 }
 
@@ -531,13 +666,13 @@ html.no-transition * {
 
 /* Prevent iOS zoom on input focus - use 16px minimum on mobile */
 @media screen and (max-width: 767px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="number"],
-  input[type="tel"],
-  input[type="search"],
-  input[type="url"],
+  input[type='text'],
+  input[type='email'],
+  input[type='password'],
+  input[type='number'],
+  input[type='tel'],
+  input[type='search'],
+  input[type='url'],
   textarea,
   select {
     font-size: 16px !important;
@@ -550,20 +685,20 @@ html.no-transition * {
  * ======================================== */
 
 /* Chrome, Safari, Edge, Opera */
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
 /* Firefox */
-input[type="number"] {
+input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
 
 /* Clean number input styling for pricing */
-input[type="number"].price-input {
+input[type='number'].price-input {
   text-align: center;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -681,7 +816,9 @@ input[type="number"].price-input {
 
   /* Dashboard Number Font - Inter for Professional Stats */
   .font-numbers {
-    font-feature-settings: 'tnum' 1, 'lnum' 1;
+    font-feature-settings:
+      'tnum' 1,
+      'lnum' 1;
     font-variant-numeric: tabular-nums lining-nums;
   }
 }
@@ -724,40 +861,40 @@ input[type="number"].price-input {
 @layer components {
   /* Category Card Gradients */
   .gradient-category-blue {
-    background: linear-gradient(145deg, #E6F7FF 0%, #FFFFFF 100%);
+    background: linear-gradient(145deg, #e6f7ff 0%, #ffffff 100%);
   }
 
   .gradient-category-green {
-    background: linear-gradient(145deg, #E6FFF5 0%, #FFFFFF 100%);
+    background: linear-gradient(145deg, #e6fff5 0%, #ffffff 100%);
   }
 
   .gradient-category-orange {
-    background: linear-gradient(145deg, #FFF7E6 0%, #FFFFFF 100%);
+    background: linear-gradient(145deg, #fff7e6 0%, #ffffff 100%);
   }
 
   .gradient-category-purple {
-    background: linear-gradient(145deg, #F5F0FF 0%, #FFFFFF 100%);
+    background: linear-gradient(145deg, #f5f0ff 0%, #ffffff 100%);
   }
 
   .gradient-category-pink {
-    background: linear-gradient(145deg, #FFF0F5 0%, #FFFFFF 100%);
+    background: linear-gradient(145deg, #fff0f5 0%, #ffffff 100%);
   }
 
   /* Promo Card Gradients */
   .gradient-promo-orange {
-    background: linear-gradient(135deg, #FF6B35 0%, #F7941E 100%);
+    background: linear-gradient(135deg, #ff6b35 0%, #f7941e 100%);
   }
 
   .gradient-promo-red {
-    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   }
 
   .gradient-promo-blue {
-    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
   }
 
   .gradient-promo-green {
-    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
   }
 
   /* Glass Morphism Effect */
@@ -841,7 +978,7 @@ input[type="number"].price-input {
 
   .btn-elegant-primary {
     @apply btn-elegant text-white;
-    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
     box-shadow: 0 4px 12px rgba(0, 157, 224, 0.3);
   }
 
@@ -883,7 +1020,7 @@ input[type="number"].price-input {
 
   .chip-elegant-active {
     @apply chip-elegant text-white;
-    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
     box-shadow: 0 2px 8px rgba(0, 157, 224, 0.3);
   }
 
@@ -926,37 +1063,52 @@ input[type="number"].price-input {
 
   .badge-discount-elegant {
     @apply badge-elegant text-white;
-    background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
     box-shadow: 0 2px 6px rgba(34, 197, 94, 0.3);
   }
 
   .badge-new-elegant {
     @apply badge-elegant text-white;
-    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
     box-shadow: 0 2px 6px rgba(0, 157, 224, 0.3);
   }
 
   .badge-promo-elegant {
     @apply badge-elegant text-white;
-    background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
     box-shadow: 0 2px 6px rgba(249, 115, 22, 0.3);
   }
 }
 
 /* Smooth Micro-interactions */
 @keyframes elegant-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes elegant-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes elegant-scale {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
 }
 
 @keyframes slide-up {
@@ -1017,24 +1169,36 @@ input[type="number"].price-input {
 }
 
 /* Staggered Animation Delays */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+}
 
 /* Text Gradients */
 @layer utilities {
   .text-gradient-brand {
-    background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%);
+    background: linear-gradient(135deg, #009de0 0%, #0077b6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .text-gradient-gold {
-    background: linear-gradient(135deg, #FFD166 0%, #F59E0B 100%);
+    background: linear-gradient(135deg, #ffd166 0%, #f59e0b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

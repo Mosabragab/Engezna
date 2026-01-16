@@ -52,16 +52,14 @@ export async function getProviders(
     const offset = (page - 1) * actualLimit;
 
     // Build query
-    let query = supabase
-      .from('providers')
-      .select(
-        `
+    let query = supabase.from('providers').select(
+      `
         *,
         governorate:governorates(id, name_ar, name_en),
         city:cities(id, name_ar, name_en)
       `,
-        { count: 'exact' }
-      );
+      { count: 'exact' }
+    );
 
     // Apply filters
     if (status) {
@@ -141,9 +139,7 @@ export async function getProviders(
  * جلب مقدم خدمة واحد بالمعرف
  * Fetch a single provider by ID
  */
-export async function getProviderById(
-  providerId: string
-): Promise<OperationResult<AdminProvider>> {
+export async function getProviderById(providerId: string): Promise<OperationResult<AdminProvider>> {
   try {
     const supabase = createAdminClient();
 
@@ -297,7 +293,11 @@ export async function rejectProvider(
 ): Promise<OperationResult<AdminProvider>> {
   try {
     if (!reason || !reason.trim()) {
-      return { success: false, error: 'Rejection reason is required', errorCode: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'Rejection reason is required',
+        errorCode: 'VALIDATION_ERROR',
+      };
     }
 
     const supabase = createAdminClient();
@@ -385,7 +385,11 @@ export async function suspendProvider(
 ): Promise<OperationResult<AdminProvider>> {
   try {
     if (!reason || !reason.trim()) {
-      return { success: false, error: 'Suspension reason is required', errorCode: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'Suspension reason is required',
+        errorCode: 'VALIDATION_ERROR',
+      };
     }
 
     const supabase = createAdminClient();
@@ -552,7 +556,11 @@ export async function updateProviderCommission(
   try {
     // Validate commission rate
     if (commissionRate < 0 || commissionRate > 100) {
-      return { success: false, error: 'Commission rate must be between 0 and 100', errorCode: 'VALIDATION_ERROR' };
+      return {
+        success: false,
+        error: 'Commission rate must be between 0 and 100',
+        errorCode: 'VALIDATION_ERROR',
+      };
     }
 
     const supabase = createAdminClient();
@@ -692,9 +700,7 @@ export async function getProviderStats(): Promise<
     const supabase = createAdminClient();
 
     // Get total count and breakdown by status
-    const { data: providers, error } = await supabase
-      .from('providers')
-      .select('status, category');
+    const { data: providers, error } = await supabase.from('providers').select('status, category');
 
     if (error) {
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };

@@ -1,140 +1,140 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useCallback } from 'react'
-import { useLocale } from 'next-intl'
-import { usePathname } from 'next/navigation'
-import { PermissionsProvider } from '@/lib/permissions/use-permissions'
-import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext'
-import { AdminSidebar } from '@/components/admin/AdminSidebar'
-import { AdminRegionProvider, useAdminRegion } from '@/lib/contexts/AdminRegionContext'
-import { createClient } from '@/lib/supabase/client'
+import { useState, useEffect, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { usePathname } from 'next/navigation';
+import { PermissionsProvider } from '@/lib/permissions/use-permissions';
+import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminRegionProvider, useAdminRegion } from '@/lib/contexts/AdminRegionContext';
+import { createClient } from '@/lib/supabase/client';
 
 interface AdminLayoutInnerProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
-  const pathname = usePathname()
-  const { isOpen, close, hasMounted } = useAdminSidebar()
+  const pathname = usePathname();
+  const { isOpen, close, hasMounted } = useAdminSidebar();
   const {
     hasRegionFilter,
     allowedGovernorateIds,
     regionProviderIds,
     loading: regionLoading,
-  } = useAdminRegion()
+  } = useAdminRegion();
 
-  const [pendingProviders, setPendingProviders] = useState(0)
-  const [openTickets, setOpenTickets] = useState(0)
-  const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0)
-  const [pendingRefunds, setPendingRefunds] = useState(0)
+  const [pendingProviders, setPendingProviders] = useState(0);
+  const [openTickets, setOpenTickets] = useState(0);
+  const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0);
+  const [pendingRefunds, setPendingRefunds] = useState(0);
 
   // Check if current page is login page - don't show sidebar
-  const isLoginPage = pathname?.includes('/admin/login')
+  const isLoginPage = pathname?.includes('/admin/login');
 
   const loadBadgeCounts = useCallback(async () => {
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Get pending providers count (filtered by region)
       let providersQuery = supabase
         .from('providers')
         .select('*', { count: 'exact', head: true })
-        .in('status', ['pending_approval', 'incomplete'])
+        .in('status', ['pending_approval', 'incomplete']);
 
       if (hasRegionFilter) {
-        providersQuery = providersQuery.in('governorate_id', allowedGovernorateIds)
+        providersQuery = providersQuery.in('governorate_id', allowedGovernorateIds);
       }
 
-      const { count: providersCount, error: providersError } = await providersQuery
+      const { count: providersCount, error: providersError } = await providersQuery;
 
       if (!providersError) {
-        setPendingProviders(providersCount || 0)
+        setPendingProviders(providersCount || 0);
       }
 
       // Get open tickets count (filtered by provider's region)
       // If regional admin has no providers in their region, show 0
       if (hasRegionFilter && regionProviderIds.length === 0) {
-        setOpenTickets(0)
+        setOpenTickets(0);
       } else {
         let ticketsQuery = supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'open')
+          .eq('status', 'open');
 
         if (hasRegionFilter && regionProviderIds.length > 0) {
-          ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds)
+          ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds);
         }
 
-        const { count: ticketsCount, error: ticketsError } = await ticketsQuery
+        const { count: ticketsCount, error: ticketsError } = await ticketsQuery;
 
         if (!ticketsError) {
-          setOpenTickets(ticketsCount || 0)
+          setOpenTickets(ticketsCount || 0);
         }
       }
 
       // Get pending banner approvals count (filtered by provider's region)
       // If regional admin has no providers in their region, show 0
       if (hasRegionFilter && regionProviderIds.length === 0) {
-        setPendingBannerApprovals(0)
+        setPendingBannerApprovals(0);
       } else {
         let bannersQuery = supabase
           .from('homepage_banners')
           .select('*', { count: 'exact', head: true })
           .not('provider_id', 'is', null)
-          .eq('approval_status', 'pending')
+          .eq('approval_status', 'pending');
 
         if (hasRegionFilter && regionProviderIds.length > 0) {
-          bannersQuery = bannersQuery.in('provider_id', regionProviderIds)
+          bannersQuery = bannersQuery.in('provider_id', regionProviderIds);
         }
 
-        const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery
+        const { count: bannerApprovalsCount, error: bannerApprovalsError } = await bannersQuery;
 
         if (!bannerApprovalsError) {
-          setPendingBannerApprovals(bannerApprovalsCount || 0)
+          setPendingBannerApprovals(bannerApprovalsCount || 0);
         }
       }
 
       // Get pending refunds count (filtered by provider's region)
       // If regional admin has no providers in their region, show 0
       if (hasRegionFilter && regionProviderIds.length === 0) {
-        setPendingRefunds(0)
+        setPendingRefunds(0);
       } else {
         let refundsQuery = supabase
           .from('refunds')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending')
+          .eq('status', 'pending');
 
         if (hasRegionFilter && regionProviderIds.length > 0) {
-          refundsQuery = refundsQuery.in('provider_id', regionProviderIds)
+          refundsQuery = refundsQuery.in('provider_id', regionProviderIds);
         }
 
-        const { count: refundsCount, error: refundsError } = await refundsQuery
+        const { count: refundsCount, error: refundsError } = await refundsQuery;
 
         if (!refundsError) {
-          setPendingRefunds(refundsCount || 0)
+          setPendingRefunds(refundsCount || 0);
         }
       }
     } catch {
       // Silently fail for badge counts - not critical
     }
-  }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds])
+  }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds]);
 
   useEffect(() => {
     // Don't load badge counts on login page or while region data is loading
-    if (isLoginPage || regionLoading) return
+    if (isLoginPage || regionLoading) return;
 
     // Load badge counts using cached region data
-    loadBadgeCounts()
+    loadBadgeCounts();
     // Refresh badge counts every 60 seconds
-    const interval = setInterval(loadBadgeCounts, 60000)
-    return () => clearInterval(interval)
-  }, [isLoginPage, regionLoading, loadBadgeCounts])
+    const interval = setInterval(loadBadgeCounts, 60000);
+    return () => clearInterval(interval);
+  }, [isLoginPage, regionLoading, loadBadgeCounts]);
 
   // Real-time subscription for admin badge counts
   useEffect(() => {
-    if (isLoginPage || regionLoading) return
+    if (isLoginPage || regionLoading) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Subscribe to refunds changes
     const refundsChannel = supabase
@@ -148,10 +148,10 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         },
         () => {
           // Reload badge counts when refunds change
-          loadBadgeCounts()
+          loadBadgeCounts();
         }
       )
-      .subscribe()
+      .subscribe();
 
     // Subscribe to support_tickets changes
     const ticketsChannel = supabase
@@ -165,10 +165,10 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         },
         () => {
           // Reload badge counts when tickets change
-          loadBadgeCounts()
+          loadBadgeCounts();
         }
       )
-      .subscribe()
+      .subscribe();
 
     // Subscribe to providers changes (for pending approvals)
     const providersChannel = supabase
@@ -182,17 +182,17 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         },
         () => {
           // Reload badge counts when providers change
-          loadBadgeCounts()
+          loadBadgeCounts();
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(refundsChannel)
-      supabase.removeChannel(ticketsChannel)
-      supabase.removeChannel(providersChannel)
-    }
-  }, [isLoginPage, regionLoading, loadBadgeCounts])
+      supabase.removeChannel(refundsChannel);
+      supabase.removeChannel(ticketsChannel);
+      supabase.removeChannel(providersChannel);
+    };
+  }, [isLoginPage, regionLoading, loadBadgeCounts]);
 
   // Always render sidebar to prevent mounting issues on navigation
   // Hide via CSS on login page for smooth transitions
@@ -217,23 +217,17 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         {children}
       </div>
     </div>
-  )
+  );
 }
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <PermissionsProvider>
       <AdminRegionProvider>
         <AdminSidebarProvider>
-          <AdminLayoutInner>
-            {children}
-          </AdminLayoutInner>
+          <AdminLayoutInner>{children}</AdminLayoutInner>
         </AdminSidebarProvider>
       </AdminRegionProvider>
     </PermissionsProvider>
-  )
+  );
 }

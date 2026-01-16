@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/lib/auth'
-import { CustomerLayout } from '@/components/customer/layout'
-import { BroadcastComparison } from '@/components/custom-order'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth';
+import { CustomerLayout } from '@/components/customer/layout';
+import { BroadcastComparison } from '@/components/custom-order';
+import { Button } from '@/components/ui/button';
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,34 +17,35 @@ import {
   CheckCircle2,
   Bell,
   RefreshCw,
-} from 'lucide-react'
-import { motion } from 'framer-motion'
-import type { BroadcastWithRequests, BroadcastStatus } from '@/types/custom-order'
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import type { BroadcastWithRequests, BroadcastStatus } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function CustomOrderReviewPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const params = useParams()
-  const broadcastId = params.id as string
-  const isRTL = locale === 'ar'
-  const { user, loading: authLoading } = useAuth()
+  const locale = useLocale();
+  const router = useRouter();
+  const params = useParams();
+  const broadcastId = params.id as string;
+  const isRTL = locale === 'ar';
+  const { user, loading: authLoading } = useAuth();
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [broadcast, setBroadcast] = useState<BroadcastWithRequests | null>(null)
-  const [selectingProvider, setSelectingProvider] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [broadcast, setBroadcast] = useState<BroadcastWithRequests | null>(null);
+  const [selectingProvider, setSelectingProvider] = useState(false);
 
   // Load broadcast data
   const loadBroadcast = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { data, error: fetchError } = await supabase
       .from('custom_order_broadcasts')
-      .select(`
+      .select(
+        `
         *,
         requests:custom_order_requests(
           *,
@@ -57,15 +58,16 @@ export default function CustomOrderReviewPage() {
             delivery_fee
           )
         )
-      `)
+      `
+      )
       .eq('id', broadcastId)
       .eq('customer_id', user.id)
-      .single()
+      .single();
 
     if (fetchError || !data) {
-      console.error('Error loading broadcast:', fetchError)
-      setError(isRTL ? 'لم يتم العثور على الطلب' : 'Order not found')
-      return
+      console.error('Error loading broadcast:', fetchError);
+      setError(isRTL ? 'لم يتم العثور على الطلب' : 'Order not found');
+      return;
     }
 
     // Transform data
@@ -75,35 +77,35 @@ export default function CustomOrderReviewPage() {
         ...req,
         provider: Array.isArray(req.provider) ? req.provider[0] : req.provider,
       })),
-    }
+    };
 
-    setBroadcast(transformedBroadcast)
-  }, [user?.id, broadcastId, isRTL])
+    setBroadcast(transformedBroadcast);
+  }, [user?.id, broadcastId, isRTL]);
 
   // Initial load
   useEffect(() => {
     // Wait for auth to finish loading before checking user
-    if (authLoading) return
+    if (authLoading) return;
 
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/orders/custom-review/${broadcastId}`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/orders/custom-review/${broadcastId}`);
+      return;
     }
 
     const init = async () => {
-      setLoading(true)
-      await loadBroadcast()
-      setLoading(false)
-    }
+      setLoading(true);
+      await loadBroadcast();
+      setLoading(false);
+    };
 
-    init()
-  }, [user, authLoading, router, locale, broadcastId, loadBroadcast])
+    init();
+  }, [user, authLoading, router, locale, broadcastId, loadBroadcast]);
 
   // Realtime subscription
   useEffect(() => {
-    if (!broadcastId || !user?.id) return
+    if (!broadcastId || !user?.id) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Subscribe to broadcast updates
     const broadcastChannel = supabase
@@ -117,10 +119,10 @@ export default function CustomOrderReviewPage() {
           filter: `id=eq.${broadcastId}`,
         },
         () => {
-          loadBroadcast()
+          loadBroadcast();
         }
       )
-      .subscribe()
+      .subscribe();
 
     // Subscribe to request updates (new pricing)
     const requestsChannel = supabase
@@ -134,79 +136,77 @@ export default function CustomOrderReviewPage() {
           filter: `broadcast_id=eq.${broadcastId}`,
         },
         () => {
-          loadBroadcast()
+          loadBroadcast();
           // Play notification sound for new pricing
           try {
-            const audio = new Audio('/sounds/notification.mp3')
-            audio.volume = 0.5
-            audio.play().catch(() => {})
+            const audio = new Audio('/sounds/notification.mp3');
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
           } catch {
             // Sound not available
           }
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(broadcastChannel)
-      supabase.removeChannel(requestsChannel)
-    }
-  }, [broadcastId, user?.id, loadBroadcast])
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(requestsChannel);
+    };
+  }, [broadcastId, user?.id, loadBroadcast]);
 
   // Handle provider selection (approve pricing) - uses RPC function to bypass RLS
   const handleSelectProvider = async (orderId: string) => {
-    if (!broadcast) return
+    if (!broadcast) return;
 
-    setSelectingProvider(true)
-    setError(null)
+    setSelectingProvider(true);
+    setError(null);
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Find the selected request
-      const selectedRequest = broadcast.requests.find((r) => r.order_id === orderId)
+      const selectedRequest = broadcast.requests.find((r) => r.order_id === orderId);
       if (!selectedRequest) {
-        throw new Error('Request not found')
+        throw new Error('Request not found');
       }
 
       // Use RPC function for approval (bypasses RLS)
       const { data, error: rpcError } = await supabase.rpc('customer_approve_custom_order', {
         p_request_id: selectedRequest.id,
         p_broadcast_id: broadcastId,
-      })
+      });
 
       if (rpcError) {
-        console.error('RPC Error:', rpcError)
-        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order')
+        console.error('RPC Error:', rpcError);
+        throw new Error(isRTL ? 'حدث خطأ في الموافقة' : 'Error approving order');
       }
 
       // Check the result
       if (!data?.success) {
-        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred')
-        throw new Error(errorMsg)
+        const errorMsg = data?.error || (isRTL ? 'حدث خطأ' : 'An error occurred');
+        throw new Error(errorMsg);
       }
 
       // Success - redirect to order tracking
-      const approvedOrderId = data.order_id || orderId
-      router.push(`/${locale}/orders/${approvedOrderId}?success=approved`)
+      const approvedOrderId = data.order_id || orderId;
+      router.push(`/${locale}/orders/${approvedOrderId}?success=approved`);
     } catch (err) {
-      console.error('Error selecting provider:', err)
+      console.error('Error selecting provider:', err);
       setError(
-        isRTL
-          ? 'حدث خطأ أثناء اختيار التاجر'
-          : 'An error occurred while selecting the provider'
-      )
+        isRTL ? 'حدث خطأ أثناء اختيار التاجر' : 'An error occurred while selecting the provider'
+      );
     } finally {
-      setSelectingProvider(false)
+      setSelectingProvider(false);
     }
-  }
+  };
 
   // Refresh data
   const handleRefresh = async () => {
-    setLoading(true)
-    await loadBroadcast()
-    setLoading(false)
-  }
+    setLoading(true);
+    await loadBroadcast();
+    setLoading(false);
+  };
 
   // Loading state (include auth loading)
   if (loading || authLoading) {
@@ -221,7 +221,7 @@ export default function CustomOrderReviewPage() {
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Error state
@@ -236,17 +236,19 @@ export default function CustomOrderReviewPage() {
             {error || (isRTL ? 'حدث خطأ' : 'An error occurred')}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mb-6 text-center max-w-md">
-            {isRTL
-              ? 'لم نتمكن من تحميل تفاصيل طلبك.'
-              : 'We could not load your order details.'}
+            {isRTL ? 'لم نتمكن من تحميل تفاصيل طلبك.' : 'We could not load your order details.'}
           </p>
           <Button onClick={() => router.push(`/${locale}/orders`)}>
-            {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
+            {isRTL ? (
+              <ArrowRight className="w-4 h-4 me-2" />
+            ) : (
+              <ArrowLeft className="w-4 h-4 me-2" />
+            )}
             {isRTL ? 'العودة للطلبات' : 'Back to Orders'}
           </Button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Broadcast completed
@@ -270,21 +272,16 @@ export default function CustomOrderReviewPage() {
               : 'Your order has been confirmed. You can track it from the orders page.'}
           </p>
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/${locale}/orders`)}
-            >
+            <Button variant="outline" onClick={() => router.push(`/${locale}/orders`)}>
               {isRTL ? 'عرض جميع الطلبات' : 'View All Orders'}
             </Button>
-            <Button
-              onClick={() => router.push(`/${locale}/orders/${broadcast.winning_order_id}`)}
-            >
+            <Button onClick={() => router.push(`/${locale}/orders/${broadcast.winning_order_id}`)}>
               {isRTL ? 'متابعة الطلب' : 'Track Order'}
             </Button>
           </div>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Broadcast expired
@@ -308,12 +305,12 @@ export default function CustomOrderReviewPage() {
           </Button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   // Count priced requests
-  const pricedRequests = broadcast.requests.filter((r) => r.status === 'priced')
-  const pendingRequests = broadcast.requests.filter((r) => r.status === 'pending')
+  const pricedRequests = broadcast.requests.filter((r) => r.status === 'priced');
+  const pendingRequests = broadcast.requests.filter((r) => r.status === 'pending');
 
   return (
     <CustomerLayout>
@@ -327,7 +324,11 @@ export default function CustomOrderReviewPage() {
               onClick={() => router.push(`/${locale}/orders`)}
               className="mb-2"
             >
-              {isRTL ? <ArrowRight className="w-4 h-4 me-2" /> : <ArrowLeft className="w-4 h-4 me-2" />}
+              {isRTL ? (
+                <ArrowRight className="w-4 h-4 me-2" />
+              ) : (
+                <ArrowLeft className="w-4 h-4 me-2" />
+              )}
               {isRTL ? 'العودة' : 'Back'}
             </Button>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
@@ -340,12 +341,7 @@ export default function CustomOrderReviewPage() {
             </p>
           </div>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
+          <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
@@ -409,5 +405,5 @@ export default function CustomOrderReviewPage() {
         )}
       </div>
     </CustomerLayout>
-  )
+  );
 }

@@ -27,6 +27,7 @@
 **Engezna (إنجزنا)** - meaning "We've got it done!" - is a B2C delivery marketplace designed to serve all of Egypt, starting from Upper Egypt governorates. We connect local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers through a modern, bilingual platform.
 
 #### Key Differentiator
+
 - **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
 - Providers manage their own delivery staff
@@ -34,13 +35,13 @@
 
 ### Features
 
-| Customers | Merchants | Admins |
-|-----------|-----------|--------|
-| Browse local stores | Simple product catalog | Complete platform oversight |
-| Search & filter | Real-time order notifications | User & provider management |
-| Easy ordering with tracking | 0% → max 7% commission | Financial reporting |
-| Multiple payment options | Sales analytics | Promo & campaign management |
-| Bilingual interface | Use existing delivery staff | Real-time analytics |
+| Customers                   | Merchants                     | Admins                      |
+| --------------------------- | ----------------------------- | --------------------------- |
+| Browse local stores         | Simple product catalog        | Complete platform oversight |
+| Search & filter             | Real-time order notifications | User & provider management  |
+| Easy ordering with tracking | 0% → max 7% commission        | Financial reporting         |
+| Multiple payment options    | Sales analytics               | Promo & campaign management |
+| Bilingual interface         | Use existing delivery staff   | Real-time analytics         |
 
 ### Tech Stack
 
@@ -77,6 +78,7 @@ npm run dev
 **Last Updated:** January 11, 2026 (Session 26)
 
 #### What's Working
+
 - ✅ Customer: Browsing, Cart, Checkout, Order Tracking, Reviews, Favorites, Promo Codes
 - ✅ Provider: Dashboard, Orders, Menu Management, Analytics, Settlements
 - ✅ Admin: RBAC/ABAC Permissions, Supervisors, Tasks, Approvals, Messaging
@@ -84,18 +86,19 @@ npm run dev
 - ✅ Custom Order System (Triple Broadcast) - Voice/Image/Text orders
 
 #### What's Pending
+
 - ⏸️ Push notifications (Firebase/SMS)
 - ⏸️ Email notifications (requires Resend/SendGrid)
 
 ### Documentation
 
-| Document | Description |
-|----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Detailed session history and updates |
-| [PRD.md](PRD.md) | Product Requirements Document |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
-| [API.md](API.md) | API endpoints documentation |
-| [claude.md](claude.md) | AI development assistant guide |
+| Document                           | Description                          |
+| ---------------------------------- | ------------------------------------ |
+| [CHANGELOG.md](CHANGELOG.md)       | Detailed session history and updates |
+| [PRD.md](PRD.md)                   | Product Requirements Document        |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines              |
+| [API.md](API.md)                   | API endpoints documentation          |
+| [claude.md](claude.md)             | AI development assistant guide       |
 
 ### Project Structure
 
@@ -132,6 +135,7 @@ engezna/
 **إنجزنا (Engezna)** - تعني "خلصناها!" - منصة توصيل B2C مصممة لخدمة جمهورية مصر العربية بالكامل، بدءاً من محافظات الصعيد.
 
 #### ميزتنا الرئيسية
+
 - **6 شهور بدون عمولة** ثم **حد أقصى 7%** (مقارنة بـ 25-30% للمنافسين)
 - **0% رسوم خدمة للعملاء** - دائماً!
 - المتاجر تدير فريق التوصيل الخاص بها
@@ -139,13 +143,13 @@ engezna/
 
 ### المميزات
 
-| العملاء | المتاجر | الإدارة |
-|---------|---------|---------|
-| تصفح المتاجر المحلية | إدارة قائمة المنتجات | إشراف كامل على المنصة |
-| البحث والتصفية | إشعارات فورية بالطلبات | إدارة المستخدمين والمتاجر |
-| طلب سهل مع التتبع | عمولة 0% → 7% حد أقصى | تقارير مالية |
-| خيارات دفع متعددة | تحليلات المبيعات | إدارة الخصومات والحملات |
-| واجهة ثنائية اللغة | استخدم فريق التوصيل الحالي | تحليلات فورية |
+| العملاء              | المتاجر                    | الإدارة                   |
+| -------------------- | -------------------------- | ------------------------- |
+| تصفح المتاجر المحلية | إدارة قائمة المنتجات       | إشراف كامل على المنصة     |
+| البحث والتصفية       | إشعارات فورية بالطلبات     | إدارة المستخدمين والمتاجر |
+| طلب سهل مع التتبع    | عمولة 0% → 7% حد أقصى      | تقارير مالية              |
+| خيارات دفع متعددة    | تحليلات المبيعات           | إدارة الخصومات والحملات   |
+| واجهة ثنائية اللغة   | استخدم فريق التوصيل الحالي | تحليلات فورية             |
 
 ### التقنيات
 
@@ -179,6 +183,7 @@ npm run dev
 **آخر تحديث:** 11 يناير 2026 (الجلسة 26)
 
 #### ما يعمل
+
 - ✅ العميل: التصفح، العربة، الدفع، تتبع الطلبات، التقييمات، المفضلة، أكواد الخصم
 - ✅ المتجر: لوحة التحكم، الطلبات، إدارة القائمة، التحليلات، التسويات
 - ✅ الإدارة: نظام الصلاحيات، المشرفين، المهام، الموافقات، الرسائل
@@ -186,6 +191,7 @@ npm run dev
 - ✅ نظام الطلبات الخاصة (Triple Broadcast) - صوت/صور/نص
 
 #### ما يحتاج استكمال
+
 - ⏸️ إشعارات الهاتف (Firebase/SMS)
 - ⏸️ إشعارات البريد (يتطلب Resend/SendGrid)
 

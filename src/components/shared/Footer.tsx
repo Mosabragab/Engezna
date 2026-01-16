@@ -1,10 +1,10 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useLocale, useTranslations } from 'next-intl'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useLocale, useTranslations } from 'next-intl';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { createClient } from '@/lib/supabase/client';
 import {
   Phone,
   MessageCircle,
@@ -19,64 +19,72 @@ import {
   Heart,
   User,
   Mail,
-  Loader2
-} from 'lucide-react'
+  Loader2,
+} from 'lucide-react';
 
 interface Governorate {
-  id: string
-  name_ar: string
-  name_en: string
-  is_active: boolean
+  id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
 }
 
 export function Footer() {
-  const locale = useLocale()
-  const t = useTranslations('footer')
-  const isRTL = locale === 'ar'
-  const [governorates, setGovernorates] = useState<Governorate[]>([])
-  const [loading, setLoading] = useState(true)
+  const locale = useLocale();
+  const t = useTranslations('footer');
+  const isRTL = locale === 'ar';
+  const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Fetch active governorates from database
   useEffect(() => {
     async function fetchGovernorates() {
       try {
-        const supabase = createClient()
+        const supabase = createClient();
         const { data, error } = await supabase
           .from('governorates')
           .select('id, name_ar, name_en, is_active')
           .eq('is_active', true)
-          .order('name_ar')
+          .order('name_ar');
 
         if (error) {
-          console.error('Error fetching governorates:', error)
+          console.error('Error fetching governorates:', error);
         } else {
-          setGovernorates(data || [])
+          setGovernorates(data || []);
         }
       } catch (err) {
-        console.error('Error fetching governorates:', err)
+        console.error('Error fetching governorates:', err);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    fetchGovernorates()
-  }, [])
+    fetchGovernorates();
+  }, []);
 
   const customerLinks = [
     { href: `/${locale}`, label: t('home'), icon: Home },
     { href: `/${locale}/orders`, label: t('myOrders'), icon: ShoppingBag },
     { href: `/${locale}/favorites`, label: t('favorites'), icon: Heart },
     { href: `/${locale}/profile/account`, label: t('myAccount'), icon: User },
-    { href: `/${locale}/help`, label: locale === 'ar' ? 'مركز المساعدة' : 'Help Center', icon: HelpCircle },
-    { href: `/${locale}/profile/support`, label: locale === 'ar' ? 'الدعم والشكاوى' : 'Support & Complaints', icon: MessageCircle },
-  ]
+    {
+      href: `/${locale}/help`,
+      label: locale === 'ar' ? 'مركز المساعدة' : 'Help Center',
+      icon: HelpCircle,
+    },
+    {
+      href: `/${locale}/profile/support`,
+      label: locale === 'ar' ? 'الدعم والشكاوى' : 'Support & Complaints',
+      icon: MessageCircle,
+    },
+  ];
 
   const partnerLinks = [
     { href: `/${locale}/partner`, label: t('becomePartner'), icon: Store },
     { href: `/${locale}/provider/login`, label: t('partnerLogin'), icon: LogIn },
     { href: `/${locale}/partner#features`, label: t('features'), icon: Sparkles },
     { href: `/${locale}/partner#faq`, label: t('faq'), icon: HelpCircle },
-  ]
+  ];
 
   return (
     <footer className="bg-gradient-to-b from-slate-50 to-slate-100 border-t border-slate-200/50">
@@ -85,15 +93,14 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand Section */}
           <div className="space-y-5">
-            <Link href={`/${locale}`} className="inline-block hover:scale-105 transition-transform duration-200">
+            <Link
+              href={`/${locale}`}
+              className="inline-block hover:scale-105 transition-transform duration-200"
+            >
               <EngeznaLogo size="lg" static showPen={false} />
             </Link>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              {t('tagline')}
-            </p>
-            <p className="text-slate-500 text-sm">
-              {t('description')}
-            </p>
+            <p className="text-slate-600 text-sm leading-relaxed">{t('tagline')}</p>
+            <p className="text-slate-500 text-sm">{t('description')}</p>
 
             {/* Social Links - Elegant */}
             <div className="flex items-center gap-3 pt-3">
@@ -127,9 +134,7 @@ export function Footer() {
 
           {/* For Customers */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-5 text-lg">
-              {t('forCustomers')}
-            </h3>
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">{t('forCustomers')}</h3>
             <ul className="space-y-3.5">
               {customerLinks.map((link) => (
                 <li key={link.href}>
@@ -138,7 +143,10 @@ export function Footer() {
                     className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                   >
                     <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                      <link.icon className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                      <link.icon
+                        className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors"
+                        strokeWidth={1.8}
+                      />
                     </div>
                     <span className="font-medium text-sm">{link.label}</span>
                   </Link>
@@ -149,9 +157,7 @@ export function Footer() {
 
           {/* For Partners */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-5 text-lg">
-              {t('forPartners')}
-            </h3>
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">{t('forPartners')}</h3>
             <ul className="space-y-3.5">
               {partnerLinks.map((link) => (
                 <li key={link.href}>
@@ -160,7 +166,10 @@ export function Footer() {
                     className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                   >
                     <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                      <link.icon className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                      <link.icon
+                        className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors"
+                        strokeWidth={1.8}
+                      />
                     </div>
                     <span className="font-medium text-sm">{link.label}</span>
                   </Link>
@@ -180,9 +189,7 @@ export function Footer() {
 
           {/* Contact Us */}
           <div>
-            <h3 className="font-bold text-slate-900 mb-5 text-lg">
-              {t('contactUs')}
-            </h3>
+            <h3 className="font-bold text-slate-900 mb-5 text-lg">{t('contactUs')}</h3>
             <ul className="space-y-3.5">
               <li>
                 <a
@@ -190,9 +197,14 @@ export function Footer() {
                   className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                 >
                   <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                    <Phone className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    <Phone
+                      className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors"
+                      strokeWidth={1.8}
+                    />
                   </div>
-                  <span dir="ltr" className="font-medium text-sm">+20 1XX XXX XXXX</span>
+                  <span dir="ltr" className="font-medium text-sm">
+                    +20 1XX XXX XXXX
+                  </span>
                 </a>
               </li>
               <li>
@@ -203,7 +215,10 @@ export function Footer() {
                   className="group flex items-center gap-2.5 text-slate-600 hover:text-[#25D366] transition-all duration-200"
                 >
                   <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-[#25D366]/10 flex items-center justify-center transition-colors">
-                    <MessageCircle className="w-4 h-4 text-slate-500 group-hover:text-[#25D366] transition-colors" strokeWidth={1.8} />
+                    <MessageCircle
+                      className="w-4 h-4 text-slate-500 group-hover:text-[#25D366] transition-colors"
+                      strokeWidth={1.8}
+                    />
                   </div>
                   <span className="font-medium text-sm">{t('whatsappSupport')}</span>
                 </a>
@@ -214,7 +229,10 @@ export function Footer() {
                   className="group flex items-center gap-2.5 text-slate-600 hover:text-primary transition-all duration-200"
                 >
                   <div className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                    <Mail className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    <Mail
+                      className="w-4 h-4 text-slate-500 group-hover:text-primary transition-colors"
+                      strokeWidth={1.8}
+                    />
                   </div>
                   <span className="font-medium text-sm">support@engezna.com</span>
                 </a>
@@ -256,9 +274,7 @@ export function Footer() {
       <div className="bg-slate-900">
         <div className="container mx-auto px-4 py-5">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
-            <p className="text-slate-400">
-              {t('copyright')}
-            </p>
+            <p className="text-slate-400">{t('copyright')}</p>
             <div className="flex items-center gap-6">
               <Link
                 href={`/${locale}/privacy`}
@@ -283,7 +299,7 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
 
-export default Footer
+export default Footer;

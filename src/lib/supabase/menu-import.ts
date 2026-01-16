@@ -3,7 +3,7 @@
  * Handles CRUD operations for menu_imports table
  */
 
-import { createClient } from './client'
+import { createClient } from './client';
 import type {
   MenuImport,
   ImportStatus,
@@ -12,14 +12,14 @@ import type {
   ExtractedAddon,
   AnalysisWarning,
   AnalysisStatistics,
-} from '@/types/menu-import'
+} from '@/types/menu-import';
 
 // Create a new import session
 export async function createMenuImport(providerId: string): Promise<{
-  data: MenuImport | null
-  error: string | null
+  data: MenuImport | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('menu_imports')
@@ -48,35 +48,35 @@ export async function createMenuImport(providerId: string): Promise<{
       retry_count: 0,
     })
     .select()
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error creating menu import:', error)
-    return { data: null, error: error.message }
+    console.error('Error creating menu import:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as MenuImport, error: null }
+  return { data: data as MenuImport, error: null };
 }
 
 // Get import by ID
 export async function getMenuImport(importId: string): Promise<{
-  data: MenuImport | null
-  error: string | null
+  data: MenuImport | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('menu_imports')
     .select('*')
     .eq('id', importId)
-    .single()
+    .single();
 
   if (error) {
-    console.error('Error fetching menu import:', error)
-    return { data: null, error: error.message }
+    console.error('Error fetching menu import:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as MenuImport, error: null }
+  return { data: data as MenuImport, error: null };
 }
 
 // Update import status
@@ -85,42 +85,39 @@ export async function updateImportStatus(
   status: ImportStatus,
   additionalData?: Partial<MenuImport>
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const updateData: Record<string, unknown> = {
     status,
     updated_at: new Date().toISOString(),
-  }
+  };
 
   // Add timestamp based on status
   switch (status) {
     case 'processing':
-      updateData.processing_started_at = new Date().toISOString()
-      break
+      updateData.processing_started_at = new Date().toISOString();
+      break;
     case 'review':
-      updateData.processing_completed_at = new Date().toISOString()
-      updateData.review_started_at = new Date().toISOString()
-      break
+      updateData.processing_completed_at = new Date().toISOString();
+      updateData.review_started_at = new Date().toISOString();
+      break;
     case 'completed':
-      updateData.completed_at = new Date().toISOString()
-      break
+      updateData.completed_at = new Date().toISOString();
+      break;
   }
 
   if (additionalData) {
-    Object.assign(updateData, additionalData)
+    Object.assign(updateData, additionalData);
   }
 
-  const { error } = await supabase
-    .from('menu_imports')
-    .update(updateData)
-    .eq('id', importId)
+  const { error } = await supabase.from('menu_imports').update(updateData).eq('id', importId);
 
   if (error) {
-    console.error('Error updating import status:', error)
-    return { success: false, error: error.message }
+    console.error('Error updating import status:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Add uploaded images
@@ -128,21 +125,21 @@ export async function addUploadedImages(
   importId: string,
   images: UploadedImage[]
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Get current images
   const { data: current, error: fetchError } = await supabase
     .from('menu_imports')
     .select('uploaded_images')
     .eq('id', importId)
-    .single()
+    .single();
 
   if (fetchError) {
-    return { success: false, error: fetchError.message }
+    return { success: false, error: fetchError.message };
   }
 
-  const currentImages = (current?.uploaded_images || []) as UploadedImage[]
-  const updatedImages = [...currentImages, ...images]
+  const currentImages = (current?.uploaded_images || []) as UploadedImage[];
+  const updatedImages = [...currentImages, ...images];
 
   const { error } = await supabase
     .from('menu_imports')
@@ -150,40 +147,40 @@ export async function addUploadedImages(
       uploaded_images: updatedImages,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error adding uploaded images:', error)
-    return { success: false, error: error.message }
+    console.error('Error adding uploaded images:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Save extracted data from AI analysis
 export async function saveExtractedData(
   importId: string,
   data: {
-    categories: ExtractedCategory[]
-    addons: ExtractedAddon[]
-    warnings: AnalysisWarning[]
-    statistics: AnalysisStatistics
+    categories: ExtractedCategory[];
+    addons: ExtractedAddon[];
+    warnings: AnalysisWarning[];
+    statistics: AnalysisStatistics;
   },
   aiInfo?: {
-    rawResponse?: string
-    modelUsed?: string
-    processingTimeMs?: number
-    tokensUsed?: { input: number; output: number }
+    rawResponse?: string;
+    modelUsed?: string;
+    processingTimeMs?: number;
+    tokensUsed?: { input: number; output: number };
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Calculate total items
-  let totalItems = 0
-  data.categories.forEach(cat => {
-    totalItems += cat.products.length
-  })
-  totalItems += data.addons.length
+  let totalItems = 0;
+  data.categories.forEach((cat) => {
+    totalItems += cat.products.length;
+  });
+  totalItems += data.addons.length;
 
   const updateData: Record<string, unknown> = {
     status: 'review',
@@ -192,55 +189,52 @@ export async function saveExtractedData(
     processing_completed_at: new Date().toISOString(),
     review_started_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }
+  };
 
   if (aiInfo) {
     if (aiInfo.rawResponse) {
-      updateData.ai_raw_response = { text: aiInfo.rawResponse }
+      updateData.ai_raw_response = { text: aiInfo.rawResponse };
     }
     if (aiInfo.modelUsed) {
-      updateData.ai_model_used = aiInfo.modelUsed
+      updateData.ai_model_used = aiInfo.modelUsed;
     }
     if (aiInfo.processingTimeMs !== undefined) {
-      updateData.ai_processing_time_ms = aiInfo.processingTimeMs
+      updateData.ai_processing_time_ms = aiInfo.processingTimeMs;
     }
     if (aiInfo.tokensUsed) {
-      updateData.ai_tokens_used = aiInfo.tokensUsed
+      updateData.ai_tokens_used = aiInfo.tokensUsed;
     }
   }
 
-  const { error } = await supabase
-    .from('menu_imports')
-    .update(updateData)
-    .eq('id', importId)
+  const { error } = await supabase.from('menu_imports').update(updateData).eq('id', importId);
 
   if (error) {
-    console.error('Error saving extracted data:', error)
-    return { success: false, error: error.message }
+    console.error('Error saving extracted data:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Save final reviewed data
 export async function saveFinalData(
   importId: string,
   finalData: {
-    categories: ExtractedCategory[]
-    addons: ExtractedAddon[]
+    categories: ExtractedCategory[];
+    addons: ExtractedAddon[];
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Calculate reviewed items
-  let reviewedItems = 0
-  finalData.categories.forEach(cat => {
-    cat.products.forEach(prod => {
+  let reviewedItems = 0;
+  finalData.categories.forEach((cat) => {
+    cat.products.forEach((prod) => {
       if (prod.isConfirmed || prod.isEdited) {
-        reviewedItems++
+        reviewedItems++;
       }
-    })
-  })
+    });
+  });
 
   const { error } = await supabase
     .from('menu_imports')
@@ -250,27 +244,27 @@ export async function saveFinalData(
       reviewed_items: reviewedItems,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error saving final data:', error)
-    return { success: false, error: error.message }
+    console.error('Error saving final data:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Mark import as completed
 export async function completeImport(
   importId: string,
   results: {
-    savedCategoryIds: string[]
-    savedProductIds: string[]
-    productsCreated: number
-    productsWithVariants: number
+    savedCategoryIds: string[];
+    savedProductIds: string[];
+    productsCreated: number;
+    productsWithVariants: number;
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('menu_imports')
@@ -283,14 +277,14 @@ export async function completeImport(
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error completing import:', error)
-    return { success: false, error: error.message }
+    console.error('Error completing import:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Mark import as failed
@@ -299,7 +293,7 @@ export async function failImport(
   errorMessage: string,
   errorDetails?: object
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('menu_imports')
@@ -309,22 +303,22 @@ export async function failImport(
       error_details: errorDetails || null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error marking import as failed:', error)
-    return { success: false, error: error.message }
+    console.error('Error marking import as failed:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Cancel import
 export async function cancelImport(importId: string): Promise<{
-  success: boolean
-  error: string | null
+  success: boolean;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { error } = await supabase
     .from('menu_imports')
@@ -332,57 +326,57 @@ export async function cancelImport(importId: string): Promise<{
       status: 'cancelled',
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error cancelling import:', error)
-    return { success: false, error: error.message }
+    console.error('Error cancelling import:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }
 
 // Get provider's import history
 export async function getProviderImports(providerId: string): Promise<{
-  data: MenuImport[] | null
-  error: string | null
+  data: MenuImport[] | null;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   const { data, error } = await supabase
     .from('menu_imports')
     .select('*')
     .eq('provider_id', providerId)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(20);
 
   if (error) {
-    console.error('Error fetching provider imports:', error)
-    return { data: null, error: error.message }
+    console.error('Error fetching provider imports:', error);
+    return { data: null, error: error.message };
   }
 
-  return { data: data as MenuImport[], error: null }
+  return { data: data as MenuImport[], error: null };
 }
 
 // Retry failed import (increment retry count)
 export async function retryImport(importId: string): Promise<{
-  success: boolean
-  error: string | null
+  success: boolean;
+  error: string | null;
 }> {
-  const supabase = createClient()
+  const supabase = createClient();
 
   // Get current retry count
   const { data: current, error: fetchError } = await supabase
     .from('menu_imports')
     .select('retry_count')
     .eq('id', importId)
-    .single()
+    .single();
 
   if (fetchError) {
-    return { success: false, error: fetchError.message }
+    return { success: false, error: fetchError.message };
   }
 
-  const newRetryCount = (current?.retry_count || 0) + 1
+  const newRetryCount = (current?.retry_count || 0) + 1;
 
   const { error } = await supabase
     .from('menu_imports')
@@ -393,12 +387,12 @@ export async function retryImport(importId: string): Promise<{
       error_details: null,
       updated_at: new Date().toISOString(),
     })
-    .eq('id', importId)
+    .eq('id', importId);
 
   if (error) {
-    console.error('Error retrying import:', error)
-    return { success: false, error: error.message }
+    console.error('Error retrying import:', error);
+    return { success: false, error: error.message };
   }
 
-  return { success: true, error: null }
+  return { success: true, error: null };
 }

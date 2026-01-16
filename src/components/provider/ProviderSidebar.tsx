@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import {
   Package,
   ShoppingBag,
@@ -21,54 +21,54 @@ import {
   TrendingUp,
   Users,
   ClipboardList,
-} from 'lucide-react'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+} from 'lucide-react';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface NavItem {
-  icon: React.ElementType
-  label: { ar: string; en: string }
-  path: string
-  badge?: string
-  badgeColor?: 'red' | 'amber' | 'green'
+  icon: React.ElementType;
+  label: { ar: string; en: string };
+  path: string;
+  badge?: string;
+  badgeColor?: 'red' | 'amber' | 'green';
 }
 
 interface NavGroup {
-  title: { ar: string; en: string }
-  items: NavItem[]
+  title: { ar: string; en: string };
+  items: NavItem[];
 }
 
 // Staff permissions interface
 interface StaffPermissions {
-  isOwner: boolean
-  canManageOrders: boolean
-  canManageMenu: boolean
-  canManageCustomers: boolean
-  canViewAnalytics: boolean
-  canManageOffers: boolean
-  canManageTeam: boolean
+  isOwner: boolean;
+  canManageOrders: boolean;
+  canManageMenu: boolean;
+  canManageCustomers: boolean;
+  canViewAnalytics: boolean;
+  canManageOffers: boolean;
+  canManageTeam: boolean;
 }
 
 interface ProviderSidebarProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
   provider: {
-    name_ar: string
-    name_en: string
-    category: string
-    status: string
-  } | null
-  pendingOrders?: number
-  pendingCustomOrders?: number // الطلبات المفتوحة المعلقة
-  unreadNotifications?: number
-  pendingRefunds?: number
-  onHoldOrders?: number // الطلبات المعلقة - مرتبطة بالمحرك المالي
-  pendingComplaints?: number
-  permissions?: StaffPermissions
-  operationMode?: 'standard' | 'custom' | 'hybrid' // وضع التشغيل: قياسي / خاص / هجين
+    name_ar: string;
+    name_en: string;
+    category: string;
+    status: string;
+  } | null;
+  pendingOrders?: number;
+  pendingCustomOrders?: number; // الطلبات المفتوحة المعلقة
+  unreadNotifications?: number;
+  pendingRefunds?: number;
+  onHoldOrders?: number; // الطلبات المعلقة - مرتبطة بالمحرك المالي
+  pendingComplaints?: number;
+  permissions?: StaffPermissions;
+  operationMode?: 'standard' | 'custom' | 'hybrid'; // وضع التشغيل: قياسي / خاص / هجين
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -88,9 +88,9 @@ export function ProviderSidebar({
   permissions,
   operationMode = 'standard', // Default to standard for backward compatibility
 }: ProviderSidebarProps) {
-  const locale = useLocale()
-  const pathname = usePathname()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const pathname = usePathname();
+  const isRTL = locale === 'ar';
 
   // Default permissions (all true for backward compatibility if not provided)
   const perms = permissions || {
@@ -101,7 +101,7 @@ export function ProviderSidebar({
     canViewAnalytics: true,
     canManageOffers: true,
     canManageTeam: true,
-  }
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Navigation Groups - المجموعات المنظمة
@@ -109,7 +109,7 @@ export function ProviderSidebar({
 
   // Build navigation groups based on permissions
   const buildNavGroups = (): NavGroup[] => {
-    const groups: NavGroup[] = []
+    const groups: NavGroup[] = [];
 
     // ─────────────────────────────────────────────────────────────────────────
     // مجموعة العمليات (Operations) - Dashboard always visible
@@ -120,7 +120,7 @@ export function ProviderSidebar({
         label: { ar: 'الرئيسية', en: 'Dashboard' },
         path: `/${locale}/provider`,
       },
-    ]
+    ];
 
     // Orders - requires canManageOrders
     if (perms.canManageOrders) {
@@ -132,7 +132,7 @@ export function ProviderSidebar({
           path: `/${locale}/provider/orders`,
           badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
           badgeColor: 'red',
-        })
+        });
       }
       // Custom Orders - only show for 'custom' or 'hybrid' modes
       if (operationMode === 'custom' || operationMode === 'hybrid') {
@@ -142,36 +142,37 @@ export function ProviderSidebar({
           path: `/${locale}/provider/orders/custom`,
           badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
           badgeColor: 'red',
-        })
+        });
       }
       operationsItems.push({
         icon: RefreshCw,
         label: { ar: 'المرتجعات', en: 'Refunds' },
         path: `/${locale}/provider/refunds`,
-        badge: (pendingRefunds + onHoldOrders) > 0
-          ? (pendingRefunds + onHoldOrders).toString()
-          : undefined,
+        badge:
+          pendingRefunds + onHoldOrders > 0
+            ? (pendingRefunds + onHoldOrders).toString()
+            : undefined,
         badgeColor: 'amber',
-      })
+      });
     }
 
     groups.push({
       title: { ar: 'العمليات', en: 'Operations' },
       items: operationsItems,
-    })
+    });
 
     // ─────────────────────────────────────────────────────────────────────────
     // مجموعة المالية (Financials) - requires canViewAnalytics or isOwner
     // ─────────────────────────────────────────────────────────────────────────
     if (perms.canViewAnalytics || perms.isOwner) {
-      const financialItems: NavItem[] = []
+      const financialItems: NavItem[] = [];
 
       if (perms.isOwner) {
         financialItems.push({
           icon: Wallet,
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
-        })
+        });
       }
 
       if (perms.canViewAnalytics) {
@@ -179,21 +180,21 @@ export function ProviderSidebar({
           icon: TrendingUp,
           label: { ar: 'التحليلات', en: 'Analytics' },
           path: `/${locale}/provider/analytics`,
-        })
+        });
       }
 
       if (financialItems.length > 0) {
         groups.push({
           title: { ar: 'المالية', en: 'Financials' },
           items: financialItems,
-        })
+        });
       }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
     // مجموعة المتجر (Store Management)
     // ─────────────────────────────────────────────────────────────────────────
-    const storeItems: NavItem[] = []
+    const storeItems: NavItem[] = [];
 
     // Products - requires canManageMenu
     if (perms.canManageMenu) {
@@ -201,7 +202,7 @@ export function ProviderSidebar({
         icon: Package,
         label: { ar: 'المنتجات', en: 'Products' },
         path: `/${locale}/provider/products`,
-      })
+      });
     }
 
     // Promotions & Banners - requires canManageOffers
@@ -210,12 +211,12 @@ export function ProviderSidebar({
         icon: Tag,
         label: { ar: 'العروض والخصومات', en: 'Promotions' },
         path: `/${locale}/provider/promotions`,
-      })
+      });
       storeItems.push({
         icon: Megaphone,
         label: { ar: 'بانر العروض', en: 'Promo Banner' },
         path: `/${locale}/provider/banner`,
-      })
+      });
     }
 
     // Reviews - visible to all (read-only for staff without specific permission)
@@ -223,13 +224,13 @@ export function ProviderSidebar({
       icon: Star,
       label: { ar: 'تقييمات العملاء', en: 'Reviews' },
       path: `/${locale}/provider/reviews`,
-    })
+    });
 
     if (storeItems.length > 0) {
       groups.push({
         title: { ar: 'المتجر', en: 'Store' },
         items: storeItems,
-      })
+      });
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -242,17 +243,17 @@ export function ProviderSidebar({
         label: { ar: 'إعدادات المتجر', en: 'Store Settings' },
         path: `/${locale}/provider/settings`,
       },
-    ]
+    ];
 
     groups.push({
       title: { ar: 'الإعدادات', en: 'Settings' },
       items: settingsItems,
-    })
+    });
 
-    return groups
-  }
+    return groups;
+  };
 
-  const navGroups = buildNavGroups()
+  const navGroups = buildNavGroups();
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Helpers
@@ -261,48 +262,49 @@ export function ProviderSidebar({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
-        return locale === 'ar' ? 'مفتوح' : 'Open'
+        return locale === 'ar' ? 'مفتوح' : 'Open';
       case 'closed':
-        return locale === 'ar' ? 'مغلق' : 'Closed'
+        return locale === 'ar' ? 'مغلق' : 'Closed';
       case 'temporarily_paused':
-        return locale === 'ar' ? 'متوقف مؤقتاً' : 'Paused'
+        return locale === 'ar' ? 'متوقف مؤقتاً' : 'Paused';
       case 'on_vacation':
-        return locale === 'ar' ? 'في إجازة' : 'On Vacation'
+        return locale === 'ar' ? 'في إجازة' : 'On Vacation';
       default:
-        return locale === 'ar' ? 'غير نشط' : 'Inactive'
+        return locale === 'ar' ? 'غير نشط' : 'Inactive';
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open':
-        return 'bg-green-500'
+        return 'bg-green-500';
       case 'closed':
-        return 'bg-red-500'
+        return 'bg-red-500';
       case 'temporarily_paused':
       case 'on_vacation':
-        return 'bg-amber-500'
+        return 'bg-amber-500';
       default:
-        return 'bg-slate-500'
+        return 'bg-slate-500';
     }
-  }
+  };
 
   const getBadgeColor = (color?: 'red' | 'amber' | 'green') => {
     switch (color) {
       case 'amber':
-        return 'bg-amber-500'
+        return 'bg-amber-500';
       case 'green':
-        return 'bg-green-500'
+        return 'bg-green-500';
       case 'red':
       default:
-        return 'bg-red-500'
+        return 'bg-red-500';
     }
-  }
+  };
 
   const isItemActive = (itemPath: string) => {
-    return pathname === itemPath ||
-      (itemPath !== `/${locale}/provider` && pathname.startsWith(itemPath))
-  }
+    return (
+      pathname === itemPath || (itemPath !== `/${locale}/provider` && pathname.startsWith(itemPath))
+    );
+  };
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Render
@@ -311,12 +313,7 @@ export function ProviderSidebar({
   return (
     <>
       {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
+      {isOpen && <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={onClose} />}
 
       {/* Sidebar */}
       <aside
@@ -344,10 +341,7 @@ export function ProviderSidebar({
                 {locale === 'ar' ? 'لوحة الشريك' : 'Partner Portal'}
               </p>
             </Link>
-            <button
-              onClick={onClose}
-              className="lg:hidden text-slate-500 hover:text-slate-700 p-1"
-            >
+            <button onClick={onClose} className="lg:hidden text-slate-500 hover:text-slate-700 p-1">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -380,9 +374,7 @@ export function ProviderSidebar({
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <span className={`w-2 h-2 rounded-full ${getStatusColor(provider.status)}`} />
-                  <span className="text-xs text-slate-600">
-                    {getStatusLabel(provider.status)}
-                  </span>
+                  <span className="text-xs text-slate-600">{getStatusLabel(provider.status)}</span>
                 </div>
               </div>
             </div>
@@ -402,7 +394,7 @@ export function ProviderSidebar({
                 {/* Group Items */}
                 <div className="space-y-0.5 lg:space-y-1">
                   {group.items.map((item) => {
-                    const isActive = isItemActive(item.path)
+                    const isActive = isItemActive(item.path);
                     return (
                       <Link
                         key={item.path}
@@ -411,9 +403,11 @@ export function ProviderSidebar({
                         className={`
                           w-full flex items-center gap-3 px-4 py-2.5 lg:py-3 rounded-xl transition-all duration-200
                           max-lg:gap-2 max-lg:px-3 max-lg:py-2 max-lg:rounded-lg
-                          ${isActive
-                            ? 'bg-gradient-to-r from-[#009DE0] to-[#0077B6] text-white shadow-primary-glow'
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]'}
+                          ${
+                            isActive
+                              ? 'bg-gradient-to-r from-[#009DE0] to-[#0077B6] text-white shadow-primary-glow'
+                              : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98]'
+                          }
                         `}
                       >
                         <item.icon className="w-5 h-5 max-lg:w-4 max-lg:h-4 flex-shrink-0" />
@@ -434,7 +428,7 @@ export function ProviderSidebar({
                           </span>
                         )}
                       </Link>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -443,5 +437,5 @@ export function ProviderSidebar({
         </div>
       </aside>
     </>
-  )
+  );
 }

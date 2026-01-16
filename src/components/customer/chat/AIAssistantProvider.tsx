@@ -2,55 +2,56 @@
  * AIAssistantProvider - Wrapper component to add AI chat to pages
  */
 
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { ChatFAB } from './ChatFAB'
-import { SmartAssistant } from './SmartAssistant'
-import { createClient } from '@/lib/supabase/client'
-import { useGuestLocation } from '@/lib/hooks/useGuestLocation'
+import { useState, useEffect } from 'react';
+import { ChatFAB } from './ChatFAB';
+import { SmartAssistant } from './SmartAssistant';
+import { createClient } from '@/lib/supabase/client';
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
 
 interface AIAssistantProviderProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function AIAssistantProvider({ children }: AIAssistantProviderProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [userId, setUserId] = useState<string | undefined>()
-  const { location: guestLocation } = useGuestLocation()
-  const governorateId = guestLocation.governorateId
-  const cityId = guestLocation.cityId
+  const [isOpen, setIsOpen] = useState(false);
+  const [userId, setUserId] = useState<string | undefined>();
+  const { location: guestLocation } = useGuestLocation();
+  const governorateId = guestLocation.governorateId;
+  const cityId = guestLocation.cityId;
 
   // Get current user
   useEffect(() => {
-    const supabase = createClient()
+    const supabase = createClient();
 
     const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUserId(user?.id)
-    }
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUserId(user?.id);
+    };
 
-    getUser()
+    getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id)
-    })
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id);
+    });
 
     return () => {
-      subscription.unsubscribe()
-    }
-  }, [])
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <>
       {children}
 
       {/* AI Chat FAB */}
-      <ChatFAB
-        onClick={() => setIsOpen(!isOpen)}
-        isOpen={isOpen}
-      />
+      <ChatFAB onClick={() => setIsOpen(!isOpen)} isOpen={isOpen} />
 
       {/* AI Chat Modal */}
       <SmartAssistant
@@ -61,7 +62,7 @@ export function AIAssistantProvider({ children }: AIAssistantProviderProps) {
         governorateId={governorateId || undefined}
       />
     </>
-  )
+  );
 }
 
-export default AIAssistantProvider
+export default AIAssistantProvider;

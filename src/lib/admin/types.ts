@@ -325,7 +325,7 @@ export const ERROR_CODES = {
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
 } as const;
 
-export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
 
 // ═══════════════════════════════════════════════════════════════════════
 // ثوابت

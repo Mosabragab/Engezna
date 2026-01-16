@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import Image from 'next/image'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ProviderLayout } from '@/components/provider'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ProviderLayout } from '@/components/provider';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   Settings,
   Store,
@@ -42,26 +42,26 @@ import {
   Users,
   Plus,
   X,
-} from 'lucide-react'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
+} from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 type CustomOrderSettings = {
-  accepts_text: boolean
-  accepts_voice: boolean
-  accepts_image: boolean
-  pricing_timeout_hours: number
-  auto_cancel_after_hours: number
-  customer_approval_timeout_hours: number
-  max_items_per_order: number
-  show_price_history: boolean
-  welcome_banner_enabled: boolean
-  welcome_banner_text_ar: string
-  welcome_banner_text_en: string
-}
+  accepts_text: boolean;
+  accepts_voice: boolean;
+  accepts_image: boolean;
+  pricing_timeout_hours: number;
+  auto_cancel_after_hours: number;
+  customer_approval_timeout_hours: number;
+  max_items_per_order: number;
+  show_price_history: boolean;
+  welcome_banner_enabled: boolean;
+  welcome_banner_text_ar: string;
+  welcome_banner_text_en: string;
+};
 
 const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
   accepts_text: true,
@@ -74,177 +74,195 @@ const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
   show_price_history: true,
   welcome_banner_enabled: true,
   welcome_banner_text_ar: 'مرحباً! يمكنك إرسال طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً',
-  welcome_banner_text_en: 'Welcome! Send your order via voice, image, or text and we will price it immediately',
-}
+  welcome_banner_text_en:
+    'Welcome! Send your order via voice, image, or text and we will price it immediately',
+};
 
 type Provider = {
-  id: string
-  name_ar: string
-  name_en: string
-  phone: string | null
-  address_ar: string | null
-  address_en: string | null
-  logo_url: string | null
-  status: string
-  delivery_fee: number | null
-  estimated_delivery_time_min: number | null
-  min_order_amount: number | null
-  delivery_radius_km: number | null
+  id: string;
+  name_ar: string;
+  name_en: string;
+  phone: string | null;
+  address_ar: string | null;
+  address_en: string | null;
+  logo_url: string | null;
+  status: string;
+  delivery_fee: number | null;
+  estimated_delivery_time_min: number | null;
+  min_order_amount: number | null;
+  delivery_radius_km: number | null;
   // Pickup settings
-  supports_pickup: boolean
-  pickup_instructions_ar: string | null
-  pickup_instructions_en: string | null
-  estimated_pickup_time_min: number | null
+  supports_pickup: boolean;
+  pickup_instructions_ar: string | null;
+  pickup_instructions_en: string | null;
+  estimated_pickup_time_min: number | null;
   // Custom order settings
-  operation_mode: 'standard' | 'custom' | 'hybrid'
-  custom_order_settings: CustomOrderSettings | null
-}
-
+  operation_mode: 'standard' | 'custom' | 'hybrid';
+  custom_order_settings: CustomOrderSettings | null;
+};
 
 export default function ProviderSettingsPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [provider, setProvider] = useState<Provider | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [activeTab, setActiveTab] = useState<'store' | 'working-hours' | 'delivery' | 'pickup' | 'custom-orders' | 'status' | 'team' | 'account'>('store')
-  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState<
+    | 'store'
+    | 'working-hours'
+    | 'delivery'
+    | 'pickup'
+    | 'custom-orders'
+    | 'status'
+    | 'team'
+    | 'account'
+  >('store');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Password change states
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [savingPassword, setSavingPassword] = useState(false)
-  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
-  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   // Delete account states
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [deleteConfirmText, setDeleteConfirmText] = useState('')
-  const [deletingAccount, setDeletingAccount] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Form states
-  const [nameAr, setNameAr] = useState('')
-  const [nameEn, setNameEn] = useState('')
-  const [phone, setPhone] = useState('')
-  const [addressAr, setAddressAr] = useState('')
-  const [addressEn, setAddressEn] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState('')
-  const [deliveryTime, setDeliveryTime] = useState('')
-  const [minimumOrder, setMinimumOrder] = useState('')
-  const [deliveryRadius, setDeliveryRadius] = useState('')
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [nameAr, setNameAr] = useState('');
+  const [nameEn, setNameEn] = useState('');
+  const [phone, setPhone] = useState('');
+  const [addressAr, setAddressAr] = useState('');
+  const [addressEn, setAddressEn] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
+  const [minimumOrder, setMinimumOrder] = useState('');
+  const [deliveryRadius, setDeliveryRadius] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   // Pickup settings
-  const [supportsPickup, setSupportsPickup] = useState(false)
-  const [pickupInstructionsAr, setPickupInstructionsAr] = useState('')
-  const [pickupInstructionsEn, setPickupInstructionsEn] = useState('')
-  const [estimatedPickupTime, setEstimatedPickupTime] = useState('')
-  const [savingPickup, setSavingPickup] = useState(false)
-  const [savedPickup, setSavedPickup] = useState(false)
+  const [supportsPickup, setSupportsPickup] = useState(false);
+  const [pickupInstructionsAr, setPickupInstructionsAr] = useState('');
+  const [pickupInstructionsEn, setPickupInstructionsEn] = useState('');
+  const [estimatedPickupTime, setEstimatedPickupTime] = useState('');
+  const [savingPickup, setSavingPickup] = useState(false);
+  const [savedPickup, setSavedPickup] = useState(false);
 
   // Custom order settings
-  const [operationMode, setOperationMode] = useState<'standard' | 'custom' | 'hybrid'>('standard')
-  const [customOrderSettings, setCustomOrderSettings] = useState<CustomOrderSettings>(DEFAULT_CUSTOM_ORDER_SETTINGS)
-  const [savingCustomOrders, setSavingCustomOrders] = useState(false)
-  const [savedCustomOrders, setSavedCustomOrders] = useState(false)
+  const [operationMode, setOperationMode] = useState<'standard' | 'custom' | 'hybrid'>('standard');
+  const [customOrderSettings, setCustomOrderSettings] = useState<CustomOrderSettings>(
+    DEFAULT_CUSTOM_ORDER_SETTINGS
+  );
+  const [savingCustomOrders, setSavingCustomOrders] = useState(false);
+  const [savedCustomOrders, setSavedCustomOrders] = useState(false);
 
   const checkAuthAndLoadProvider = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/settings`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/settings`);
+      return;
     }
 
-    setUserEmail(user.email || null)
+    setUserEmail(user.email || null);
 
     const { data: providersData } = await supabase
       .from('providers')
       .select('*')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const providerData = providersData?.[0]
+    const providerData = providersData?.[0];
     if (!providerData || !ACTIVE_PROVIDER_STATUSES.includes(providerData.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProvider(providerData)
-    setNameAr(providerData.name_ar || '')
-    setNameEn(providerData.name_en || '')
-    setPhone(providerData.phone || '')
-    setAddressAr(providerData.address_ar || '')
-    setAddressEn(providerData.address_en || '')
-    setDeliveryFee(providerData.delivery_fee?.toString() || '')
-    setDeliveryTime(providerData.estimated_delivery_time_min?.toString() || '')
-    setMinimumOrder(providerData.min_order_amount?.toString() || '')
-    setDeliveryRadius(providerData.delivery_radius_km?.toString() || '')
-    setLogoPreview(providerData.logo_url)
+    setProvider(providerData);
+    setNameAr(providerData.name_ar || '');
+    setNameEn(providerData.name_en || '');
+    setPhone(providerData.phone || '');
+    setAddressAr(providerData.address_ar || '');
+    setAddressEn(providerData.address_en || '');
+    setDeliveryFee(providerData.delivery_fee?.toString() || '');
+    setDeliveryTime(providerData.estimated_delivery_time_min?.toString() || '');
+    setMinimumOrder(providerData.min_order_amount?.toString() || '');
+    setDeliveryRadius(providerData.delivery_radius_km?.toString() || '');
+    setLogoPreview(providerData.logo_url);
 
     // Load pickup settings
-    setSupportsPickup(providerData.supports_pickup || false)
-    setPickupInstructionsAr(providerData.pickup_instructions_ar || '')
-    setPickupInstructionsEn(providerData.pickup_instructions_en || '')
-    setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15')
+    setSupportsPickup(providerData.supports_pickup || false);
+    setPickupInstructionsAr(providerData.pickup_instructions_ar || '');
+    setPickupInstructionsEn(providerData.pickup_instructions_en || '');
+    setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15');
 
     // Load custom order settings
-    setOperationMode(providerData.operation_mode || 'standard')
+    setOperationMode(providerData.operation_mode || 'standard');
     setCustomOrderSettings({
       ...DEFAULT_CUSTOM_ORDER_SETTINGS,
-      ...(providerData.custom_order_settings || {})
-    })
+      ...(providerData.custom_order_settings || {}),
+    });
 
-    setLoading(false)
-  }, [locale, router])
+    setLoading(false);
+  }, [locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadProvider()
-  }, [checkAuthAndLoadProvider])
+    checkAuthAndLoadProvider();
+  }, [checkAuthAndLoadProvider]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert(locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB')
-        return
+        alert(
+          locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB'
+        );
+        return;
       }
-      setLogoFile(file)
-      setLogoPreview(URL.createObjectURL(file))
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
-  }
+  };
 
   const handleSaveStore = async () => {
-    if (!provider) return
+    if (!provider) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
-    let logoUrl = provider.logo_url
+    let logoUrl = provider.logo_url;
 
     // Upload new logo if selected
     if (logoFile) {
-      const fileExt = logoFile.name.split('.').pop()
-      const fileName = `provider-logos/${provider.id}-${Date.now()}.${fileExt}`
+      const fileExt = logoFile.name.split('.').pop();
+      const fileName = `provider-logos/${provider.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('public')
-        .upload(fileName, logoFile, { upsert: true })
+        .upload(fileName, logoFile, { upsert: true });
 
       if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage
-          .from('public')
-          .getPublicUrl(fileName)
-        logoUrl = publicUrl
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('public').getPublicUrl(fileName);
+        logoUrl = publicUrl;
       }
     }
 
@@ -257,24 +275,24 @@ export default function ProviderSettingsPage() {
         address_ar: addressAr || null,
         address_en: addressEn || null,
         logo_url: logoUrl,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', provider.id)
+      .eq('id', provider.id);
 
     if (!error) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-      setProvider(prev => prev ? { ...prev, logo_url: logoUrl } : null)
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      setProvider((prev) => (prev ? { ...prev, logo_url: logoUrl } : null));
     }
 
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const handleSaveDelivery = async () => {
-    if (!provider) return
+    if (!provider) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('providers')
@@ -283,23 +301,23 @@ export default function ProviderSettingsPage() {
         estimated_delivery_time_min: deliveryTime ? parseInt(deliveryTime) : null,
         min_order_amount: minimumOrder ? parseFloat(minimumOrder) : null,
         delivery_radius_km: deliveryRadius ? parseFloat(deliveryRadius) : null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', provider.id)
+      .eq('id', provider.id);
 
     if (!error) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     }
 
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const handleSavePickup = async () => {
-    if (!provider) return
+    if (!provider) return;
 
-    setSavingPickup(true)
-    const supabase = createClient()
+    setSavingPickup(true);
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('providers')
@@ -308,215 +326,231 @@ export default function ProviderSettingsPage() {
         pickup_instructions_ar: pickupInstructionsAr || null,
         pickup_instructions_en: pickupInstructionsEn || null,
         estimated_pickup_time_min: estimatedPickupTime ? parseInt(estimatedPickupTime) : 15,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', provider.id)
+      .eq('id', provider.id);
 
     if (!error) {
-      setSavedPickup(true)
-      setTimeout(() => setSavedPickup(false), 3000)
-      setProvider(prev => prev ? {
-        ...prev,
-        supports_pickup: supportsPickup,
-        pickup_instructions_ar: pickupInstructionsAr || null,
-        pickup_instructions_en: pickupInstructionsEn || null,
-        estimated_pickup_time_min: estimatedPickupTime ? parseInt(estimatedPickupTime) : 15,
-      } : null)
+      setSavedPickup(true);
+      setTimeout(() => setSavedPickup(false), 3000);
+      setProvider((prev) =>
+        prev
+          ? {
+              ...prev,
+              supports_pickup: supportsPickup,
+              pickup_instructions_ar: pickupInstructionsAr || null,
+              pickup_instructions_en: pickupInstructionsEn || null,
+              estimated_pickup_time_min: estimatedPickupTime ? parseInt(estimatedPickupTime) : 15,
+            }
+          : null
+      );
     }
 
-    setSavingPickup(false)
-  }
+    setSavingPickup(false);
+  };
 
   const handleSaveCustomOrders = async () => {
-    if (!provider) return
+    if (!provider) return;
 
-    setSavingCustomOrders(true)
-    const supabase = createClient()
+    setSavingCustomOrders(true);
+    const supabase = createClient();
 
     const updatedSettings = {
       ...customOrderSettings,
       enabled_at: operationMode !== 'standard' ? new Date().toISOString() : null,
-    }
+    };
 
     const { error } = await supabase
       .from('providers')
       .update({
         operation_mode: operationMode,
         custom_order_settings: updatedSettings,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', provider.id)
+      .eq('id', provider.id);
 
     if (!error) {
-      setSavedCustomOrders(true)
-      setTimeout(() => setSavedCustomOrders(false), 3000)
-      setProvider(prev => prev ? {
-        ...prev,
-        operation_mode: operationMode,
-        custom_order_settings: updatedSettings,
-      } : null)
+      setSavedCustomOrders(true);
+      setTimeout(() => setSavedCustomOrders(false), 3000);
+      setProvider((prev) =>
+        prev
+          ? {
+              ...prev,
+              operation_mode: operationMode,
+              custom_order_settings: updatedSettings,
+            }
+          : null
+      );
     }
 
-    setSavingCustomOrders(false)
-  }
+    setSavingCustomOrders(false);
+  };
 
   const handleToggleStatus = async (newStatus: 'open' | 'closed' | 'temporarily_paused') => {
-    if (!provider) return
+    if (!provider) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('providers')
       .update({
         status: newStatus,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', provider.id)
+      .eq('id', provider.id);
 
     if (!error) {
-      setProvider(prev => prev ? { ...prev, status: newStatus } : null)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setProvider((prev) => (prev ? { ...prev, status: newStatus } : null));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     }
 
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const handlePasswordChange = async () => {
-    if (!userEmail) return
+    if (!userEmail) return;
 
     // Validation
     if (!currentPassword || !newPassword || !confirmPassword) {
       setPasswordMessage({
         type: 'error',
-        text: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required'
-      })
-      return
+        text: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required',
+      });
+      return;
     }
 
     if (newPassword.length < 8) {
       setPasswordMessage({
         type: 'error',
-        text: locale === 'ar' ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' : 'Password must be at least 8 characters'
-      })
-      return
+        text:
+          locale === 'ar'
+            ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+            : 'Password must be at least 8 characters',
+      });
+      return;
     }
 
     if (newPassword !== confirmPassword) {
       setPasswordMessage({
         type: 'error',
-        text: locale === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match'
-      })
-      return
+        text: locale === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match',
+      });
+      return;
     }
 
-    setSavingPassword(true)
-    setPasswordMessage(null)
+    setSavingPassword(true);
+    setPasswordMessage(null);
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     // Verify current password
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: userEmail,
       password: currentPassword,
-    })
+    });
 
     if (signInError) {
       setPasswordMessage({
         type: 'error',
-        text: locale === 'ar' ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect'
-      })
-      setSavingPassword(false)
-      return
+        text: locale === 'ar' ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect',
+      });
+      setSavingPassword(false);
+      return;
     }
 
     // Update password
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
-    })
+    });
 
     if (error) {
       setPasswordMessage({
         type: 'error',
-        text: locale === 'ar' ? 'فشل تحديث كلمة المرور' : 'Failed to update password'
-      })
+        text: locale === 'ar' ? 'فشل تحديث كلمة المرور' : 'Failed to update password',
+      });
     } else {
       setPasswordMessage({
         type: 'success',
-        text: locale === 'ar' ? 'تم تحديث كلمة المرور بنجاح' : 'Password updated successfully'
-      })
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
+        text: locale === 'ar' ? 'تم تحديث كلمة المرور بنجاح' : 'Password updated successfully',
+      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
       setTimeout(() => {
-        setShowPasswordForm(false)
-        setPasswordMessage(null)
-      }, 2000)
+        setShowPasswordForm(false);
+        setPasswordMessage(null);
+      }, 2000);
     }
 
-    setSavingPassword(false)
-  }
+    setSavingPassword(false);
+  };
 
   const handleSignOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = `/${locale}`
-  }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = `/${locale}`;
+  };
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE' && deleteConfirmText !== 'حذف') {
-      return
+      return;
     }
 
-    setDeletingAccount(true)
+    setDeletingAccount(true);
 
     try {
       // Call API to delete account
       const response = await fetch('/api/auth/delete-account', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-      })
+      });
 
       if (response.ok) {
         // Sign out and redirect
-        const supabase = createClient()
-        await supabase.auth.signOut()
-        window.location.href = `/${locale}`
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        window.location.href = `/${locale}`;
       } else {
-        const data = await response.json()
-        alert(data.error || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'))
+        const data = await response.json();
+        alert(data.error || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'));
       }
     } catch (error) {
-      console.error('Delete account error:', error)
-      alert(locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account')
+      console.error('Delete account error:', error);
+      alert(
+        locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account'
+      );
     } finally {
-      setDeletingAccount(false)
+      setDeletingAccount(false);
     }
-  }
+  };
 
   const tabs = [
     { key: 'store', label_ar: 'معلومات المتجر', label_en: 'Store Info', icon: Store },
     { key: 'working-hours', label_ar: 'ساعات العمل', label_en: 'Working Hours', icon: Clock },
     { key: 'delivery', label_ar: 'التوصيل', label_en: 'Delivery', icon: Truck },
     { key: 'pickup', label_ar: 'الاستلام', label_en: 'Pickup', icon: Package },
-    { key: 'custom-orders', label_ar: 'الطلبات الخاصة', label_en: 'Custom Orders', icon: ClipboardList },
+    {
+      key: 'custom-orders',
+      label_ar: 'الطلبات الخاصة',
+      label_en: 'Custom Orders',
+      icon: ClipboardList,
+    },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
     { key: 'team', label_ar: 'إدارة الفريق', label_en: 'Team', icon: Users },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
-  ]
+  ];
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -529,7 +563,7 @@ export default function ProviderSettingsPage() {
           {/* Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2">
             {tabs.map((tab) => {
-              const Icon = tab.icon
+              const Icon = tab.icon;
               return (
                 <button
                   key={tab.key}
@@ -543,7 +577,7 @@ export default function ProviderSettingsPage() {
                   <Icon className="w-4 h-4" />
                   {locale === 'ar' ? tab.label_ar : tab.label_en}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -655,11 +689,7 @@ export default function ProviderSettingsPage() {
                   />
                 </div>
 
-                <Button
-                  className="w-full"
-                  onClick={handleSaveStore}
-                  disabled={saving}
-                >
+                <Button className="w-full" onClick={handleSaveStore} disabled={saving}>
                   {saving ? (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -748,11 +778,7 @@ export default function ProviderSettingsPage() {
                   />
                 </div>
 
-                <Button
-                  className="w-full"
-                  onClick={handleSaveDelivery}
-                  disabled={saving}
-                >
+                <Button className="w-full" onClick={handleSaveDelivery} disabled={saving}>
                   {saving ? (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -790,7 +816,9 @@ export default function ProviderSettingsPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Enable Pickup Toggle */}
-                <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div
+                  className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg ${isRTL ? 'flex-row-reverse' : ''}`}
+                >
                   <div className={isRTL ? 'text-right' : ''}>
                     <Label className="text-slate-900 font-medium">
                       {locale === 'ar' ? 'دعم الاستلام من المتجر' : 'Support Customer Pickup'}
@@ -822,9 +850,13 @@ export default function ProviderSettingsPage() {
                   <div className="space-y-4 pt-4 border-t border-slate-200">
                     {/* Estimated Pickup Time */}
                     <div>
-                      <Label className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+                      <Label
+                        className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+                      >
                         <Clock className="w-4 h-4" />
-                        {locale === 'ar' ? 'وقت التحضير المتوقع (دقيقة)' : 'Estimated Preparation Time (minutes)'}
+                        {locale === 'ar'
+                          ? 'وقت التحضير المتوقع (دقيقة)'
+                          : 'Estimated Preparation Time (minutes)'}
                       </Label>
                       <Input
                         type="number"
@@ -844,9 +876,13 @@ export default function ProviderSettingsPage() {
 
                     {/* Pickup Instructions AR */}
                     <div>
-                      <Label className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+                      <Label
+                        className={`block text-sm text-slate-500 mb-1 flex items-center gap-1 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+                      >
                         <MapPin className="w-4 h-4" />
-                        {locale === 'ar' ? 'تعليمات الاستلام (عربي)' : 'Pickup Instructions (Arabic)'}
+                        {locale === 'ar'
+                          ? 'تعليمات الاستلام (عربي)'
+                          : 'Pickup Instructions (Arabic)'}
                       </Label>
                       <Textarea
                         value={pickupInstructionsAr}
@@ -854,16 +890,20 @@ export default function ProviderSettingsPage() {
                         className="bg-white border-slate-200 text-slate-900"
                         dir="rtl"
                         rows={3}
-                        placeholder={locale === 'ar'
-                          ? 'مثال: الاستلام من الباب الخلفي، اذكر رقم الطلب عند الوصول'
-                          : 'Example: Pickup from back door, mention order number on arrival'}
+                        placeholder={
+                          locale === 'ar'
+                            ? 'مثال: الاستلام من الباب الخلفي، اذكر رقم الطلب عند الوصول'
+                            : 'Example: Pickup from back door, mention order number on arrival'
+                        }
                       />
                     </div>
 
                     {/* Pickup Instructions EN */}
                     <div>
                       <Label className="block text-sm text-slate-500 mb-1">
-                        {locale === 'ar' ? 'تعليمات الاستلام (إنجليزي)' : 'Pickup Instructions (English)'}
+                        {locale === 'ar'
+                          ? 'تعليمات الاستلام (إنجليزي)'
+                          : 'Pickup Instructions (English)'}
                       </Label>
                       <Textarea
                         value={pickupInstructionsEn}
@@ -877,12 +917,12 @@ export default function ProviderSettingsPage() {
 
                     {/* Info Box */}
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <div className={`flex items-start gap-2 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                      <div
+                        className={`flex items-start gap-2 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                      >
                         <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
                         <div className="text-sm text-blue-800">
-                          <p className="font-medium mb-1">
-                            {locale === 'ar' ? 'ملاحظة' : 'Note'}
-                          </p>
+                          <p className="font-medium mb-1">{locale === 'ar' ? 'ملاحظة' : 'Note'}</p>
                           <p>
                             {locale === 'ar'
                               ? 'عند تفعيل هذا الخيار، سيتمكن العملاء من اختيار "استلام من المتجر" عند الطلب، وسيتم تصفير رسوم التوصيل تلقائياً.'
@@ -894,11 +934,7 @@ export default function ProviderSettingsPage() {
                   </div>
                 )}
 
-                <Button
-                  className="w-full"
-                  onClick={handleSavePickup}
-                  disabled={savingPickup}
-                >
+                <Button className="w-full" onClick={handleSavePickup} disabled={savingPickup}>
                   {savingPickup ? (
                     <>
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -954,17 +990,29 @@ export default function ProviderSettingsPage() {
                       name="operationMode"
                       value="standard"
                       checked={operationMode === 'standard'}
-                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      onChange={(e) =>
+                        setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')
+                      }
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      operationMode === 'standard' ? 'border-primary bg-primary' : 'border-slate-300'
-                    }`}>
-                      {operationMode === 'standard' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                        operationMode === 'standard'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {operationMode === 'standard' && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className={`font-semibold ${operationMode === 'standard' ? 'text-primary' : 'text-slate-700'}`}>
-                        {locale === 'ar' ? 'قياسي (قائمة المنتجات فقط)' : 'Standard (Product List Only)'}
+                      <p
+                        className={`font-semibold ${operationMode === 'standard' ? 'text-primary' : 'text-slate-700'}`}
+                      >
+                        {locale === 'ar'
+                          ? 'قياسي (قائمة المنتجات فقط)'
+                          : 'Standard (Product List Only)'}
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
                         {locale === 'ar'
@@ -987,18 +1035,30 @@ export default function ProviderSettingsPage() {
                       name="operationMode"
                       value="hybrid"
                       checked={operationMode === 'hybrid'}
-                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      onChange={(e) =>
+                        setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')
+                      }
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      operationMode === 'hybrid' ? 'border-primary bg-primary' : 'border-slate-300'
-                    }`}>
-                      {operationMode === 'hybrid' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                        operationMode === 'hybrid'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {operationMode === 'hybrid' && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className={`font-semibold ${operationMode === 'hybrid' ? 'text-primary' : 'text-slate-700'}`}>
-                          {locale === 'ar' ? 'هجين (قائمة المنتجات + الطلبات الخاصة)' : 'Hybrid (Products + Custom Orders)'}
+                        <p
+                          className={`font-semibold ${operationMode === 'hybrid' ? 'text-primary' : 'text-slate-700'}`}
+                        >
+                          {locale === 'ar'
+                            ? 'هجين (قائمة المنتجات + الطلبات الخاصة)'
+                            : 'Hybrid (Products + Custom Orders)'}
                         </p>
                         <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
                           {locale === 'ar' ? 'موصى به' : 'Recommended'}
@@ -1025,16 +1085,26 @@ export default function ProviderSettingsPage() {
                       name="operationMode"
                       value="custom"
                       checked={operationMode === 'custom'}
-                      onChange={(e) => setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')}
+                      onChange={(e) =>
+                        setOperationMode(e.target.value as 'standard' | 'custom' | 'hybrid')
+                      }
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
-                      operationMode === 'custom' ? 'border-primary bg-primary' : 'border-slate-300'
-                    }`}>
-                      {operationMode === 'custom' && <div className="w-2 h-2 rounded-full bg-white" />}
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0 ${
+                        operationMode === 'custom'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300'
+                      }`}
+                    >
+                      {operationMode === 'custom' && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
                     </div>
                     <div className="flex-1">
-                      <p className={`font-semibold ${operationMode === 'custom' ? 'text-primary' : 'text-slate-700'}`}>
+                      <p
+                        className={`font-semibold ${operationMode === 'custom' ? 'text-primary' : 'text-slate-700'}`}
+                      >
                         {locale === 'ar' ? 'طلبات خاصة فقط' : 'Custom Orders Only'}
                       </p>
                       <p className="text-sm text-slate-500 mt-1">
@@ -1060,19 +1130,25 @@ export default function ProviderSettingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {/* Text */}
                         <button
-                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_text: !s.accepts_text }))}
+                          onClick={() =>
+                            setCustomOrderSettings((s) => ({ ...s, accepts_text: !s.accepts_text }))
+                          }
                           className={`p-4 rounded-xl border transition-all ${
                             customOrderSettings.accepts_text
                               ? 'border-primary bg-primary/5'
                               : 'border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <FileText className={`w-6 h-6 mx-auto mb-2 ${
-                            customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-400'
-                          }`} />
-                          <p className={`font-medium ${
-                            customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-600'
-                          }`}>
+                          <FileText
+                            className={`w-6 h-6 mx-auto mb-2 ${
+                              customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-400'
+                            }`}
+                          />
+                          <p
+                            className={`font-medium ${
+                              customOrderSettings.accepts_text ? 'text-primary' : 'text-slate-600'
+                            }`}
+                          >
                             {locale === 'ar' ? 'نصي' : 'Text'}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
@@ -1082,19 +1158,28 @@ export default function ProviderSettingsPage() {
 
                         {/* Voice */}
                         <button
-                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_voice: !s.accepts_voice }))}
+                          onClick={() =>
+                            setCustomOrderSettings((s) => ({
+                              ...s,
+                              accepts_voice: !s.accepts_voice,
+                            }))
+                          }
                           className={`p-4 rounded-xl border transition-all ${
                             customOrderSettings.accepts_voice
                               ? 'border-primary bg-primary/5'
                               : 'border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <Mic className={`w-6 h-6 mx-auto mb-2 ${
-                            customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-400'
-                          }`} />
-                          <p className={`font-medium ${
-                            customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-600'
-                          }`}>
+                          <Mic
+                            className={`w-6 h-6 mx-auto mb-2 ${
+                              customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-400'
+                            }`}
+                          />
+                          <p
+                            className={`font-medium ${
+                              customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-600'
+                            }`}
+                          >
                             {locale === 'ar' ? 'صوتي' : 'Voice'}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
@@ -1104,19 +1189,28 @@ export default function ProviderSettingsPage() {
 
                         {/* Image */}
                         <button
-                          onClick={() => setCustomOrderSettings(s => ({ ...s, accepts_image: !s.accepts_image }))}
+                          onClick={() =>
+                            setCustomOrderSettings((s) => ({
+                              ...s,
+                              accepts_image: !s.accepts_image,
+                            }))
+                          }
                           className={`p-4 rounded-xl border transition-all ${
                             customOrderSettings.accepts_image
                               ? 'border-primary bg-primary/5'
                               : 'border-slate-200 hover:border-slate-300'
                           }`}
                         >
-                          <ImageIcon className={`w-6 h-6 mx-auto mb-2 ${
-                            customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-400'
-                          }`} />
-                          <p className={`font-medium ${
-                            customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-600'
-                          }`}>
+                          <ImageIcon
+                            className={`w-6 h-6 mx-auto mb-2 ${
+                              customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-400'
+                            }`}
+                          />
+                          <p
+                            className={`font-medium ${
+                              customOrderSettings.accepts_image ? 'text-primary' : 'text-slate-600'
+                            }`}
+                          >
                             {locale === 'ar' ? 'صور' : 'Image'}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
@@ -1144,14 +1238,18 @@ export default function ProviderSettingsPage() {
                             min="1"
                             max="48"
                             value={customOrderSettings.pricing_timeout_hours}
-                            onChange={(e) => setCustomOrderSettings(s => ({
-                              ...s,
-                              pricing_timeout_hours: parseInt(e.target.value) || 2
-                            }))}
+                            onChange={(e) =>
+                              setCustomOrderSettings((s) => ({
+                                ...s,
+                                pricing_timeout_hours: parseInt(e.target.value) || 2,
+                              }))
+                            }
                             className="bg-white border-slate-200"
                           />
                           <p className="text-xs text-slate-400 mt-1">
-                            {locale === 'ar' ? 'الوقت المتاح لك لتسعير الطلب' : 'Time available to price the order'}
+                            {locale === 'ar'
+                              ? 'الوقت المتاح لك لتسعير الطلب'
+                              : 'Time available to price the order'}
                           </p>
                         </div>
 
@@ -1159,21 +1257,27 @@ export default function ProviderSettingsPage() {
                         <div>
                           <Label className="text-sm text-slate-500 mb-1 flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            {locale === 'ar' ? 'مهلة موافقة العميل (ساعات)' : 'Customer Approval Timeout (hours)'}
+                            {locale === 'ar'
+                              ? 'مهلة موافقة العميل (ساعات)'
+                              : 'Customer Approval Timeout (hours)'}
                           </Label>
                           <Input
                             type="number"
                             min="1"
                             max="24"
                             value={customOrderSettings.customer_approval_timeout_hours}
-                            onChange={(e) => setCustomOrderSettings(s => ({
-                              ...s,
-                              customer_approval_timeout_hours: parseInt(e.target.value) || 2
-                            }))}
+                            onChange={(e) =>
+                              setCustomOrderSettings((s) => ({
+                                ...s,
+                                customer_approval_timeout_hours: parseInt(e.target.value) || 2,
+                              }))
+                            }
                             className="bg-white border-slate-200"
                           />
                           <p className="text-xs text-slate-400 mt-1">
-                            {locale === 'ar' ? 'الوقت المتاح للعميل للموافقة على السعر' : 'Time for customer to approve price'}
+                            {locale === 'ar'
+                              ? 'الوقت المتاح للعميل للموافقة على السعر'
+                              : 'Time for customer to approve price'}
                           </p>
                         </div>
                       </div>
@@ -1181,21 +1285,32 @@ export default function ProviderSettingsPage() {
 
                     {/* Welcome Banner */}
                     <div className="space-y-4">
-                      <div className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}>
+                      <div
+                        className={`flex items-center justify-between ${isRTL ? 'flex-row-reverse' : ''}`}
+                      >
                         <Label className="text-slate-900 font-medium">
                           {locale === 'ar' ? 'بانر الترحيب' : 'Welcome Banner'}
                         </Label>
                         <button
                           type="button"
-                          onClick={() => setCustomOrderSettings(s => ({ ...s, welcome_banner_enabled: !s.welcome_banner_enabled }))}
+                          onClick={() =>
+                            setCustomOrderSettings((s) => ({
+                              ...s,
+                              welcome_banner_enabled: !s.welcome_banner_enabled,
+                            }))
+                          }
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            customOrderSettings.welcome_banner_enabled ? 'bg-primary' : 'bg-slate-300'
+                            customOrderSettings.welcome_banner_enabled
+                              ? 'bg-primary'
+                              : 'bg-slate-300'
                           }`}
                           dir="ltr"
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              customOrderSettings.welcome_banner_enabled ? 'translate-x-6' : 'translate-x-1'
+                              customOrderSettings.welcome_banner_enabled
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
                             }`}
                           />
                         </button>
@@ -1209,10 +1324,12 @@ export default function ProviderSettingsPage() {
                             </Label>
                             <Textarea
                               value={customOrderSettings.welcome_banner_text_ar}
-                              onChange={(e) => setCustomOrderSettings(s => ({
-                                ...s,
-                                welcome_banner_text_ar: e.target.value
-                              }))}
+                              onChange={(e) =>
+                                setCustomOrderSettings((s) => ({
+                                  ...s,
+                                  welcome_banner_text_ar: e.target.value,
+                                }))
+                              }
                               className="bg-white border-slate-200"
                               dir="rtl"
                               rows={2}
@@ -1224,10 +1341,12 @@ export default function ProviderSettingsPage() {
                             </Label>
                             <Textarea
                               value={customOrderSettings.welcome_banner_text_en}
-                              onChange={(e) => setCustomOrderSettings(s => ({
-                                ...s,
-                                welcome_banner_text_en: e.target.value
-                              }))}
+                              onChange={(e) =>
+                                setCustomOrderSettings((s) => ({
+                                  ...s,
+                                  welcome_banner_text_en: e.target.value,
+                                }))
+                              }
                               className="bg-white border-slate-200"
                               dir="ltr"
                               rows={2}
@@ -1239,17 +1358,37 @@ export default function ProviderSettingsPage() {
 
                     {/* Info Box */}
                     <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                      <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                      <div
+                        className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                      >
                         <Sparkles className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
                         <div className="text-sm text-emerald-800">
                           <p className="font-medium mb-1">
                             {locale === 'ar' ? 'نظام الطلب الخاص' : 'Custom Order System'}
                           </p>
-                          <ul className={`space-y-1 text-emerald-700 ${isRTL ? 'list-disc list-inside' : 'list-disc list-inside'}`}>
-                            <li>{locale === 'ar' ? 'العميل يرسل طلبه (نص/صوت/صورة)' : 'Customer sends order (text/voice/image)'}</li>
-                            <li>{locale === 'ar' ? 'تقوم بتسعير الطلب وإرساله للعميل' : 'You price the order and send it to customer'}</li>
-                            <li>{locale === 'ar' ? 'العميل يوافق أو يرفض السعر' : 'Customer approves or rejects the price'}</li>
-                            <li>{locale === 'ar' ? 'أول متجر يقدم سعر مناسب يفوز بالطلب!' : 'First store to offer a good price wins!'}</li>
+                          <ul
+                            className={`space-y-1 text-emerald-700 ${isRTL ? 'list-disc list-inside' : 'list-disc list-inside'}`}
+                          >
+                            <li>
+                              {locale === 'ar'
+                                ? 'العميل يرسل طلبه (نص/صوت/صورة)'
+                                : 'Customer sends order (text/voice/image)'}
+                            </li>
+                            <li>
+                              {locale === 'ar'
+                                ? 'تقوم بتسعير الطلب وإرساله للعميل'
+                                : 'You price the order and send it to customer'}
+                            </li>
+                            <li>
+                              {locale === 'ar'
+                                ? 'العميل يوافق أو يرفض السعر'
+                                : 'Customer approves or rejects the price'}
+                            </li>
+                            <li>
+                              {locale === 'ar'
+                                ? 'أول متجر يقدم سعر مناسب يفوز بالطلب!'
+                                : 'First store to offer a good price wins!'}
+                            </li>
                           </ul>
                         </div>
                       </div>
@@ -1303,18 +1442,26 @@ export default function ProviderSettingsPage() {
                   <span className="text-sm text-slate-500">
                     {locale === 'ar' ? 'الحالة الحالية:' : 'Current Status:'}
                   </span>
-                  <span className={`px-3 py-1 rounded-lg text-sm font-semibold border ${
-                    provider?.status === 'open'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : provider?.status === 'closed'
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}>
+                  <span
+                    className={`px-3 py-1 rounded-lg text-sm font-semibold border ${
+                      provider?.status === 'open'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : provider?.status === 'closed'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
+                  >
                     {provider?.status === 'open'
-                      ? locale === 'ar' ? 'مفتوح' : 'Open'
+                      ? locale === 'ar'
+                        ? 'مفتوح'
+                        : 'Open'
                       : provider?.status === 'closed'
-                      ? locale === 'ar' ? 'مغلق' : 'Closed'
-                      : locale === 'ar' ? 'متوقف مؤقتاً' : 'Temporarily Paused'}
+                        ? locale === 'ar'
+                          ? 'مغلق'
+                          : 'Closed'
+                        : locale === 'ar'
+                          ? 'متوقف مؤقتاً'
+                          : 'Temporarily Paused'}
                   </span>
                 </div>
 
@@ -1333,30 +1480,30 @@ export default function ProviderSettingsPage() {
                         : 'border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      provider?.status === 'open'
-                        ? 'border-emerald-500 bg-emerald-500'
-                        : 'border-slate-300 bg-white'
-                    }`}>
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        provider?.status === 'open'
+                          ? 'border-emerald-500 bg-emerald-500'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
                       {provider?.status === 'open' && (
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
                       )}
                     </div>
                     <div className="text-start flex-1">
-                      <p className={`font-semibold ${
-                        provider?.status === 'open' ? 'text-emerald-700' : 'text-slate-700'
-                      }`}>
+                      <p
+                        className={`font-semibold ${
+                          provider?.status === 'open' ? 'text-emerald-700' : 'text-slate-700'
+                        }`}
+                      >
                         {locale === 'ar' ? 'مفتوح' : 'Open'}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {locale === 'ar'
-                          ? 'المتجر يستقبل الطلبات'
-                          : 'Store is accepting orders'}
+                        {locale === 'ar' ? 'المتجر يستقبل الطلبات' : 'Store is accepting orders'}
                       </p>
                     </div>
-                    {provider?.status === 'open' && (
-                      <Check className="w-5 h-5 text-emerald-500" />
-                    )}
+                    {provider?.status === 'open' && <Check className="w-5 h-5 text-emerald-500" />}
                   </button>
 
                   {/* Temporarily Paused Option */}
@@ -1369,19 +1516,25 @@ export default function ProviderSettingsPage() {
                         : 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      provider?.status === 'temporarily_paused'
-                        ? 'border-amber-500 bg-amber-500'
-                        : 'border-slate-300 bg-white'
-                    }`}>
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        provider?.status === 'temporarily_paused'
+                          ? 'border-amber-500 bg-amber-500'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
                       {provider?.status === 'temporarily_paused' && (
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
                       )}
                     </div>
                     <div className="text-start flex-1">
-                      <p className={`font-semibold ${
-                        provider?.status === 'temporarily_paused' ? 'text-amber-700' : 'text-slate-700'
-                      }`}>
+                      <p
+                        className={`font-semibold ${
+                          provider?.status === 'temporarily_paused'
+                            ? 'text-amber-700'
+                            : 'text-slate-700'
+                        }`}
+                      >
                         {locale === 'ar' ? 'متوقف مؤقتاً' : 'Temporarily Paused'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -1405,19 +1558,23 @@ export default function ProviderSettingsPage() {
                         : 'border-slate-200 hover:border-red-300 hover:bg-red-50/50'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                      provider?.status === 'closed'
-                        ? 'border-red-500 bg-red-500'
-                        : 'border-slate-300 bg-white'
-                    }`}>
+                    <div
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                        provider?.status === 'closed'
+                          ? 'border-red-500 bg-red-500'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
                       {provider?.status === 'closed' && (
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
                       )}
                     </div>
                     <div className="text-start flex-1">
-                      <p className={`font-semibold ${
-                        provider?.status === 'closed' ? 'text-red-700' : 'text-slate-700'
-                      }`}>
+                      <p
+                        className={`font-semibold ${
+                          provider?.status === 'closed' ? 'text-red-700' : 'text-slate-700'
+                        }`}
+                      >
                         {locale === 'ar' ? 'مغلق' : 'Closed'}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -1426,9 +1583,7 @@ export default function ProviderSettingsPage() {
                           : 'Store is closed and not accepting orders'}
                       </p>
                     </div>
-                    {provider?.status === 'closed' && (
-                      <Check className="w-5 h-5 text-red-500" />
-                    )}
+                    {provider?.status === 'closed' && <Check className="w-5 h-5 text-red-500" />}
                   </button>
                 </div>
 
@@ -1438,7 +1593,7 @@ export default function ProviderSettingsPage() {
                   <p>
                     {locale === 'ar'
                       ? 'تغيير الحالة سيؤثر على ظهور متجرك للعملاء وقدرتهم على تقديم الطلبات.'
-                      : 'Changing status will affect your store visibility and customers\' ability to place orders.'}
+                      : "Changing status will affect your store visibility and customers' ability to place orders."}
                   </p>
                 </div>
               </CardContent>
@@ -1464,7 +1619,9 @@ export default function ProviderSettingsPage() {
                       </span>
                     </div>
                     <div>
-                      <p className="font-medium text-lg text-slate-900">{userEmail?.split('@')[0]}</p>
+                      <p className="font-medium text-lg text-slate-900">
+                        {userEmail?.split('@')[0]}
+                      </p>
                       <p className="text-slate-500 text-sm">{userEmail}</p>
                     </div>
                   </div>
@@ -1490,9 +1647,13 @@ export default function ProviderSettingsPage() {
                           <Lock className="w-5 h-5" />
                         </div>
                         <div className={isRTL ? 'text-right' : 'text-left'}>
-                          <p className="font-medium text-slate-900">{locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}</p>
+                          <p className="font-medium text-slate-900">
+                            {locale === 'ar' ? 'تغيير كلمة المرور' : 'Change Password'}
+                          </p>
                           <p className="text-xs text-slate-500">
-                            {locale === 'ar' ? 'تحديث كلمة المرور الخاصة بك' : 'Update your password'}
+                            {locale === 'ar'
+                              ? 'تحديث كلمة المرور الخاصة بك'
+                              : 'Update your password'}
                           </p>
                         </div>
                       </div>
@@ -1506,11 +1667,11 @@ export default function ProviderSettingsPage() {
                         </h4>
                         <button
                           onClick={() => {
-                            setShowPasswordForm(false)
-                            setPasswordMessage(null)
-                            setCurrentPassword('')
-                            setNewPassword('')
-                            setConfirmPassword('')
+                            setShowPasswordForm(false);
+                            setPasswordMessage(null);
+                            setCurrentPassword('');
+                            setNewPassword('');
+                            setConfirmPassword('');
                           }}
                           className="text-slate-500 hover:text-slate-900"
                         >
@@ -1529,14 +1690,22 @@ export default function ProviderSettingsPage() {
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             className={`bg-white border-slate-200 ${isRTL ? 'pl-10' : 'pr-10'}`}
-                            placeholder={locale === 'ar' ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
+                            placeholder={
+                              locale === 'ar'
+                                ? 'أدخل كلمة المرور الحالية'
+                                : 'Enter current password'
+                            }
                           />
                           <button
                             type="button"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                             className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-500`}
                           >
-                            {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {showCurrentPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1552,14 +1721,20 @@ export default function ProviderSettingsPage() {
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             className={`bg-white border-slate-200 ${isRTL ? 'pl-10' : 'pr-10'}`}
-                            placeholder={locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
+                            placeholder={
+                              locale === 'ar' ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'
+                            }
                           />
                           <button
                             type="button"
                             onClick={() => setShowNewPassword(!showNewPassword)}
                             className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-500`}
                           >
-                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            {showNewPassword ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1574,17 +1749,23 @@ export default function ProviderSettingsPage() {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           className="bg-white border-slate-200"
-                          placeholder={locale === 'ar' ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
+                          placeholder={
+                            locale === 'ar'
+                              ? 'أعد إدخال كلمة المرور الجديدة'
+                              : 'Re-enter new password'
+                          }
                         />
                       </div>
 
                       {/* Password Message */}
                       {passwordMessage && (
-                        <div className={`flex items-center gap-2 p-3 rounded-lg ${
-                          passwordMessage.type === 'success'
-                            ? 'bg-[hsl(158_100%_38%/0.15)] text-deal'
-                            : 'bg-[hsl(358_100%_68%/0.15)] text-error'
-                        }`}>
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${
+                            passwordMessage.type === 'success'
+                              ? 'bg-[hsl(158_100%_38%/0.15)] text-deal'
+                              : 'bg-[hsl(358_100%_68%/0.15)] text-error'
+                          }`}
+                        >
                           {passwordMessage.type === 'success' ? (
                             <Check className="w-4 h-4" />
                           ) : (
@@ -1602,7 +1783,9 @@ export default function ProviderSettingsPage() {
                       >
                         {savingPassword ? (
                           <>
-                            <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                            <Loader2
+                              className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`}
+                            />
                             {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                           </>
                         ) : (
@@ -1642,9 +1825,13 @@ export default function ProviderSettingsPage() {
                             <Trash2 className="w-5 h-5 text-red-600" />
                           </div>
                           <div className={isRTL ? 'text-right' : 'text-left'}>
-                            <p className="font-medium text-red-600">{locale === 'ar' ? 'حذف حسابي' : 'Delete My Account'}</p>
+                            <p className="font-medium text-red-600">
+                              {locale === 'ar' ? 'حذف حسابي' : 'Delete My Account'}
+                            </p>
                             <p className="text-xs text-slate-500">
-                              {locale === 'ar' ? 'حذف الحساب والبيانات نهائياً' : 'Permanently delete account and data'}
+                              {locale === 'ar'
+                                ? 'حذف الحساب والبيانات نهائياً'
+                                : 'Permanently delete account and data'}
                             </p>
                           </div>
                         </div>
@@ -1657,7 +1844,9 @@ export default function ProviderSettingsPage() {
                           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                           <div>
                             <p className="font-medium text-red-700">
-                              {locale === 'ar' ? 'تحذير: هذا الإجراء نهائي!' : 'Warning: This action is permanent!'}
+                              {locale === 'ar'
+                                ? 'تحذير: هذا الإجراء نهائي!'
+                                : 'Warning: This action is permanent!'}
                             </p>
                             <p className="text-sm text-red-600 mt-1">
                               {locale === 'ar'
@@ -1670,9 +1859,7 @@ export default function ProviderSettingsPage() {
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-slate-700">
-                          {locale === 'ar'
-                            ? 'اكتب "حذف" للتأكيد'
-                            : 'Type "DELETE" to confirm'}
+                          {locale === 'ar' ? 'اكتب "حذف" للتأكيد' : 'Type "DELETE" to confirm'}
                         </label>
                         <Input
                           value={deleteConfirmText}
@@ -1687,8 +1874,8 @@ export default function ProviderSettingsPage() {
                           variant="outline"
                           className="flex-1"
                           onClick={() => {
-                            setShowDeleteConfirm(false)
-                            setDeleteConfirmText('')
+                            setShowDeleteConfirm(false);
+                            setDeleteConfirmText('');
                           }}
                         >
                           {locale === 'ar' ? 'إلغاء' : 'Cancel'}
@@ -1696,11 +1883,16 @@ export default function ProviderSettingsPage() {
                         <Button
                           className="flex-1 !bg-red-600 hover:!bg-red-700 !text-white"
                           onClick={handleDeleteAccount}
-                          disabled={deletingAccount || (deleteConfirmText !== 'DELETE' && deleteConfirmText !== 'حذف')}
+                          disabled={
+                            deletingAccount ||
+                            (deleteConfirmText !== 'DELETE' && deleteConfirmText !== 'حذف')
+                          }
                         >
                           {deletingAccount ? (
                             <>
-                              <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                              <Loader2
+                                className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`}
+                              />
                               {locale === 'ar' ? 'جاري الحذف...' : 'Deleting...'}
                             </>
                           ) : (
@@ -1740,7 +1932,7 @@ export default function ProviderSettingsPage() {
                 <p className="text-sm text-slate-500 mt-1">
                   {locale === 'ar'
                     ? 'إدارة أوقات العمل اليومية للمتجر'
-                    : 'Manage your store\'s daily working hours'}
+                    : "Manage your store's daily working hours"}
                 </p>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1820,5 +2012,5 @@ export default function ProviderSettingsPage() {
         </div>
       </div>
     </ProviderLayout>
-  )
+  );
 }

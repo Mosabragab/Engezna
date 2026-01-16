@@ -1,41 +1,41 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift, Sparkles } from 'lucide-react'
-import { useCart, CartItem } from '@/lib/store/cart'
-import { CustomerLayout } from '@/components/customer/layout'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift, Sparkles } from 'lucide-react';
+import { useCart, CartItem } from '@/lib/store/cart';
+import { CustomerLayout } from '@/components/customer/layout';
+import { createClient } from '@/lib/supabase/client';
 
 type ExtrasItem = {
-  id: string
-  name_ar: string
-  name_en: string
-  price: number
-  image_url: string | null
-  provider_id: string
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+  price: number;
+  image_url: string | null;
+  provider_id: string;
+};
 
 type Promotion = {
-  id: string
-  type: 'percentage' | 'fixed' | 'buy_x_get_y'
-  discount_value: number
-  buy_quantity?: number
-  get_quantity?: number
-  name_ar: string
-  name_en: string
-  applies_to: 'all' | 'specific'
-  product_ids?: string[]
-  min_order_amount?: number
-  max_discount?: number
-}
+  id: string;
+  type: 'percentage' | 'fixed' | 'buy_x_get_y';
+  discount_value: number;
+  buy_quantity?: number;
+  get_quantity?: number;
+  name_ar: string;
+  name_en: string;
+  applies_to: 'all' | 'specific';
+  product_ids?: string[];
+  min_order_amount?: number;
+  max_discount?: number;
+};
 
 export default function CartPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const t = useTranslations('cart')
+  const locale = useLocale();
+  const router = useRouter();
+  const t = useTranslations('cart');
 
   const {
     cart: items,
@@ -47,24 +47,24 @@ export default function CartPage() {
     getTotal,
     getItemCount,
     addItem,
-  } = useCart()
+  } = useCart();
 
-  const [promotions, setPromotions] = useState<Promotion[]>([])
-  const [loadingPromotions, setLoadingPromotions] = useState(false)
-  const [extrasItems, setExtrasItems] = useState<ExtrasItem[]>([])
-  const [loadingExtras, setLoadingExtras] = useState(false)
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [loadingPromotions, setLoadingPromotions] = useState(false);
+  const [extrasItems, setExtrasItems] = useState<ExtrasItem[]>([]);
+  const [loadingExtras, setLoadingExtras] = useState(false);
 
   // Fetch active promotions for the provider
   useEffect(() => {
     async function fetchPromotions() {
       if (!provider?.id) {
-        setPromotions([])
-        return
+        setPromotions([]);
+        return;
       }
 
-      setLoadingPromotions(true)
-      const supabase = createClient()
-      const now = new Date().toISOString()
+      setLoadingPromotions(true);
+      const supabase = createClient();
+      const now = new Date().toISOString();
 
       const { data } = await supabase
         .from('promotions')
@@ -72,27 +72,27 @@ export default function CartPage() {
         .eq('provider_id', provider.id)
         .eq('is_active', true)
         .lte('start_date', now)
-        .gte('end_date', now)
+        .gte('end_date', now);
 
       if (data) {
-        setPromotions(data)
+        setPromotions(data);
       }
-      setLoadingPromotions(false)
+      setLoadingPromotions(false);
     }
 
-    fetchPromotions()
-  }, [provider?.id])
+    fetchPromotions();
+  }, [provider?.id]);
 
   // Fetch extras items from provider's "extras" category
   useEffect(() => {
     async function fetchExtras() {
       if (!provider?.id) {
-        setExtrasItems([])
-        return
+        setExtrasItems([]);
+        return;
       }
 
-      setLoadingExtras(true)
-      const supabase = createClient()
+      setLoadingExtras(true);
+      const supabase = createClient();
 
       // First, find the extras category for this provider
       const { data: extrasCategory } = await supabase
@@ -102,16 +102,16 @@ export default function CartPage() {
         .eq('is_extras', true)
         .eq('is_active', true)
         .limit(1)
-        .single()
+        .single();
 
       if (!extrasCategory) {
-        setExtrasItems([])
-        setLoadingExtras(false)
-        return
+        setExtrasItems([]);
+        setLoadingExtras(false);
+        return;
       }
 
       // Get items from the extras category that aren't already in cart
-      const cartItemIds = items.map(item => item.menuItem.id)
+      const cartItemIds = items.map((item) => item.menuItem.id);
 
       const { data: extras } = await supabase
         .from('menu_items')
@@ -120,136 +120,142 @@ export default function CartPage() {
         .eq('category_id', extrasCategory.id)
         .eq('is_available', true)
         .order('display_order', { ascending: true })
-        .limit(6)
+        .limit(6);
 
       if (extras) {
         // Filter out items already in cart
-        const filteredExtras = extras.filter(item => !cartItemIds.includes(item.id))
-        setExtrasItems(filteredExtras.slice(0, 4)) // Show max 4 items
+        const filteredExtras = extras.filter((item) => !cartItemIds.includes(item.id));
+        setExtrasItems(filteredExtras.slice(0, 4)); // Show max 4 items
       }
-      setLoadingExtras(false)
+      setLoadingExtras(false);
     }
 
-    fetchExtras()
-  }, [provider?.id, items])
+    fetchExtras();
+  }, [provider?.id, items]);
 
   // Get applicable promotion for a product
   const getProductPromotion = (productId: string): Promotion | null => {
     for (const promo of promotions) {
       if (promo.applies_to === 'all') {
-        return promo
+        return promo;
       }
       if (promo.applies_to === 'specific' && promo.product_ids?.includes(productId)) {
-        return promo
+        return promo;
       }
     }
-    return null
-  }
+    return null;
+  };
 
   // Calculate variant-level discount (from original_price)
   const calculateVariantDiscount = (item: CartItem): number => {
     // Check if variant has original_price (meaning it's discounted)
-    if (item.selectedVariant?.original_price && item.selectedVariant.original_price > item.selectedVariant.price) {
-      const discountPerUnit = item.selectedVariant.original_price - item.selectedVariant.price
-      return discountPerUnit * item.quantity
+    if (
+      item.selectedVariant?.original_price &&
+      item.selectedVariant.original_price > item.selectedVariant.price
+    ) {
+      const discountPerUnit = item.selectedVariant.original_price - item.selectedVariant.price;
+      return discountPerUnit * item.quantity;
     }
 
     // Check if menu item has original_price (meaning it's discounted)
     if (item.menuItem.original_price && item.menuItem.original_price > item.menuItem.price) {
-      const discountPerUnit = item.menuItem.original_price - item.menuItem.price
-      return discountPerUnit * item.quantity
+      const discountPerUnit = item.menuItem.original_price - item.menuItem.price;
+      return discountPerUnit * item.quantity;
     }
 
-    return 0
-  }
+    return 0;
+  };
 
   // Calculate discount for a single item (from promotions table)
   const calculateItemDiscount = (item: CartItem): number => {
     // First check for variant-level discount (original_price)
-    const variantDiscount = calculateVariantDiscount(item)
+    const variantDiscount = calculateVariantDiscount(item);
     if (variantDiscount > 0) {
-      return variantDiscount
+      return variantDiscount;
     }
 
     // Then check for promotions-based discount
-    const promo = getProductPromotion(item.menuItem.id)
-    if (!promo) return 0
+    const promo = getProductPromotion(item.menuItem.id);
+    if (!promo) return 0;
 
-    const price = item.selectedVariant?.price ?? item.menuItem.price
-    const itemTotal = price * item.quantity
-    const subtotal = getSubtotal()
+    const price = item.selectedVariant?.price ?? item.menuItem.price;
+    const itemTotal = price * item.quantity;
+    const subtotal = getSubtotal();
 
     // Check if this specific promotion meets min_order_amount requirement
     if (promo.min_order_amount && subtotal < promo.min_order_amount) {
-      return 0 // This promotion doesn't apply due to minimum order
+      return 0; // This promotion doesn't apply due to minimum order
     }
 
     if (promo.type === 'percentage') {
-      let discount = (itemTotal * promo.discount_value) / 100
+      let discount = (itemTotal * promo.discount_value) / 100;
       // Apply max discount if set
       if (promo.max_discount && discount > promo.max_discount) {
-        discount = promo.max_discount
+        discount = promo.max_discount;
       }
-      return discount
+      return discount;
     }
 
     if (promo.type === 'fixed') {
       // Fixed discount per item
-      return Math.min(promo.discount_value * item.quantity, itemTotal)
+      return Math.min(promo.discount_value * item.quantity, itemTotal);
     }
 
     if (promo.type === 'buy_x_get_y' && promo.buy_quantity && promo.get_quantity) {
       // Calculate free items
-      const totalItems = item.quantity
-      const setSize = promo.buy_quantity + promo.get_quantity
-      const completeSets = Math.floor(totalItems / setSize)
-      const freeItems = completeSets * promo.get_quantity
-      return freeItems * price
+      const totalItems = item.quantity;
+      const setSize = promo.buy_quantity + promo.get_quantity;
+      const completeSets = Math.floor(totalItems / setSize);
+      const freeItems = completeSets * promo.get_quantity;
+      return freeItems * price;
     }
 
-    return 0
-  }
+    return 0;
+  };
 
   // Calculate total discount
   const calculateTotalDiscount = (): number => {
     // Sum up discounts per item (min_order_amount is checked per-promotion in calculateItemDiscount)
-    return items.reduce((sum, item) => sum + calculateItemDiscount(item), 0)
-  }
+    return items.reduce((sum, item) => sum + calculateItemDiscount(item), 0);
+  };
 
-  const subtotal = getSubtotal()
-  const discount = calculateTotalDiscount()
-  const deliveryFee = provider?.delivery_fee || 0
-  const total = subtotal - discount + deliveryFee
+  const subtotal = getSubtotal();
+  const discount = calculateTotalDiscount();
+  const deliveryFee = provider?.delivery_fee || 0;
+  const total = subtotal - discount + deliveryFee;
 
   const handleCheckout = () => {
-    router.push(`/${locale}/checkout`)
-  }
+    router.push(`/${locale}/checkout`);
+  };
 
   const getName = (item: { name_ar: string; name_en: string }) => {
-    return locale === 'ar' ? item.name_ar : item.name_en
-  }
+    return locale === 'ar' ? item.name_ar : item.name_en;
+  };
 
   // Handle adding an extras item to cart
   const handleAddExtras = (extrasItem: ExtrasItem) => {
-    if (!provider) return
+    if (!provider) return;
 
     // Create a complete menu item object for the cart
-    addItem({
-      id: extrasItem.id,
-      name_ar: extrasItem.name_ar,
-      name_en: extrasItem.name_en,
-      price: extrasItem.price,
-      image_url: extrasItem.image_url,
-      provider_id: extrasItem.provider_id,
-      // Required fields with defaults for extras
-      description_ar: null,
-      description_en: null,
-      is_available: true,
-      is_vegetarian: false,
-      is_spicy: false,
-      preparation_time_min: 0,
-    }, provider)
-  }
+    addItem(
+      {
+        id: extrasItem.id,
+        name_ar: extrasItem.name_ar,
+        name_en: extrasItem.name_en,
+        price: extrasItem.price,
+        image_url: extrasItem.image_url,
+        provider_id: extrasItem.provider_id,
+        // Required fields with defaults for extras
+        description_ar: null,
+        description_en: null,
+        is_available: true,
+        is_vegetarian: false,
+        is_spicy: false,
+        preparation_time_min: 0,
+      },
+      provider
+    );
+  };
 
   if (items.length === 0) {
     return (
@@ -268,7 +274,7 @@ export default function CartPage() {
           </button>
         </div>
       </CustomerLayout>
-    )
+    );
   }
 
   return (
@@ -300,12 +306,13 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="space-y-3 mb-6">
           {items.map((item) => {
-            const promo = getProductPromotion(item.menuItem.id)
-            const itemDiscount = calculateItemDiscount(item)
-            const price = item.selectedVariant?.price ?? item.menuItem.price
-            const itemTotal = price * item.quantity
+            const promo = getProductPromotion(item.menuItem.id);
+            const itemDiscount = calculateItemDiscount(item);
+            const price = item.selectedVariant?.price ?? item.menuItem.price;
+            const itemTotal = price * item.quantity;
             // Check if promo exists but discount is 0 due to min_order_amount
-            const hasUnmetMinOrder = promo && promo.min_order_amount && subtotal < promo.min_order_amount
+            const hasUnmetMinOrder =
+              promo && promo.min_order_amount && subtotal < promo.min_order_amount;
 
             return (
               <div
@@ -356,7 +363,9 @@ export default function CartPage() {
                     </h4>
                     {item.selectedVariant && (
                       <p className="text-xs text-slate-500">
-                        {locale === 'ar' ? item.selectedVariant.name_ar : (item.selectedVariant.name_en || item.selectedVariant.name_ar)}
+                        {locale === 'ar'
+                          ? item.selectedVariant.name_ar
+                          : item.selectedVariant.name_en || item.selectedVariant.name_ar}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-1">
@@ -388,11 +397,15 @@ export default function CartPage() {
                         >
                           <Minus className="w-5 h-5" />
                         </button>
-                        <span className="w-8 text-center font-semibold">
-                          {item.quantity}
-                        </span>
+                        <span className="w-8 text-center font-semibold">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1, item.selectedVariant?.id)}
+                          onClick={() =>
+                            updateQuantity(
+                              item.menuItem.id,
+                              item.quantity + 1,
+                              item.selectedVariant?.id
+                            )
+                          }
                           className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
                           aria-label={locale === 'ar' ? 'زيادة الكمية' : 'Increase quantity'}
                         >
@@ -407,7 +420,8 @@ export default function CartPage() {
                               {itemTotal.toFixed(2)}
                             </span>
                             <span className="font-bold text-green-600 ms-2">
-                              {(itemTotal - itemDiscount).toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              {(itemTotal - itemDiscount).toFixed(2)}{' '}
+                              {locale === 'ar' ? 'ج.م' : 'EGP'}
                             </span>
                           </>
                         ) : (
@@ -420,7 +434,7 @@ export default function CartPage() {
                   </div>
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -494,7 +508,9 @@ export default function CartPage() {
           <div className="space-y-3">
             <div className="flex justify-between text-slate-600">
               <span>{t('subtotal')}</span>
-              <span>{subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span>
+                {subtotal.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
 
             {/* Discount Row */}
@@ -504,7 +520,9 @@ export default function CartPage() {
                   <Percent className="w-4 h-4" />
                   {locale === 'ar' ? 'خصم العرض' : 'Promotion Discount'}
                 </span>
-                <span>-{discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+                <span>
+                  -{discount.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                </span>
               </div>
             )}
 
@@ -512,15 +530,18 @@ export default function CartPage() {
               <span>{t('deliveryFee')}</span>
               <span>
                 {deliveryFee === 0
-                  ? (locale === 'ar' ? 'مجاني' : 'Free')
-                  : `${deliveryFee.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`
-                }
+                  ? locale === 'ar'
+                    ? 'مجاني'
+                    : 'Free'
+                  : `${deliveryFee.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
               </span>
             </div>
 
             <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg">
               <span>{t('total')}</span>
-              <span className="text-primary">{total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span className="text-primary">
+                {total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </div>
 
             {/* Checkout Button - Inside card */}
@@ -528,8 +549,7 @@ export default function CartPage() {
               <div className="bg-card-bg-warning text-warning text-xs rounded-lg px-3 py-1.5 text-center">
                 {locale === 'ar'
                   ? `أضف ${(provider.min_order_amount - subtotal).toFixed(0)} ج.م للوصول للحد الأدنى`
-                  : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`
-                }
+                  : `Add ${(provider.min_order_amount - subtotal).toFixed(0)} EGP to reach minimum order`}
               </div>
             )}
 
@@ -539,11 +559,13 @@ export default function CartPage() {
               className="w-full bg-primary text-white rounded-lg py-3 font-medium text-base disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 mt-2"
             >
               <span>{t('checkout')}</span>
-              <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">{total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-md text-sm">
+                {total.toFixed(0)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+              </span>
             </button>
           </div>
         </div>
       </div>
     </CustomerLayout>
-  )
+  );
 }

@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatDate } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatDate } from '@/lib/utils/formatters';
 import {
   Shield,
   Mail,
@@ -29,32 +29,32 @@ import {
   Power,
   ToggleLeft,
   ToggleRight,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 interface EmailTemplate {
-  id: string
-  slug: string
-  name: string
-  description: string | null
-  subject: string
-  html_content: string
-  available_variables: string[]
-  is_active: boolean
-  category: string
-  created_at: string
-  updated_at: string
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  subject: string;
+  html_content: string;
+  available_variables: string[];
+  is_active: boolean;
+  category: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface TemplateVersion {
-  id: string
-  template_id: string
-  version_number: number
-  subject: string
-  html_content: string
-  created_at: string
-  change_note: string | null
+  id: string;
+  template_id: string;
+  version_number: number;
+  subject: string;
+  html_content: string;
+  created_at: string;
+  change_note: string | null;
 }
 
 // Sample data for previewing templates
@@ -87,7 +87,7 @@ const sampleData: Record<string, Record<string, string | number>> = {
     deliveryAddress: 'شارع التحرير، المنصورة، الدقهلية',
     orderUrl: 'https://www.engezna.com/ar/provider/orders/1234',
   },
-  'settlement': {
+  settlement: {
     merchantName: 'أحمد محمد',
     storeName: 'مطعم الشرق',
     formattedAmount: '15,750.50 ج.م',
@@ -198,194 +198,199 @@ const sampleData: Record<string, Record<string, string | number>> = {
     submittedAt: '15 يناير 2024 - 10:30 ص',
     reviewUrl: 'https://www.engezna.com/ar/admin/stores/pending/123',
   },
-}
+};
 
 const categoryLabels: Record<string, { ar: string; en: string }> = {
   merchant: { ar: 'التجار', en: 'Merchants' },
   customer: { ar: 'العملاء', en: 'Customers' },
   admin: { ar: 'الإدارة', en: 'Admin' },
   marketing: { ar: 'التسويق', en: 'Marketing' },
-}
+};
 
 export default function AdminEmailTemplatesPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const { toggle: toggleSidebar } = useAdminSidebar()
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const { toggle: toggleSidebar } = useAdminSidebar();
 
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [canEdit, setCanEdit] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [canEdit, setCanEdit] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [templates, setTemplates] = useState<EmailTemplate[]>([])
-  const [filteredTemplates, setFilteredTemplates] = useState<EmailTemplate[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [filteredTemplates, setFilteredTemplates] = useState<EmailTemplate[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Edit modal
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null)
-  const [formLoading, setFormLoading] = useState(false)
-  const [formError, setFormError] = useState('')
-  const [formSuccess, setFormSuccess] = useState('')
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [formLoading, setFormLoading] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
   const [formData, setFormData] = useState({
     subject: '',
     html_content: '',
-  })
+  });
 
   // Preview modal
-  const [showPreviewModal, setShowPreviewModal] = useState(false)
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null)
-  const [previewHtml, setPreviewHtml] = useState('')
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
+  const [previewHtml, setPreviewHtml] = useState('');
 
   // Version history modal
-  const [showHistoryModal, setShowHistoryModal] = useState(false)
-  const [historyTemplate, setHistoryTemplate] = useState<EmailTemplate | null>(null)
-  const [versions, setVersions] = useState<TemplateVersion[]>([])
-  const [versionsLoading, setVersionsLoading] = useState(false)
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyTemplate, setHistoryTemplate] = useState<EmailTemplate | null>(null);
+  const [versions, setVersions] = useState<TemplateVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
 
   // Copy feedback
-  const [copiedVar, setCopiedVar] = useState<string | null>(null)
+  const [copiedVar, setCopiedVar] = useState<string | null>(null);
 
   // Toggle loading state
-  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const loadTemplates = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     const { data, error } = await supabase
       .from('email_templates')
       .select('*')
       .order('category')
-      .order('name')
+      .order('name');
 
     if (error) {
-      console.error('Error loading templates:', error)
-      return
+      console.error('Error loading templates:', error);
+      return;
     }
 
-    setTemplates(data || [])
-  }, [])
+    setTemplates(data || []);
+  }, []);
 
   const checkAuth = useCallback(async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
     if (user) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
-        setIsAdmin(true)
+        setIsAdmin(true);
 
         const { data: adminUser } = await supabase
           .from('admin_users')
           .select('id, role')
           .eq('user_id', user.id)
-          .single()
+          .single();
 
         if (adminUser) {
           // Check if user can edit templates
           if (['super_admin', 'admin', 'marketing_manager'].includes(adminUser.role)) {
-            setCanEdit(true)
+            setCanEdit(true);
           }
         }
 
-        await loadTemplates(supabase)
+        await loadTemplates(supabase);
       }
     }
 
-    setLoading(false)
-  }, [loadTemplates])
+    setLoading(false);
+  }, [loadTemplates]);
 
   const filterTemplates = useCallback(() => {
-    let filtered = [...templates]
+    let filtered = [...templates];
 
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(t =>
-        t.name?.toLowerCase().includes(query) ||
-        t.slug?.toLowerCase().includes(query) ||
-        t.description?.toLowerCase().includes(query)
-      )
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.name?.toLowerCase().includes(query) ||
+          t.slug?.toLowerCase().includes(query) ||
+          t.description?.toLowerCase().includes(query)
+      );
     }
 
     if (categoryFilter !== 'all') {
-      filtered = filtered.filter(t => t.category === categoryFilter)
+      filtered = filtered.filter((t) => t.category === categoryFilter);
     }
 
-    setFilteredTemplates(filtered)
-  }, [templates, searchQuery, categoryFilter])
+    setFilteredTemplates(filtered);
+  }, [templates, searchQuery, categoryFilter]);
 
   useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
-    filterTemplates()
-  }, [filterTemplates])
+    filterTemplates();
+  }, [filterTemplates]);
 
   function replaceVariables(html: string, variables: Record<string, string | number>): string {
-    let result = html
+    let result = html;
     for (const [key, value] of Object.entries(variables)) {
-      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
-      result = result.replace(regex, String(value))
+      const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      result = result.replace(regex, String(value));
     }
-    return result
+    return result;
   }
 
   function openPreview(template: EmailTemplate) {
-    const data = sampleData[template.slug] || {}
-    const html = replaceVariables(template.html_content, data)
-    setPreviewHtml(html)
-    setPreviewTemplate(template)
-    setShowPreviewModal(true)
+    const data = sampleData[template.slug] || {};
+    const html = replaceVariables(template.html_content, data);
+    setPreviewHtml(html);
+    setPreviewTemplate(template);
+    setShowPreviewModal(true);
   }
 
   function openEditModal(template: EmailTemplate) {
-    setEditingTemplate(template)
+    setEditingTemplate(template);
     setFormData({
       subject: template.subject,
       html_content: template.html_content,
-    })
-    setFormError('')
-    setFormSuccess('')
-    setShowEditModal(true)
+    });
+    setFormError('');
+    setFormSuccess('');
+    setShowEditModal(true);
   }
 
   async function openHistoryModal(template: EmailTemplate) {
-    setHistoryTemplate(template)
-    setVersionsLoading(true)
-    setShowHistoryModal(true)
+    setHistoryTemplate(template);
+    setVersionsLoading(true);
+    setShowHistoryModal(true);
 
-    const supabase = createClient()
+    const supabase = createClient();
     const { data, error } = await supabase
       .from('email_template_versions')
       .select('*')
       .eq('template_id', template.id)
-      .order('version_number', { ascending: false })
+      .order('version_number', { ascending: false });
 
     if (!error && data) {
-      setVersions(data)
+      setVersions(data);
     }
-    setVersionsLoading(false)
+    setVersionsLoading(false);
   }
 
   async function handleSave() {
-    if (!editingTemplate) return
+    if (!editingTemplate) return;
 
     if (!formData.subject || !formData.html_content) {
-      setFormError(locale === 'ar' ? 'الموضوع والمحتوى مطلوبان' : 'Subject and content are required')
-      return
+      setFormError(
+        locale === 'ar' ? 'الموضوع والمحتوى مطلوبان' : 'Subject and content are required'
+      );
+      return;
     }
 
-    setFormLoading(true)
-    setFormError('')
-    setFormSuccess('')
+    setFormLoading(true);
+    setFormError('');
+    setFormSuccess('');
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('email_templates')
@@ -394,27 +399,27 @@ export default function AdminEmailTemplatesPage() {
         html_content: formData.html_content,
         updated_by: user?.id,
       })
-      .eq('id', editingTemplate.id)
+      .eq('id', editingTemplate.id);
 
     if (error) {
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving template')
-      setFormLoading(false)
-      return
+      setFormError(locale === 'ar' ? 'حدث خطأ أثناء الحفظ' : 'Error saving template');
+      setFormLoading(false);
+      return;
     }
 
-    setFormSuccess(locale === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Changes saved successfully')
-    await loadTemplates(supabase)
+    setFormSuccess(locale === 'ar' ? 'تم حفظ التغييرات بنجاح' : 'Changes saved successfully');
+    await loadTemplates(supabase);
 
     setTimeout(() => {
-      setShowEditModal(false)
-      setFormLoading(false)
-    }, 1000)
+      setShowEditModal(false);
+      setFormLoading(false);
+    }, 1000);
   }
 
   async function restoreVersion(version: TemplateVersion) {
-    if (!historyTemplate) return
+    if (!historyTemplate) return;
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('email_templates')
@@ -422,33 +427,33 @@ export default function AdminEmailTemplatesPage() {
         subject: version.subject,
         html_content: version.html_content,
       })
-      .eq('id', historyTemplate.id)
+      .eq('id', historyTemplate.id);
 
     if (!error) {
-      await loadTemplates(supabase)
-      setShowHistoryModal(false)
+      await loadTemplates(supabase);
+      setShowHistoryModal(false);
     }
   }
 
   function copyVariable(variable: string) {
-    navigator.clipboard.writeText(`{{${variable}}}`)
-    setCopiedVar(variable)
-    setTimeout(() => setCopiedVar(null), 2000)
+    navigator.clipboard.writeText(`{{${variable}}}`);
+    setCopiedVar(variable);
+    setTimeout(() => setCopiedVar(null), 2000);
   }
 
   async function toggleTemplateStatus(template: EmailTemplate) {
-    setTogglingId(template.id)
-    const supabase = createClient()
+    setTogglingId(template.id);
+    const supabase = createClient();
 
     const { error } = await supabase
       .from('email_templates')
       .update({ is_active: !template.is_active })
-      .eq('id', template.id)
+      .eq('id', template.id);
 
     if (!error) {
-      await loadTemplates(supabase)
+      await loadTemplates(supabase);
     }
-    setTogglingId(null)
+    setTogglingId(null);
   }
 
   if (loading) {
@@ -459,7 +464,7 @@ export default function AdminEmailTemplatesPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent mx-auto mt-20"></div>
         </div>
       </>
-    )
+    );
   }
 
   if (!user || !isAdmin) {
@@ -486,7 +491,7 @@ export default function AdminEmailTemplatesPage() {
           </div>
         </div>
       </>
-    )
+    );
   }
 
   return (
@@ -503,7 +508,9 @@ export default function AdminEmailTemplatesPage() {
           <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
             <div className="flex items-center gap-3 mb-2">
               <Mail className="w-5 h-5 text-slate-600" />
-              <span className="text-sm text-slate-600">{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
+              <span className="text-sm text-slate-600">
+                {locale === 'ar' ? 'الإجمالي' : 'Total'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">{templates.length}</p>
           </div>
@@ -512,19 +519,27 @@ export default function AdminEmailTemplatesPage() {
               <CheckCircle2 className="w-5 h-5 text-green-600" />
               <span className="text-sm text-green-700">{locale === 'ar' ? 'نشطة' : 'Active'}</span>
             </div>
-            <p className="text-2xl font-bold text-green-700">{templates.filter(t => t.is_active).length}</p>
+            <p className="text-2xl font-bold text-green-700">
+              {templates.filter((t) => t.is_active).length}
+            </p>
           </div>
           <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div className="flex items-center gap-3 mb-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              <span className="text-sm text-blue-700">{locale === 'ar' ? 'للتجار' : 'Merchants'}</span>
+              <span className="text-sm text-blue-700">
+                {locale === 'ar' ? 'للتجار' : 'Merchants'}
+              </span>
             </div>
-            <p className="text-2xl font-bold text-blue-700">{templates.filter(t => t.category === 'merchant').length}</p>
+            <p className="text-2xl font-bold text-blue-700">
+              {templates.filter((t) => t.category === 'merchant').length}
+            </p>
           </div>
           <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
             <div className="flex items-center gap-3 mb-2">
               <Code className="w-5 h-5 text-purple-600" />
-              <span className="text-sm text-purple-700">{locale === 'ar' ? 'المتغيرات' : 'Variables'}</span>
+              <span className="text-sm text-purple-700">
+                {locale === 'ar' ? 'المتغيرات' : 'Variables'}
+              </span>
             </div>
             <p className="text-2xl font-bold text-purple-700">
               {templates.reduce((acc, t) => acc + (t.available_variables?.length || 0), 0)}
@@ -536,7 +551,9 @@ export default function AdminEmailTemplatesPage() {
         <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+              <Search
+                className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+              />
               <input
                 type="text"
                 placeholder={locale === 'ar' ? 'بحث في القوالب...' : 'Search templates...'}
@@ -561,8 +578,8 @@ export default function AdminEmailTemplatesPage() {
             <Button
               variant="outline"
               onClick={() => {
-                const supabase = createClient()
-                loadTemplates(supabase)
+                const supabase = createClient();
+                loadTemplates(supabase);
               }}
               className="flex items-center gap-2"
             >
@@ -586,7 +603,8 @@ export default function AdminEmailTemplatesPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                          {categoryLabels[template.category]?.[locale === 'ar' ? 'ar' : 'en'] || template.category}
+                          {categoryLabels[template.category]?.[locale === 'ar' ? 'ar' : 'en'] ||
+                            template.category}
                         </span>
                         {template.is_active ? (
                           <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
@@ -612,7 +630,9 @@ export default function AdminEmailTemplatesPage() {
 
                   {/* Subject */}
                   <div className="mb-3 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-500 mb-1">{locale === 'ar' ? 'الموضوع:' : 'Subject:'}</p>
+                    <p className="text-xs text-slate-500 mb-1">
+                      {locale === 'ar' ? 'الموضوع:' : 'Subject:'}
+                    </p>
                     <p className="text-sm text-slate-700 font-medium">{template.subject}</p>
                   </div>
 
@@ -644,7 +664,8 @@ export default function AdminEmailTemplatesPage() {
 
                   {/* Meta */}
                   <div className="text-xs text-slate-400 mb-3">
-                    {locale === 'ar' ? 'آخر تحديث:' : 'Last updated:'} {formatDate(template.updated_at, locale)}
+                    {locale === 'ar' ? 'آخر تحديث:' : 'Last updated:'}{' '}
+                    {formatDate(template.updated_at, locale)}
                   </div>
 
                   {/* Actions */}
@@ -692,9 +713,14 @@ export default function AdminEmailTemplatesPage() {
                               ? 'hover:bg-red-50 hover:text-red-600 hover:border-red-200'
                               : 'hover:bg-green-50 hover:text-green-600 hover:border-green-200'
                           }`}
-                          title={template.is_active
-                            ? (locale === 'ar' ? 'إيقاف القالب' : 'Deactivate template')
-                            : (locale === 'ar' ? 'تفعيل القالب' : 'Activate template')
+                          title={
+                            template.is_active
+                              ? locale === 'ar'
+                                ? 'إيقاف القالب'
+                                : 'Deactivate template'
+                              : locale === 'ar'
+                                ? 'تفعيل القالب'
+                                : 'Activate template'
                           }
                         >
                           {togglingId === template.id ? (
@@ -705,9 +731,12 @@ export default function AdminEmailTemplatesPage() {
                             <ToggleLeft className="w-4 h-4 text-slate-400" />
                           )}
                           {template.is_active
-                            ? (locale === 'ar' ? 'إيقاف' : 'Deactivate')
-                            : (locale === 'ar' ? 'تفعيل' : 'Activate')
-                          }
+                            ? locale === 'ar'
+                              ? 'إيقاف'
+                              : 'Deactivate'
+                            : locale === 'ar'
+                              ? 'تفعيل'
+                              : 'Activate'}
                         </Button>
                       </>
                     )}
@@ -791,30 +820,33 @@ export default function AdminEmailTemplatesPage() {
               )}
 
               {/* Available Variables */}
-              {editingTemplate.available_variables && editingTemplate.available_variables.length > 0 && (
-                <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                  <p className="text-sm text-purple-700 mb-2 font-medium flex items-center gap-2">
-                    <Variable className="w-4 h-4" />
-                    {locale === 'ar' ? 'المتغيرات المتاحة (انقر للنسخ):' : 'Available variables (click to copy):'}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {editingTemplate.available_variables.map((v) => (
-                      <button
-                        key={v}
-                        onClick={() => copyVariable(v)}
-                        className="text-sm bg-white text-purple-700 px-3 py-1 rounded-lg font-mono hover:bg-purple-100 flex items-center gap-2 border border-purple-200"
-                      >
-                        {`{{${v}}}`}
-                        {copiedVar === v ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Copy className="w-4 h-4 opacity-50" />
-                        )}
-                      </button>
-                    ))}
+              {editingTemplate.available_variables &&
+                editingTemplate.available_variables.length > 0 && (
+                  <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p className="text-sm text-purple-700 mb-2 font-medium flex items-center gap-2">
+                      <Variable className="w-4 h-4" />
+                      {locale === 'ar'
+                        ? 'المتغيرات المتاحة (انقر للنسخ):'
+                        : 'Available variables (click to copy):'}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {editingTemplate.available_variables.map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => copyVariable(v)}
+                          className="text-sm bg-white text-purple-700 px-3 py-1 rounded-lg font-mono hover:bg-purple-100 flex items-center gap-2 border border-purple-200"
+                        >
+                          {`{{${v}}}`}
+                          {copiedVar === v ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Copy className="w-4 h-4 opacity-50" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <div className="space-y-4">
                 {/* Subject */}
@@ -851,11 +883,11 @@ export default function AdminEmailTemplatesPage() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    const data = sampleData[editingTemplate.slug] || {}
-                    const html = replaceVariables(formData.html_content, data)
-                    setPreviewHtml(html)
-                    setPreviewTemplate(editingTemplate)
-                    setShowPreviewModal(true)
+                    const data = sampleData[editingTemplate.slug] || {};
+                    const html = replaceVariables(formData.html_content, data);
+                    setPreviewHtml(html);
+                    setPreviewTemplate(editingTemplate);
+                    setShowPreviewModal(true);
                   }}
                   className="flex items-center gap-2"
                 >
@@ -930,7 +962,8 @@ export default function AdminEmailTemplatesPage() {
                         </span>
                       </div>
                       <p className="text-sm text-slate-600 mb-3">
-                        <strong>{locale === 'ar' ? 'الموضوع:' : 'Subject:'}</strong> {version.subject}
+                        <strong>{locale === 'ar' ? 'الموضوع:' : 'Subject:'}</strong>{' '}
+                        {version.subject}
                       </p>
                       <Button
                         variant="outline"
@@ -954,5 +987,5 @@ export default function AdminEmailTemplatesPage() {
         </div>
       )}
     </>
-  )
+  );
 }

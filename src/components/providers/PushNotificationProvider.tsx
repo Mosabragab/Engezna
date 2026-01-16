@@ -1,26 +1,21 @@
-'use client'
+'use client';
 
-import { useEffect, useCallback, useState } from 'react'
-import { usePushNotifications, NotificationPayload } from '@/hooks/usePushNotifications'
-import { usePathname } from 'next/navigation'
-import { Bell, X } from 'lucide-react'
+import { useEffect, useCallback, useState } from 'react';
+import { usePushNotifications, NotificationPayload } from '@/hooks/usePushNotifications';
+import { usePathname } from 'next/navigation';
+import { Bell, X } from 'lucide-react';
 
 interface ToastNotification extends NotificationPayload {
-  id: string
+  id: string;
 }
 
 export function PushNotificationProvider({ children }: { children: React.ReactNode }) {
-  const {
-    permission,
-    isSupported,
-    isLoading,
-    requestPermission,
-    onForegroundMessage,
-  } = usePushNotifications()
+  const { permission, isSupported, isLoading, requestPermission, onForegroundMessage } =
+    usePushNotifications();
 
-  const pathname = usePathname()
-  const [showPrompt, setShowPrompt] = useState(false)
-  const [toasts, setToasts] = useState<ToastNotification[]>([])
+  const pathname = usePathname();
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
   // Determine if we should show the notification prompt
   // Only show on authenticated pages (provider, admin, customer areas)
@@ -28,96 +23,99 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
     pathname?.includes('/provider') ||
     pathname?.includes('/admin') ||
     pathname?.includes('/orders') ||
-    pathname?.includes('/profile')
+    pathname?.includes('/profile');
 
   // Show prompt after a delay on authenticated pages
   useEffect(() => {
-    if (!isAuthenticatedPage || !isSupported || isLoading) return
-    if (permission !== 'default') return
+    if (!isAuthenticatedPage || !isSupported || isLoading) return;
+    if (permission !== 'default') return;
 
     // Show prompt after 5 seconds on authenticated pages
     const timer = setTimeout(() => {
-      setShowPrompt(true)
-    }, 5000)
+      setShowPrompt(true);
+    }, 5000);
 
-    return () => clearTimeout(timer)
-  }, [isAuthenticatedPage, isSupported, isLoading, permission])
+    return () => clearTimeout(timer);
+  }, [isAuthenticatedPage, isSupported, isLoading, permission]);
 
   // Handle enabling notifications
   const handleEnableNotifications = useCallback(async () => {
-    setShowPrompt(false)
-    await requestPermission()
-  }, [requestPermission])
+    setShowPrompt(false);
+    await requestPermission();
+  }, [requestPermission]);
 
   // Handle dismissing the prompt
   const handleDismissPrompt = useCallback(() => {
-    setShowPrompt(false)
+    setShowPrompt(false);
     // Store dismissal in localStorage to not show again for 7 days
-    localStorage.setItem('notification_prompt_dismissed', String(Date.now()))
-  }, [])
+    localStorage.setItem('notification_prompt_dismissed', String(Date.now()));
+  }, []);
 
   // Check if prompt was recently dismissed
   useEffect(() => {
-    const dismissed = localStorage.getItem('notification_prompt_dismissed')
+    const dismissed = localStorage.getItem('notification_prompt_dismissed');
     if (dismissed) {
-      const dismissedAt = parseInt(dismissed)
-      const sevenDays = 7 * 24 * 60 * 60 * 1000
+      const dismissedAt = parseInt(dismissed);
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if (Date.now() - dismissedAt < sevenDays) {
-        setShowPrompt(false)
+        setShowPrompt(false);
       }
     }
-  }, [])
+  }, []);
 
   // Handle foreground messages
   useEffect(() => {
-    if (permission !== 'granted') return
+    if (permission !== 'granted') return;
 
     const unsubscribe = onForegroundMessage((payload) => {
       // Add toast notification
       const toast: ToastNotification = {
         ...payload,
         id: `toast-${Date.now()}`,
-      }
+      };
 
-      setToasts((prev) => [...prev, toast])
+      setToasts((prev) => [...prev, toast]);
 
       // Auto-remove after 5 seconds
       setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== toast.id))
-      }, 5000)
+        setToasts((prev) => prev.filter((t) => t.id !== toast.id));
+      }, 5000);
 
       // Play notification sound
       try {
-        const audio = new Audio('/sounds/notification.mp3')
-        audio.volume = 0.5
+        const audio = new Audio('/sounds/notification.mp3');
+        audio.volume = 0.5;
         audio.play().catch(() => {
           // Audio play failed, likely due to autoplay policy
-        })
+        });
       } catch {
         // Audio not supported
       }
-    })
+    });
 
-    return unsubscribe
-  }, [permission, onForegroundMessage])
+    return unsubscribe;
+  }, [permission, onForegroundMessage]);
 
   // Remove a toast
   const removeToast = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-  }, [])
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Handle toast click
-  const handleToastClick = useCallback((toast: ToastNotification) => {
-    removeToast(toast.id)
+  const handleToastClick = useCallback(
+    (toast: ToastNotification) => {
+      removeToast(toast.id);
 
-    // Navigate based on notification data
-    if (toast.data?.click_action) {
-      window.location.href = toast.data.click_action
-    }
-  }, [removeToast])
+      // Navigate based on notification data
+      if (toast.data?.click_action) {
+        window.location.href = toast.data.click_action;
+      }
+    },
+    [removeToast]
+  );
 
   // Get locale from pathname
-  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en'
+  const locale = pathname?.startsWith('/ar') ? 'ar' : 'en';
 
   return (
     <>
@@ -188,8 +186,8 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
               </div>
               <button
                 onClick={(e) => {
-                  e.stopPropagation()
-                  removeToast(toast.id)
+                  e.stopPropagation();
+                  removeToast(toast.id);
                 }}
                 className="text-slate-400 hover:text-slate-600 transition-colors"
               >
@@ -200,7 +198,7 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
         ))}
       </div>
     </>
-  )
+  );
 }
 
-export default PushNotificationProvider
+export default PushNotificationProvider;

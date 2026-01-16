@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useLocale } from 'next-intl'
-import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { ProviderLayout } from '@/components/provider'
-import { ACTIVE_PROVIDER_STATUSES } from '@/types/database'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
+import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { ProviderLayout } from '@/components/provider';
+import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   Tag,
   Plus,
@@ -27,48 +27,48 @@ import {
   Package,
   CheckSquare,
   Square,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 type Promotion = {
-  id: string
-  provider_id: string
-  name_ar: string
-  name_en: string
-  type: 'percentage' | 'fixed' | 'buy_x_get_y'
-  discount_value: number
-  buy_quantity?: number
-  get_quantity?: number
-  min_order_amount?: number
-  max_discount?: number
-  start_date: string
-  end_date: string
-  is_active: boolean
-  applies_to: 'all' | 'specific'
-  product_ids?: string[]
-  created_at: string
-}
+  id: string;
+  provider_id: string;
+  name_ar: string;
+  name_en: string;
+  type: 'percentage' | 'fixed' | 'buy_x_get_y';
+  discount_value: number;
+  buy_quantity?: number;
+  get_quantity?: number;
+  min_order_amount?: number;
+  max_discount?: number;
+  start_date: string;
+  end_date: string;
+  is_active: boolean;
+  applies_to: 'all' | 'specific';
+  product_ids?: string[];
+  created_at: string;
+};
 
 type Product = {
-  id: string
-  name_ar: string
-  name_en: string
-}
+  id: string;
+  name_ar: string;
+  name_en: string;
+};
 
 export default function PromotionsPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [providerId, setProviderId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [promotions, setPromotions] = useState<Promotion[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'upcoming' | 'expired'>('all')
-  const [showForm, setShowForm] = useState(false)
-  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null)
+  const [providerId, setProviderId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [activeTab, setActiveTab] = useState<'all' | 'active' | 'upcoming' | 'expired'>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -84,91 +84,95 @@ export default function PromotionsPage() {
     end_date: '',
     applies_to: 'all' as 'all' | 'specific',
     product_ids: [] as string[],
-  })
-  const [saving, setSaving] = useState(false)
+  });
+  const [saving, setSaving] = useState(false);
 
   const loadPromotions = useCallback(async (provId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
     const { data } = await supabase
       .from('promotions')
       .select('*')
       .eq('provider_id', provId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
-    if (data) setPromotions(data)
-  }, [])
+    if (data) setPromotions(data);
+  }, []);
 
   const loadProducts = useCallback(async (provId: string) => {
-    const supabase = createClient()
+    const supabase = createClient();
     const { data } = await supabase
       .from('menu_items')
       .select('id, name_ar, name_en')
       .eq('provider_id', provId)
       .eq('is_available', true)
-      .order('name_ar')
+      .order('name_ar');
 
-    if (data) setProducts(data)
-  }, [])
+    if (data) setProducts(data);
+  }, []);
 
   const checkAuthAndLoadPromotions = useCallback(async () => {
-    setLoading(true)
-    const supabase = createClient()
+    setLoading(true);
+    const supabase = createClient();
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
-      router.push(`/${locale}/auth/login?redirect=/provider/promotions`)
-      return
+      router.push(`/${locale}/auth/login?redirect=/provider/promotions`);
+      return;
     }
 
     const { data: providerData } = await supabase
       .from('providers')
       .select('id, status')
       .eq('owner_id', user.id)
-      .limit(1)
+      .limit(1);
 
-    const provider = providerData?.[0]
+    const provider = providerData?.[0];
     if (!provider || !ACTIVE_PROVIDER_STATUSES.includes(provider.status)) {
-      router.push(`/${locale}/provider`)
-      return
+      router.push(`/${locale}/provider`);
+      return;
     }
 
-    setProviderId(provider.id)
-    await loadPromotions(provider.id)
-    await loadProducts(provider.id)
+    setProviderId(provider.id);
+    await loadPromotions(provider.id);
+    await loadProducts(provider.id);
 
-    setLoading(false)
-  }, [loadProducts, loadPromotions, locale, router])
+    setLoading(false);
+  }, [loadProducts, loadPromotions, locale, router]);
 
   useEffect(() => {
-    checkAuthAndLoadPromotions()
-  }, [checkAuthAndLoadPromotions])
+    checkAuthAndLoadPromotions();
+  }, [checkAuthAndLoadPromotions]);
 
   const getPromotionStatus = (promo: Promotion) => {
-    const now = new Date()
-    const start = new Date(promo.start_date)
-    const end = new Date(promo.end_date)
+    const now = new Date();
+    const start = new Date(promo.start_date);
+    const end = new Date(promo.end_date);
 
-    if (!promo.is_active) return 'inactive'
-    if (now < start) return 'upcoming'
-    if (now > end) return 'expired'
-    return 'active'
-  }
+    if (!promo.is_active) return 'inactive';
+    if (now < start) return 'upcoming';
+    if (now > end) return 'expired';
+    return 'active';
+  };
 
-  const filteredPromotions = promotions.filter(promo => {
-    if (activeTab === 'all') return true
-    const status = getPromotionStatus(promo)
-    if (activeTab === 'active') return status === 'active'
-    if (activeTab === 'upcoming') return status === 'upcoming'
-    if (activeTab === 'expired') return status === 'expired' || status === 'inactive'
-    return true
-  })
+  const filteredPromotions = promotions.filter((promo) => {
+    if (activeTab === 'all') return true;
+    const status = getPromotionStatus(promo);
+    if (activeTab === 'active') return status === 'active';
+    if (activeTab === 'upcoming') return status === 'upcoming';
+    if (activeTab === 'expired') return status === 'expired' || status === 'inactive';
+    return true;
+  });
 
   const stats = {
-    active: promotions.filter(p => getPromotionStatus(p) === 'active').length,
-    upcoming: promotions.filter(p => getPromotionStatus(p) === 'upcoming').length,
-    expired: promotions.filter(p => getPromotionStatus(p) === 'expired' || getPromotionStatus(p) === 'inactive').length,
+    active: promotions.filter((p) => getPromotionStatus(p) === 'active').length,
+    upcoming: promotions.filter((p) => getPromotionStatus(p) === 'upcoming').length,
+    expired: promotions.filter(
+      (p) => getPromotionStatus(p) === 'expired' || getPromotionStatus(p) === 'inactive'
+    ).length,
     total: promotions.length,
-  }
+  };
 
   const resetForm = () => {
     setFormData({
@@ -184,9 +188,9 @@ export default function PromotionsPage() {
       end_date: '',
       applies_to: 'all',
       product_ids: [],
-    })
-    setEditingPromotion(null)
-  }
+    });
+    setEditingPromotion(null);
+  };
 
   const handleEdit = (promo: Promotion) => {
     setFormData({
@@ -202,16 +206,16 @@ export default function PromotionsPage() {
       end_date: promo.end_date.split('T')[0],
       applies_to: promo.applies_to,
       product_ids: promo.product_ids || [],
-    })
-    setEditingPromotion(promo)
-    setShowForm(true)
-  }
+    });
+    setEditingPromotion(promo);
+    setShowForm(true);
+  };
 
   const handleSave = async () => {
-    if (!providerId) return
+    if (!providerId) return;
 
-    setSaving(true)
-    const supabase = createClient()
+    setSaving(true);
+    const supabase = createClient();
 
     const promoData = {
       provider_id: providerId,
@@ -219,8 +223,10 @@ export default function PromotionsPage() {
       name_en: formData.name_en,
       type: formData.type,
       discount_value: parseFloat(formData.discount_value) || 0,
-      buy_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.buy_quantity) || null : null,
-      get_quantity: formData.type === 'buy_x_get_y' ? parseInt(formData.get_quantity) || null : null,
+      buy_quantity:
+        formData.type === 'buy_x_get_y' ? parseInt(formData.buy_quantity) || null : null,
+      get_quantity:
+        formData.type === 'buy_x_get_y' ? parseInt(formData.get_quantity) || null : null,
       min_order_amount: formData.min_order_amount ? parseFloat(formData.min_order_amount) : null,
       max_discount: formData.max_discount ? parseFloat(formData.max_discount) : null,
       start_date: formData.start_date,
@@ -228,84 +234,74 @@ export default function PromotionsPage() {
       is_active: true,
       applies_to: formData.applies_to,
       product_ids: formData.applies_to === 'specific' ? formData.product_ids : null,
-    }
+    };
 
-    let error
+    let error;
 
     if (editingPromotion) {
       const result = await supabase
         .from('promotions')
         .update(promoData)
-        .eq('id', editingPromotion.id)
-      error = result.error
+        .eq('id', editingPromotion.id);
+      error = result.error;
     } else {
-      const result = await supabase
-        .from('promotions')
-        .insert(promoData)
-      error = result.error
+      const result = await supabase.from('promotions').insert(promoData);
+      error = result.error;
     }
 
     if (!error) {
-      await loadPromotions(providerId)
-      setShowForm(false)
-      resetForm()
+      await loadPromotions(providerId);
+      setShowForm(false);
+      resetForm();
     }
 
-    setSaving(false)
-  }
+    setSaving(false);
+  };
 
   const handleToggleActive = async (promo: Promotion) => {
-    if (!providerId) return
+    if (!providerId) return;
 
-    const supabase = createClient()
-    await supabase
-      .from('promotions')
-      .update({ is_active: !promo.is_active })
-      .eq('id', promo.id)
+    const supabase = createClient();
+    await supabase.from('promotions').update({ is_active: !promo.is_active }).eq('id', promo.id);
 
-    await loadPromotions(providerId)
-  }
+    await loadPromotions(providerId);
+  };
 
   const handleDelete = async (promoId: string) => {
-    if (!providerId) return
-    if (!confirm(locale === 'ar' ? 'هل تريد حذف هذا العرض؟' : 'Delete this promotion?')) return
+    if (!providerId) return;
+    if (!confirm(locale === 'ar' ? 'هل تريد حذف هذا العرض؟' : 'Delete this promotion?')) return;
 
-    const supabase = createClient()
-    await supabase
-      .from('promotions')
-      .delete()
-      .eq('id', promoId)
+    const supabase = createClient();
+    await supabase.from('promotions').delete().eq('id', promoId);
 
-    await loadPromotions(providerId)
-  }
+    await loadPromotions(providerId);
+  };
 
   const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
+    const date = new Date(dateStr);
     return date.toLocaleDateString(locale === 'ar' ? 'ar-EG' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   const tabs = [
     { key: 'all', label_ar: 'الكل', label_en: 'All', count: stats.total },
     { key: 'active', label_ar: 'نشط', label_en: 'Active', count: stats.active },
     { key: 'upcoming', label_ar: 'قادم', label_en: 'Upcoming', count: stats.upcoming },
     { key: 'expired', label_ar: 'منتهي', label_en: 'Expired', count: stats.expired },
-  ]
+  ];
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">
-            {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
-          </p>
+          <p className="text-slate-500">{locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -315,7 +311,13 @@ export default function PromotionsPage() {
     >
       {/* Add Promotion Button */}
       <div className="flex justify-end mb-4">
-        <Button size="sm" onClick={() => { resetForm(); setShowForm(true) }}>
+        <Button
+          size="sm"
+          onClick={() => {
+            resetForm();
+            setShowForm(true);
+          }}
+        >
           <Plus className="w-4 h-4 me-1" />
           {locale === 'ar' ? 'عرض جديد' : 'New Promotion'}
         </Button>
@@ -356,11 +358,13 @@ export default function PromotionsPage() {
                 }`}
               >
                 {locale === 'ar' ? tab.label_ar : tab.label_en}
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  activeTab === tab.key
-                    ? 'bg-white/20 text-white'
-                    : 'bg-slate-100 text-slate-600'
-                }`}>{tab.count}</span>
+                <span
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {tab.count}
+                </span>
               </button>
             ))}
           </div>
@@ -380,7 +384,12 @@ export default function PromotionsPage() {
                     ? 'أنشئ عرضاً جديداً لجذب المزيد من العملاء'
                     : 'Create a new promotion to attract more customers'}
                 </p>
-                <Button onClick={() => { resetForm(); setShowForm(true) }}>
+                <Button
+                  onClick={() => {
+                    resetForm();
+                    setShowForm(true);
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   {locale === 'ar' ? 'إنشاء عرض' : 'Create Promotion'}
                 </Button>
@@ -389,16 +398,24 @@ export default function PromotionsPage() {
           ) : (
             <div className="space-y-4">
               {filteredPromotions.map((promo) => {
-                const status = getPromotionStatus(promo)
+                const status = getPromotionStatus(promo);
                 return (
-                  <Card key={promo.id} className="bg-white border-slate-200 overflow-hidden shadow-elegant-sm hover:shadow-elegant transition-all duration-300">
+                  <Card
+                    key={promo.id}
+                    className="bg-white border-slate-200 overflow-hidden shadow-elegant-sm hover:shadow-elegant transition-all duration-300"
+                  >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            promo.type === 'percentage' ? 'bg-[hsl(158_100%_38%/0.2)]' :
-                            promo.type === 'fixed' ? 'bg-[hsl(194_86%_58%/0.2)]' : 'bg-[hsl(198_100%_44%/0.2)]'
-                          }`}>
+                          <div
+                            className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                              promo.type === 'percentage'
+                                ? 'bg-[hsl(158_100%_38%/0.2)]'
+                                : promo.type === 'fixed'
+                                  ? 'bg-[hsl(194_86%_58%/0.2)]'
+                                  : 'bg-[hsl(198_100%_44%/0.2)]'
+                            }`}
+                          >
                             {promo.type === 'percentage' ? (
                               <Percent className="w-6 h-6 text-deal" />
                             ) : promo.type === 'fixed' ? (
@@ -415,8 +432,8 @@ export default function PromotionsPage() {
                               {promo.type === 'percentage'
                                 ? `${promo.discount_value}% ${locale === 'ar' ? 'خصم' : 'off'}`
                                 : promo.type === 'fixed'
-                                ? `${promo.discount_value} ${locale === 'ar' ? 'ج.م خصم' : 'EGP off'}`
-                                : `${locale === 'ar' ? 'اشتري' : 'Buy'} ${promo.buy_quantity} ${locale === 'ar' ? 'واحصل على' : 'get'} ${promo.get_quantity} ${locale === 'ar' ? 'مجاناً' : 'free'}`}
+                                  ? `${promo.discount_value} ${locale === 'ar' ? 'ج.م خصم' : 'EGP off'}`
+                                  : `${locale === 'ar' ? 'اشتري' : 'Buy'} ${promo.buy_quantity} ${locale === 'ar' ? 'واحصل على' : 'get'} ${promo.get_quantity} ${locale === 'ar' ? 'مجاناً' : 'free'}`}
                             </p>
                             <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 flex-wrap">
                               <span className="flex items-center gap-1">
@@ -425,14 +442,18 @@ export default function PromotionsPage() {
                               </span>
                               {promo.min_order_amount && (
                                 <span>
-                                  {locale === 'ar' ? 'الحد الأدنى:' : 'Min:'} {promo.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                  {locale === 'ar' ? 'الحد الأدنى:' : 'Min:'}{' '}
+                                  {promo.min_order_amount} {locale === 'ar' ? 'ج.م' : 'EGP'}
                                 </span>
                               )}
-                              <span className={`flex items-center gap-1 ${promo.applies_to === 'specific' ? 'text-primary' : ''}`}>
+                              <span
+                                className={`flex items-center gap-1 ${promo.applies_to === 'specific' ? 'text-primary' : ''}`}
+                              >
                                 {promo.applies_to === 'specific' ? (
                                   <>
                                     <CheckSquare className="w-3 h-3" />
-                                    {promo.product_ids?.length || 0} {locale === 'ar' ? 'منتج محدد' : 'specific products'}
+                                    {promo.product_ids?.length || 0}{' '}
+                                    {locale === 'ar' ? 'منتج محدد' : 'specific products'}
                                   </>
                                 ) : (
                                   <>
@@ -445,14 +466,26 @@ export default function PromotionsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            status === 'active' ? 'bg-[hsl(158_100%_38%/0.2)] text-deal' :
-                            status === 'upcoming' ? 'bg-[hsl(194_86%_58%/0.2)] text-info' :
-                            'bg-slate-200 text-slate-500'
-                          }`}>
-                            {status === 'active' ? (locale === 'ar' ? 'نشط' : 'Active') :
-                             status === 'upcoming' ? (locale === 'ar' ? 'قادم' : 'Upcoming') :
-                             (locale === 'ar' ? 'منتهي' : 'Expired')}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              status === 'active'
+                                ? 'bg-[hsl(158_100%_38%/0.2)] text-deal'
+                                : status === 'upcoming'
+                                  ? 'bg-[hsl(194_86%_58%/0.2)] text-info'
+                                  : 'bg-slate-200 text-slate-500'
+                            }`}
+                          >
+                            {status === 'active'
+                              ? locale === 'ar'
+                                ? 'نشط'
+                                : 'Active'
+                              : status === 'upcoming'
+                                ? locale === 'ar'
+                                  ? 'قادم'
+                                  : 'Upcoming'
+                                : locale === 'ar'
+                                  ? 'منتهي'
+                                  : 'Expired'}
                           </span>
                         </div>
                       </div>
@@ -474,8 +507,12 @@ export default function PromotionsPage() {
                         >
                           <Power className="w-4 h-4 mr-1" />
                           {promo.is_active
-                            ? (locale === 'ar' ? 'إيقاف' : 'Disable')
-                            : (locale === 'ar' ? 'تفعيل' : 'Enable')}
+                            ? locale === 'ar'
+                              ? 'إيقاف'
+                              : 'Disable'
+                            : locale === 'ar'
+                              ? 'تفعيل'
+                              : 'Enable'}
                         </Button>
                         <Button
                           variant="outline"
@@ -489,7 +526,7 @@ export default function PromotionsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                )
+                );
               })}
             </div>
           )}
@@ -504,8 +541,12 @@ export default function PromotionsPage() {
               <CardTitle className="text-slate-900 flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 {editingPromotion
-                  ? (locale === 'ar' ? 'تعديل العرض' : 'Edit Promotion')
-                  : (locale === 'ar' ? 'عرض جديد' : 'New Promotion')}
+                  ? locale === 'ar'
+                    ? 'تعديل العرض'
+                    : 'Edit Promotion'
+                  : locale === 'ar'
+                    ? 'عرض جديد'
+                    : 'New Promotion'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
@@ -519,7 +560,9 @@ export default function PromotionsPage() {
                   onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
                   className="bg-white border-slate-200 text-slate-900"
                   dir="rtl"
-                  placeholder={locale === 'ar' ? 'مثال: خصم نهاية الأسبوع' : 'e.g., Weekend Discount'}
+                  placeholder={
+                    locale === 'ar' ? 'مثال: خصم نهاية الأسبوع' : 'e.g., Weekend Discount'
+                  }
                 />
               </div>
 
@@ -587,8 +630,12 @@ export default function PromotionsPage() {
                 <div>
                   <label className="block text-sm text-slate-500 mb-1">
                     {formData.type === 'percentage'
-                      ? (locale === 'ar' ? 'نسبة الخصم (%)' : 'Discount Percentage (%)')
-                      : (locale === 'ar' ? 'قيمة الخصم (ج.م)' : 'Discount Amount (EGP)')}
+                      ? locale === 'ar'
+                        ? 'نسبة الخصم (%)'
+                        : 'Discount Percentage (%)'
+                      : locale === 'ar'
+                        ? 'قيمة الخصم (ج.م)'
+                        : 'Discount Amount (EGP)'}
                   </label>
                   <Input
                     type="number"
@@ -714,7 +761,9 @@ export default function PromotionsPage() {
                     }`}
                   >
                     <CheckSquare className="w-5 h-5 mx-auto mb-1 text-primary" />
-                    <p className="text-xs">{locale === 'ar' ? 'منتجات محددة' : 'Specific Products'}</p>
+                    <p className="text-xs">
+                      {locale === 'ar' ? 'منتجات محددة' : 'Specific Products'}
+                    </p>
                   </button>
                 </div>
               </div>
@@ -723,7 +772,8 @@ export default function PromotionsPage() {
               {formData.applies_to === 'specific' && (
                 <div>
                   <label className="block text-sm text-slate-500 mb-2">
-                    {locale === 'ar' ? 'اختر المنتجات' : 'Select Products'} ({formData.product_ids.length} {locale === 'ar' ? 'منتج' : 'selected'})
+                    {locale === 'ar' ? 'اختر المنتجات' : 'Select Products'} (
+                    {formData.product_ids.length} {locale === 'ar' ? 'منتج' : 'selected'})
                   </label>
                   <div className="max-h-48 overflow-y-auto bg-slate-50 rounded-lg p-2 space-y-1">
                     {products.length === 0 ? (
@@ -732,7 +782,7 @@ export default function PromotionsPage() {
                       </p>
                     ) : (
                       products.map((product) => {
-                        const isSelected = formData.product_ids.includes(product.id)
+                        const isSelected = formData.product_ids.includes(product.id);
                         return (
                           <button
                             key={product.id}
@@ -741,13 +791,15 @@ export default function PromotionsPage() {
                               if (isSelected) {
                                 setFormData({
                                   ...formData,
-                                  product_ids: formData.product_ids.filter(id => id !== product.id)
-                                })
+                                  product_ids: formData.product_ids.filter(
+                                    (id) => id !== product.id
+                                  ),
+                                });
                               } else {
                                 setFormData({
                                   ...formData,
-                                  product_ids: [...formData.product_ids, product.id]
-                                })
+                                  product_ids: [...formData.product_ids, product.id],
+                                });
                               }
                             }}
                             className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${
@@ -763,7 +815,7 @@ export default function PromotionsPage() {
                               {locale === 'ar' ? product.name_ar : product.name_en}
                             </span>
                           </button>
-                        )
+                        );
                       })
                     )}
                   </div>
@@ -775,8 +827,8 @@ export default function PromotionsPage() {
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {formData.product_ids.map((productId) => {
-                          const product = products.find(p => p.id === productId)
-                          if (!product) return null
+                          const product = products.find((p) => p.id === productId);
+                          if (!product) return null;
                           return (
                             <span
                               key={productId}
@@ -785,16 +837,20 @@ export default function PromotionsPage() {
                               {locale === 'ar' ? product.name_ar : product.name_en}
                               <button
                                 type="button"
-                                onClick={() => setFormData({
-                                  ...formData,
-                                  product_ids: formData.product_ids.filter(id => id !== productId)
-                                })}
+                                onClick={() =>
+                                  setFormData({
+                                    ...formData,
+                                    product_ids: formData.product_ids.filter(
+                                      (id) => id !== productId
+                                    ),
+                                  })
+                                }
                                 className="text-slate-400 hover:text-red-500 transition-colors"
                               >
                                 <X className="w-3 h-3" />
                               </button>
                             </span>
-                          )
+                          );
                         })}
                       </div>
                     </div>
@@ -802,7 +858,9 @@ export default function PromotionsPage() {
                   {formData.applies_to === 'specific' && formData.product_ids.length === 0 && (
                     <p className="text-xs text-premium mt-2 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      {locale === 'ar' ? 'يرجى اختيار منتج واحد على الأقل' : 'Please select at least one product'}
+                      {locale === 'ar'
+                        ? 'يرجى اختيار منتج واحد على الأقل'
+                        : 'Please select at least one product'}
                     </p>
                   )}
                 </div>
@@ -813,7 +871,13 @@ export default function PromotionsPage() {
                 <Button
                   className="flex-1"
                   onClick={handleSave}
-                  disabled={saving || !formData.name_ar || !formData.start_date || !formData.end_date || (formData.applies_to === 'specific' && formData.product_ids.length === 0)}
+                  disabled={
+                    saving ||
+                    !formData.name_ar ||
+                    !formData.start_date ||
+                    !formData.end_date ||
+                    (formData.applies_to === 'specific' && formData.product_ids.length === 0)
+                  }
                 >
                   {saving ? (
                     <>
@@ -829,7 +893,10 @@ export default function PromotionsPage() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => { setShowForm(false); resetForm() }}
+                  onClick={() => {
+                    setShowForm(false);
+                    resetForm();
+                  }}
                   className="border-slate-300"
                 >
                   <X className="w-4 h-4 mr-2" />
@@ -841,5 +908,5 @@ export default function PromotionsPage() {
         </div>
       )}
     </ProviderLayout>
-  )
+  );
 }

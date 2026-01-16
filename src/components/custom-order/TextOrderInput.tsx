@@ -1,24 +1,18 @@
-'use client'
+'use client';
 
-import { useState, useRef, useEffect } from 'react'
-import { useLocale } from 'next-intl'
-import { cn } from '@/lib/utils'
-import { FileText, X, Sparkles } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { TextOrderInputProps } from '@/types/custom-order'
+import { useState, useRef, useEffect } from 'react';
+import { useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { FileText, X, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { TextOrderInputProps } from '@/types/custom-order';
 
 interface ExtendedTextOrderInputProps extends TextOrderInputProps {
-  className?: string
-  showTips?: boolean
+  className?: string;
+  showTips?: boolean;
 }
 
-const EXAMPLE_ITEMS_AR = [
-  'كيلو طماطم',
-  '2 كيلو بطاطس',
-  'زجاجة زيت كبيرة',
-  'عبوة حليب',
-  '6 بيض',
-]
+const EXAMPLE_ITEMS_AR = ['كيلو طماطم', '2 كيلو بطاطس', 'زجاجة زيت كبيرة', 'عبوة حليب', '6 بيض'];
 
 const EXAMPLE_ITEMS_EN = [
   '1 kg tomatoes',
@@ -26,7 +20,7 @@ const EXAMPLE_ITEMS_EN = [
   'Large cooking oil bottle',
   'Milk carton',
   '6 eggs',
-]
+];
 
 export function TextOrderInput({
   value,
@@ -37,40 +31,40 @@ export function TextOrderInput({
   className,
   showTips = true,
 }: ExtendedTextOrderInputProps) {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const [isFocused, setIsFocused] = useState(false)
-  const [showExamples, setShowExamples] = useState(false)
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [showExamples, setShowExamples] = useState(false);
 
-  const examples = isRTL ? EXAMPLE_ITEMS_AR : EXAMPLE_ITEMS_EN
+  const examples = isRTL ? EXAMPLE_ITEMS_AR : EXAMPLE_ITEMS_EN;
   const defaultPlaceholder = isRTL
     ? 'اكتب قائمة مشترياتك هنا...\nمثال:\n- كيلو طماطم\n- 2 لتر حليب\n- علبة جبنة'
-    : 'Write your shopping list here...\nExample:\n- 1 kg tomatoes\n- 2 liters milk\n- Cheese pack'
+    : 'Write your shopping list here...\nExample:\n- 1 kg tomatoes\n- 2 liters milk\n- Cheese pack';
 
   // Auto-resize textarea
   useEffect(() => {
-    const textarea = textareaRef.current
+    const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto'
-      textarea.style.height = `${Math.max(150, textarea.scrollHeight)}px`
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.max(150, textarea.scrollHeight)}px`;
     }
-  }, [value])
+  }, [value]);
 
   const handleExampleClick = (example: string) => {
-    const newValue = value ? `${value}\n- ${example}` : `- ${example}`
-    onChange(newValue)
-    textareaRef.current?.focus()
-  }
+    const newValue = value ? `${value}\n- ${example}` : `- ${example}`;
+    onChange(newValue);
+    textareaRef.current?.focus();
+  };
 
   const handleClear = () => {
-    onChange('')
-    textareaRef.current?.focus()
-  }
+    onChange('');
+    textareaRef.current?.focus();
+  };
 
-  const characterCount = value.length
-  const isNearLimit = characterCount > maxLength * 0.8
-  const isAtLimit = characterCount >= maxLength
+  const characterCount = value.length;
+  const isNearLimit = characterCount > maxLength * 0.8;
+  const isAtLimit = characterCount >= maxLength;
 
   return (
     <div className={cn('flex flex-col gap-3', className)}>
@@ -90,9 +84,7 @@ export function TextOrderInput({
               </p>
               <ul className="mt-1 space-y-0.5 text-xs">
                 <li>
-                  {isRTL
-                    ? '• اكتب كل صنف في سطر منفصل'
-                    : '• Write each item on a separate line'}
+                  {isRTL ? '• اكتب كل صنف في سطر منفصل' : '• Write each item on a separate line'}
                 </li>
                 <li>
                   {isRTL
@@ -166,8 +158,8 @@ export function TextOrderInput({
             isAtLimit
               ? 'text-red-500 font-medium'
               : isNearLimit
-              ? 'text-amber-500'
-              : 'text-slate-400'
+                ? 'text-amber-500'
+                : 'text-slate-400'
           )}
         >
           {characterCount.toLocaleString(locale)} / {maxLength.toLocaleString(locale)}
@@ -216,5 +208,5 @@ export function TextOrderInput({
         </AnimatePresence>
       </div>
     </div>
-  )
+  );
 }

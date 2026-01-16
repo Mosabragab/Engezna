@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
+import { useLocale } from 'next-intl';
 
 interface PriceTagProps {
-  price: number
-  originalPrice?: number | null
-  size?: 'sm' | 'md' | 'lg'
-  showCurrency?: boolean
-  className?: string
+  price: number;
+  originalPrice?: number | null;
+  size?: 'sm' | 'md' | 'lg';
+  showCurrency?: boolean;
+  className?: string;
 }
 
 export function PriceTag({
@@ -17,13 +17,13 @@ export function PriceTag({
   showCurrency = true,
   className = '',
 }: PriceTagProps) {
-  const locale = useLocale()
-  const currency = locale === 'ar' ? 'ج.م' : 'EGP'
+  const locale = useLocale();
+  const currency = locale === 'ar' ? 'ج.م' : 'EGP';
 
-  const hasDiscount = originalPrice && originalPrice > price
+  const hasDiscount = originalPrice && originalPrice > price;
   const discountPercentage = hasDiscount
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
-    : 0
+    : 0;
 
   const sizeClasses = {
     sm: {
@@ -41,9 +41,9 @@ export function PriceTag({
       original: 'text-base',
       discount: 'text-sm px-2 py-1',
     },
-  }
+  };
 
-  const classes = sizeClasses[size]
+  const classes = sizeClasses[size];
 
   return (
     <div className={`flex items-center flex-wrap gap-2 ${className}`}>
@@ -66,5 +66,5 @@ export function PriceTag({
         </span>
       )}
     </div>
-  )
+  );
 }
