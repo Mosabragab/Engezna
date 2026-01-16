@@ -144,11 +144,12 @@ async function authenticateViaAPI(
         localStorage.setItem(supabaseKey, JSON.stringify(authData));
 
         // Set guest location to prevent redirect to welcome page
+        // Using Beni Suef as the default test location (company HQ)
         const guestLocation = {
-          governorateId: 'test-governorate-id',
-          governorateName: { ar: 'القاهرة', en: 'Cairo' },
-          cityId: 'test-city-id',
-          cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+          governorateId: 'test-beni-suef-gov',
+          governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+          cityId: 'test-beni-suef-city',
+          cityName: { ar: 'بني سويف', en: 'Beni Suef' },
         };
         localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
       },
