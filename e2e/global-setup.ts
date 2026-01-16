@@ -142,6 +142,15 @@ async function authenticateViaAPI(
         };
 
         localStorage.setItem(supabaseKey, JSON.stringify(authData));
+
+        // Set guest location to prevent redirect to welcome page
+        const guestLocation = {
+          governorateId: 'test-governorate-id',
+          governorateName: { ar: 'القاهرة', en: 'Cairo' },
+          cityId: 'test-city-id',
+          cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+        };
+        localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
       },
       {
         accessToken: data.session.access_token,
@@ -324,6 +333,17 @@ async function authenticateViaUI(
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
 
+    // Set guest location to prevent redirect to welcome page
+    await page.evaluate(() => {
+      const guestLocation = {
+        governorateId: 'test-governorate-id',
+        governorateName: { ar: 'القاهرة', en: 'Cairo' },
+        cityId: 'test-city-id',
+        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+      };
+      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+    });
+
     await context.storageState({ path: storageStatePath });
     console.log(`   ✓ ${role} UI auth complete`);
   } catch (error) {
@@ -367,6 +387,17 @@ async function authenticateCustomerViaUI(
 
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(3000);
+
+    // Set guest location to prevent redirect to welcome page
+    await page.evaluate(() => {
+      const guestLocation = {
+        governorateId: 'test-governorate-id',
+        governorateName: { ar: 'القاهرة', en: 'Cairo' },
+        cityId: 'test-city-id',
+        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+      };
+      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+    });
 
     await context.storageState({ path: storageStatePath });
     console.log('   ✓ Customer UI auth complete');
