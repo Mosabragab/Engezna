@@ -342,6 +342,7 @@ export function CustomerHeader({
               <button
                 className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
                 onClick={() => router.push(`/${locale}/notifications`)}
+                aria-label="notifications"
               >
                 <Bell className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
                 {unreadCount > 0 && (
