@@ -188,7 +188,7 @@ export default function TermsPage() {
           icon: CreditCard,
           title: 'هيكل العمولات',
           content: `💰 فترة السماح:
-• أول ٦ أشهر: عمولة ٠٪ على جميع الطلبات
+• أول ٣ أشهر: عمولة ٠٪ على جميع الطلبات
 • تبدأ من أول طلب على المنصة
 • غير قابلة للتحويل أو التمديد
 
@@ -434,7 +434,7 @@ Your responsibilities:
           icon: CreditCard,
           title: 'Commission Structure',
           content: `💰 Grace Period:
-• First 6 months: 0% commission on all orders
+• First 3 months: 0% commission on all orders
 • Starts from your first order on the Platform
 • Non-transferable and cannot be extended
 
