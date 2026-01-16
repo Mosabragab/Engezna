@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useCallback } from 'react'
+import { useCallback } from 'react';
 
 /**
  * useBadge Hook - App Icon Badge Management
@@ -18,42 +18,41 @@ import { useCallback } from 'react'
  */
 
 interface BadgeAPI {
-  setBadge: (count: number) => Promise<void>
-  clearBadge: () => Promise<void>
-  isSupported: boolean
+  setBadge: (count: number) => Promise<void>;
+  clearBadge: () => Promise<void>;
+  isSupported: boolean;
 }
 
 // Check if running in Capacitor
 const isCapacitor = (): boolean => {
-  return typeof window !== 'undefined' &&
-         !!(window as any).Capacitor?.isNativePlatform?.()
-}
+  return typeof window !== 'undefined' && !!(window as any).Capacitor?.isNativePlatform?.();
+};
 
 // Check if Badge API is supported (PWA)
 const isBadgeSupported = (): boolean => {
-  return typeof navigator !== 'undefined' && 'setAppBadge' in navigator
-}
+  return typeof navigator !== 'undefined' && 'setAppBadge' in navigator;
+};
 
 // Lazy load Capacitor Badge (won't fail if not installed)
 async function loadCapacitorBadge(): Promise<any | null> {
   // Skip import in non-Capacitor environments to avoid build errors
   if (!isCapacitor()) {
-    return null
+    return null;
   }
 
   try {
     // Use dynamic import with webpackIgnore to prevent build-time resolution
-    const modulePath = '@capacitor/badge'
-    // @ts-ignore - Dynamic import, module may not exist in web builds
-    const badgeModule = await import(/* webpackIgnore: true */ modulePath)
-    return badgeModule?.Badge ?? null
+    const modulePath = '@capacitor/badge';
+    // Dynamic import, module may not exist in web builds
+    const badgeModule = await import(/* webpackIgnore: true */ modulePath);
+    return badgeModule?.Badge ?? null;
   } catch {
-    return null
+    return null;
   }
 }
 
 export function useBadge(): BadgeAPI {
-  const isSupported = isBadgeSupported() || isCapacitor()
+  const isSupported = isBadgeSupported() || isCapacitor();
 
   /**
    * Set badge count on app icon
@@ -63,8 +62,8 @@ export function useBadge(): BadgeAPI {
     try {
       // If count is 0 or negative, clear the badge
       if (count <= 0) {
-        await clearBadgeInternal()
-        return
+        await clearBadgeInternal();
+        return;
       }
 
       // Try Capacitor first (for iOS App Store)
@@ -72,42 +71,42 @@ export function useBadge(): BadgeAPI {
       if (isCapacitor()) {
         try {
           // Dynamic import - will fail gracefully if not installed
-          const Badge = await loadCapacitorBadge()
+          const Badge = await loadCapacitorBadge();
           if (Badge) {
-            await Badge.set({ count })
-            console.log(`[Badge] Set to ${count} via Capacitor`)
-            return
+            await Badge.set({ count });
+            console.log(`[Badge] Set to ${count} via Capacitor`);
+            return;
           }
         } catch (e) {
-          console.warn('[Badge] Capacitor Badge plugin not available')
+          console.warn('[Badge] Capacitor Badge plugin not available');
         }
       }
 
       // Fallback to PWA Badge API (Android/Desktop)
       if (isBadgeSupported()) {
-        await (navigator as any).setAppBadge(count)
-        console.log(`[Badge] Set to ${count} via PWA API`)
-        return
+        await (navigator as any).setAppBadge(count);
+        console.log(`[Badge] Set to ${count} via PWA API`);
+        return;
       }
 
-      console.warn('[Badge] Badge API not supported on this platform')
+      console.warn('[Badge] Badge API not supported on this platform');
     } catch (error) {
-      console.error('[Badge] Error setting badge:', error)
+      console.error('[Badge] Error setting badge:', error);
     }
-  }, [])
+  }, []);
 
   /**
    * Clear badge from app icon
    */
   const clearBadge = useCallback(async (): Promise<void> => {
-    await clearBadgeInternal()
-  }, [])
+    await clearBadgeInternal();
+  }, []);
 
   return {
     setBadge,
     clearBadge,
     isSupported,
-  }
+  };
 }
 
 // Internal function to clear badge
@@ -115,22 +114,22 @@ async function clearBadgeInternal(): Promise<void> {
   try {
     // Try Capacitor first
     if (isCapacitor()) {
-      const Badge = await loadCapacitorBadge()
+      const Badge = await loadCapacitorBadge();
       if (Badge) {
-        await Badge.clear()
-        console.log('[Badge] Cleared via Capacitor')
-        return
+        await Badge.clear();
+        console.log('[Badge] Cleared via Capacitor');
+        return;
       }
     }
 
     // Fallback to PWA Badge API
     if (isBadgeSupported()) {
-      await (navigator as any).clearAppBadge()
-      console.log('[Badge] Cleared via PWA API')
-      return
+      await (navigator as any).clearAppBadge();
+      console.log('[Badge] Cleared via PWA API');
+      return;
     }
   } catch (error) {
-    console.error('[Badge] Error clearing badge:', error)
+    console.error('[Badge] Error clearing badge:', error);
   }
 }
 
@@ -138,23 +137,23 @@ async function clearBadgeInternal(): Promise<void> {
 export async function setAppBadge(count: number): Promise<void> {
   try {
     if (count <= 0) {
-      await clearAppBadge()
-      return
+      await clearAppBadge();
+      return;
     }
 
     if (isCapacitor()) {
-      const Badge = await loadCapacitorBadge()
+      const Badge = await loadCapacitorBadge();
       if (Badge) {
-        await Badge.set({ count })
-        return
+        await Badge.set({ count });
+        return;
       }
     }
 
     if (isBadgeSupported()) {
-      await (navigator as any).setAppBadge(count)
+      await (navigator as any).setAppBadge(count);
     }
   } catch (error) {
-    console.error('[Badge] Error:', error)
+    console.error('[Badge] Error:', error);
   }
 }
 
@@ -162,17 +161,17 @@ export async function setAppBadge(count: number): Promise<void> {
 export async function clearAppBadge(): Promise<void> {
   try {
     if (isCapacitor()) {
-      const Badge = await loadCapacitorBadge()
+      const Badge = await loadCapacitorBadge();
       if (Badge) {
-        await Badge.clear()
-        return
+        await Badge.clear();
+        return;
       }
     }
 
     if (isBadgeSupported()) {
-      await (navigator as any).clearAppBadge()
+      await (navigator as any).clearAppBadge();
     }
   } catch (error) {
-    console.error('[Badge] Error:', error)
+    console.error('[Badge] Error:', error);
   }
 }

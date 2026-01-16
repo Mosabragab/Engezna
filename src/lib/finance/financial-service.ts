@@ -32,9 +32,9 @@ type AnySupabaseClient = SupabaseClient<any, any, any>;
 
 interface FinancialServiceConfig {
   supabase: AnySupabaseClient;
-  providerId?: string;           // For provider-specific queries
-  governorateIds?: string[];     // For regional admin filtering
-  isRegionalAdmin?: boolean;     // Whether user is regional admin
+  providerId?: string; // For provider-specific queries
+  governorateIds?: string[]; // For regional admin filtering
+  isRegionalAdmin?: boolean; // Whether user is regional admin
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -62,12 +62,8 @@ export class FinancialService {
    * Get raw financial data from the settlement engine
    * This is the base query that respects all filters
    */
-  async getFinancialEngineData(
-    filters?: FinancialFilters
-  ): Promise<FinancialEngineData[]> {
-    let query = this.supabase
-      .from('financial_settlement_engine')
-      .select('*');
+  async getFinancialEngineData(filters?: FinancialFilters): Promise<FinancialEngineData[]> {
+    let query = this.supabase.from('financial_settlement_engine').select('*');
 
     // Apply provider filter (for provider dashboard)
     if (this.providerId) {
@@ -106,7 +102,7 @@ export class FinancialService {
    * Get admin-level summary (platform-wide or filtered by region)
    */
   async getAdminSummary(filters?: FinancialFilters): Promise<AdminFinancialSummary> {
-    let query = this.supabase.from('admin_financial_summary').select('*');
+    const query = this.supabase.from('admin_financial_summary').select('*');
 
     // For regional admin, we need to aggregate from financial_settlement_engine
     if (this.isRegionalAdmin && this.governorateIds?.length) {
@@ -181,10 +177,12 @@ export class FinancialService {
   async getSettlements(filters?: FinancialFilters): Promise<Settlement[]> {
     let query = this.supabase
       .from('settlements')
-      .select(`
+      .select(
+        `
         *,
         provider:providers(id, name_ar, name_en, governorate_id, city_id)
-      `)
+      `
+      )
       .order('created_at', { ascending: false });
 
     // Apply provider filter
@@ -229,10 +227,12 @@ export class FinancialService {
   async getSettlementById(settlementId: string): Promise<Settlement | null> {
     const { data, error } = await this.supabase
       .from('settlements')
-      .select(`
+      .select(
+        `
         *,
         provider:providers(id, name_ar, name_en, governorate_id, city_id)
-      `)
+      `
+      )
       .eq('id', settlementId)
       .single();
 
@@ -384,8 +384,10 @@ export class FinancialService {
         payoutOwed: data.reduce((sum, d) => sum + d.online_payout_owed, 0),
       },
       totalNetBalance: data.reduce((sum, d) => sum + d.net_balance, 0),
-      providersToPay: data.filter((d) => d.settlement_direction === 'platform_pays_provider').length,
-      providersToCollect: data.filter((d) => d.settlement_direction === 'provider_pays_platform').length,
+      providersToPay: data.filter((d) => d.settlement_direction === 'platform_pays_provider')
+        .length,
+      providersToCollect: data.filter((d) => d.settlement_direction === 'provider_pays_platform')
+        .length,
       providersBalanced: data.filter((d) => d.settlement_direction === 'balanced').length,
       eligibleOrders: data.reduce((sum, d) => sum + d.eligible_orders_count, 0),
       heldOrders: data.reduce((sum, d) => sum + d.held_orders_count, 0),
@@ -482,7 +484,8 @@ export class FinancialService {
         payoutOwed: (data.online_payout_owed as number) || 0,
       },
       netBalance: (data.net_balance as number) || 0,
-      settlementDirection: (data.settlement_direction as Settlement['settlementDirection']) || 'balanced',
+      settlementDirection:
+        (data.settlement_direction as Settlement['settlementDirection']) || 'balanced',
       status: (data.status as Settlement['status']) || 'pending',
       amountPaid: (data.amount_paid as number) || 0,
       paymentDate: data.payment_date as string | null,
