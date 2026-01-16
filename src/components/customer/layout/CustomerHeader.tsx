@@ -338,14 +338,20 @@ export function CustomerHeader({
               className="relative"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
+              data-testid="notification-container"
             >
               <button
                 className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
                 onClick={() => router.push(`/${locale}/notifications`)}
+                data-testid="notification-button"
+                aria-label={locale === 'ar' ? 'الإشعارات' : 'Notifications'}
               >
                 <Bell className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-red-500/30 animate-pulse">
+                  <span
+                    className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-red-500/30 animate-pulse"
+                    data-testid="notification-badge"
+                  >
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
                 )}

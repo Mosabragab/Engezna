@@ -480,7 +480,8 @@ test.describe('Custom Order Broadcast System', () => {
 test.describe('Real-time Order Updates', () => {
   test('should have realtime infrastructure on orders page', async ({ page }) => {
     await page.goto('/ar/orders');
-    await page.waitForLoadState('networkidle');
+    // Use domcontentloaded instead of networkidle to avoid timeout with WebSocket connections
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       // Verify page has real-time capability (structure check)
@@ -498,21 +499,27 @@ test.describe('Real-time Order Updates', () => {
 
   test('should have notification UI in header', async ({ page }) => {
     await page.goto('/ar');
-    await page.waitForLoadState('networkidle');
+    // Use domcontentloaded instead of networkidle to avoid timeout with Supabase Realtime connections
+    await page.waitForLoadState('domcontentloaded');
 
     // Check for notification bell or badge in header
     const header = page.locator('header');
     await expect(header).toBeVisible();
 
-    const notificationIndicator = header.locator(
-      '[class*="notification"], [class*="badge"], [class*="bell"], [aria-label*="notification"]'
+    // Use data-testid for more reliable element selection
+    const notificationButton = header.locator('[data-testid="notification-button"]');
+    const notificationByAriaLabel = header.locator(
+      '[aria-label*="notification"], [aria-label*="الإشعارات"]'
     );
-    const hasNotificationUI = await notificationIndicator
-      .first()
-      .isVisible()
-      .catch(() => false);
+    const notificationBySvg = header.locator('button:has(svg.lucide-bell)');
+
+    const hasNotificationUI =
+      (await notificationButton.count()) > 0 ||
+      (await notificationByAriaLabel.count()) > 0 ||
+      (await notificationBySvg.count()) > 0;
 
     console.log('Notification UI present:', hasNotificationUI);
+    expect(hasNotificationUI).toBeTruthy();
   });
 });
 
