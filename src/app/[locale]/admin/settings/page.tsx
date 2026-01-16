@@ -80,10 +80,10 @@ const defaultSettings: PlatformSettings = {
   allow_wallet_payment: true,
   order_auto_cancel_minutes: 30,
   provider_commission_payout_day: 1,
-  // Commission settings - 0% for 6 months, max 7% after
+  // Commission settings - 0% for 3 months, max 7% after
   default_commission_rate: 7.0,
   max_commission_rate: 7.0,
-  grace_period_days: 180, // 6 months
+  grace_period_days: 90, // 3 months
   grace_period_enabled: true,
 };
 
@@ -541,8 +541,8 @@ export default function AdminSettingsPage() {
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
                     {locale === 'ar'
-                      ? `180 يوم = 6 شهور. حالياً: ${Math.round(settings.grace_period_days / 30)} شهور`
-                      : `180 days = 6 months. Currently: ${Math.round(settings.grace_period_days / 30)} months`}
+                      ? `90 يوم = 3 شهور. حالياً: ${Math.round(settings.grace_period_days / 30)} شهور`
+                      : `90 days = 3 months. Currently: ${Math.round(settings.grace_period_days / 30)} months`}
                   </p>
                 </div>
 

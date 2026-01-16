@@ -367,8 +367,8 @@ export default async function WelcomePage({ params }: PageProps) {
               >
                 <Store className="w-5 h-5" />
                 {isRTL
-                  ? 'انضم كشريك - 6 شهور بدون عمولة'
-                  : 'Join as a Partner - 6 months with 0% commission'}
+                  ? 'انضم كشريك - 3 شهور بدون عمولة'
+                  : 'Join as a Partner - 3 months with 0% commission'}
                 {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </Link>
             </div>

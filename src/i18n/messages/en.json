@@ -49,7 +49,7 @@
       "subtitle": "Because great service is a right for everyone, not just big cities",
       "lowCommission": {
         "title": "No Crazy Commissions",
-        "description": "Only 7% max commission after 6 months - compared to 15-20% on other platforms"
+        "description": "Only 7% max commission after 3 months - compared to 15-20% on other platforms"
       },
       "fastDelivery": {
         "title": "Faster Connection",
@@ -106,7 +106,7 @@
       },
       "provider": {
         "title": "Own a Shop or Restaurant?",
-        "subtitle": "Register on Engezna - zero registration fees, 0% commission for 6 months, then max 7%",
+        "subtitle": "Register on Engezna - zero registration fees, 0% commission for 3 months, then max 7%",
         "button": "Register Free as Partner"
       }
     },
@@ -956,7 +956,7 @@
     "benefits": {
       "freeRegistration": "Free Registration Forever",
       "freeRegistrationDesc": "No registration fees… ever",
-      "zeroCommission": "0% Commission for 6 Months",
+      "zeroCommission": "0% Commission for 3 Months",
       "zeroCommissionDesc": "Start with zero commission, then max 7%",
       "easyDashboard": "Easy Dashboard",
       "easyDashboardDesc": "Manage orders and products with ease",
@@ -979,7 +979,7 @@
     "faqTitle": "Frequently Asked Questions",
     "faqs": {
       "q1": "What's the commission per order?",
-      "a1": "Commission is 0% for the first 6 months, then max 7% per order.",
+      "a1": "Commission is 0% for the first 3 months, then max 7% per order.",
       "q2": "Is registration free?",
       "a2": "Yes! Registration is free forever with no hidden fees.",
       "q3": "How do I receive my earnings?",
