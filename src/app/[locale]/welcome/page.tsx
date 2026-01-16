@@ -164,8 +164,8 @@ export default async function WelcomePage({ params }: PageProps) {
               </h1>
               <p className="text-lg text-slate-600 mb-6">
                 {isRTL
-                  ? 'توصيل أسرع بينك وبين أقرب تاجر في محافظتك - بدون رسوم خدمة'
-                  : 'Fast delivery connecting you with the nearest merchant in your governorate - no service fees'}
+                  ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة'
+                  : 'For your daily home essentials from the nearest merchant - no service fees'}
               </p>
 
               {/* CTA Button */}
