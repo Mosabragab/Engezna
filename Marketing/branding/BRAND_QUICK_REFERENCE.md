@@ -40,7 +40,7 @@ Last Updated: 2026-01-13
 
 - **Merchant Registration Fee:** 0 EGP – forever
 - **Merchant Commission:**
-  - 0% first 6 months from launch
+  - 0% first 3 months from launch
   - 7% maximum after that
 - **Customer Service Fee:** 0% – No fees for customers
 - **Delivery:** Provided by **merchant**, not by Engezna.

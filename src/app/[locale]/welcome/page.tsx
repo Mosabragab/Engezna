@@ -164,8 +164,8 @@ export default async function WelcomePage({ params }: PageProps) {
               </h1>
               <p className="text-lg text-slate-600 mb-6">
                 {isRTL
-                  ? 'توصيل أسرع بينك وبين أقرب تاجر في محافظتك - بدون رسوم خدمة'
-                  : 'Fast delivery connecting you with the nearest merchant in your governorate - no service fees'}
+                  ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة'
+                  : 'For your daily home essentials from the nearest merchant - no service fees'}
               </p>
 
               {/* CTA Button */}
@@ -367,8 +367,8 @@ export default async function WelcomePage({ params }: PageProps) {
               >
                 <Store className="w-5 h-5" />
                 {isRTL
-                  ? 'انضم كشريك - 6 شهور بدون عمولة'
-                  : 'Join as a Partner - 6 months with 0% commission'}
+                  ? 'انضم كشريك - 3 شهور بدون عمولة'
+                  : 'Join as a Partner - 3 months with 0% commission'}
                 {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
               </Link>
             </div>

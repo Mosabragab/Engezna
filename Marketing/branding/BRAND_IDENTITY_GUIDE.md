@@ -203,7 +203,7 @@ Key positioning pillars:
 
 ### 6.2 Supporting Messages
 
-- "منصّة إنجزنا… توصيل أسرع بينك وبين أقرب تاجر."
+- "منصّة إنجزنا… لتلبية احتياجات بيتك اليومية."
 - "من غير رسوم تسجيل… من غير عمولة مجنونة."
 - "لكل طلب… في تاجر جاهز يخدمك."
 
@@ -618,7 +618,7 @@ The Engezna animated logo uses a unique RTL reveal animation that writes the Ara
   - **0 EGP – forever** (no sign-up fee for service providers).
 
 - **Merchant commission:**
-  - 0% for the first **6 months** from platform launch in their city.
+  - 0% for the first **3 months** from platform launch in their city.
   - **7% commission (maximum)** on order value after that period.
 
 - **Customer service fee:**

@@ -88,12 +88,12 @@ export interface CommissionSettings {
   customer_service_fee_enabled: boolean;
 }
 
-// Default commission settings (6 months grace, 7% max, 0% customer fee)
+// Default commission settings (3 months grace, 7% max, 0% customer fee)
 export const DEFAULT_COMMISSION_SETTINGS: CommissionSettings = {
   enabled: true,
   default_rate: 7.0,
   max_rate: 7.0,
-  grace_period_days: 180, // 6 months
+  grace_period_days: 90, // 3 months
   grace_period_enabled: true,
   customer_service_fee: 0.0,
   customer_service_fee_enabled: false,

@@ -52,7 +52,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 **السياق:**
 - المنتج: منصة تحويل الطلبات الهاتفية إلى طلبات رقمية
 - الفئات المستهدفة: مطاعم، سوبرماركت، كافيهات، صيدليات، محلات خضار وفاكهة
-- USP: صفر رسوم تسجيل، صفر عمولة أول 6 شهور، حد أقصى 7% بعدها
+- USP: صفر رسوم تسجيل، صفر عمولة أول 3 شهور، حد أقصى 7% بعدها
 - نموذج التوصيل: التاجر يستخدم سائقه الخاص
 
 **المطلوب:**
@@ -863,7 +863,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 أنت Social Media Manager لـ Engezna. اكتب منشور [Facebook/Instagram/TikTok] عن [الموضوع]. النبرة: واثقة، محلية، عامية مصرية بسيطة. الهدف: [engagement/awareness/conversion]. المحافظة المستهدفة: [اسم المحافظة].
 
 # Write Merchant Outreach Message
-أنت Sales Representative لـ Engezna. اكتب رسالة WhatsApp لتاجر [مطعم/سوبرماركت/صيدلية] في [المدينة] لدعوته للتسجيل. ركز على: صفر رسوم، صفر عمولة 6 شهور، حل مشكلة الطلبات الهاتفية.
+أنت Sales Representative لـ Engezna. اكتب رسالة WhatsApp لتاجر [مطعم/سوبرماركت/صيدلية] في [المدينة] لدعوته للتسجيل. ركز على: صفر رسوم، صفر عمولة 3 شهور، حل مشكلة الطلبات الهاتفية.
 
 # Create Customer Support Response
 أنت Customer Support Agent لـ Engezna. رد على شكوى عميل يقول: "[الشكوى]". كن متعاطفاً، قدم حل عملي، حافظ على صورة العلامة.
