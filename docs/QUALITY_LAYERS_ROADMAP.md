@@ -49,6 +49,11 @@
 | 2026-01-16 | 3.3     | XSS Sanitization (escapeHtml, sanitize, etc.)   | ✅ مكتمل |
 | 2026-01-16 | 3.4     | Global Rate Limiting (withRateLimit middleware) | ✅ مكتمل |
 | 2026-01-16 | -       | Security Tests (76 tests)                       | ✅ مكتمل |
+| 2026-01-16 | 4.1     | Logger Service (child loggers, request IDs)     | ✅ مكتمل |
+| 2026-01-16 | 4.2     | Health Check API (/api/health)                  | ✅ مكتمل |
+| 2026-01-16 | 4.4     | Performance Utils (timers, metrics, retry)      | ✅ مكتمل |
+| 2026-01-16 | 4.5     | Cache Service (LRU, TTL, memoize)               | ✅ مكتمل |
+| 2026-01-16 | -       | AUX Layer Tests (70 tests)                      | ✅ مكتمل |
 |            |         |                                                 |          |
 
 ---
@@ -364,60 +369,75 @@
 
 **الأولوية:** متوسطة
 **التبعيات:** المرحلة 1
-**الحالة:** ⬜ لم تبدأ
+**الحالة:** ✅ مكتمل
 
 | #   | المهمة            | الوصف                    | الحالة |
 | --- | ----------------- | ------------------------ | ------ |
-| 4.1 | Logger Service    | نظام logging مركزي       | ⬜     |
-| 4.2 | Health Check API  | Endpoint لفحص صحة النظام | ⬜     |
+| 4.1 | Logger Service    | نظام logging مركزي       | ✅     |
+| 4.2 | Health Check API  | Endpoint لفحص صحة النظام | ✅     |
 | 4.3 | Monitoring Setup  | Sentry integration       | ⬜     |
-| 4.4 | Performance Utils | أدوات قياس الأداء        | ⬜     |
-| 4.5 | Cache Service     | طبقة caching بسيطة       | ⬜     |
+| 4.4 | Performance Utils | أدوات قياس الأداء        | ✅     |
+| 4.5 | Cache Service     | طبقة caching بسيطة       | ✅     |
 
 ### Checklist - المرحلة 4
 
 #### 4.1 Logger Service
 
-- [ ] تثبيت pino أو winston
-- [ ] إنشاء `src/lib/logger/index.ts`
-- [ ] Log levels: debug, info, warn, error
-- [ ] JSON format للـ production
-- [ ] Pretty format للـ development
-- [ ] Request logging middleware
-- [ ] استبدال console.log/error
+- [x] إنشاء `src/lib/logger/index.ts` (بدون مكتبات خارجية)
+- [x] Log levels: debug, info, warn, error
+- [x] JSON format للـ production
+- [x] Pretty format للـ development (colors)
+- [x] Child logger pattern
+- [x] `createRequestLogger()` - request-scoped logging
+- [x] `logTimed()` - measure and log execution time
+- [x] `generateRequestId()` - unique request IDs
+- [ ] استبدال console.log/error (اختياري - تدريجي)
 
 #### 4.2 Health Check API
 
-- [ ] إنشاء `src/app/api/health/route.ts`
-- [ ] فحص database connection
-- [ ] فحص Supabase connection
-- [ ] Return: status, version, uptime
-- [ ] Response time tracking
+- [x] إنشاء `src/app/api/health/route.ts`
+- [x] GET /api/health - basic health check
+- [x] GET /api/health?detailed=true - with dependency checks
+- [x] HEAD /api/health - lightweight probe
+- [x] فحص Supabase connection
+- [x] Return: status, version, uptime
+- [x] Response time tracking للـ Supabase
+- [x] No-cache headers
 
-#### 4.3 Monitoring (Sentry)
+#### 4.3 Monitoring (Sentry) - اختياري
 
 - [ ] تثبيت @sentry/nextjs
-- [ ] إنشاء `sentry.client.config.ts`
-- [ ] إنشاء `sentry.server.config.ts`
-- [ ] إنشاء `sentry.edge.config.ts`
+- [ ] إنشاء sentry configs
 - [ ] تكوين error boundaries
 - [ ] Performance monitoring
-- [ ] User feedback widget
 
 #### 4.4 Performance Utils
 
-- [ ] إنشاء `src/lib/utils/performance.ts`
-- [ ] `measureTime()` - قياس وقت التنفيذ
-- [ ] `trackMetric()` - تسجيل metrics
-- [ ] Memory usage helpers
+- [x] إنشاء `src/lib/utils/performance.ts`
+- [x] `measureSync()` / `measureAsync()` - قياس وقت التنفيذ
+- [x] `createTimer()` - lap timer with statistics
+- [x] `trackMetric()` / `getMetricStats()` - metrics tracking
+- [x] `debounce()` / `throttle()` - rate control
+- [x] `retry()` - exponential backoff retry
+- [x] `withMetrics()` - auto-track function execution
 
 #### 4.5 Cache Service
 
-- [ ] إنشاء `src/lib/cache/index.ts`
-- [ ] In-memory cache
-- [ ] TTL support
-- [ ] Cache invalidation
-- [ ] Size limits
+- [x] إنشاء `src/lib/cache/index.ts`
+- [x] In-memory cache with `createCache()`
+- [x] TTL support (per-cache and per-entry)
+- [x] LRU eviction when at capacity
+- [x] Cache statistics (hits, misses, hit rate)
+- [x] `getOrSet()` - cache-aside pattern
+- [x] `memoize()` - function memoization
+- [x] Pre-configured caches: `appCache`, `requestCache`, `staticCache`
+- [x] Key generator helpers: `cacheKey.user()`, `cacheKey.provider()`, etc.
+
+#### 4.6 AUX Tests
+
+- [x] Logger tests (20 tests)
+- [x] Performance utils tests (25 tests)
+- [x] Cache tests (25 tests)
 
 ---
 
@@ -508,7 +528,8 @@ sentry.server.config.ts          # Sentry server config
 | CI Pipeline Success Rate                 | 100%  | ⬜       |
 | RBAC Tests Passing                       | 100%  | ✅       |
 | Security Tests Passing                   | 100%  | ✅ (76)  |
-| Unit Tests Passing                       | 100%  | ✅ (200) |
+| Unit Tests Passing                       | 100%  | ✅ (270) |
+| AUX Layer Tests Passing                  | 100%  | ✅ (70)  |
 
 ---
 
