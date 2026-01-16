@@ -11,7 +11,7 @@
 
 ### 🎯 Business Model Summary
 
-- **Grace Period:** 6 months (0% commission) - فترة السماح
+- **Grace Period:** 3 months (0% commission) - فترة السماح
 - **After Grace Period:** Maximum 7% commission (أقل عمولة في السوق)
 - **Competitors:** 25-30%
 - **Customer Fees:** 0% (NO service fees)
@@ -26,7 +26,7 @@ You are tasked with implementing HERE Maps integration, cleaning up the location
 
 1. **Removing the Districts (الأحياء) system entirely** from all interfaces
 2. **Implementing HERE Maps** for GPS-based location selection
-3. **Updating partnership messaging** to reflect the new offer (6 months free, max 7% commission)
+3. **Updating partnership messaging** to reflect the new offer (3 months free, max 7% commission)
 4. **Ensuring NO mention of 6% commission** anywhere (old rate - must be removed)
 5. **Building Admin Governorate Management** - activate/deactivate governorates, manage cities
 6. **Building Admin Commission Management** - platform settings, governorate overrides, provider overrides
@@ -811,8 +811,8 @@ const PARTNERSHIP_MESSAGES = {
   // Key benefits
   benefits: {
     freeperiod: {
-      title: '6 أشهر مجانية',
-      description: 'ابدأ بدون أي عمولة لمدة 6 أشهر كاملة - فرصتك للنمو بدون تكلفة',
+      title: '3 أشهر مجانية',
+      description: 'ابدأ بدون أي عمولة لمدة 3 أشهر كاملة - فرصتك للنمو بدون تكلفة',
     },
     lowCommission: {
       title: 'أقل عمولة في السوق',
@@ -838,14 +838,14 @@ const PARTNERSHIP_MESSAGES = {
   // Commission explanation
   commissionExplanation: `
     نموذج عملنا بسيط وشفاف:
-    • أول 6 أشهر: عمولة 0% (صفر) على جميع الطلبات
+    • أول 3 أشهر: عمولة 0% (صفر) على جميع الطلبات
     • بعد ذلك: عمولة لا تتجاوز 7% كحد أقصى
     • هذه العمولة هي الأدنى في سوق التوصيل المصري
   `,
 
   // Trust badges
   trustBadges: [
-    '✅ 0% عمولة لأول 6 أشهر',
+    '✅ 0% عمولة لأول 3 أشهر',
     '✅ 7% كحد أقصى بعد الفترة المجانية',
     '✅ بدون رسوم تسجيل',
     '✅ دعم فني مجاني',
@@ -885,7 +885,7 @@ export default function ProviderRegisterPage() {
         {/* Trust Badges */}
         <div className="flex flex-wrap justify-center gap-4 mb-8">
           <Badge variant="success" className="text-lg px-4 py-2">
-            ✅ 0% عمولة لأول 6 أشهر
+            ✅ 0% عمولة لأول 3 أشهر
           </Badge>
           <Badge variant="outline" className="text-lg px-4 py-2">
             ✅ 7% كحد أقصى بعد ذلك
@@ -898,12 +898,12 @@ export default function ProviderRegisterPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Gift className="h-6 w-6 text-green-500" />6 أشهر مجانية
+              <Gift className="h-6 w-6 text-green-500" />3 أشهر مجانية
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p>
-              ابدأ بدون أي عمولة لمدة 6 أشهر كاملة. فرصتك للنمو واكتساب عملاء جدد بدون أي تكلفة.
+              ابدأ بدون أي عمولة لمدة 3 أشهر كاملة. فرصتك للنمو واكتساب عملاء جدد بدون أي تكلفة.
             </p>
           </CardContent>
         </Card>
@@ -982,7 +982,7 @@ export default function ProviderRegisterPage() {
 - [ ] Search for "٦%" (Arabic numeral)
 - [ ] Search for "six percent"
 - [ ] Update to 7% maximum
-- [ ] Update grace period to 6 months (180 days)
+- [ ] Update grace period to 3 months (90 days)
 
 ### 4.3 Verify Database Schema Alignment
 
@@ -1068,8 +1068,8 @@ The following files contain **WRONG information** that MUST be corrected:
 
 | File                               | Current (WRONG ❌)             | Correct (✅)                     |
 | ---------------------------------- | ------------------------------ | -------------------------------- |
-| `branding/BRAND_IDENTITY_GUIDE.md` | 9 months, 6%, 2% service fee   | **6 months, 7%, 0% service fee** |
-| `PRD.md`                           | "6% commission", "9 months"    | **7% max, 6 months**             |
+| `branding/BRAND_IDENTITY_GUIDE.md` | 9 months, 6%, 2% service fee   | **3 months, 7%, 0% service fee** |
+| `PRD.md`                           | "6% commission", "9 months"    | **7% max, 3 months**             |
 | `README.md`                        | "6% commission" in settlements | **7% max**                       |
 | `claude.md`                        | "6% platform fee"              | **7% max**                       |
 
@@ -1107,7 +1107,7 @@ The following files contain **WRONG information** that MUST be corrected:
   - **No hidden fees** ✅
 
 - **Commission Structure:**
-  - **0% for the first 6 months** (Grace Period / فترة السماح)
+  - **0% for the first 3 months** (Grace Period / فترة السماح)
   - **Maximum 7%** after grace period (lowest in Egyptian market!)
   - Competitors charge 25-30%
 
@@ -1148,7 +1148,7 @@ grep -rn "service fee" --include="*.md" .
 
 **Section: Business Model**
 
-- Change "9 months" → "6 months"
+- Change "9 months" → "3 months"
 - Change "6% commission" → "7% maximum commission"
 - Remove any "2% service fee" mentions
 
@@ -1199,7 +1199,7 @@ At the end of all changes, create/update documentation files:
 - Simplified location system: Governorate → City → GPS (removed Districts)
 - Updated provider registration flow to use GPS
 - Updated customer address form to use GPS
-- Updated partnership messaging (6 months free, 7% max commission)
+- Updated partnership messaging (3 months free, 7% max commission)
 
 ### Removed
 
@@ -1211,7 +1211,7 @@ At the end of all changes, create/update documentation files:
 ### Fixed
 
 - Commission percentage now correctly shows 7% max
-- Grace period correctly shows 6 months (180 days)
+- Grace period correctly shows 3 months (90 days)
 ```
 
 **Update `/docs/LOCATION_SYSTEM.md`:**
@@ -1256,7 +1256,7 @@ HERE Maps integration for selecting precise GPS coordinates.
 
 ### Grace Period (فترة السماح)
 
-- Duration: 6 months (180 days)
+- Duration: 3 months (90 days)
 - Commission: 0%
 - Starts: From provider registration date
 
@@ -1293,7 +1293,7 @@ Before considering the task complete:
 
 - [ ] **No 6% commission** mentions anywhere (code OR documentation)
 - [ ] **Partnership messages** updated to:
-  - 6 months free (0% commission)
+  - 3 months free (0% commission)
   - Maximum 7% after grace period
   - **NO customer service fees**
 - [ ] **Admin commission settings page** working:
@@ -1357,7 +1357,7 @@ Before considering the task complete:
 ✅ CORRECT MESSAGES:
 
 العربية:
-- "0% عمولة لأول 6 أشهر"
+- "0% عمولة لأول 3 أشهر"
 - "7% كحد أقصى بعد الفترة المجانية"
 - "بدون رسوم تسجيل"
 - "بدون رسوم خفية"
@@ -1366,7 +1366,7 @@ Before considering the task complete:
 - "المنافسون يأخذون 25-30%"
 
 English:
-- "0% commission for first 6 months"
+- "0% commission for first 3 months"
 - "Maximum 7% after grace period"
 - "No registration fees"
 - "No hidden fees"
@@ -1400,7 +1400,7 @@ When updating partnership pages, use these colors:
 
 ```
 ┌─────────────────────────────────────────┐
-│  🎁 6 أشهر مجانية (0% عمولة)            │  ← Green highlight
+│  🎁 3 أشهر مجانية (0% عمولة)            │  ← Green highlight
 ├─────────────────────────────────────────┤
 │  📊 7% كحد أقصى بعد الفترة المجانية      │  ← Blue (Primary)
 ├─────────────────────────────────────────┤
@@ -2053,8 +2053,8 @@ Expected locations:
   "partnership": {
     "title": "انضم لإنجزنا",
     "subtitle": "أقل عمولة في السوق المصري",
-    "gracePeriod": "6 أشهر مجانية",
-    "gracePeriodDesc": "ابدأ بدون أي عمولة لمدة 6 أشهر كاملة",
+    "gracePeriod": "3 أشهر مجانية",
+    "gracePeriodDesc": "ابدأ بدون أي عمولة لمدة 3 أشهر كاملة",
     "commissionAfter": "7% كحد أقصى",
     "commissionAfterDesc": "بعد الفترة المجانية، عمولة 7% فقط - مقارنة بـ 25-30% في المنصات الأخرى",
     "noRegistrationFee": "بدون رسوم تسجيل",

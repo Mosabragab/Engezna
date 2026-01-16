@@ -429,7 +429,7 @@ Technique:
 
 1. ✅ Visit `/ar/provider/finance` or `/en/provider/finance`
 2. ✅ Total earnings and pending payout cards
-3. ✅ Commission breakdown (up to 7% platform fee, 0% for first 6 months)
+3. ✅ Commission breakdown (up to 7% platform fee, 0% for first 3 months)
 4. ✅ This month vs last month earnings comparison
 5. ✅ Payout schedule information (weekly on Sundays)
 6. ✅ Transaction history with date range filter
@@ -459,7 +459,7 @@ Technique:
 9. ✅ Status filtering (all, pending, processing, completed, failed)
 10. ✅ Geographic filtering by governorate/city
 11. ✅ **CRITICAL**: Only includes orders where both `status='delivered'` AND `payment_status='completed'`
-12. ✅ Up to 7% platform commission rate (0% for first 6 months grace period)
+12. ✅ Up to 7% platform commission rate (0% for first 3 months grace period)
 
 #### Admin Settlement Detail (`/admin/settlements/[id]`)
 
@@ -1629,7 +1629,7 @@ const categories = await supabase.from('provider_categories').select('*')
 - ✅ **Finance Page**: Created `/provider/finance` with comprehensive financial dashboard
   - Total earnings card with all-time earnings
   - Pending payout card showing next payment
-  - Commission breakdown showing up to 7% platform fee (0% for first 6 months)
+  - Commission breakdown showing up to 7% platform fee (0% for first 3 months)
   - This month vs last month earnings comparison
   - Payout schedule information (weekly on Sundays)
   - Transaction history with date range filtering

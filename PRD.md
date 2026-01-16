@@ -27,7 +27,7 @@ local businesses and creating economic opportunities through fair, transparent p
 
 **Key Differentiator:**
 
-- **6 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **3 months 0% commission** then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
 - Providers manage their own delivery staff
 - Arabic-first UX with full RTL support
@@ -1138,7 +1138,7 @@ reviews (
    - Competitive advantage for providers
    - Commission structure:
      - Maximum commission: 7%
-     - 0% commission for first 6 months (grace period)
+     - 0% commission for first 3 months (grace period)
      - Governorate-specific rates may apply
 
 **Note:** Providers handle their own delivery using existing staff. They set their own delivery fees directly with customers. Engezna does NOT charge delivery fees or manage drivers.
@@ -1236,7 +1236,7 @@ reviews (
 
 ### **4. Simple, Transparent Pricing**
 
-- Maximum 7% commission (0% for first 6 months)
+- Maximum 7% commission (0% for first 3 months)
 - No hidden fees
 - No delivery fee split confusion
 - Providers set their own delivery charges

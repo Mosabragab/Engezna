@@ -1,4 +1,5 @@
 # 🎯 Engezna - Value Proposition & Brand Voice
+
 ## عرض القيمة وصوت العلامة التجارية
 
 **تاريخ الإعداد:** يناير 2026
@@ -1061,7 +1062,7 @@
 │  │  PILOT CITY: Beni Suef                                         │       │
 │  │  • Competing directly with Talabat (present for 6 months)     │       │
 │  │  • Talabat charges: 3,000 EGP signup + 18-25% commission      │       │
-│  │  • Our offer: Wave 1 = 0 fees + 0% for 6 months, then 7%     │       │
+│  │  • Our offer: Wave 1 = 0 fees + 0% for 3 months, then 7%     │       │
 │  │                                                                 │       │
 │  │  Our "Governorates First" strategy:                            │       │
 │  │  • Phase 1: Secondary governorates (Beni Suef as pilot)       │       │
