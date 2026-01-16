@@ -12,7 +12,7 @@ export function generateMetadata() {
   return {
     title: 'Engezna - إنجزنا | Local Marketplace in Egypt',
     description:
-      'منصة إنجزنا - ماركت بليس لاحتياجات البيت الضرورية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات - يجمع التجار والعملاء في مكان واحد',
+      'منصة إنجزنا لتلبية احتياجات البيت اليومية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات',
     manifest: '/manifest.json',
     themeColor: '#0F172A',
     appleWebApp: {
