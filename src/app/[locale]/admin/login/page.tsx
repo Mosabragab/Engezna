@@ -1,12 +1,12 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
-import { createClient } from '@/lib/supabase/client'
+import { useLocale } from 'next-intl';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { createClient } from '@/lib/supabase/client';
 import {
   Shield,
   Mail,
@@ -19,118 +19,94 @@ import {
   ArrowRight,
   ArrowLeft,
   Timer,
-} from 'lucide-react'
+} from 'lucide-react';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function AdminLoginPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const isRTL = locale === 'ar';
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Brute force protection
-  const [isLocked, setIsLocked] = useState(false)
-  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0)
-  const MAX_ATTEMPTS = 5
-  const LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes in milliseconds
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockoutTimeLeft, setLockoutTimeLeft] = useState(0);
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes in milliseconds
 
-  useEffect(() => {
-    checkExistingAuth()
-    checkLockoutStatus()
+  // Helper functions - defined before hooks that use them
+  const clearLockout = useCallback(() => {
+    localStorage.removeItem('admin_login_lockout');
+    localStorage.removeItem('admin_login_attempts');
+    setIsLocked(false);
+    setLockoutTimeLeft(0);
+  }, []);
 
-    // Fallback: Show form after 3 seconds even if auth check is slow
-    const fallbackTimer = setTimeout(() => {
-      setCheckingAuth(false)
-    }, 3000)
+  const clearAttempts = useCallback(() => {
+    localStorage.removeItem('admin_login_attempts');
+  }, []);
 
-    return () => clearTimeout(fallbackTimer)
-  }, [])
-
-  // Countdown timer for lockout
-  useEffect(() => {
-    if (!isLocked || lockoutTimeLeft <= 0) return
-
-    const timer = setInterval(() => {
-      setLockoutTimeLeft(prev => {
-        if (prev <= 1000) {
-          setIsLocked(false)
-          clearLockout()
-          return 0
-        }
-        return prev - 1000
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [isLocked, lockoutTimeLeft])
-
-  function checkLockoutStatus() {
-    const lockoutData = localStorage.getItem('admin_login_lockout')
-    if (lockoutData) {
-      const { lockoutUntil } = JSON.parse(lockoutData)
-      const now = Date.now()
-      if (lockoutUntil > now) {
-        setIsLocked(true)
-        setLockoutTimeLeft(lockoutUntil - now)
-      } else {
-        clearLockout()
-      }
-    }
-  }
-
-  function getFailedAttempts(): number {
-    const data = localStorage.getItem('admin_login_attempts')
+  const getFailedAttempts = useCallback((): number => {
+    const data = localStorage.getItem('admin_login_attempts');
     if (data) {
-      const { count, timestamp } = JSON.parse(data)
+      const { count, timestamp } = JSON.parse(data);
       // Reset if older than 1 hour
       if (Date.now() - timestamp > 60 * 60 * 1000) {
-        localStorage.removeItem('admin_login_attempts')
-        return 0
+        localStorage.removeItem('admin_login_attempts');
+        return 0;
       }
-      return count
+      return count;
     }
-    return 0
-  }
+    return 0;
+  }, []);
 
-  function incrementFailedAttempts() {
-    const current = getFailedAttempts()
-    const newCount = current + 1
-    localStorage.setItem('admin_login_attempts', JSON.stringify({
-      count: newCount,
-      timestamp: Date.now()
-    }))
+  const incrementFailedAttempts = useCallback(() => {
+    const current = getFailedAttempts();
+    const newCount = current + 1;
+    localStorage.setItem(
+      'admin_login_attempts',
+      JSON.stringify({
+        count: newCount,
+        timestamp: Date.now(),
+      })
+    );
 
     if (newCount >= MAX_ATTEMPTS) {
-      const lockoutUntil = Date.now() + LOCKOUT_DURATION
-      localStorage.setItem('admin_login_lockout', JSON.stringify({ lockoutUntil }))
-      setIsLocked(true)
-      setLockoutTimeLeft(LOCKOUT_DURATION)
+      const lockoutUntil = Date.now() + LOCKOUT_DURATION;
+      localStorage.setItem('admin_login_lockout', JSON.stringify({ lockoutUntil }));
+      setIsLocked(true);
+      setLockoutTimeLeft(LOCKOUT_DURATION);
     }
 
-    return newCount
-  }
+    return newCount;
+  }, [getFailedAttempts, MAX_ATTEMPTS, LOCKOUT_DURATION]);
 
-  function clearLockout() {
-    localStorage.removeItem('admin_login_lockout')
-    localStorage.removeItem('admin_login_attempts')
-    setIsLocked(false)
-    setLockoutTimeLeft(0)
-  }
+  const checkLockoutStatus = useCallback(() => {
+    const lockoutData = localStorage.getItem('admin_login_lockout');
+    if (lockoutData) {
+      const { lockoutUntil } = JSON.parse(lockoutData);
+      const now = Date.now();
+      if (lockoutUntil > now) {
+        setIsLocked(true);
+        setLockoutTimeLeft(lockoutUntil - now);
+      } else {
+        clearLockout();
+      }
+    }
+  }, [clearLockout]);
 
-  function clearAttempts() {
-    localStorage.removeItem('admin_login_attempts')
-  }
-
-  async function checkExistingAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const checkExistingAuth = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (user) {
       // Check if user is admin
@@ -138,7 +114,7 @@ export default function AdminLoginPage() {
         .from('profiles')
         .select('role')
         .eq('id', user.id)
-        .single()
+        .single();
 
       if (profile?.role === 'admin') {
         // Check if admin is active
@@ -146,54 +122,89 @@ export default function AdminLoginPage() {
           .from('admin_users')
           .select('is_active')
           .eq('user_id', user.id)
-          .single()
+          .single();
 
         if (adminUser?.is_active) {
           // Use full page navigation to ensure fresh context
-          window.location.href = `/${locale}/admin`
-          return
+          window.location.href = `/${locale}/admin`;
+          return;
         }
       }
     }
 
-    setCheckingAuth(false)
-  }
+    setCheckingAuth(false);
+  }, [locale]);
+
+  // Initial auth check and lockout status check
+  useEffect(() => {
+    checkExistingAuth();
+    checkLockoutStatus();
+
+    // Fallback: Show form after 3 seconds even if auth check is slow
+    const fallbackTimer = setTimeout(() => {
+      setCheckingAuth(false);
+    }, 3000);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [checkExistingAuth, checkLockoutStatus]);
+
+  // Countdown timer for lockout
+  useEffect(() => {
+    if (!isLocked || lockoutTimeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setLockoutTimeLeft((prev) => {
+        if (prev <= 1000) {
+          setIsLocked(false);
+          clearLockout();
+          return 0;
+        }
+        return prev - 1000;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isLocked, lockoutTimeLeft, clearLockout]);
 
   async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
 
     // Check if locked out
     if (isLocked) {
-      const minutes = Math.ceil(lockoutTimeLeft / 60000)
+      const minutes = Math.ceil(lockoutTimeLeft / 60000);
       setError(
         locale === 'ar'
           ? `تم قفل الحساب مؤقتاً. حاول مرة أخرى بعد ${minutes} دقيقة.`
           : `Account temporarily locked. Try again in ${minutes} minute(s).`
-      )
-      return
+      );
+      return;
     }
 
     if (!email || !password) {
-      setError(locale === 'ar' ? 'البريد الإلكتروني وكلمة المرور مطلوبان' : 'Email and password are required')
-      return
+      setError(
+        locale === 'ar'
+          ? 'البريد الإلكتروني وكلمة المرور مطلوبان'
+          : 'Email and password are required'
+      );
+      return;
     }
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password,
-      })
+      });
 
       if (signInError) {
         // Increment failed attempts on authentication failure
-        const attempts = incrementFailedAttempts()
-        const remaining = MAX_ATTEMPTS - attempts
+        const attempts = incrementFailedAttempts();
+        const remaining = MAX_ATTEMPTS - attempts;
 
         if (signInError.message.includes('Invalid login credentials')) {
           if (remaining > 0) {
@@ -201,25 +212,25 @@ export default function AdminLoginPage() {
               locale === 'ar'
                 ? `البريد الإلكتروني أو كلمة المرور غير صحيحة. ${remaining} محاولات متبقية.`
                 : `Invalid email or password. ${remaining} attempt(s) remaining.`
-            )
+            );
           } else {
             setError(
               locale === 'ar'
                 ? 'تم قفل الحساب لمدة 15 دقيقة بسبب كثرة المحاولات الفاشلة.'
                 : 'Account locked for 15 minutes due to too many failed attempts.'
-            )
+            );
           }
         } else {
-          setError(signInError.message)
+          setError(signInError.message);
         }
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       if (!authData.user) {
-        setError(locale === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed')
-        setLoading(false)
-        return
+        setError(locale === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');
+        setLoading(false);
+        return;
       }
 
       // Check if user has admin role
@@ -227,13 +238,15 @@ export default function AdminLoginPage() {
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
-        .single()
+        .single();
 
       if (profile?.role !== 'admin') {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'هذا الحساب ليس حساب مشرف' : 'This account is not an admin account')
-        setLoading(false)
-        return
+        await supabase.auth.signOut();
+        setError(
+          locale === 'ar' ? 'هذا الحساب ليس حساب مشرف' : 'This account is not an admin account'
+        );
+        setLoading(false);
+        return;
       }
 
       // Check if admin is active
@@ -241,45 +254,48 @@ export default function AdminLoginPage() {
         .from('admin_users')
         .select('is_active, role')
         .eq('user_id', authData.user.id)
-        .single()
+        .single();
 
       if (!adminUser) {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'لم يتم العثور على سجل المشرف' : 'Admin record not found')
-        setLoading(false)
-        return
+        await supabase.auth.signOut();
+        setError(locale === 'ar' ? 'لم يتم العثور على سجل المشرف' : 'Admin record not found');
+        setLoading(false);
+        return;
       }
 
       if (!adminUser.is_active) {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'حسابك معطل. تواصل مع المدير التنفيذي.' : 'Your account is deactivated. Contact the administrator.')
-        setLoading(false)
-        return
+        await supabase.auth.signOut();
+        setError(
+          locale === 'ar'
+            ? 'حسابك معطل. تواصل مع المدير التنفيذي.'
+            : 'Your account is deactivated. Contact the administrator.'
+        );
+        setLoading(false);
+        return;
       }
 
       // Update last active
       await supabase
         .from('admin_users')
         .update({ last_active_at: new Date().toISOString() })
-        .eq('user_id', authData.user.id)
+        .eq('user_id', authData.user.id);
 
       // Clear failed login attempts on successful login
-      clearAttempts()
+      clearAttempts();
 
       // Clear any stale permissions cache before redirect
       if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('admin_permissions_cache')
+        sessionStorage.removeItem('admin_permissions_cache');
       }
 
       // Redirect to admin dashboard using full page navigation
       // This ensures PermissionsProvider loads fresh data
-      window.location.href = `/${locale}/admin`
-
+      window.location.href = `/${locale}/admin`;
     } catch {
-      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   if (checkingAuth) {
@@ -287,7 +303,7 @@ export default function AdminLoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#009DE0] border-t-transparent"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -315,7 +331,9 @@ export default function AdminLoginPage() {
                   {locale === 'ar' ? 'تسجيل دخول المشرفين' : 'Admin Login'}
                 </h1>
                 <p className="text-sm text-white/80">
-                  {locale === 'ar' ? 'سجل دخولك للوصول للوحة التحكم' : 'Sign in to access the dashboard'}
+                  {locale === 'ar'
+                    ? 'سجل دخولك للوصول للوحة التحكم'
+                    : 'Sign in to access the dashboard'}
                 </p>
               </div>
             </div>
@@ -335,8 +353,7 @@ export default function AdminLoginPage() {
                 <p className="text-sm text-amber-600">
                   {locale === 'ar'
                     ? `يمكنك المحاولة مرة أخرى بعد: ${Math.floor(lockoutTimeLeft / 60000)}:${String(Math.floor((lockoutTimeLeft % 60000) / 1000)).padStart(2, '0')}`
-                    : `You can try again in: ${Math.floor(lockoutTimeLeft / 60000)}:${String(Math.floor((lockoutTimeLeft % 60000) / 1000)).padStart(2, '0')}`
-                  }
+                    : `You can try again in: ${Math.floor(lockoutTimeLeft / 60000)}:${String(Math.floor((lockoutTimeLeft % 60000) / 1000)).padStart(2, '0')}`}
                 </p>
               </div>
             )}
@@ -354,7 +371,9 @@ export default function AdminLoginPage() {
                 {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               </label>
               <div className="relative">
-                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Mail
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type="email"
                   value={email}
@@ -374,7 +393,9 @@ export default function AdminLoginPage() {
                 {locale === 'ar' ? 'كلمة المرور' : 'Password'}
               </label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Lock
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -450,5 +471,5 @@ export default function AdminLoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

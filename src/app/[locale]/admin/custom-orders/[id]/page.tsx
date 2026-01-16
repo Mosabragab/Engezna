@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar } from '@/components/admin'
-import { formatDateTime, formatCurrency } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar } from '@/components/admin';
+import { formatDateTime, formatCurrency } from '@/lib/utils/formatters';
 import {
   ArrowLeft,
   ArrowRight,
@@ -37,65 +37,65 @@ import {
   MessageSquare,
   Flag,
   Loader2,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { BroadcastStatus, CustomOrderInputType, CustomOrderItem } from '@/types/custom-order'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { BroadcastStatus, CustomOrderInputType, CustomOrderItem } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface BroadcastDetails {
-  id: string
-  customer_id: string
-  provider_ids: string[]
-  original_input_type: CustomOrderInputType
-  original_text: string | null
-  voice_url: string | null
-  image_urls: string[] | null
-  transcribed_text: string | null
-  customer_notes: string | null
-  delivery_address: any
-  status: BroadcastStatus
-  pricing_deadline: string
-  expires_at: string
-  created_at: string
-  completed_at: string | null
-  winning_order_id: string | null
+  id: string;
+  customer_id: string;
+  provider_ids: string[];
+  original_input_type: CustomOrderInputType;
+  original_text: string | null;
+  voice_url: string | null;
+  image_urls: string[] | null;
+  transcribed_text: string | null;
+  customer_notes: string | null;
+  delivery_address: any;
+  status: BroadcastStatus;
+  pricing_deadline: string;
+  expires_at: string;
+  created_at: string;
+  completed_at: string | null;
+  winning_order_id: string | null;
   customer: {
-    id: string
-    full_name: string
-    phone: string | null
-    email: string | null
-  } | null
-  requests: RequestDetails[]
+    id: string;
+    full_name: string;
+    phone: string | null;
+    email: string | null;
+  } | null;
+  requests: RequestDetails[];
 }
 
 interface RequestDetails {
-  id: string
-  provider_id: string
-  status: string
-  total: number
-  subtotal: number
-  delivery_fee: number
-  items_count: number
-  priced_at: string | null
-  responded_at: string | null
+  id: string;
+  provider_id: string;
+  status: string;
+  total: number;
+  subtotal: number;
+  delivery_fee: number;
+  items_count: number;
+  priced_at: string | null;
+  responded_at: string | null;
   provider: {
-    id: string
-    name_ar: string
-    name_en: string
-    logo_url: string | null
-    phone: string | null
-  } | null
-  items: CustomOrderItem[]
+    id: string;
+    name_ar: string;
+    name_en: string;
+    logo_url: string | null;
+    phone: string | null;
+  } | null;
+  items: CustomOrderItem[];
   order?: {
-    id: string
-    order_number: string
-    status: string
-  } | null
+    id: string;
+    order_number: string;
+    status: string;
+  } | null;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -103,56 +103,31 @@ interface RequestDetails {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function AdminCustomOrderDetailPage() {
-  const locale = useLocale()
-  const router = useRouter()
-  const params = useParams()
-  const broadcastId = params.id as string
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const router = useRouter();
+  const params = useParams();
+  const broadcastId = params.id as string;
+  const isRTL = locale === 'ar';
 
-  const { toggle: toggleSidebar } = useAdminSidebar()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [dataLoading, setDataLoading] = useState(true)
-  const [broadcast, setBroadcast] = useState<BroadcastDetails | null>(null)
-  const [selectedRequest, setSelectedRequest] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const { toggle: toggleSidebar } = useAdminSidebar();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [broadcast, setBroadcast] = useState<BroadcastDetails | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        setLoading(false)
-        loadBroadcast()
-        return
-      }
-    }
-
-    setLoading(false)
-  }
-
-  async function loadBroadcast() {
-    setDataLoading(true)
-    const supabase = createClient()
+  // Load broadcast data
+  const loadBroadcast = useCallback(async () => {
+    setDataLoading(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('custom_order_broadcasts')
-      .select(`
+      .select(
+        `
         *,
         customer:profiles!custom_order_broadcasts_customer_id_fkey(
           id,
@@ -176,9 +151,10 @@ export default function AdminCustomOrderDetailPage() {
             status
           )
         )
-      `)
+      `
+      )
       .eq('id', broadcastId)
-      .single()
+      .single();
 
     if (!error && data) {
       const transformed: BroadcastDetails = {
@@ -189,29 +165,61 @@ export default function AdminCustomOrderDetailPage() {
           provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
           order: Array.isArray(r.order) ? r.order[0] : r.order,
         })),
-      }
-      setBroadcast(transformed)
+      };
+      setBroadcast(transformed);
 
       // Auto-select winning request or first priced one
-      const winningRequest = transformed.requests.find(r => r.status === 'customer_approved')
-      const pricedRequest = transformed.requests.find(r => r.status === 'priced')
-      setSelectedRequest(winningRequest?.id || pricedRequest?.id || transformed.requests[0]?.id || null)
+      const winningRequest = transformed.requests.find((r) => r.status === 'customer_approved');
+      const pricedRequest = transformed.requests.find((r) => r.status === 'priced');
+      setSelectedRequest(
+        winningRequest?.id || pricedRequest?.id || transformed.requests[0]?.id || null
+      );
     }
 
-    setDataLoading(false)
-  }
+    setDataLoading(false);
+  }, [broadcastId]);
+
+  // Check authentication
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
+
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true);
+        setLoading(false);
+        loadBroadcast();
+        return;
+      }
+    }
+
+    setLoading(false);
+  }, [loadBroadcast]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Get input type icon
   const getInputIcon = (type: CustomOrderInputType) => {
     switch (type) {
       case 'voice':
-        return <Mic className="w-5 h-5" />
+        return <Mic className="w-5 h-5" />;
       case 'image':
-        return <ImageIcon className="w-5 h-5" />
+        return <ImageIcon className="w-5 h-5" />;
       default:
-        return <FileText className="w-5 h-5" />
+        return <FileText className="w-5 h-5" />;
     }
-  }
+  };
 
   // Get status badge
   const getStatusBadge = (status: string, size: 'sm' | 'md' = 'sm') => {
@@ -256,29 +264,31 @@ export default function AdminCustomOrderDetailPage() {
         label: isRTL ? 'مرفوض' : 'Rejected',
         className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       },
-    }
+    };
 
-    const config = configs[status] || configs.pending
-    const Icon = config.icon
-    const sizeClass = size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs'
+    const config = configs[status] || configs.pending;
+    const Icon = config.icon;
+    const sizeClass = size === 'md' ? 'px-3 py-1.5 text-sm' : 'px-2 py-0.5 text-xs';
 
     return (
-      <span className={`inline-flex items-center gap-1.5 rounded-full font-medium ${sizeClass} ${config.className}`}>
+      <span
+        className={`inline-flex items-center gap-1.5 rounded-full font-medium ${sizeClass} ${config.className}`}
+      >
         <Icon className={size === 'md' ? 'w-4 h-4' : 'w-3 h-3'} />
         {config.label}
       </span>
-    )
-  }
+    );
+  };
 
   // Selected request data
-  const selectedRequestData = broadcast?.requests.find(r => r.id === selectedRequest)
+  const selectedRequestData = broadcast?.requests.find((r) => r.id === selectedRequest);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   if (!isAdmin) {
@@ -291,7 +301,7 @@ export default function AdminCustomOrderDetailPage() {
           </h1>
         </div>
       </div>
-    )
+    );
   }
 
   if (dataLoading || !broadcast || !user) {
@@ -299,7 +309,7 @@ export default function AdminCustomOrderDetailPage() {
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
-    )
+    );
   }
 
   return (
@@ -337,7 +347,10 @@ export default function AdminCustomOrderDetailPage() {
               </h1>
               <div className="flex items-center gap-4 mt-2 text-sm text-slate-600 dark:text-slate-400">
                 {broadcast.customer?.phone && (
-                  <a href={`tel:${broadcast.customer.phone}`} className="flex items-center gap-1 hover:text-primary">
+                  <a
+                    href={`tel:${broadcast.customer.phone}`}
+                    className="flex items-center gap-1 hover:text-primary"
+                  >
                     <Phone className="w-4 h-4" />
                     {broadcast.customer.phone}
                   </a>
@@ -354,10 +367,16 @@ export default function AdminCustomOrderDetailPage() {
                 {getInputIcon(broadcast.original_input_type)}
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   {broadcast.original_input_type === 'voice'
-                    ? isRTL ? 'طلب صوتي' : 'Voice Order'
+                    ? isRTL
+                      ? 'طلب صوتي'
+                      : 'Voice Order'
                     : broadcast.original_input_type === 'image'
-                    ? isRTL ? 'طلب بالصور' : 'Image Order'
-                    : isRTL ? 'طلب نصي' : 'Text Order'}
+                      ? isRTL
+                        ? 'طلب بالصور'
+                        : 'Image Order'
+                      : isRTL
+                        ? 'طلب نصي'
+                        : 'Text Order'}
                 </span>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -380,7 +399,9 @@ export default function AdminCustomOrderDetailPage() {
                   </h2>
                 </div>
                 <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                  {isRTL ? 'هذا هو ما طلبه العميل - للمقارنة مع الفاتورة' : 'This is what the customer requested - for dispute resolution'}
+                  {isRTL
+                    ? 'هذا هو ما طلبه العميل - للمقارنة مع الفاتورة'
+                    : 'This is what the customer requested - for dispute resolution'}
                 </p>
               </div>
 
@@ -394,7 +415,11 @@ export default function AdminCustomOrderDetailPage() {
                         onClick={() => setIsPlaying(!isPlaying)}
                         className="w-12 h-12 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center"
                       >
-                        {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ms-0.5" />}
+                        {isPlaying ? (
+                          <Pause className="w-5 h-5" />
+                        ) : (
+                          <Play className="w-5 h-5 ms-0.5" />
+                        )}
                       </button>
                       <div>
                         <p className="font-medium text-purple-700 dark:text-purple-300">
@@ -454,8 +479,12 @@ export default function AdminCustomOrderDetailPage() {
                   <div>
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       {broadcast.transcribed_text
-                        ? isRTL ? 'النص المحول من الصوت' : 'Transcribed Text'
-                        : isRTL ? 'نص الطلب' : 'Order Text'}
+                        ? isRTL
+                          ? 'النص المحول من الصوت'
+                          : 'Transcribed Text'
+                        : isRTL
+                          ? 'نص الطلب'
+                          : 'Order Text'}
                     </p>
                     <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-4 text-slate-700 dark:text-slate-300">
                       {broadcast.transcribed_text || broadcast.original_text}
@@ -536,8 +565,8 @@ export default function AdminCustomOrderDetailPage() {
                             item.availability_status === 'unavailable'
                               ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                               : item.availability_status === 'substituted'
-                              ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
-                              : 'bg-slate-50 dark:bg-slate-900'
+                                ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800'
+                                : 'bg-slate-50 dark:bg-slate-900'
                           }`}
                         >
                           <div className="flex items-start justify-between">
@@ -545,13 +574,16 @@ export default function AdminCustomOrderDetailPage() {
                               <p className="font-medium text-slate-800 dark:text-slate-200">
                                 {item.item_name_ar}
                               </p>
-                              {item.original_customer_text && item.original_customer_text !== item.item_name_ar && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                  {isRTL ? 'طلب العميل:' : 'Customer requested:'} {item.original_customer_text}
-                                </p>
-                              )}
+                              {item.original_customer_text &&
+                                item.original_customer_text !== item.item_name_ar && (
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {isRTL ? 'طلب العميل:' : 'Customer requested:'}{' '}
+                                    {item.original_customer_text}
+                                  </p>
+                                )}
                               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                                {item.quantity} x {item.unit_price?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                                {item.quantity} x {item.unit_price?.toFixed(2)}{' '}
+                                {isRTL ? 'ج.م' : 'EGP'}
                               </p>
                             </div>
                             <p className="font-semibold text-slate-800 dark:text-slate-200">
@@ -559,16 +591,18 @@ export default function AdminCustomOrderDetailPage() {
                             </p>
                           </div>
 
-                          {item.availability_status === 'substituted' && item.substitute_name_ar && (
-                            <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
-                              <p className="text-xs text-amber-700 dark:text-amber-400 mb-1">
-                                {isRTL ? 'البديل المقترح:' : 'Substitute:'}
-                              </p>
-                              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-                                {item.substitute_name_ar} - {item.substitute_total_price?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
-                              </p>
-                            </div>
-                          )}
+                          {item.availability_status === 'substituted' &&
+                            item.substitute_name_ar && (
+                              <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-700">
+                                <p className="text-xs text-amber-700 dark:text-amber-400 mb-1">
+                                  {isRTL ? 'البديل المقترح:' : 'Substitute:'}
+                                </p>
+                                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                                  {item.substitute_name_ar} -{' '}
+                                  {item.substitute_total_price?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                                </p>
+                              </div>
+                            )}
                         </div>
                       ))}
                     </div>
@@ -576,8 +610,12 @@ export default function AdminCustomOrderDetailPage() {
                     <div className="text-center py-8 text-slate-500 dark:text-slate-400">
                       <Package className="w-8 h-8 mx-auto mb-2 opacity-50" />
                       {selectedRequestData.status === 'pending'
-                        ? isRTL ? 'لم يتم التسعير بعد' : 'Not priced yet'
-                        : isRTL ? 'لا توجد أصناف' : 'No items'}
+                        ? isRTL
+                          ? 'لم يتم التسعير بعد'
+                          : 'Not priced yet'
+                        : isRTL
+                          ? 'لا توجد أصناف'
+                          : 'No items'}
                     </div>
                   )}
 
@@ -585,16 +623,26 @@ export default function AdminCustomOrderDetailPage() {
                   {selectedRequestData.status !== 'pending' && (
                     <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-600 dark:text-slate-400">{isRTL ? 'المجموع' : 'Subtotal'}</span>
-                        <span className="font-medium">{selectedRequestData.subtotal?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                        <span className="text-slate-600 dark:text-slate-400">
+                          {isRTL ? 'المجموع' : 'Subtotal'}
+                        </span>
+                        <span className="font-medium">
+                          {selectedRequestData.subtotal?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                        </span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-slate-600 dark:text-slate-400">{isRTL ? 'التوصيل' : 'Delivery'}</span>
-                        <span className="font-medium">{selectedRequestData.delivery_fee?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                        <span className="text-slate-600 dark:text-slate-400">
+                          {isRTL ? 'التوصيل' : 'Delivery'}
+                        </span>
+                        <span className="font-medium">
+                          {selectedRequestData.delivery_fee?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                        </span>
                       </div>
                       <div className="flex justify-between text-lg font-bold border-t border-slate-200 dark:border-slate-700 pt-2">
                         <span>{isRTL ? 'الإجمالي' : 'Total'}</span>
-                        <span className="text-primary">{selectedRequestData.total?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}</span>
+                        <span className="text-primary">
+                          {selectedRequestData.total?.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -616,7 +664,11 @@ export default function AdminCustomOrderDetailPage() {
                   <Store className="w-4 h-4 me-2" />
                   {isRTL ? 'التواصل مع التاجر' : 'Contact Merchant'}
                 </Button>
-                <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
                   <Flag className="w-4 h-4 me-2" />
                   {isRTL ? 'فتح نزاع' : 'Open Dispute'}
                 </Button>
@@ -626,5 +678,5 @@ export default function AdminCustomOrderDetailPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

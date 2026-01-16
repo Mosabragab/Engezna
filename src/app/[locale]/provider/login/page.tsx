@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { useLocale, useTranslations } from 'next-intl'
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { createClient } from '@/lib/supabase/client'
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo'
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { createClient } from '@/lib/supabase/client';
+import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import {
   Store,
   Mail,
@@ -22,27 +22,27 @@ import {
   LogIn,
   ArrowRight,
   ArrowLeft,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // Form validation schema
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-})
+});
 
-type LoginFormData = z.infer<typeof loginSchema>
+type LoginFormData = z.infer<typeof loginSchema>;
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 export default function ProviderLoginPage() {
-  const locale = useLocale()
-  const t = useTranslations('partner.login')
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const t = useTranslations('partner.login');
+  const isRTL = locale === 'ar';
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const {
     register,
@@ -50,19 +50,21 @@ export default function ProviderLoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   const checkExistingAuth = useCallback(async () => {
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
       // Add timeout to prevent hanging forever (5 seconds max)
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Auth check timeout')), 5000)
-      )
+      );
 
-      const authPromise = supabase.auth.getUser()
-      const { data: { user } } = await Promise.race([authPromise, timeoutPromise])
+      const authPromise = supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await Promise.race([authPromise, timeoutPromise]);
 
       if (user) {
         // Check if user is provider_owner or provider_staff
@@ -70,12 +72,12 @@ export default function ProviderLoginPage() {
           .from('profiles')
           .select('role')
           .eq('id', user.id)
-          .single()
+          .single();
 
         if (profile?.role === 'provider_owner') {
           // Use full page navigation to ensure fresh context
-          window.location.href = `/${locale}/provider`
-          return
+          window.location.href = `/${locale}/provider`;
+          return;
         }
 
         // If provider_staff, check if they are active
@@ -85,61 +87,65 @@ export default function ProviderLoginPage() {
             .select('id, is_active')
             .eq('user_id', user.id)
             .eq('is_active', true)
-            .single()
+            .single();
 
           if (staffData) {
             // Use full page navigation to ensure fresh context
-            window.location.href = `/${locale}/provider`
-            return
+            window.location.href = `/${locale}/provider`;
+            return;
           }
         }
       }
     } catch (error) {
       // Log error but continue to show login form
-      console.error('Error checking existing auth:', error)
+      console.error('Error checking existing auth:', error);
     }
 
-    setCheckingAuth(false)
-  }, [locale])
+    setCheckingAuth(false);
+  }, [locale]);
 
   useEffect(() => {
-    checkExistingAuth()
+    checkExistingAuth();
 
     // Fallback: Force show form after 3 seconds if still loading
     const fallbackTimer = setTimeout(() => {
-      setCheckingAuth(false)
-    }, 3000)
+      setCheckingAuth(false);
+    }, 3000);
 
-    return () => clearTimeout(fallbackTimer)
-  }, [checkExistingAuth])
+    return () => clearTimeout(fallbackTimer);
+  }, [checkExistingAuth]);
 
   async function onSubmit(data: LoginFormData) {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
 
-    const supabase = createClient()
+    const supabase = createClient();
 
     try {
       // Sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: data.email.toLowerCase().trim(),
         password: data.password,
-      })
+      });
 
       if (signInError) {
         if (signInError.message.includes('Invalid login credentials')) {
-          setError(locale === 'ar' ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة' : 'Invalid email or password')
+          setError(
+            locale === 'ar'
+              ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة'
+              : 'Invalid email or password'
+          );
         } else {
-          setError(signInError.message)
+          setError(signInError.message);
         }
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       if (!authData.user) {
-        setError(locale === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed')
-        setLoading(false)
-        return
+        setError(locale === 'ar' ? 'فشل تسجيل الدخول' : 'Login failed');
+        setLoading(false);
+        return;
       }
 
       // Check if user has provider_owner or provider_staff role
@@ -147,14 +153,18 @@ export default function ProviderLoginPage() {
         .from('profiles')
         .select('role')
         .eq('id', authData.user.id)
-        .single()
+        .single();
 
       // Validate role is either provider_owner or provider_staff
       if (profile?.role !== 'provider_owner' && profile?.role !== 'provider_staff') {
-        await supabase.auth.signOut()
-        setError(locale === 'ar' ? 'هذا الحساب غير مسجل كشريك أو مشرف' : 'This account is not registered as a partner or staff')
-        setLoading(false)
-        return
+        await supabase.auth.signOut();
+        setError(
+          locale === 'ar'
+            ? 'هذا الحساب غير مسجل كشريك أو مشرف'
+            : 'This account is not registered as a partner or staff'
+        );
+        setLoading(false);
+        return;
       }
 
       // For staff members, verify they are active in provider_staff
@@ -164,27 +174,29 @@ export default function ProviderLoginPage() {
           .select('id, is_active, providers(name_ar, name_en)')
           .eq('user_id', authData.user.id)
           .eq('is_active', true)
-          .single()
+          .single();
 
         if (!staffData) {
-          await supabase.auth.signOut()
-          setError(locale === 'ar'
-            ? 'حسابك كمشرف غير نشط. تواصل مع مالك المتجر.'
-            : 'Your staff account is inactive. Contact the store owner.')
-          setLoading(false)
-          return
+          await supabase.auth.signOut();
+          setError(
+            locale === 'ar'
+              ? 'حسابك كمشرف غير نشط. تواصل مع مالك المتجر.'
+              : 'Your staff account is inactive. Contact the store owner.'
+          );
+          setLoading(false);
+          return;
         }
       }
 
       // Nuclear fix: Use window.location.href to ensure full page reload
       // This guarantees all cookies are sent to server and Layout rebuilds completely
-      window.location.href = `/${locale}/provider`
-
+      // eslint-disable-next-line react-hooks/immutability -- Intentional page navigation after login
+      window.location.href = `/${locale}/provider`;
     } catch (err) {
-      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred')
+      setError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
-    setLoading(false)
+    setLoading(false);
   }
 
   if (checkingAuth) {
@@ -192,7 +204,7 @@ export default function ProviderLoginPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -216,12 +228,8 @@ export default function ProviderLoginPage() {
                 <Store className="w-6 h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">
-                  {t('title')}
-                </h1>
-                <p className="text-sm text-white/80">
-                  {t('description')}
-                </p>
+                <h1 className="text-xl font-bold">{t('title')}</h1>
+                <p className="text-sm text-white/80">{t('description')}</p>
               </div>
             </div>
           </div>
@@ -239,7 +247,9 @@ export default function ProviderLoginPage() {
             <div className="space-y-2">
               <Label htmlFor="email">{t('email')}</Label>
               <div className="relative">
-                <Mail className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Mail
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <Input
                   id="email"
                   type="email"
@@ -250,16 +260,16 @@ export default function ProviderLoginPage() {
                   dir="ltr"
                 />
               </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">{t('password')}</Label>
               <div className="relative">
-                <Lock className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`} />
+                <Lock
+                  className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                />
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -291,11 +301,7 @@ export default function ProviderLoginPage() {
               </Link>
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3"
-            >
+            <Button type="submit" disabled={loading} className="w-full py-3">
               {loading ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
@@ -321,10 +327,7 @@ export default function ProviderLoginPage() {
           </p>
           <p className="text-slate-600 text-sm">
             {t('notProvider')}{' '}
-            <Link
-              href={`/${locale}/auth/login`}
-              className="text-primary hover:underline"
-            >
+            <Link href={`/${locale}/auth/login`} className="text-primary hover:underline">
               {t('customerLoginLink')}
             </Link>
           </p>
@@ -342,5 +345,5 @@ export default function ProviderLoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

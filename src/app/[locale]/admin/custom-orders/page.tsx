@@ -1,14 +1,14 @@
-'use client'
+'use client';
 
-import { useLocale } from 'next-intl'
-import { useEffect, useState, useCallback } from 'react'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
-import type { User } from '@supabase/supabase-js'
-import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin'
-import type { GeoFilterValue } from '@/components/admin'
-import { formatDateTime } from '@/lib/utils/formatters'
+import { useLocale } from 'next-intl';
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
+import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin';
+import type { GeoFilterValue } from '@/components/admin';
+import { formatDateTime } from '@/lib/utils/formatters';
 import {
   Radio,
   Eye,
@@ -28,80 +28,80 @@ import {
   Search,
   Filter,
   BarChart3,
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import type { BroadcastStatus, CustomOrderInputType } from '@/types/custom-order'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { BroadcastStatus, CustomOrderInputType } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface BroadcastWithDetails {
-  id: string
-  customer_id: string
-  provider_ids: string[]
-  original_input_type: CustomOrderInputType
-  original_text: string | null
-  voice_url: string | null
-  image_urls: string[] | null
-  status: BroadcastStatus
-  pricing_deadline: string
-  expires_at: string
-  created_at: string
-  completed_at: string | null
-  winning_order_id: string | null
+  id: string;
+  customer_id: string;
+  provider_ids: string[];
+  original_input_type: CustomOrderInputType;
+  original_text: string | null;
+  voice_url: string | null;
+  image_urls: string[] | null;
+  status: BroadcastStatus;
+  pricing_deadline: string;
+  expires_at: string;
+  created_at: string;
+  completed_at: string | null;
+  winning_order_id: string | null;
   customer: {
-    id: string
-    full_name: string
-    phone: string | null
-  } | null
+    id: string;
+    full_name: string;
+    phone: string | null;
+  } | null;
   requests: {
-    id: string
-    provider_id: string
-    status: string
-    total: number
-    priced_at: string | null
+    id: string;
+    provider_id: string;
+    status: string;
+    total: number;
+    priced_at: string | null;
     provider: {
-      id: string
-      name_ar: string
-      name_en: string
-    } | null
-  }[]
+      id: string;
+      name_ar: string;
+      name_en: string;
+    } | null;
+  }[];
 }
 
 interface Stats {
-  total: number
-  active: number
-  completed: number
-  expired: number
-  avgResponseTime: number
-  totalValue: number
+  total: number;
+  active: number;
+  completed: number;
+  expired: number;
+  avgResponseTime: number;
+  totalValue: number;
 }
 
-type FilterStatus = 'all' | 'active' | 'completed' | 'expired' | 'cancelled'
+type FilterStatus = 'all' | 'active' | 'completed' | 'expired' | 'cancelled';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Component
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export default function AdminCustomOrdersPage() {
-  const locale = useLocale()
-  const isRTL = locale === 'ar'
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
-  const { toggle: toggleSidebar } = useAdminSidebar()
-  const [user, setUser] = useState<User | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [dataLoading, setDataLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
+  const { toggle: toggleSidebar } = useAdminSidebar();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const [broadcasts, setBroadcasts] = useState<BroadcastWithDetails[]>([])
-  const [filteredBroadcasts, setFilteredBroadcasts] = useState<BroadcastWithDetails[]>([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
-  const { geoFilter, setGeoFilter, isRegionalAdmin } = useAdminGeoFilter()
+  const [broadcasts, setBroadcasts] = useState<BroadcastWithDetails[]>([]);
+  const [filteredBroadcasts, setFilteredBroadcasts] = useState<BroadcastWithDetails[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const { geoFilter, setGeoFilter, isRegionalAdmin } = useAdminGeoFilter();
   const [stats, setStats] = useState<Stats>({
     total: 0,
     active: 0,
@@ -109,48 +109,55 @@ export default function AdminCustomOrdersPage() {
     expired: 0,
     avgResponseTime: 0,
     totalValue: 0,
-  })
+  });
 
-  // Check auth
-  useEffect(() => {
-    checkAuth()
-  }, [])
+  // Calculate stats helper
+  const calculateStats = useCallback((data: BroadcastWithDetails[]) => {
+    const active = data.filter((b) => b.status === 'active').length;
+    const completed = data.filter((b) => b.status === 'completed').length;
+    const expired = data.filter((b) => b.status === 'expired').length;
 
-  // Filter broadcasts
-  useEffect(() => {
-    filterBroadcasts()
-  }, [broadcasts, searchQuery, statusFilter])
-
-  async function checkAuth() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    setUser(user)
-
-    if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role === 'admin') {
-        setIsAdmin(true)
-        setLoading(false)
-        loadBroadcasts()
-        return
+    // Calculate average response time
+    const pricedRequests = data.flatMap((b) => b.requests).filter((r) => r.priced_at);
+    const totalResponseTime = pricedRequests.reduce((sum, r) => {
+      const broadcast = data.find((b) => b.requests.some((req) => req.id === r.id));
+      if (broadcast && r.priced_at) {
+        const created = new Date(broadcast.created_at).getTime();
+        const priced = new Date(r.priced_at).getTime();
+        return sum + (priced - created);
       }
-    }
+      return sum;
+    }, 0);
+    const avgResponseTime =
+      pricedRequests.length > 0
+        ? Math.round(totalResponseTime / pricedRequests.length / 60000) // in minutes
+        : 0;
 
-    setLoading(false)
-  }
+    // Calculate total value
+    const totalValue = data.reduce((sum, b) => {
+      const approvedRequest = b.requests.find((r) => r.status === 'customer_approved');
+      return sum + (approvedRequest?.total || 0);
+    }, 0);
 
-  async function loadBroadcasts() {
-    setDataLoading(true)
-    const supabase = createClient()
+    setStats({
+      total: data.length,
+      active,
+      completed,
+      expired,
+      avgResponseTime,
+      totalValue,
+    });
+  }, []);
+
+  // Load broadcasts
+  const loadBroadcasts = useCallback(async () => {
+    setDataLoading(true);
+    const supabase = createClient();
 
     const { data, error } = await supabase
       .from('custom_order_broadcasts')
-      .select(`
+      .select(
+        `
         *,
         customer:profiles!custom_order_broadcasts_customer_id_fkey(
           id,
@@ -169,9 +176,10 @@ export default function AdminCustomOrdersPage() {
             name_en
           )
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
-      .limit(100)
+      .limit(100);
 
     if (!error && data) {
       const transformed = data.map((b: any) => ({
@@ -181,107 +189,109 @@ export default function AdminCustomOrdersPage() {
           ...r,
           provider: Array.isArray(r.provider) ? r.provider[0] : r.provider,
         })),
-      }))
-      setBroadcasts(transformed)
-      calculateStats(transformed)
+      }));
+      setBroadcasts(transformed);
+      calculateStats(transformed);
     }
 
-    setDataLoading(false)
-  }
+    setDataLoading(false);
+  }, [calculateStats]);
 
-  function calculateStats(data: BroadcastWithDetails[]) {
-    const active = data.filter(b => b.status === 'active').length
-    const completed = data.filter(b => b.status === 'completed').length
-    const expired = data.filter(b => b.status === 'expired').length
+  // Check auth
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setUser(user);
 
-    // Calculate average response time
-    const pricedRequests = data.flatMap(b => b.requests).filter(r => r.priced_at)
-    const totalResponseTime = pricedRequests.reduce((sum, r) => {
-      const broadcast = data.find(b => b.requests.some(req => req.id === r.id))
-      if (broadcast && r.priced_at) {
-        const created = new Date(broadcast.created_at).getTime()
-        const priced = new Date(r.priced_at).getTime()
-        return sum + (priced - created)
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role === 'admin') {
+        setIsAdmin(true);
+        setLoading(false);
+        loadBroadcasts();
+        return;
       }
-      return sum
-    }, 0)
-    const avgResponseTime = pricedRequests.length > 0
-      ? Math.round(totalResponseTime / pricedRequests.length / 60000) // in minutes
-      : 0
+    }
 
-    // Calculate total value
-    const totalValue = data.reduce((sum, b) => {
-      const approvedRequest = b.requests.find(r => r.status === 'customer_approved')
-      return sum + (approvedRequest?.total || 0)
-    }, 0)
+    setLoading(false);
+  }, [loadBroadcasts]);
 
-    setStats({
-      total: data.length,
-      active,
-      completed,
-      expired,
-      avgResponseTime,
-      totalValue,
-    })
-  }
-
-  function filterBroadcasts() {
-    let result = [...broadcasts]
+  // Filter broadcasts
+  const filterBroadcasts = useCallback(() => {
+    let result = [...broadcasts];
 
     // Status filter
     if (statusFilter !== 'all') {
-      result = result.filter(b => b.status === statusFilter)
+      result = result.filter((b) => b.status === statusFilter);
     }
 
     // Search filter
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      result = result.filter(b =>
-        b.customer?.full_name?.toLowerCase().includes(query) ||
-        b.customer?.phone?.includes(query) ||
-        b.original_text?.toLowerCase().includes(query) ||
-        b.id.toLowerCase().includes(query)
-      )
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.customer?.full_name?.toLowerCase().includes(query) ||
+          b.customer?.phone?.includes(query) ||
+          b.original_text?.toLowerCase().includes(query) ||
+          b.id.toLowerCase().includes(query)
+      );
     }
 
-    setFilteredBroadcasts(result)
-  }
+    setFilteredBroadcasts(result);
+  }, [broadcasts, statusFilter, searchQuery]);
+
+  // Check auth on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Filter broadcasts when dependencies change
+  useEffect(() => {
+    filterBroadcasts();
+  }, [filterBroadcasts]);
 
   const handleRefresh = async () => {
-    setRefreshing(true)
-    await loadBroadcasts()
-    setRefreshing(false)
-  }
+    setRefreshing(true);
+    await loadBroadcasts();
+    setRefreshing(false);
+  };
 
   // Calculate time remaining
   const getTimeRemaining = (deadline: string) => {
-    const now = new Date().getTime()
-    const deadlineTime = new Date(deadline).getTime()
-    const diff = deadlineTime - now
+    const now = new Date().getTime();
+    const deadlineTime = new Date(deadline).getTime();
+    const diff = deadlineTime - now;
 
-    if (diff <= 0) return { expired: true, text: isRTL ? 'منتهي' : 'Expired' }
+    if (diff <= 0) return { expired: true, text: isRTL ? 'منتهي' : 'Expired' };
 
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
     return {
       expired: false,
       text: `${hours}h ${minutes}m`,
       urgent: diff < 30 * 60 * 1000,
-    }
-  }
+    };
+  };
 
   // Get input type icon
   const getInputIcon = (type: CustomOrderInputType) => {
     switch (type) {
       case 'voice':
-        return <Mic className="w-4 h-4" />
+        return <Mic className="w-4 h-4" />;
       case 'image':
-        return <ImageIcon className="w-4 h-4" />
+        return <ImageIcon className="w-4 h-4" />;
       default:
-        return <FileText className="w-4 h-4" />
+        return <FileText className="w-4 h-4" />;
     }
-  }
+  };
 
   // Status badge
   const getStatusBadge = (status: BroadcastStatus) => {
@@ -306,24 +316,26 @@ export default function AdminCustomOrdersPage() {
         label: isRTL ? 'ملغي' : 'Cancelled',
         className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       },
-    }
-    const config = configs[status]
-    const Icon = config.icon
+    };
+    const config = configs[status];
+    const Icon = config.icon;
 
     return (
-      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}>
+      <span
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${config.className}`}
+      >
         <Icon className="w-3 h-3" />
         {config.label}
       </span>
-    )
-  }
+    );
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   if (!isAdmin || !user) {
@@ -335,14 +347,16 @@ export default function AdminCustomOrdersPage() {
             {isRTL ? 'غير مصرح' : 'Unauthorized'}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-4">
-            {isRTL ? 'ليس لديك صلاحية للوصول لهذه الصفحة' : 'You do not have permission to access this page'}
+            {isRTL
+              ? 'ليس لديك صلاحية للوصول لهذه الصفحة'
+              : 'You do not have permission to access this page'}
           </p>
           <Link href={`/${locale}/admin/login`}>
             <Button>{isRTL ? 'تسجيل الدخول' : 'Login'}</Button>
           </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -362,8 +376,12 @@ export default function AdminCustomOrdersPage() {
                 <Radio className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{stats.total}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'إجمالي البثوث' : 'Total Broadcasts'}</p>
+                <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">
+                  {stats.total}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'إجمالي البثوث' : 'Total Broadcasts'}
+                </p>
               </div>
             </div>
           </div>
@@ -374,8 +392,12 @@ export default function AdminCustomOrdersPage() {
                 <Timer className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.active}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'نشط الآن' : 'Active Now'}</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {stats.active}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'نشط الآن' : 'Active Now'}
+                </p>
               </div>
             </div>
           </div>
@@ -386,8 +408,12 @@ export default function AdminCustomOrdersPage() {
                 <CheckCircle2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.completed}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'مكتمل' : 'Completed'}</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {stats.completed}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'مكتمل' : 'Completed'}
+                </p>
               </div>
             </div>
           </div>
@@ -398,8 +424,12 @@ export default function AdminCustomOrdersPage() {
                 <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.expired}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'منتهي' : 'Expired'}</p>
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  {stats.expired}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'منتهي' : 'Expired'}
+                </p>
               </div>
             </div>
           </div>
@@ -410,8 +440,12 @@ export default function AdminCustomOrdersPage() {
                 <TrendingUp className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.avgResponseTime}m</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'متوسط الاستجابة' : 'Avg Response'}</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {stats.avgResponseTime}m
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'متوسط الاستجابة' : 'Avg Response'}
+                </p>
               </div>
             </div>
           </div>
@@ -423,7 +457,9 @@ export default function AdminCustomOrdersPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-primary">{stats.totalValue.toFixed(0)}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{isRTL ? 'إجمالي القيمة' : 'Total Value'}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {isRTL ? 'إجمالي القيمة' : 'Total Value'}
+                </p>
               </div>
             </div>
           </div>
@@ -469,12 +505,7 @@ export default function AdminCustomOrdersPage() {
             </Link>
 
             {/* Refresh */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`w-4 h-4 me-2 ${refreshing ? 'animate-spin' : ''}`} />
               {isRTL ? 'تحديث' : 'Refresh'}
             </Button>
@@ -493,16 +524,20 @@ export default function AdminCustomOrdersPage() {
               {isRTL ? 'لا توجد بثوث' : 'No broadcasts found'}
             </h3>
             <p className="text-slate-500 dark:text-slate-400">
-              {isRTL ? 'لم يتم العثور على بثوث تطابق معايير البحث' : 'No broadcasts match your search criteria'}
+              {isRTL
+                ? 'لم يتم العثور على بثوث تطابق معايير البحث'
+                : 'No broadcasts match your search criteria'}
             </p>
           </div>
         ) : (
           <div className="space-y-4">
             <AnimatePresence mode="popLayout">
               {filteredBroadcasts.map((broadcast, index) => {
-                const timeRemaining = getTimeRemaining(broadcast.pricing_deadline)
-                const pricedCount = broadcast.requests.filter(r => r.status === 'priced' || r.status === 'customer_approved').length
-                const totalProviders = broadcast.provider_ids.length
+                const timeRemaining = getTimeRemaining(broadcast.pricing_deadline);
+                const pricedCount = broadcast.requests.filter(
+                  (r) => r.status === 'priced' || r.status === 'customer_approved'
+                ).length;
+                const totalProviders = broadcast.provider_ids.length;
 
                 return (
                   <motion.div
@@ -538,11 +573,13 @@ export default function AdminCustomOrdersPage() {
                               {broadcast.original_input_type}
                             </span>
                             {broadcast.status === 'active' && (
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
-                                timeRemaining.urgent
-                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                  : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                              }`}>
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs ${
+                                  timeRemaining.urgent
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                                }`}
+                              >
                                 <Timer className="w-3 h-3" />
                                 {timeRemaining.text}
                               </span>
@@ -597,8 +634,8 @@ export default function AdminCustomOrdersPage() {
                                 req.status === 'priced' || req.status === 'customer_approved'
                                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
                                   : req.status === 'expired'
-                                  ? 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                    ? 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                               }`}
                             >
                               <Store className="w-3 h-3" />
@@ -615,12 +652,12 @@ export default function AdminCustomOrdersPage() {
                       </div>
                     </div>
                   </motion.div>
-                )
+                );
               })}
             </AnimatePresence>
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
