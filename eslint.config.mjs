@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Additional ignores
+    "coverage/**",
+    "e2e/reports/**",
+    "playwright-report/**",
+    "public/sw.js",
+    "public/workbox-*.js",
+    "public/serwist-*.js",
   ]),
   // Custom rule overrides
   {
@@ -23,6 +30,12 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "warn",
       // Downgrade unused vars to warning
       "@typescript-eslint/no-unused-vars": "warn",
+      // Console warnings (allow in dev, catch in review)
+      "no-console": ["warn", { allow: ["warn", "error"] }],
+      // Enforce best practices
+      "prefer-const": "error",
+      "eqeqeq": ["error", "always", { null: "ignore" }],
+      "no-var": "error",
     },
   },
 ]);
