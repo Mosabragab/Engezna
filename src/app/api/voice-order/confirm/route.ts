@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  orderCreationLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 // This endpoint handles the confirmation of voice orders
 // The actual cart state management happens on the client side with Zustand
@@ -6,6 +12,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting Check (20 requests per 5 minutes)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(orderCreationLimiter, identifier);
+
+    if (!rateLimitResult.success) {
+      return rateLimitErrorResponse(rateLimitResult);
+    }
+
     const body = await request.json();
     const { items, locale } = body;
 

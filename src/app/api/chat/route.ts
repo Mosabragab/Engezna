@@ -5,6 +5,7 @@
  * interact with the database and help customers with their orders.
  *
  * @version 2.1.0 - Added Customer Memory for personalized conversations
+ * @version 2.2.0 - Added Upstash Redis Rate Limiting (Phase 1.1)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,6 +13,12 @@ import { runAgentStream, type AgentStreamEvent, type AgentMessage } from '@/lib/
 import type { AgentContext } from '@/lib/ai/agentPrompt';
 import { getCustomerMemory } from '@/lib/ai/customerMemory';
 import { postProcessCartActions, type CartAction, type CartItem } from '@/lib/ai/chatProcessor';
+import {
+  chatLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 // =============================================================================
 // TYPES
@@ -68,6 +75,14 @@ function createSSEEncoder() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting Check (30 requests per minute)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(chatLimiter, identifier);
+
+    if (!rateLimitResult.success) {
+      return rateLimitErrorResponse(rateLimitResult);
+    }
+
     const body = (await request.json()) as ChatRequest;
 
     // Validate required fields
@@ -290,6 +305,14 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Rate Limiting Check (30 requests per minute)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(chatLimiter, identifier);
+
+    if (!rateLimitResult.success) {
+      return rateLimitErrorResponse(rateLimitResult);
+    }
+
     const body = (await request.json()) as ChatRequest;
 
     if (!body.messages || body.messages.length === 0) {

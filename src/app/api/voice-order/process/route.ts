@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import OpenAI from 'openai';
+import {
+  voiceOrderLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 // Lazy initialization to avoid build-time errors
 let openai: OpenAI | null = null;
@@ -227,6 +233,14 @@ async function processFunctionCall(name: string, args: Record<string, unknown>):
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate Limiting Check (10 requests per minute)
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(voiceOrderLimiter, identifier);
+
+    if (!rateLimitResult.success) {
+      return rateLimitErrorResponse(rateLimitResult);
+    }
+
     // Authentication check - user must be logged in
     const supabase = await createClient();
     const {
