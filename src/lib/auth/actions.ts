@@ -4,14 +4,13 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import {
+  loginLimiter,
+  otpSendLimiter,
+  otpVerifyLimiter,
+  passwordResetLimiter,
   checkRateLimit,
-  resetRateLimit,
-  getRateLimitKey,
-  OTP_SEND_LIMIT,
-  OTP_VERIFY_LIMIT,
-  LOGIN_LIMIT,
-  PASSWORD_RESET_LIMIT,
-} from '@/lib/utils/rate-limit';
+  getClientIdentifier,
+} from '@/lib/utils/upstash-rate-limit';
 
 /**
  * Get client IP from headers
@@ -20,6 +19,7 @@ async function getClientIP(): Promise<string> {
   const headersList = await headers();
   const forwardedFor = headersList.get('x-forwarded-for');
   const realIP = headersList.get('x-real-ip');
+  const cfIP = headersList.get('cf-connecting-ip');
 
   if (forwardedFor) {
     return forwardedFor.split(',')[0].trim();
@@ -27,7 +27,17 @@ async function getClientIP(): Promise<string> {
   if (realIP) {
     return realIP;
   }
+  if (cfIP) {
+    return cfIP;
+  }
   return 'unknown';
+}
+
+/**
+ * Get identifier for rate limiting (IP + optional target)
+ */
+function getRateLimitIdentifier(ip: string, target?: string): string {
+  return target ? `${ip}:${target}` : ip;
 }
 
 /**
@@ -84,13 +94,19 @@ export async function signInWithEmail(formData: {
   password: string;
   locale: string;
 }) {
-  // Rate limit check
+  // Rate limit check (10 requests per 15 minutes)
   const ip = await getClientIP();
-  const rateLimitKey = getRateLimitKey(ip, formData.email, 'login');
-  const rateLimitResult = checkRateLimit(rateLimitKey, LOGIN_LIMIT);
+  const identifier = getRateLimitIdentifier(ip, formData.email);
+  const rateLimitResult = await checkRateLimit(loginLimiter, identifier);
 
-  if (!rateLimitResult.allowed) {
-    return { error: rateLimitResult.message };
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return {
+      error:
+        retryAfter > 60
+          ? `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${Math.ceil(retryAfter / 60)} دقيقة.`
+          : `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${retryAfter} ثانية.`,
+    };
   }
 
   const supabase = await createClient();
@@ -104,9 +120,6 @@ export async function signInWithEmail(formData: {
     return { error: error.message };
   }
 
-  // Reset rate limit on successful login
-  resetRateLimit(rateLimitKey);
-
   return { success: true, data };
 }
 
@@ -114,14 +127,20 @@ export async function signInWithEmail(formData: {
  * Sign in with OTP (phone or email)
  */
 export async function signInWithOTP(formData: { phone?: string; email?: string; locale: string }) {
-  // Rate limit check - prevent OTP spam
+  // Rate limit check - prevent OTP spam (5 requests per 10 minutes)
   const ip = await getClientIP();
   const target = formData.phone || formData.email || '';
-  const rateLimitKey = getRateLimitKey(ip, target, 'otp-send');
-  const rateLimitResult = checkRateLimit(rateLimitKey, OTP_SEND_LIMIT);
+  const identifier = getRateLimitIdentifier(ip, target);
+  const rateLimitResult = await checkRateLimit(otpSendLimiter, identifier);
 
-  if (!rateLimitResult.allowed) {
-    return { error: rateLimitResult.message };
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return {
+      error:
+        retryAfter > 60
+          ? `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${Math.ceil(retryAfter / 60)} دقيقة.`
+          : `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${retryAfter} ثانية.`,
+    };
   }
 
   const supabase = await createClient();
@@ -165,14 +184,20 @@ export async function verifyOTP(formData: {
   token: string;
   type: 'sms' | 'email';
 }) {
-  // Rate limit check - prevent brute force attacks on OTP codes
+  // Rate limit check - prevent brute force attacks (5 requests per 5 minutes)
   const ip = await getClientIP();
   const target = formData.phone || formData.email || '';
-  const rateLimitKey = getRateLimitKey(ip, target, 'otp-verify');
-  const rateLimitResult = checkRateLimit(rateLimitKey, OTP_VERIFY_LIMIT);
+  const identifier = getRateLimitIdentifier(ip, target);
+  const rateLimitResult = await checkRateLimit(otpVerifyLimiter, identifier);
 
-  if (!rateLimitResult.allowed) {
-    return { error: rateLimitResult.message };
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return {
+      error:
+        retryAfter > 60
+          ? `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${Math.ceil(retryAfter / 60)} دقيقة.`
+          : `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${retryAfter} ثانية.`,
+    };
   }
 
   const supabase = await createClient();
@@ -188,10 +213,6 @@ export async function verifyOTP(formData: {
       return { error: error.message };
     }
 
-    // Reset rate limits on successful verification
-    resetRateLimit(rateLimitKey);
-    resetRateLimit(getRateLimitKey(ip, target, 'otp-send'));
-
     return { success: true, data };
   }
 
@@ -205,10 +226,6 @@ export async function verifyOTP(formData: {
     if (error) {
       return { error: error.message };
     }
-
-    // Reset rate limits on successful verification
-    resetRateLimit(rateLimitKey);
-    resetRateLimit(getRateLimitKey(ip, target, 'otp-send'));
 
     return { success: true, data };
   }
@@ -229,13 +246,19 @@ export async function signOut(locale: string) {
  * Reset password - send reset email
  */
 export async function resetPassword(formData: { email: string; locale: string }) {
-  // Rate limit check - prevent password reset spam
+  // Rate limit check - prevent password reset spam (3 requests per hour)
   const ip = await getClientIP();
-  const rateLimitKey = getRateLimitKey(ip, formData.email, 'password-reset');
-  const rateLimitResult = checkRateLimit(rateLimitKey, PASSWORD_RESET_LIMIT);
+  const identifier = getRateLimitIdentifier(ip, formData.email);
+  const rateLimitResult = await checkRateLimit(passwordResetLimiter, identifier);
 
-  if (!rateLimitResult.allowed) {
-    return { error: rateLimitResult.message };
+  if (!rateLimitResult.success) {
+    const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
+    return {
+      error:
+        retryAfter > 60
+          ? `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${Math.ceil(retryAfter / 60)} دقيقة.`
+          : `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${retryAfter} ثانية.`,
+    };
   }
 
   const supabase = await createClient();
