@@ -29,7 +29,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.notification?.body || payload.data?.body || '',
     icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
+    badge: '/icons/badge-72x72.svg',
     tag: payload.data?.tag || 'default',
     data: payload.data || {},
     // Vibration pattern: vibrate 200ms, pause 100ms, vibrate 200ms
@@ -48,15 +48,15 @@ function getNotificationActions(type) {
   switch (type) {
     case 'new_order':
       return [
-        { action: 'view', title: 'عرض الطلب', icon: '/icons/view-icon.png' },
-        { action: 'accept', title: 'قبول', icon: '/icons/accept-icon.png' },
+        { action: 'view', title: 'عرض الطلب', icon: '/icons/view-icon.svg' },
+        { action: 'accept', title: 'قبول', icon: '/icons/accept-icon.svg' },
       ];
     case 'order_update':
-      return [{ action: 'view', title: 'عرض التفاصيل', icon: '/icons/view-icon.png' }];
+      return [{ action: 'view', title: 'عرض التفاصيل', icon: '/icons/view-icon.svg' }];
     case 'chat_message':
       return [
-        { action: 'reply', title: 'رد', icon: '/icons/reply-icon.png' },
-        { action: 'view', title: 'فتح المحادثة', icon: '/icons/view-icon.png' },
+        { action: 'reply', title: 'رد', icon: '/icons/reply-icon.svg' },
+        { action: 'view', title: 'فتح المحادثة', icon: '/icons/view-icon.svg' },
       ];
     default:
       return [];

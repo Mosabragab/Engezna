@@ -246,7 +246,7 @@ As a service provider, you are responsible for:
 
 ##### 10.1 Grace Period
 
-- **First 6 Months:** 0% commission on all orders
+- **First 3 Months:** 0% commission on all orders
 - This grace period begins from the Provider's first order on the Platform
 - The grace period is non-transferable and cannot be extended
 

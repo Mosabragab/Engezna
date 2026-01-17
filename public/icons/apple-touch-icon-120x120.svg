@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <rect width="120" height="120" rx="27" fill="#0F172A"/>
+  <circle cx="60" cy="50" r="30" fill="#009DE0"/>
+  <text x="60" y="60" fill="white" font-size="26" font-family="Arial" text-anchor="middle" font-weight="bold">ن</text>
+  <text x="60" y="98" fill="white" font-size="14" font-family="Arial" text-anchor="middle">إنجزنا</text>
+</svg>

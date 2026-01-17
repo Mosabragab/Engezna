@@ -41,30 +41,30 @@
   "categories": ["food", "shopping", "lifestyle"],
   "screenshots": [
     {
-      "src": "/screenshots/screenshot-home-mobile.png",
+      "src": "/screenshots/screenshot-home-mobile.svg",
       "sizes": "390x844",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "narrow",
       "label": "الصفحة الرئيسية - تصفح المتاجر والعروض"
     },
     {
-      "src": "/screenshots/screenshot-providers-mobile.png",
+      "src": "/screenshots/screenshot-providers-mobile.svg",
       "sizes": "390x844",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "narrow",
       "label": "قائمة المتاجر المحلية"
     },
     {
-      "src": "/screenshots/screenshot-order-mobile.png",
+      "src": "/screenshots/screenshot-order-mobile.svg",
       "sizes": "390x844",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "narrow",
       "label": "تتبع طلبك بسهولة"
     },
     {
-      "src": "/screenshots/screenshot-home-desktop.png",
+      "src": "/screenshots/screenshot-home-desktop.svg",
       "sizes": "1280x800",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "form_factor": "wide",
       "label": "الصفحة الرئيسية على الديسكتوب"
     }
