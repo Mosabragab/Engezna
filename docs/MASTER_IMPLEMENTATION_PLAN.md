@@ -1026,7 +1026,7 @@ npx @sentry/wizard@latest -i nextjs
 
 ### 🔴 حرجة (يجب قبل الإطلاق) - 25-35 ساعة
 
-- [ ] Upstash Redis Rate Limiting
+- [x] Upstash Redis Rate Limiting (2026-01-17) ✅
 - [ ] إصلاح XSS في export-service.ts
 - [ ] Zod Validation للـ critical routes
 - [ ] إصلاح N+1 في users.ts
@@ -1075,7 +1075,7 @@ npx @sentry/wizard@latest -i nextjs
 
 ### قبل الإطلاق (Checklist)
 
-- [ ] Rate limiting يعمل على Upstash Redis
+- [x] Rate limiting يعمل على Upstash Redis (2026-01-17) ✅
 - [ ] XSS محمي في كل exports
 - [ ] Zod validation على `/api/chat`, `/api/voice-order/*`
 - [ ] N+1 queries محلولة
