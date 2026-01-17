@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#0F172A"/>
+  <rect x="15" y="60" width="360" height="80" rx="12" fill="#1e293b"/>
+  <text x="195" y="110" fill="#009DE0" font-size="24" font-family="Arial" text-anchor="middle" font-weight="bold">إنجزنا</text>
+  <rect x="15" y="160" width="170" height="120" rx="12" fill="#1e293b"/>
+  <rect x="205" y="160" width="170" height="120" rx="12" fill="#1e293b"/>
+  <rect x="15" y="300" width="170" height="120" rx="12" fill="#1e293b"/>
+  <rect x="205" y="300" width="170" height="120" rx="12" fill="#1e293b"/>
+  <rect x="15" y="440" width="360" height="100" rx="12" fill="#009DE0"/>
+  <text x="195" y="500" fill="white" font-size="18" font-family="Arial" text-anchor="middle">الصفحة الرئيسية</text>
+  <text x="195" y="750" fill="#64748b" font-size="14" font-family="Arial" text-anchor="middle">Placeholder - Replace with actual screenshot</text>
+</svg>

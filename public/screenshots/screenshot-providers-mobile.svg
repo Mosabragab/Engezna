@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#0F172A"/>
+  <rect x="15" y="60" width="360" height="50" rx="8" fill="#1e293b"/>
+  <text x="195" y="92" fill="white" font-size="18" font-family="Arial" text-anchor="middle">المتاجر</text>
+  <rect x="15" y="130" width="360" height="140" rx="12" fill="#1e293b"/>
+  <circle cx="75" cy="200" r="40" fill="#009DE0"/>
+  <rect x="130" y="170" width="200" height="16" rx="4" fill="#334155"/>
+  <rect x="130" y="200" width="150" height="12" rx="4" fill="#475569"/>
+  <rect x="15" y="290" width="360" height="140" rx="12" fill="#1e293b"/>
+  <circle cx="75" cy="360" r="40" fill="#10b981"/>
+  <rect x="130" y="330" width="200" height="16" rx="4" fill="#334155"/>
+  <rect x="130" y="360" width="150" height="12" rx="4" fill="#475569"/>
+  <rect x="15" y="450" width="360" height="140" rx="12" fill="#1e293b"/>
+  <circle cx="75" cy="520" r="40" fill="#f59e0b"/>
+  <rect x="130" y="490" width="200" height="16" rx="4" fill="#334155"/>
+  <rect x="130" y="520" width="150" height="12" rx="4" fill="#475569"/>
+  <text x="195" y="750" fill="#64748b" font-size="14" font-family="Arial" text-anchor="middle">Placeholder - Replace with actual screenshot</text>
+</svg>
