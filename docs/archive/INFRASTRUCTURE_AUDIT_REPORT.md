@@ -8,13 +8,13 @@
 
 ## Executive Summary
 
-| Metric | Value |
-|--------|-------|
-| **Overall Readiness Score** | **72/100** |
-| **Critical Issues Found** | 5 |
-| **High Priority Issues** | 12 |
-| **Medium Priority Issues** | 18 |
-| **Estimated Fix Time** | 40-60 hours |
+| Metric                      | Value       |
+| --------------------------- | ----------- |
+| **Overall Readiness Score** | **72/100**  |
+| **Critical Issues Found**   | 5           |
+| **High Priority Issues**    | 12          |
+| **Medium Priority Issues**  | 18          |
+| **Estimated Fix Time**      | 40-60 hours |
 
 ### Readiness for 100,000+ Users: **NOT READY** (Needs Critical Fixes)
 
@@ -22,16 +22,16 @@
 
 ## Quick Assessment
 
-| Category | Score | Status |
-|----------|-------|--------|
-| Database & Indexes | 95/100 | ✅ Excellent |
-| API & Queries | 65/100 | ⚠️ Needs Work |
-| Realtime | 80/100 | ✅ Good |
-| Caching | 45/100 | ❌ Critical |
-| Rate Limiting | 60/100 | ⚠️ Needs Work |
-| Error Handling | 55/100 | ⚠️ Needs Work |
-| Performance | 50/100 | ❌ Critical |
-| Security | 90/100 | ✅ Excellent |
+| Category           | Score  | Status        |
+| ------------------ | ------ | ------------- |
+| Database & Indexes | 95/100 | ✅ Excellent  |
+| API & Queries      | 65/100 | ⚠️ Needs Work |
+| Realtime           | 80/100 | ✅ Good       |
+| Caching            | 45/100 | ❌ Critical   |
+| Rate Limiting      | 60/100 | ⚠️ Needs Work |
+| Error Handling     | 55/100 | ⚠️ Needs Work |
+| Performance        | 50/100 | ❌ Critical   |
+| Security           | 90/100 | ✅ Excellent  |
 
 ---
 
@@ -41,19 +41,20 @@
 
 **Total Indexes Found:** 216
 
-| Critical Index | Status |
-|----------------|--------|
-| `orders.customer_id` | ✅ EXISTS |
-| `orders.provider_id` | ✅ EXISTS |
-| `orders.status` | ✅ EXISTS |
-| `orders.created_at` | ✅ EXISTS |
-| `menu_items.provider_id` | ✅ EXISTS |
-| `menu_items.category_id` | ✅ EXISTS |
-| `providers.governorate_id` | ✅ EXISTS |
+| Critical Index                       | Status    |
+| ------------------------------------ | --------- |
+| `orders.customer_id`                 | ✅ EXISTS |
+| `orders.provider_id`                 | ✅ EXISTS |
+| `orders.status`                      | ✅ EXISTS |
+| `orders.created_at`                  | ✅ EXISTS |
+| `menu_items.provider_id`             | ✅ EXISTS |
+| `menu_items.category_id`             | ✅ EXISTS |
+| `providers.governorate_id`           | ✅ EXISTS |
 | `customer_notifications.customer_id` | ✅ EXISTS |
 | `provider_notifications.provider_id` | ✅ EXISTS |
 
 **Index Types:**
+
 - BTREE: 200+ (standard queries)
 - GIN: 2 (JSONB/arrays)
 - GIST: 2 (geographic queries)
@@ -77,15 +78,15 @@
 
 ### 2.1 N+1 Query Issues Found: ❌ 5 CRITICAL
 
-| File | Issue | Severity |
-|------|-------|----------|
-| `src/lib/admin/users.ts:186-209` | Loop with sequential awaits for order cancellation | **CRITICAL** |
-| `src/lib/supabase/product-variants.ts:278-303` | N separate update queries in Promise.all | HIGH |
-| `src/lib/supabase/provider-categories.ts:200-227` | N separate update queries in Promise.all | HIGH |
-| `src/lib/finance/financial-service.ts:196-198` | Dependent sequential queries | HIGH |
-| `src/lib/admin/statistics.ts:110-205` | Multiple sequential queries without joins | MEDIUM |
+| File                                              | Issue                                              | Severity     |
+| ------------------------------------------------- | -------------------------------------------------- | ------------ |
+| `src/lib/admin/users.ts:186-209`                  | Loop with sequential awaits for order cancellation | **CRITICAL** |
+| `src/lib/supabase/product-variants.ts:278-303`    | N separate update queries in Promise.all           | HIGH         |
+| `src/lib/supabase/provider-categories.ts:200-227` | N separate update queries in Promise.all           | HIGH         |
+| `src/lib/finance/financial-service.ts:196-198`    | Dependent sequential queries                       | HIGH         |
+| `src/lib/admin/statistics.ts:110-205`             | Multiple sequential queries without joins          | MEDIUM       |
 
-### 2.2 Select * Usage: ⚠️ 120+ Instances
+### 2.2 Select \* Usage: ⚠️ 120+ Instances
 
 Should be replaced with specific column selections to reduce payload.
 
@@ -101,13 +102,13 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 3.1 Subscriptions: ✅ GOOD
 
-| Metric | Value |
-|--------|-------|
-| Total Subscriptions | 31 |
-| With Cleanup | 31 (100%) |
-| With Error Handling | 3 (9.7%) |
-| With Polling Fallback | 2 (6.5%) |
-| Memory Leak Risk | LOW |
+| Metric                | Value     |
+| --------------------- | --------- |
+| Total Subscriptions   | 31        |
+| With Cleanup          | 31 (100%) |
+| With Error Handling   | 3 (9.7%)  |
+| With Polling Fallback | 2 (6.5%)  |
+| Memory Leak Risk      | LOW       |
 
 ### 3.2 Issues
 
@@ -127,23 +128,23 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 4.1 Current State: ❌ CRITICAL GAP
 
-| Pattern | Status |
-|---------|--------|
-| `unstable_cache` | ❌ NOT USED |
-| `revalidate` (ISR) | ❌ Only logo (1 file) |
-| `revalidatePath` | ❌ NOT USED |
-| `revalidateTag` | ❌ NOT USED |
-| Redis/Upstash | ❌ NOT IMPLEMENTED |
-| Service Worker | ✅ Excellent (Serwist) |
-| In-Memory Cache | ✅ Defined but unused |
+| Pattern            | Status                 |
+| ------------------ | ---------------------- |
+| `unstable_cache`   | ❌ NOT USED            |
+| `revalidate` (ISR) | ❌ Only logo (1 file)  |
+| `revalidatePath`   | ❌ NOT USED            |
+| `revalidateTag`    | ❌ NOT USED            |
+| Redis/Upstash      | ❌ NOT IMPLEMENTED     |
+| Service Worker     | ✅ Excellent (Serwist) |
+| In-Memory Cache    | ✅ Defined but unused  |
 
 ### 4.2 Service Worker Strategies
 
-| Strategy | Content | Behavior |
-|----------|---------|----------|
-| NetworkFirst | Orders, prices, cart | 10s timeout |
-| StaleWhileRevalidate | Providers, products | Background update |
-| CacheFirst | Images | Never refetch |
+| Strategy             | Content              | Behavior          |
+| -------------------- | -------------------- | ----------------- |
+| NetworkFirst         | Orders, prices, cart | 10s timeout       |
+| StaleWhileRevalidate | Providers, products  | Background update |
+| CacheFirst           | Images               | Never refetch     |
 
 ### 4.3 Missing Caching
 
@@ -158,16 +159,16 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 5.1 Current Implementation: ⚠️ PARTIAL
 
-| Endpoint | Rate Limited | Config |
-|----------|--------------|--------|
-| Login | ✅ YES | 10 req/15min |
-| OTP Send | ✅ YES | 5 req/10min |
-| OTP Verify | ✅ YES | 5 req/5min |
-| Password Reset | ✅ YES | 3 req/hour |
-| Create Order | ❌ NO | - |
-| Voice Order | ❌ NO | - |
-| Chat API | ❌ NO | - |
-| Search | ⚠️ Partial | Tool-level only |
+| Endpoint       | Rate Limited | Config          |
+| -------------- | ------------ | --------------- |
+| Login          | ✅ YES       | 10 req/15min    |
+| OTP Send       | ✅ YES       | 5 req/10min     |
+| OTP Verify     | ✅ YES       | 5 req/5min      |
+| Password Reset | ✅ YES       | 3 req/hour      |
+| Create Order   | ❌ NO        | -               |
+| Voice Order    | ❌ NO        | -               |
+| Chat API       | ❌ NO        | -               |
+| Search         | ⚠️ Partial   | Tool-level only |
 
 ### 5.2 Storage: ❌ In-Memory Only
 
@@ -186,11 +187,11 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 6.1 Error Boundaries: ❌ MISSING
 
-| File | Status |
-|------|--------|
+| File                    | Status     |
+| ----------------------- | ---------- |
 | `error.tsx` (per route) | ❌ 0 files |
-| `global-error.tsx` | ❌ 0 files |
-| `not-found.tsx` | ✅ 2 files |
+| `global-error.tsx`      | ❌ 0 files |
+| `not-found.tsx`         | ✅ 2 files |
 
 ### 6.2 Error Monitoring: ❌ NOT IMPLEMENTED
 
@@ -220,19 +221,19 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 7.1 Loading States: ❌ CRITICAL GAP
 
-| Metric | Value |
-|--------|-------|
-| Total Pages | 101 |
-| With loading.tsx | 2 (2%) |
-| With Suspense | 0 (0%) |
+| Metric            | Value    |
+| ----------------- | -------- |
+| Total Pages       | 101      |
+| With loading.tsx  | 2 (2%)   |
+| With Suspense     | 0 (0%)   |
 | Client Components | 98 (97%) |
 
 ### 7.2 Image Optimization: ⚠️ POOR
 
-| Usage | Count |
-|-------|-------|
-| next/image | 4 files (4%) |
-| Raw <img> | 96% of images |
+| Usage      | Count         |
+| ---------- | ------------- |
+| next/image | 4 files (4%)  |
+| Raw <img>  | 96% of images |
 
 ### 7.3 Code Splitting: ❌ NOT IMPLEMENTED
 
@@ -242,13 +243,13 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 7.4 Heavy Dependencies
 
-| Package | Size Impact | Files Using |
-|---------|-------------|-------------|
-| Firebase | ~100KB | 25+ |
-| OpenAI | ~80KB | 1 |
-| jsPDF | ~150KB | 1 |
-| Leaflet | ~70KB | 1 |
-| Framer Motion | ~50KB | Many |
+| Package       | Size Impact | Files Using |
+| ------------- | ----------- | ----------- |
+| Firebase      | ~100KB      | 25+         |
+| OpenAI        | ~80KB       | 1           |
+| jsPDF         | ~150KB      | 1           |
+| Leaflet       | ~70KB       | 1           |
+| Framer Motion | ~50KB       | Many        |
 
 ---
 
@@ -256,15 +257,15 @@ Should be replaced with specific column selections to reduce payload.
 
 ### 8.1 Overall: ✅ EXCELLENT
 
-| Category | Status |
-|----------|--------|
-| Secrets Management | ✅ Secure |
-| Input Validation (Zod) | ✅ Comprehensive |
-| SQL Injection | ✅ Protected (RPC-based) |
-| XSS Protection | ✅ Enterprise-grade |
-| CSRF Protection | ✅ Double-submit cookie |
-| Authentication | ✅ Middleware enforced |
-| Security Headers | ✅ Configured |
+| Category               | Status                   |
+| ---------------------- | ------------------------ |
+| Secrets Management     | ✅ Secure                |
+| Input Validation (Zod) | ✅ Comprehensive         |
+| SQL Injection          | ✅ Protected (RPC-based) |
+| XSS Protection         | ✅ Enterprise-grade      |
+| CSRF Protection        | ✅ Double-submit cookie  |
+| Authentication         | ✅ Middleware enforced   |
+| Security Headers       | ✅ Configured            |
 
 ### 8.2 Security Headers (next.config.ts)
 
@@ -288,6 +289,7 @@ Should be replaced with specific column selections to reduce payload.
 ```
 
 **Missing:**
+
 - Edge function configuration
 - Cron jobs
 - Region specification
@@ -345,7 +347,7 @@ Should be replaced with specific column selections to reduce payload.
 8. No code splitting/dynamic imports (8 hours)
 9. Missing error handling in Realtime (4 hours)
 10. withErrorHandler only 16% coverage (6 hours)
-11. Select * usage (120+ instances) (8 hours)
+11. Select \* usage (120+ instances) (8 hours)
 12. Missing polling fallback for critical subscriptions (4 hours)
 
 ### 🟠 MEDIUM PRIORITY (Plan for Later)
@@ -361,11 +363,11 @@ Should be replaced with specific column selections to reduce payload.
 
 ## Estimated Work
 
-| Priority | Items | Hours |
-|----------|-------|-------|
-| Critical | 5 | 20-30 |
-| High | 7 | 44-52 |
-| Medium | 6 | 30-36 |
+| Priority  | Items  | Hours      |
+| --------- | ------ | ---------- |
+| Critical  | 5      | 20-30      |
+| High      | 7      | 44-52      |
+| Medium    | 6      | 30-36      |
 | **Total** | **18** | **94-118** |
 
 ---
@@ -390,7 +392,7 @@ Should be replaced with specific column selections to reduce payload.
 
 ### Week 3: Optimization
 
-11. ✅ Replace Select * with specific columns
+11. ✅ Replace Select \* with specific columns
 12. ✅ Add error handling to all Realtime subscriptions
 13. ✅ Increase withErrorHandler coverage to 100%
 14. ✅ Add polling fallback to critical subscriptions

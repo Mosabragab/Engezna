@@ -9,12 +9,12 @@
 
 ## الملفات المُؤرشفة
 
-| الملف | الوصف | تم دمجه في |
-|-------|-------|-----------|
-| `SECURITY_IMPLEMENTATION_PLAN.md` | خطة الأمان السيبراني | المرحلة 1: 1.1-1.3 |
-| `INFRASTRUCTURE_AUDIT_REPORT.md` | تقرير البنية التحتية | المرحلة 1-2 |
-| `CODE_QUALITY_AND_PERFORMANCE_PLAN.md` | خطة جودة الكود | المرحلة 1.4, 2-3 |
-| `FRONTEND_PERFORMANCE_AUDIT.md` | تدقيق أداء الـ Frontend | المرحلة 2-3 |
+| الملف                                  | الوصف                   | تم دمجه في         |
+| -------------------------------------- | ----------------------- | ------------------ |
+| `SECURITY_IMPLEMENTATION_PLAN.md`      | خطة الأمان السيبراني    | المرحلة 1: 1.1-1.3 |
+| `INFRASTRUCTURE_AUDIT_REPORT.md`       | تقرير البنية التحتية    | المرحلة 1-2        |
+| `CODE_QUALITY_AND_PERFORMANCE_PLAN.md` | خطة جودة الكود          | المرحلة 1.4, 2-3   |
+| `FRONTEND_PERFORMANCE_AUDIT.md`        | تدقيق أداء الـ Frontend | المرحلة 2-3        |
 
 ---
 

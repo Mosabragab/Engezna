@@ -7,12 +7,12 @@
 
 ## 📊 ملخص نتائج التدقيق الأمني
 
-| الفئة | الحالة | المشاكل |
-|-------|--------|---------|
+| الفئة                 | الحالة         | المشاكل              |
+| --------------------- | -------------- | -------------------- |
 | **Hardcoded Secrets** | ⚠️ تحتاج إصلاح | 1 حرجة (Firebase SW) |
-| **Zod Validation** | ❌ غير موجود | 0% من الـ Routes |
-| **Rate Limiting** | ⚠️ جزئي | In-Memory فقط |
-| **XSS Protection** | ⚠️ تحتاج إصلاح | 1 حرجة (Export) |
+| **Zod Validation**    | ❌ غير موجود   | 0% من الـ Routes     |
+| **Rate Limiting**     | ⚠️ جزئي        | In-Memory فقط        |
+| **XSS Protection**    | ⚠️ تحتاج إصلاح | 1 حرجة (Export)      |
 
 ---
 
@@ -47,6 +47,7 @@ printWindow.document.write(html);
 ```
 
 **الحل:**
+
 ```typescript
 import { escapeHtml } from '@/lib/security/xss';
 
@@ -224,10 +225,7 @@ export async function checkRateLimit(
  * Get client identifier from request
  * Uses IP + optional user identifier for better accuracy
  */
-export function getClientIdentifier(
-  request: Request,
-  userId?: string
-): string {
+export function getClientIdentifier(request: Request, userId?: string): string {
   const forwarded = request.headers.get('x-forwarded-for');
   const ip = forwarded?.split(',')[0] || 'unknown';
 
@@ -278,7 +276,12 @@ export function rateLimitErrorResponse(result: RateLimitResult): Response {
 **مثال: `src/app/api/chat/route.ts`**
 
 ```typescript
-import { chatLimiter, getClientIdentifier, checkRateLimit, rateLimitErrorResponse } from '@/lib/utils/upstash-rate-limit';
+import {
+  chatLimiter,
+  getClientIdentifier,
+  checkRateLimit,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 export async function POST(request: Request) {
   // Rate limiting
@@ -296,7 +299,12 @@ export async function POST(request: Request) {
 **مثال: `src/app/api/voice-order/process/route.ts`**
 
 ```typescript
-import { voiceOrderLimiter, getClientIdentifier, checkRateLimit, rateLimitErrorResponse } from '@/lib/utils/upstash-rate-limit';
+import {
+  voiceOrderLimiter,
+  getClientIdentifier,
+  checkRateLimit,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 export async function POST(request: Request) {
   // Rate limiting
@@ -332,10 +340,7 @@ export const egyptianPhoneSchema = z
   .string()
   .regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صحيح');
 
-export const emailSchema = z
-  .string()
-  .email('بريد إلكتروني غير صحيح')
-  .max(255);
+export const emailSchema = z.string().email('بريد إلكتروني غير صحيح').max(255);
 
 export const passwordSchema = z
   .string()
@@ -412,11 +417,15 @@ export const paymentInitiateSchema = z.object({
   orderData: z.object({
     provider_id: uuidSchema,
     total: z.number().positive().max(1000000),
-    cart_items: z.array(z.object({
-      id: uuidSchema,
-      quantity: z.number().int().positive(),
-      price: z.number().positive(),
-    })).min(1),
+    cart_items: z
+      .array(
+        z.object({
+          id: uuidSchema,
+          quantity: z.number().int().positive(),
+          price: z.number().positive(),
+        })
+      )
+      .min(1),
   }),
 });
 ```
@@ -441,7 +450,7 @@ export function validateBody<T>(schema: ZodSchema<T>) {
           error: NextResponse.json(
             {
               error: 'Validation Error',
-              details: error.errors.map(e => ({
+              details: error.errors.map((e) => ({
                 field: e.path.join('.'),
                 message: e.message,
               })),
@@ -451,10 +460,7 @@ export function validateBody<T>(schema: ZodSchema<T>) {
         };
       }
       return {
-        error: NextResponse.json(
-          { error: 'Invalid request body' },
-          { status: 400 }
-        ),
+        error: NextResponse.json({ error: 'Invalid request body' }, { status: 400 }),
       };
     }
   };
@@ -479,10 +485,7 @@ export function validateQuery<T>(schema: ZodSchema<T>) {
         };
       }
       return {
-        error: NextResponse.json(
-          { error: 'Invalid query parameters' },
-          { status: 400 }
-        ),
+        error: NextResponse.json({ error: 'Invalid query parameters' }, { status: 400 }),
       };
     }
   };
@@ -536,6 +539,7 @@ const nextConfig: NextConfig = {
 ```
 
 **ملاحظة:** Service Workers لا يمكنها الوصول لـ process.env مباشرة. الحل:
+
 1. استخدام Workbox مع injection
 2. أو إنشاء endpoint يوفر الـ config
 3. أو قبول أن Firebase API keys عامة (لكن مع Domain Restrictions في Firebase Console)
@@ -567,14 +571,14 @@ const nextConfig: NextConfig = {
 
 ## 📊 الوقت المقدر
 
-| المهمة | الساعات |
-|--------|---------|
-| Upstash Rate Limiting | 4-6 |
-| Zod Validation (critical routes) | 8-12 |
-| XSS Fix | 2-3 |
-| Firebase Config | 1-2 |
-| Testing & Verification | 4-6 |
-| **الإجمالي** | **19-29 ساعة** |
+| المهمة                           | الساعات        |
+| -------------------------------- | -------------- |
+| Upstash Rate Limiting            | 4-6            |
+| Zod Validation (critical routes) | 8-12           |
+| XSS Fix                          | 2-3            |
+| Firebase Config                  | 1-2            |
+| Testing & Verification           | 4-6            |
+| **الإجمالي**                     | **19-29 ساعة** |
 
 ---
 

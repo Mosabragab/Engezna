@@ -6,15 +6,43 @@
 
 ---
 
+## ⚠️ تنبيه مهم: Prettier Formatting
+
+**قبل كل commit، يجب تشغيل:**
+
+```bash
+npx prettier --write "**/*.{ts,tsx,js,jsx,md,json}"
+```
+
+أو استخدام الأمر المختصر:
+
+```bash
+npm run format
+```
+
+**السبب:** المشروع يستخدم CI/CD يفحص Prettier formatting. أي ملف غير منسق سيؤدي لفشل الـ Pipeline.
+
+**البديل الأفضل:** تفعيل Prettier on Save في VS Code:
+
+```json
+// .vscode/settings.json
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
+```
+
+---
+
 ## 📊 الملخص التنفيذي
 
-| الفئة | الدرجة الحالية | الهدف |
-|-------|---------------|-------|
-| **الأمان السيبراني** | 70/100 | 95/100 |
-| **البنية التحتية** | 72/100 | 90/100 |
-| **جودة الكود** | 60/100 | 85/100 |
-| **أداء الـ Frontend** | 45/100 | 85/100 |
-| **المتوسط العام** | **62/100** | **89/100** |
+| الفئة                 | الدرجة الحالية | الهدف      |
+| --------------------- | -------------- | ---------- |
+| **الأمان السيبراني**  | 70/100         | 95/100     |
+| **البنية التحتية**    | 72/100         | 90/100     |
+| **جودة الكود**        | 60/100         | 85/100     |
+| **أداء الـ Frontend** | 45/100         | 85/100     |
+| **المتوسط العام**     | **62/100**     | **89/100** |
 
 ### جاهزية 100,000+ مستخدم: ❌ **غير جاهز** (يحتاج إصلاحات حرجة)
 
@@ -31,11 +59,13 @@
 **المشكلة:** Rate limiting حالياً in-memory فقط - لا يعمل عبر serverless instances
 
 **الخطوة 1: التثبيت**
+
 ```bash
 npm install @upstash/ratelimit @upstash/redis
 ```
 
 **الخطوة 2: Environment Variables**
+
 ```env
 # .env.local
 UPSTASH_REDIS_REST_URL=https://your-url.upstash.io
@@ -43,6 +73,7 @@ UPSTASH_REDIS_REST_TOKEN=your-token
 ```
 
 **الخطوة 3: إنشاء `src/lib/utils/upstash-rate-limit.ts`**
+
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
@@ -168,10 +199,10 @@ export function rateLimitErrorResponse(result: RateLimitResult): Response {
 
 **الخطوة 4: تطبيق على API Routes**
 
-| الملف | الـ Limiter |
-|-------|------------|
-| `api/chat/route.ts` | `chatLimiter` |
-| `api/voice-order/process/route.ts` | `voiceOrderLimiter` |
+| الملف                              | الـ Limiter            |
+| ---------------------------------- | ---------------------- |
+| `api/chat/route.ts`                | `chatLimiter`          |
+| `api/voice-order/process/route.ts` | `voiceOrderLimiter`    |
 | `api/voice-order/confirm/route.ts` | `orderCreationLimiter` |
 
 ---
@@ -181,6 +212,7 @@ export function rateLimitErrorResponse(result: RateLimitResult): Response {
 **الملف:** `src/lib/finance/export-service.ts:546`
 
 **المشكلة:**
+
 ```typescript
 // ❌ الحالي - XSS vulnerability
 printWindow.document.write(html);
@@ -188,6 +220,7 @@ printWindow.document.write(html);
 ```
 
 **الحل:**
+
 ```typescript
 import { escapeHtml } from '@/lib/security/xss';
 
@@ -205,6 +238,7 @@ const safeNotes = escapeHtml(entry.notes || '-');
 **المشكلة:** 0% من الـ 25 API routes تستخدم Zod validation
 
 **إنشاء `src/lib/validation/schemas.ts`:**
+
 ```typescript
 import { z } from 'zod';
 
@@ -263,16 +297,21 @@ export const paymentInitiateSchema = z.object({
   orderData: z.object({
     provider_id: uuidSchema,
     total: z.number().positive().max(1000000),
-    cart_items: z.array(z.object({
-      id: uuidSchema,
-      quantity: z.number().int().positive(),
-      price: z.number().positive(),
-    })).min(1),
+    cart_items: z
+      .array(
+        z.object({
+          id: uuidSchema,
+          quantity: z.number().int().positive(),
+          price: z.number().positive(),
+        })
+      )
+      .min(1),
   }),
 });
 ```
 
 **إنشاء `src/lib/validation/middleware.ts`:**
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { ZodSchema, ZodError } from 'zod';
@@ -289,7 +328,7 @@ export function validateBody<T>(schema: ZodSchema<T>) {
           error: NextResponse.json(
             {
               error: 'Validation Error',
-              details: error.errors.map(e => ({
+              details: error.errors.map((e) => ({
                 field: e.path.join('.'),
                 message: e.message,
               })),
@@ -313,6 +352,7 @@ export function validateBody<T>(schema: ZodSchema<T>) {
 **الملف الحرج:** `src/lib/admin/users.ts:186-209`
 
 **المشكلة:**
+
 ```typescript
 // ❌ N+1 Query - O(n*2) database calls
 for (const order of ordersToCancel) {
@@ -322,6 +362,7 @@ for (const order of ordersToCancel) {
 ```
 
 **الحل: Batch Updates**
+
 ```typescript
 // ✅ O(2) database calls only
 async function batchCancelOrders(
@@ -332,7 +373,7 @@ async function batchCancelOrders(
 ) {
   if (!ordersToCancel.length) return;
 
-  const orderIds = ordersToCancel.map(o => o.id);
+  const orderIds = ordersToCancel.map((o) => o.id);
 
   // Batch 1: Update all orders
   const { error: updateError } = await supabase
@@ -348,7 +389,7 @@ async function batchCancelOrders(
   if (updateError) throw updateError;
 
   // Batch 2: Insert all notifications
-  const notifications = ordersToCancel.map(order => ({
+  const notifications = ordersToCancel.map((order) => ({
     provider_id: order.provider_id,
     type: 'order_cancelled',
     title_ar: 'تم إلغاء طلب بسبب حظر العميل',
@@ -374,6 +415,7 @@ async function batchCancelOrders(
 ### 1.5 🚨 Error Boundaries
 
 **إنشاء `src/app/global-error.tsx`:**
+
 ```typescript
 'use client';
 
@@ -410,6 +452,7 @@ export default function GlobalError({
 ```
 
 **إنشاء `src/app/[locale]/error.tsx`:**
+
 ```typescript
 'use client';
 
@@ -467,6 +510,7 @@ export default function LocaleError({
 ### 1.6 🔍 SEO Critical Files
 
 **إنشاء `src/app/robots.ts`:**
+
 ```typescript
 import { MetadataRoute } from 'next';
 
@@ -487,6 +531,7 @@ export default function robots(): MetadataRoute.Robots {
 ```
 
 **إنشاء `src/app/sitemap.ts`:**
+
 ```typescript
 import { MetadataRoute } from 'next';
 import { createServerClient } from '@/lib/supabase/server';
@@ -512,7 +557,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/ar/terms`, lastModified: new Date(), priority: 0.3 },
   ];
 
-  const providerPages = (providers || []).flatMap(provider => [
+  const providerPages = (providers || []).flatMap((provider) => [
     {
       url: `${baseUrl}/ar/providers/${provider.id}`,
       lastModified: new Date(provider.updated_at),
@@ -543,23 +588,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 **الملفات المطلوب تعديلها:**
 
-| الملف | السطر | الحالي | المطلوب |
-|-------|-------|--------|---------|
-| `BottomNavigation.tsx` | 22 | `const { cart } = useCart()` | `const count = useCart(s => s.cart.reduce(...))` |
-| `SmartAssistant.tsx` | 176 | `const { getItemCount } = useCart()` | `const getItemCount = useCart(s => s.getItemCount)` |
-| `CustomOrderInterface.tsx` | 109 | `const cart = useCart()` | Individual selectors |
-| `useAIChat.ts` | 104-117 | Destructure all | Individual selectors |
+| الملف                      | السطر   | الحالي                               | المطلوب                                             |
+| -------------------------- | ------- | ------------------------------------ | --------------------------------------------------- |
+| `BottomNavigation.tsx`     | 22      | `const { cart } = useCart()`         | `const count = useCart(s => s.cart.reduce(...))`    |
+| `SmartAssistant.tsx`       | 176     | `const { getItemCount } = useCart()` | `const getItemCount = useCart(s => s.getItemCount)` |
+| `CustomOrderInterface.tsx` | 109     | `const cart = useCart()`             | Individual selectors                                |
+| `useAIChat.ts`             | 104-117 | Destructure all                      | Individual selectors                                |
 
 **مثال التعديل:**
+
 ```typescript
 // ❌ قبل - يشترك في كل الـ Store
 const { cart } = useCart();
 const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
 // ✅ بعد - يشترك في القيمة المحسوبة فقط
-const cartItemsCount = useCart((state) =>
-  state.cart.reduce((sum, item) => sum + item.quantity, 0)
-);
+const cartItemsCount = useCart((state) => state.cart.reduce((sum, item) => sum + item.quantity, 0));
 ```
 
 **التأثير المتوقع:** تقليل 30-40% من Re-renders
@@ -571,6 +615,7 @@ const cartItemsCount = useCart((state) =>
 **الملف:** `src/lib/contexts/LocationContext.tsx`
 
 **المشكلة (lines 350-368):**
+
 ```typescript
 // ❌ كائن جديد في كل render
 const value: LocationContextValue = {
@@ -580,6 +625,7 @@ return <LocationContext.Provider value={value}>{children}</LocationContext.Provi
 ```
 
 **الحل:**
+
 ```typescript
 // ✅ Memoized value
 const value = useMemo(() => ({
@@ -635,6 +681,7 @@ src/app/[locale]/
 ```
 
 **نموذج `src/app/[locale]/(customer)/loading.tsx`:**
+
 ```typescript
 export default function CustomerLoading() {
   return (
@@ -674,18 +721,19 @@ export default function CustomerLoading() {
 
 **التعديلات (4 مواقع):**
 
-| السطر | قبل | بعد |
-|-------|-----|-----|
-| 601 | `<img src={currentBanner.image_url} />` | `<Image src={...} fill sizes="..." />` |
-| 892 | `<img src={formData.image_url} />` | `<Image src={...} width={96} height={96} />` |
-| 1124 | `<img ... />` | `<Image ... />` |
-| 1195 | `<img ... />` | `<Image ... />` |
+| السطر | قبل                                     | بعد                                          |
+| ----- | --------------------------------------- | -------------------------------------------- |
+| 601   | `<img src={currentBanner.image_url} />` | `<Image src={...} fill sizes="..." />`       |
+| 892   | `<img src={formData.image_url} />`      | `<Image src={...} width={96} height={96} />` |
+| 1124  | `<img ... />`                           | `<Image ... />`                              |
+| 1195  | `<img ... />`                           | `<Image ... />`                              |
 
 ---
 
 ### 2.5 ⚡ ISR للصفحات الثابتة
 
 **صفحات المتاجر `src/app/[locale]/providers/page.tsx`:**
+
 ```typescript
 // Revalidate every 5 minutes
 export const revalidate = 300;
@@ -709,6 +757,7 @@ export default async function ProvidersPage({ params }: { params: { locale: stri
 ```
 
 **صفحة تفاصيل المتجر `src/app/[locale]/providers/[id]/page.tsx`:**
+
 ```typescript
 // Revalidate every minute
 export const revalidate = 60;
@@ -722,7 +771,7 @@ export async function generateStaticParams() {
     .order('rating', { ascending: false })
     .limit(100);
 
-  return (providers || []).flatMap(p => [
+  return (providers || []).flatMap((p) => [
     { locale: 'ar', id: p.id },
     { locale: 'en', id: p.id },
   ]);
@@ -763,14 +812,15 @@ export async function generateMetadata({ params }: { params: { locale: string; i
 
 ### 2.6 📦 Dynamic Imports للمكتبات الثقيلة
 
-| المكتبة | الحجم | الملف | التعديل |
-|---------|-------|-------|---------|
-| jsPDF | ~150KB | Admin exports | `dynamic import()` |
-| xlsx | ~45KB | Admin imports | `dynamic import()` |
-| Leaflet | ~70KB | Maps | Already dynamic ✅ |
-| OpenAI | ~80KB | Chat | `dynamic import()` |
+| المكتبة | الحجم  | الملف         | التعديل            |
+| ------- | ------ | ------------- | ------------------ |
+| jsPDF   | ~150KB | Admin exports | `dynamic import()` |
+| xlsx    | ~45KB  | Admin imports | `dynamic import()` |
+| Leaflet | ~70KB  | Maps          | Already dynamic ✅ |
+| OpenAI  | ~80KB  | Chat          | `dynamic import()` |
 
 **مثال:**
+
 ```typescript
 // ❌ قبل
 import jsPDF from 'jspdf';
@@ -828,6 +878,7 @@ export const LocationHelpersContext = createContext<{
 ### 3.2 🏗️ Repository Pattern
 
 **الهيكل المقترح:**
+
 ```
 src/lib/
 ├── repositories/              # Data Access Layer
@@ -843,6 +894,7 @@ src/lib/
 ```
 
 **مثال `base-repository.ts`:**
+
 ```typescript
 export abstract class BaseRepository<T> {
   constructor(
@@ -873,6 +925,7 @@ export abstract class BaseRepository<T> {
 **المشكلة:** 28 من 31 subscription بدون error handling
 
 **الحل:**
+
 ```typescript
 // ❌ قبل
 const channel = supabase.channel('orders').on('postgres_changes', {...}).subscribe();
@@ -903,14 +956,15 @@ const channel = supabase
 
 ### 3.4 🧩 React.memo للمكونات الثابتة
 
-| المكون | الملف | السبب |
-|--------|-------|-------|
-| `BottomNavigation` | layout components | يعاد رندره كثيراً |
-| `CustomerHeader` | layout components | يعاد رندره كثيراً |
-| `MessageBubble` | chat components | قوائم طويلة |
-| `ProductCard` | product components | قوائم طويلة |
+| المكون             | الملف              | السبب             |
+| ------------------ | ------------------ | ----------------- |
+| `BottomNavigation` | layout components  | يعاد رندره كثيراً |
+| `CustomerHeader`   | layout components  | يعاد رندره كثيراً |
+| `MessageBubble`    | chat components    | قوائم طويلة       |
+| `ProductCard`      | product components | قوائم طويلة       |
 
 **مثال:**
+
 ```typescript
 export const BottomNavigation = React.memo(function BottomNavigation() {
   // component code
@@ -925,7 +979,7 @@ export const BottomNavigation = React.memo(function BottomNavigation() {
 
 ---
 
-### 4.1 استبدال Select * بأعمدة محددة
+### 4.1 استبدال Select \* بأعمدة محددة
 
 **الحالة:** 120+ instances
 
@@ -997,7 +1051,7 @@ npx @sentry/wizard@latest -i nextjs
 
 ### 🟢 منخفضة (مستقبلاً) - 30-50 ساعة
 
-- [ ] Select * → specific columns
+- [ ] Select \* → specific columns
 - [ ] Sentry integration
 - [ ] Vercel cron jobs
 - [ ] Bundle optimization
@@ -1006,12 +1060,12 @@ npx @sentry/wizard@latest -i nextjs
 
 ## 📈 الجدول الزمني المقترح
 
-| الأسبوع | المرحلة | الساعات | الهدف |
-|---------|---------|---------|-------|
-| 1 | المرحلة 1 (الحرجة) | 25-35 | جاهز للإطلاق الأولي |
-| 2 | المرحلة 2 (الأداء) | 20-30 | أداء محسّن |
-| 3 | المرحلة 3 (الهيكلة) | 15-25 | كود نظيف |
-| 4+ | المرحلة 4 (التحسينات) | 30-50 | تحسينات مستمرة |
+| الأسبوع | المرحلة               | الساعات | الهدف               |
+| ------- | --------------------- | ------- | ------------------- |
+| 1       | المرحلة 1 (الحرجة)    | 25-35   | جاهز للإطلاق الأولي |
+| 2       | المرحلة 2 (الأداء)    | 20-30   | أداء محسّن          |
+| 3       | المرحلة 3 (الهيكلة)   | 15-25   | كود نظيف            |
+| 4+      | المرحلة 4 (التحسينات) | 30-50   | تحسينات مستمرة      |
 
 **الإجمالي:** 90-140 ساعة
 

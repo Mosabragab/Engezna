@@ -7,12 +7,12 @@
 
 ## 📊 ملخص التقييم
 
-| الفئة | الدرجة | الحالة |
-|-------|--------|--------|
-| **Bundle Size** | 75/100 | ✅ جيد (Tree-shaking يعمل) |
-| **State Management** | 40/100 | ❌ حرج (Re-renders كثيرة) |
-| **SEO & Metadata** | 20/100 | ❌ حرج جداً (لا يوجد Dynamic Metadata) |
-| **المتوسط** | **45/100** | ⚠️ يحتاج تحسين عاجل |
+| الفئة                | الدرجة     | الحالة                                 |
+| -------------------- | ---------- | -------------------------------------- |
+| **Bundle Size**      | 75/100     | ✅ جيد (Tree-shaking يعمل)             |
+| **State Management** | 40/100     | ❌ حرج (Re-renders كثيرة)              |
+| **SEO & Metadata**   | 20/100     | ❌ حرج جداً (لا يوجد Dynamic Metadata) |
+| **المتوسط**          | **45/100** | ⚠️ يحتاج تحسين عاجل                    |
 
 ---
 
@@ -22,11 +22,11 @@
 
 **الحالة:** ✅ ممتاز - يستخدم Modular Imports
 
-| الملف | طريقة الاستيراد | التأثير |
-|-------|----------------|---------|
-| `src/lib/firebase/config.ts` | `import { initializeApp, getMessaging } from 'firebase/app'` | منخفض (~40KB) |
-| `src/hooks/usePushNotifications.ts` | `import { getToken, onMessage } from 'firebase/messaging'` | منخفض |
-| `public/firebase-messaging-sw.js` | CDN compat v10.7.1 | منفصل (Service Worker) |
+| الملف                               | طريقة الاستيراد                                              | التأثير                |
+| ----------------------------------- | ------------------------------------------------------------ | ---------------------- |
+| `src/lib/firebase/config.ts`        | `import { initializeApp, getMessaging } from 'firebase/app'` | منخفض (~40KB)          |
+| `src/hooks/usePushNotifications.ts` | `import { getToken, onMessage } from 'firebase/messaging'`   | منخفض                  |
+| `public/firebase-messaging-sw.js`   | CDN compat v10.7.1                                           | منفصل (Service Worker) |
 
 **ملاحظة:** فقط Firebase Messaging مستخدم - لا يوجد Firestore أو Auth
 
@@ -34,12 +34,13 @@
 
 **الحالة:** ✅ جيد - يستخدم Named Imports
 
-| الإحصائية | القيمة |
-|-----------|--------|
-| ملفات تستخدم Framer Motion | 29 من 385 (7.5%) |
-| حجم المكتبة (مع Tree-shaking) | ~60-80KB |
+| الإحصائية                     | القيمة           |
+| ----------------------------- | ---------------- |
+| ملفات تستخدم Framer Motion    | 29 من 385 (7.5%) |
+| حجم المكتبة (مع Tree-shaking) | ~60-80KB         |
 
 **الاستخدامات الرئيسية:**
+
 - `motion, AnimatePresence` - 20 ملف
 - `motion` فقط - 7 ملفات
 - `Reorder` - 2 ملفات (Admin + NotepadOrderInput)
@@ -57,26 +58,27 @@ const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
 ```
 
 **المشكلة:** صفحات كثيرة تحمّل مكتبات ثقيلة دون تقسيم:
+
 - Admin pages تحمّل jsPDF (~150KB) حتى لو المستخدم لم يحتاجها
 - Chat components تحمّل OpenAI SDK (~80KB) مباشرة
 - Leaflet maps (~70KB) تحمّل synchronously
 
 ### 1.4 حجم الـ Bundle المُقدّر
 
-| الحالة | الحجم (gzipped) |
-|--------|-----------------|
-| **الحالي** | 250-350 KB |
-| **بعد التحسين** | 150-220 KB |
-| **التوفير المتوقع** | 30-40% |
+| الحالة              | الحجم (gzipped) |
+| ------------------- | --------------- |
+| **الحالي**          | 250-350 KB      |
+| **بعد التحسين**     | 150-220 KB      |
+| **التوفير المتوقع** | 30-40%          |
 
 ### 1.5 التأثير على الموبايلات المصرية المتوسطة
 
-| نوع الجهاز | RAM | الأداء المتوقع |
-|------------|-----|----------------|
-| Samsung A14/A24 | 4GB | ⚠️ بطيء في الصفحات الثقيلة |
-| Xiaomi Redmi 12 | 4GB | ⚠️ قد يتجمد مع Animations كثيرة |
-| Oppo A57/A77 | 4GB | ⚠️ First Load قد يستغرق 5-8 ثواني |
-| iPhone SE 2020 | 3GB | ✅ جيد |
+| نوع الجهاز      | RAM | الأداء المتوقع                    |
+| --------------- | --- | --------------------------------- |
+| Samsung A14/A24 | 4GB | ⚠️ بطيء في الصفحات الثقيلة        |
+| Xiaomi Redmi 12 | 4GB | ⚠️ قد يتجمد مع Animations كثيرة   |
+| Oppo A57/A77    | 4GB | ⚠️ First Load قد يستغرق 5-8 ثواني |
+| iPhone SE 2020  | 3GB | ✅ جيد                            |
 
 **توصية:** تقليل Framer Motion animations على الأجهزة الضعيفة
 
@@ -87,6 +89,7 @@ const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
 ### 2.1 مخازن Zustand
 
 #### Store 1: `useCart` (320 سطر)
+
 **الملف:** `src/lib/store/cart.ts`
 
 ```typescript
@@ -103,15 +106,16 @@ const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
 
 **المشاكل:**
 
-| المكون | الملف | المشكلة |
-|--------|-------|---------|
-| BottomNavigation | line 22 | `const { cart } = useCart()` - يشترك في كل الـ Store |
-| SmartAssistant | line 176 | `const { getItemCount } = useCart()` - يشترك في كل الـ Store |
-| CustomOrderInterface | line 109 | `const cart = useCart()` - كل الـ Store |
+| المكون               | الملف    | المشكلة                                                      |
+| -------------------- | -------- | ------------------------------------------------------------ |
+| BottomNavigation     | line 22  | `const { cart } = useCart()` - يشترك في كل الـ Store         |
+| SmartAssistant       | line 176 | `const { getItemCount } = useCart()` - يشترك في كل الـ Store |
+| CustomOrderInterface | line 109 | `const cart = useCart()` - كل الـ Store                      |
 
 **النتيجة:** أي تغيير في السلة (إضافة، تعديل، حذف) = إعادة رندر لكل المكونات المشتركة!
 
 #### Store 2: `useChatStore` (272 سطر)
+
 **الملف:** `src/lib/store/chat.ts`
 
 ```typescript
@@ -125,6 +129,7 @@ const InteractiveMapPicker = dynamic(() => import('./InteractiveMapPicker'), {
 ```
 
 **المشكلة في useAIChat.ts (lines 104-117):**
+
 ```typescript
 // ❌ الحالي - يشترك في كل شيء
 const { messages, addMessage, setMessages, clearMessages,
@@ -154,6 +159,7 @@ const addMessage = useChatStore((state) => state.addMessage);
 ```
 
 **المشكلة الحرجة (lines 350-368):**
+
 ```typescript
 // ❌ الحالي - كائن جديد في كل render
 const value: LocationContextValue = {
@@ -164,6 +170,7 @@ return <LocationContext.Provider value={value}>{children}</LocationContext.Provi
 ```
 
 **التأثير:**
+
 - الصفحة الرئيسية تعيد الرندر عند تحميل المحافظات
 - صفحة Checkout تعيد الرندر عند أي تغيير
 - صفحة Profile تعيد الرندر بدون سبب
@@ -171,16 +178,17 @@ return <LocationContext.Provider value={value}>{children}</LocationContext.Provi
 #### Context 2: AdminRegionContext (348 سطر)
 
 **المشاكل:**
+
 - نفس مشكلة عدم استخدام `useMemo` للـ value
 - `hasRegionFilter` يُحسب في كل render بدون memoization
 
 ### 2.3 إحصائيات Memoization
 
-| الإحصائية | القيمة |
-|-----------|--------|
-| إجمالي المكونات | 100 ملف |
-| مكونات تستخدم memo/useMemo/useCallback | 31 (31%) |
-| **الفجوة** | 69% بدون memoization |
+| الإحصائية                              | القيمة               |
+| -------------------------------------- | -------------------- |
+| إجمالي المكونات                        | 100 ملف              |
+| مكونات تستخدم memo/useMemo/useCallback | 31 (31%)             |
+| **الفجوة**                             | 69% بدون memoization |
 
 ### 2.4 خريطة Re-renders
 
@@ -208,9 +216,7 @@ const { cart } = useCart();
 const count = cart.reduce((sum, item) => sum + item.quantity, 0);
 
 // ✅ بعد
-const count = useCart((state) =>
-  state.cart.reduce((sum, item) => sum + item.quantity, 0)
-);
+const count = useCart((state) => state.cart.reduce((sum, item) => sum + item.quantity, 0));
 ```
 
 **التأثير المتوقع:** تقليل 30-40% من Re-renders
@@ -253,14 +259,14 @@ export const UserLocationContext = createContext<{
 
 ### 3.1 الحالة الحالية - **حرجة جداً**
 
-| العنصر | الحالة |
-|--------|--------|
+| العنصر                       | الحالة               |
+| ---------------------------- | -------------------- |
 | `generateMetadata` functions | ❌ 1 فقط (في layout) |
-| Dynamic Metadata للمنتجات | ❌ غير موجود |
-| OpenGraph Images | ❌ غير موجود |
-| Structured Data (JSON-LD) | ❌ غير موجود |
-| Sitemap | ❌ غير موجود |
-| robots.txt | ❌ غير موجود |
+| Dynamic Metadata للمنتجات    | ❌ غير موجود         |
+| OpenGraph Images             | ❌ غير موجود         |
+| Structured Data (JSON-LD)    | ❌ غير موجود         |
+| Sitemap                      | ❌ غير موجود         |
+| robots.txt                   | ❌ غير موجود         |
 
 ### 3.2 المشكلة الهيكلية
 
@@ -278,13 +284,13 @@ export const UserLocationContext = createContext<{
 
 ### 3.3 صفحات بدون Metadata ديناميكي
 
-| الصفحة | النوع | التأثير SEO |
-|--------|-------|-------------|
-| `/[locale]/providers` | قائمة المتاجر | **عالي** - يجب أن يظهر في البحث |
-| `/[locale]/providers/[id]` | تفاصيل المتجر | **حرج** - صفحة المنتج الرئيسية |
-| `/[locale]/offers` | العروض | **عالي** - محتوى تسويقي |
-| `/[locale]/privacy` | الخصوصية | متوسط |
-| `/[locale]/terms` | الشروط | متوسط |
+| الصفحة                     | النوع         | التأثير SEO                     |
+| -------------------------- | ------------- | ------------------------------- |
+| `/[locale]/providers`      | قائمة المتاجر | **عالي** - يجب أن يظهر في البحث |
+| `/[locale]/providers/[id]` | تفاصيل المتجر | **حرج** - صفحة المنتج الرئيسية  |
+| `/[locale]/offers`         | العروض        | **عالي** - محتوى تسويقي         |
+| `/[locale]/privacy`        | الخصوصية      | متوسط                           |
+| `/[locale]/terms`          | الشروط        | متوسط                           |
 
 ### 3.4 ما ينقص صفحة المتجر `/providers/[id]`
 
@@ -297,9 +303,10 @@ export async function generateMetadata({ params }) {
   const locale = params.locale;
 
   return {
-    title: locale === 'ar'
-      ? `${provider.name_ar} - ${provider.rating}⭐ | إنجزنا`
-      : `${provider.name_en} - ${provider.rating}⭐ | Engezna`,
+    title:
+      locale === 'ar'
+        ? `${provider.name_ar} - ${provider.rating}⭐ | إنجزنا`
+        : `${provider.name_en} - ${provider.rating}⭐ | Engezna`,
     description: provider.description?.[locale],
     openGraph: {
       title: provider.name?.[locale],
@@ -359,12 +366,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 ### 3.7 تأثير عدم وجود SEO
 
-| المشكلة | التأثير |
-|---------|---------|
-| لا Sitemap | Google لا يكتشف صفحات المتاجر |
-| لا OpenGraph | مشاركة WhatsApp/Facebook بدون صورة |
-| لا Dynamic Title | كل الصفحات بنفس العنوان في البحث |
-| لا JSON-LD | لا يظهر Rating في نتائج Google |
+| المشكلة          | التأثير                            |
+| ---------------- | ---------------------------------- |
+| لا Sitemap       | Google لا يكتشف صفحات المتاجر      |
+| لا OpenGraph     | مشاركة WhatsApp/Facebook بدون صورة |
+| لا Dynamic Title | كل الصفحات بنفس العنوان في البحث   |
+| لا JSON-LD       | لا يظهر Rating في نتائج Google     |
 
 ---
 
@@ -372,29 +379,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 ### المرحلة 1: Quick Wins (4-6 ساعات)
 
-| المهمة | الملف | الوقت |
-|--------|-------|-------|
-| إضافة Zustand selectors | cart.ts, chat.ts | 2 ساعات |
-| Memoize Context values | LocationContext.tsx | 1 ساعة |
-| إنشاء robots.txt | app/robots.ts | 30 دقيقة |
-| إنشاء sitemap.ts | app/sitemap.ts | 2 ساعات |
+| المهمة                  | الملف               | الوقت    |
+| ----------------------- | ------------------- | -------- |
+| إضافة Zustand selectors | cart.ts, chat.ts    | 2 ساعات  |
+| Memoize Context values  | LocationContext.tsx | 1 ساعة   |
+| إنشاء robots.txt        | app/robots.ts       | 30 دقيقة |
+| إنشاء sitemap.ts        | app/sitemap.ts      | 2 ساعات  |
 
 ### المرحلة 2: SEO Critical (8-12 ساعة)
 
-| المهمة | الملف | الوقت |
-|--------|-------|-------|
+| المهمة                                  | الملف                   | الوقت   |
+| --------------------------------------- | ----------------------- | ------- |
 | تحويل Provider page لـ Server Component | providers/[id]/page.tsx | 4 ساعات |
-| إضافة generateMetadata | providers/[id]/page.tsx | 2 ساعات |
-| إضافة JSON-LD | providers/[id]/page.tsx | 2 ساعات |
-| إضافة OpenGraph images | public/og-* | 2 ساعات |
+| إضافة generateMetadata                  | providers/[id]/page.tsx | 2 ساعات |
+| إضافة JSON-LD                           | providers/[id]/page.tsx | 2 ساعات |
+| إضافة OpenGraph images                  | public/og-\*            | 2 ساعات |
 
 ### المرحلة 3: Performance (6-8 ساعات)
 
-| المهمة | الملف | الوقت |
-|--------|-------|-------|
-| تقسيم LocationContext | LocationContext.tsx | 4 ساعات |
-| إضافة dynamic imports | Admin pages, Chat | 3 ساعات |
-| React.memo للمكونات الثابتة | Header, Nav, etc. | 2 ساعات |
+| المهمة                      | الملف               | الوقت   |
+| --------------------------- | ------------------- | ------- |
+| تقسيم LocationContext       | LocationContext.tsx | 4 ساعات |
+| إضافة dynamic imports       | Admin pages, Chat   | 3 ساعات |
+| React.memo للمكونات الثابتة | Header, Nav, etc.   | 2 ساعات |
 
 ---
 
@@ -422,13 +429,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 ## 🎯 الهدف النهائي
 
-| المقياس | الحالي | الهدف |
-|---------|--------|-------|
-| Bundle Size | 250-350KB | <200KB |
+| المقياس                  | الحالي        | الهدف          |
+| ------------------------ | ------------- | -------------- |
+| Bundle Size              | 250-350KB     | <200KB         |
 | Re-renders (Cart action) | 5+ components | 1-2 components |
-| SEO Score | 20/100 | 80/100 |
-| First Load (3G) | 5-8 ثواني | <3 ثواني |
-| Lighthouse Performance | ~60 | >85 |
+| SEO Score                | 20/100        | 80/100         |
+| First Load (3G)          | 5-8 ثواني     | <3 ثواني       |
+| Lighthouse Performance   | ~60           | >85            |
 
 ---
 

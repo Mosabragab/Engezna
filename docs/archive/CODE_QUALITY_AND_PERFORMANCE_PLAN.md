@@ -7,14 +7,14 @@
 
 ## 📊 ملخص التحليل
 
-| الفئة | الحالة | التفاصيل |
-|-------|--------|----------|
-| **N+1 Queries** | ❌ 5 حرجة | Loop with await في users.ts |
-| **Select *** | ⚠️ 120+ | يجب استبدالها بأعمدة محددة |
-| **Repository Pattern** | ⚠️ جزئي | 51 استدعاء مباشر في hooks |
-| **img Tags** | ✅ 4 فقط | في banner/page.tsx |
-| **Loading States** | ❌ 2% | 2 من 101 صفحة |
-| **ISR** | ❌ 0% | لا يوجد static generation |
+| الفئة                  | الحالة    | التفاصيل                    |
+| ---------------------- | --------- | --------------------------- |
+| **N+1 Queries**        | ❌ 5 حرجة | Loop with await في users.ts |
+| **Select \***          | ⚠️ 120+   | يجب استبدالها بأعمدة محددة  |
+| **Repository Pattern** | ⚠️ جزئي   | 51 استدعاء مباشر في hooks   |
+| **img Tags**           | ✅ 4 فقط  | في banner/page.tsx          |
+| **Loading States**     | ❌ 2%     | 2 من 101 صفحة               |
+| **ISR**                | ❌ 0%     | لا يوجد static generation   |
 
 ---
 
@@ -23,6 +23,7 @@
 ### 1.1 المشكلة الحرجة في `src/lib/admin/users.ts`
 
 **الكود الحالي (السطور 186-209):**
+
 ```typescript
 // ❌ N+1 Query - O(n*2) database calls
 for (const order of ordersToCancel) {
@@ -36,6 +37,7 @@ for (const order of ordersToCancel) {
 ```
 
 **الحل: Batch Updates**
+
 ```typescript
 // ✅ الحل - O(2) database calls only
 async function batchCancelOrders(
@@ -46,7 +48,7 @@ async function batchCancelOrders(
 ) {
   if (!ordersToCancel.length) return;
 
-  const orderIds = ordersToCancel.map(o => o.id);
+  const orderIds = ordersToCancel.map((o) => o.id);
 
   // Batch 1: Update all orders in single query
   const { error: updateError } = await supabase
@@ -62,7 +64,7 @@ async function batchCancelOrders(
   if (updateError) throw updateError;
 
   // Batch 2: Insert all notifications in single query
-  const notifications = ordersToCancel.map(order => ({
+  const notifications = ordersToCancel.map((order) => ({
     provider_id: order.provider_id,
     type: 'order_cancelled',
     title_ar: 'تم إلغاء طلب بسبب حظر العميل',
@@ -103,9 +105,7 @@ $$ LANGUAGE plpgsql;
 
 // ثانياً: استخدام الـ RPC
 const { error } = await supabase.rpc('update_variant_orders', {
-  updates: JSON.stringify(
-    variantIds.map((id, index) => ({ id, order: index }))
-  ),
+  updates: JSON.stringify(variantIds.map((id, index) => ({ id, order: index }))),
 });
 ```
 
@@ -121,12 +121,12 @@ const { error } = await supabase.rpc('update_variant_orders', {
 
 ### 2.1 الحالة الحالية
 
-| الطبقة | الحالة | المشكلة |
-|--------|--------|---------|
-| **lib/admin/** | ⚠️ مختلط | 54 استدعاء Supabase مباشر |
-| **hooks/** | ❌ سيء | 51 استدعاء مباشر |
-| **contexts/** | ❌ سيء | 9 استدعاءات في AdminRegionContext |
-| **services/** | ✅ جيد | FinancialService, BroadcastService |
+| الطبقة         | الحالة   | المشكلة                            |
+| -------------- | -------- | ---------------------------------- |
+| **lib/admin/** | ⚠️ مختلط | 54 استدعاء Supabase مباشر          |
+| **hooks/**     | ❌ سيء   | 51 استدعاء مباشر                   |
+| **contexts/**  | ❌ سيء   | 9 استدعاءات في AdminRegionContext  |
+| **services/**  | ✅ جيد   | FinancialService, BroadcastService |
 
 ### 2.2 الهيكل المقترح
 
@@ -219,15 +219,15 @@ export class ProvidersRepository extends BaseRepository<Provider> {
 
 ### 3.1 تحليل الـ Dependencies
 
-| الحزمة | الإصدار | الحجم | الاستخدام | التوصية |
-|--------|---------|-------|----------|---------|
-| **firebase** | 12.7.0 | ~100KB | 25 ملف | ✅ ضروري |
-| **openai** | 6.9.1 | ~80KB | 1 ملف | 🟡 Lazy load |
-| **jspdf** | 3.0.4 | ~150KB | 1 ملف | 🟡 Lazy load |
-| **leaflet** | 1.9.4 | ~70KB | 1 ملف | 🟡 Lazy load |
-| **framer-motion** | 12.23.26 | ~50KB | كثير | ✅ ضروري |
-| **xlsx** | 0.18.5 | ~45KB | 1 ملف | 🟡 Lazy load |
-| **anthropic** | 0.71.2 | ~30KB | محدود | 🟡 Lazy load |
+| الحزمة            | الإصدار  | الحجم  | الاستخدام | التوصية      |
+| ----------------- | -------- | ------ | --------- | ------------ |
+| **firebase**      | 12.7.0   | ~100KB | 25 ملف    | ✅ ضروري     |
+| **openai**        | 6.9.1    | ~80KB  | 1 ملف     | 🟡 Lazy load |
+| **jspdf**         | 3.0.4    | ~150KB | 1 ملف     | 🟡 Lazy load |
+| **leaflet**       | 1.9.4    | ~70KB  | 1 ملف     | 🟡 Lazy load |
+| **framer-motion** | 12.23.26 | ~50KB  | كثير      | ✅ ضروري     |
+| **xlsx**          | 0.18.5   | ~45KB  | 1 ملف     | 🟡 Lazy load |
+| **anthropic**     | 0.71.2   | ~30KB  | محدود     | 🟡 Lazy load |
 
 ### 3.2 حزم يجب تحميلها بـ Lazy Loading
 
@@ -257,9 +257,9 @@ const MapComponent = dynamic(() => import('@/components/Map'), {
 
 ### 3.3 Bundle Size التقديري
 
-| قبل الـ Lazy Loading | بعد الـ Lazy Loading |
-|----------------------|----------------------|
-| ~850KB (gzipped) | ~500KB (gzipped) |
+| قبل الـ Lazy Loading  | بعد الـ Lazy Loading  |
+| --------------------- | --------------------- |
+| ~850KB (gzipped)      | ~500KB (gzipped)      |
 | First Load JS: ~420KB | First Load JS: ~250KB |
 
 ---
@@ -452,6 +452,7 @@ export default function GlobalError({
 ### 5.1 الملفات المطلوب تعديلها
 
 فقط **ملف واحد** يحتاج تعديل:
+
 ```
 src/app/[locale]/provider/banner/page.tsx
 └── 4 img tags (السطور: 601, 892, 1124, 1195)
@@ -502,14 +503,14 @@ src/app/[locale]/provider/banner/page.tsx
 
 ### 6.1 الصفحات المرشحة للـ Static Generation
 
-| الصفحة | نوع البيانات | TTL المقترح |
-|--------|-------------|-------------|
-| `/providers` | قائمة المتاجر | 5 دقائق |
-| `/providers/[id]` | تفاصيل المتجر | 1 دقيقة |
-| `/categories` | الأصناف | 1 ساعة |
-| `/help` | مساعدة | 24 ساعة |
-| `/privacy` | سياسة الخصوصية | 24 ساعة |
-| `/terms` | الشروط | 24 ساعة |
+| الصفحة            | نوع البيانات   | TTL المقترح |
+| ----------------- | -------------- | ----------- |
+| `/providers`      | قائمة المتاجر  | 5 دقائق     |
+| `/providers/[id]` | تفاصيل المتجر  | 1 دقيقة     |
+| `/categories`     | الأصناف        | 1 ساعة      |
+| `/help`           | مساعدة         | 24 ساعة     |
+| `/privacy`        | سياسة الخصوصية | 24 ساعة     |
+| `/terms`          | الشروط         | 24 ساعة     |
 
 ### 6.2 تطبيق ISR للمتاجر
 
@@ -653,7 +654,7 @@ export async function POST(request: Request) {
 
 ### أولوية منخفضة (مستقبلاً)
 
-- [ ] استبدال Select * بأعمدة محددة (120 ملف)
+- [ ] استبدال Select \* بأعمدة محددة (120 ملف)
 - [ ] إنشاء DI container
 - [ ] إضافة integration tests
 
@@ -661,15 +662,15 @@ export async function POST(request: Request) {
 
 ## 📊 الوقت المقدر
 
-| المهمة | الساعات |
-|--------|---------|
-| N+1 Fixes | 4-6 |
-| Loading/Error States | 6-8 |
-| img → next/image | 1-2 |
-| ISR Implementation | 4-6 |
-| Lazy Loading | 2-3 |
-| Repository Layer | 12-16 |
-| **الإجمالي** | **29-41 ساعة** |
+| المهمة               | الساعات        |
+| -------------------- | -------------- |
+| N+1 Fixes            | 4-6            |
+| Loading/Error States | 6-8            |
+| img → next/image     | 1-2            |
+| ISR Implementation   | 4-6            |
+| Lazy Loading         | 2-3            |
+| Repository Layer     | 12-16          |
+| **الإجمالي**         | **29-41 ساعة** |
 
 ---
 
