@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -38,7 +38,17 @@ interface CustomerHeaderProps {
   rightAction?: React.ReactNode; // Custom action button (e.g., refresh)
 }
 
-export function CustomerHeader({
+/**
+ * CustomerHeader - Main header component for customer pages
+ *
+ * Phase 3.4: Wrapped with React.memo to prevent unnecessary re-renders.
+ * This header appears on almost every customer-facing page and re-renders
+ * frequently due to global state changes (cart, location, notifications).
+ *
+ * Note: For optimal performance, ensure `rightAction` prop is wrapped with
+ * useMemo in parent components when passing React nodes.
+ */
+export const CustomerHeader = memo(function CustomerHeader({
   showBackButton = false,
   title,
   transparent = false,
@@ -515,4 +525,7 @@ export function CustomerHeader({
       </div>
     </header>
   );
-}
+});
+
+// Display name for DevTools
+CustomerHeader.displayName = 'CustomerHeader';

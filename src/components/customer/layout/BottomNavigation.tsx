@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { Home, Search, ShoppingCart, ClipboardList, Heart } from 'lucide-react';
 import { useCart } from '@/lib/store/cart';
 import { createClient } from '@/lib/supabase/client';
@@ -15,7 +15,14 @@ interface NavItem {
   labelKey: string;
 }
 
-export function BottomNavigation() {
+/**
+ * BottomNavigation - Mobile navigation bar
+ *
+ * Phase 3.4: Wrapped with React.memo to prevent unnecessary re-renders
+ * from parent layout components. This is a high-frequency render component
+ * that appears on every customer-facing page.
+ */
+export const BottomNavigation = memo(function BottomNavigation() {
   const locale = useLocale();
   const pathname = usePathname();
   const t = useTranslations('bottomNav');
@@ -167,4 +174,7 @@ export function BottomNavigation() {
       </div>
     </nav>
   );
-}
+});
+
+// Display name for DevTools
+BottomNavigation.displayName = 'BottomNavigation';

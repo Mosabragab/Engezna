@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Plus, Minus, Flame, Leaf, ChevronDown, Tag, Gift } from 'lucide-react';
 import type { PricingType } from '@/types/menu-import';
@@ -54,7 +55,18 @@ interface ProductCardProps {
   promotion?: PromotionInfo | null;
 }
 
-export function ProductCard({
+/**
+ * ProductCard - Product display card for menus and catalogs
+ *
+ * Phase 3.4: Wrapped with React.memo to optimize rendering in long product lists.
+ * This is critical for smooth scrolling on mobile devices.
+ *
+ * Performance tips for parent components:
+ * - Wrap onQuantityChange with useCallback
+ * - Wrap onCustomize with useCallback
+ * - Wrap onSelectVariant with useCallback
+ */
+export const ProductCard = memo(function ProductCard({
   product,
   quantity = 0,
   onQuantityChange,
@@ -433,4 +445,7 @@ export function ProductCard({
       </div>
     </div>
   );
-}
+});
+
+// Display name for DevTools
+ProductCard.displayName = 'ProductCard';
