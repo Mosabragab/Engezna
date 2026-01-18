@@ -11,23 +11,11 @@ import ProviderDetailClient, {
 // ISR: Revalidate every minute
 export const revalidate = 60;
 
-// Generate static params for top providers
+// Generate static params - return empty to use on-demand ISR
+// Note: Can't use cookies() in generateStaticParams (build time)
 export async function generateStaticParams() {
-  const supabase = await createClient();
-  const { data: providers } = await supabase
-    .from('providers')
-    .select('id')
-    .in('status', ['open', 'closed'])
-    .order('rating', { ascending: false })
-    .limit(100);
-
-  if (!providers) return [];
-
-  // Generate params for both locales
-  return providers.flatMap((p) => [
-    { locale: 'ar', id: p.id },
-    { locale: 'en', id: p.id },
-  ]);
+  // Pages will be generated on-demand and cached with revalidate=60
+  return [];
 }
 
 // Generate metadata for SEO
