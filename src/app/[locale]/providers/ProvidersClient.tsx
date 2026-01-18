@@ -90,16 +90,14 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
 
   // Smart Arabic text normalization for search
   const normalizeArabicText = (text: string): string => {
-    return (
-      text
-        .toLowerCase()
-        .replace(/[ةه]/g, 'ه')
-        .replace(/[أإآا]/g, 'ا')
-        .replace(/[يى]/g, 'ي')
-        .replace(/[\u064B-\u065F]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-    );
+    return text
+      .toLowerCase()
+      .replace(/[ةه]/g, 'ه')
+      .replace(/[أإآا]/g, 'ا')
+      .replace(/[يى]/g, 'ي')
+      .replace(/[\u064B-\u065F]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   // Filter and sort providers client-side

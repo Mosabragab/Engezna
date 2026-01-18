@@ -154,7 +154,8 @@ export default async function ProviderDetailPage({
   const menuItems =
     menuItemsResult.data?.map((item) => ({
       ...item,
-      variants: item.product_variants?.filter((v: { is_available: boolean }) => v.is_available) || [],
+      variants:
+        item.product_variants?.filter((v: { is_available: boolean }) => v.is_available) || [],
     })) || [];
 
   return (

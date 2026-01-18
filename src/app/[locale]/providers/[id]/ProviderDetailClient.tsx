@@ -513,7 +513,9 @@ export default function ProviderDetailClient({
 
           {/* Description */}
           {getDescription(provider) && (
-            <p className="text-sm text-slate-500 mt-3 leading-relaxed">{getDescription(provider)}</p>
+            <p className="text-sm text-slate-500 mt-3 leading-relaxed">
+              {getDescription(provider)}
+            </p>
           )}
         </div>
       </div>
@@ -731,7 +733,9 @@ export default function ProviderDetailClient({
                       product={item}
                       quantity={getItemQuantity(item.id)}
                       onQuantityChange={(qty) => handleQuantityChange(item, qty)}
-                      onSelectVariant={item.has_variants ? () => handleProductClick(item) : undefined}
+                      onSelectVariant={
+                        item.has_variants ? () => handleProductClick(item) : undefined
+                      }
                       variant="horizontal"
                       promotion={getProductPromotion(item.id)}
                     />

@@ -83,10 +83,7 @@ export default function ProviderLoading() {
           {/* Stats Cards Skeleton */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
-              >
+              <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 bg-slate-100 rounded-xl animate-pulse" />
                   <div className="w-16 h-4 bg-slate-200 rounded animate-pulse" />
@@ -105,9 +102,7 @@ export default function ProviderLoading() {
                 <div
                   key={i}
                   className={`h-8 rounded-lg animate-pulse ${
-                    i === 0
-                      ? 'w-24 bg-[#009DE0]/20'
-                      : 'w-20 bg-slate-100'
+                    i === 0 ? 'w-24 bg-[#009DE0]/20' : 'w-20 bg-slate-100'
                   }`}
                 />
               ))}

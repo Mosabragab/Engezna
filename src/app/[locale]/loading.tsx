@@ -14,9 +14,7 @@ export default function CustomerLoading() {
   const isRTL = locale === 'ar';
 
   return (
-    <div
-      className="min-h-screen bg-slate-50 animate-[fadeIn_300ms_ease-out_400ms_forwards] opacity-0"
-    >
+    <div className="min-h-screen bg-slate-50 animate-[fadeIn_300ms_ease-out_400ms_forwards] opacity-0">
       {/* Header Skeleton */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-100 shadow-sm">
         <div className="container mx-auto px-4">
@@ -47,10 +45,7 @@ export default function CustomerLoading() {
         {/* Categories Skeleton */}
         <div className="flex gap-3 overflow-hidden py-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center gap-2 flex-shrink-0"
-            >
+            <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
               <div className="w-16 h-16 bg-slate-200 rounded-2xl animate-pulse" />
               <div className="w-12 h-3 bg-slate-200 rounded animate-pulse" />
             </div>
