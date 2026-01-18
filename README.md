@@ -4,9 +4,9 @@
 
 ![Engezna Logo](public/logo.svg)
 
-**Modern Delivery Marketplace for Egypt**
+**Modern Marketplace for Essential Home Needs in Egypt**
 
-منصة توصيل محلية حديثة لجمهورية مصر العربية
+منصة لتلبية احتياجات البيت اليومية، حديثة لخدمة جمهورية مصر العربية
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.0.7-black)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.2.1-61dafb)](https://react.dev/)
@@ -30,7 +30,7 @@
 
 - **3 months 0% commission** then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
-- Providers manage their own delivery staff
+- Providers manage their own operations
 - Arabic-first user experience with full RTL support
 
 ### Features
@@ -41,7 +41,7 @@
 | Search & filter             | Real-time order notifications | User & provider management  |
 | Easy ordering with tracking | 0% → max 7% commission        | Financial reporting         |
 | Multiple payment options    | Sales analytics               | Promo & campaign management |
-| Bilingual interface         | Use existing delivery staff   | Real-time analytics         |
+| Bilingual interface         | Full operational control      | Real-time analytics         |
 
 ### Tech Stack
 
@@ -141,18 +141,18 @@ engezna/
 
 - **3 شهور بدون عمولة** ثم **حد أقصى 7%** (مقارنة بـ 25-30% للمنافسين)
 - **0% رسوم خدمة للعملاء** - دائماً!
-- المتاجر تدير فريق التوصيل الخاص بها
+- المتاجر تدير عملياتها بشكل مستقل
 - تجربة مستخدم بالعربية أولاً مع دعم RTL كامل
 
 ### المميزات
 
-| العملاء              | المتاجر                    | الإدارة                   |
-| -------------------- | -------------------------- | ------------------------- |
-| تصفح المتاجر المحلية | إدارة قائمة المنتجات       | إشراف كامل على المنصة     |
-| البحث والتصفية       | إشعارات فورية بالطلبات     | إدارة المستخدمين والمتاجر |
-| طلب سهل مع التتبع    | عمولة 0% → 7% حد أقصى      | تقارير مالية              |
-| خيارات دفع متعددة    | تحليلات المبيعات           | إدارة الخصومات والحملات   |
-| واجهة ثنائية اللغة   | استخدم فريق التوصيل الحالي | تحليلات فورية             |
+| العملاء              | المتاجر                | الإدارة                   |
+| -------------------- | ---------------------- | ------------------------- |
+| تصفح المتاجر المحلية | إدارة قائمة المنتجات   | إشراف كامل على المنصة     |
+| البحث والتصفية       | إشعارات فورية بالطلبات | إدارة المستخدمين والمتاجر |
+| طلب سهل مع التتبع    | عمولة 0% → 7% حد أقصى  | تقارير مالية              |
+| خيارات دفع متعددة    | تحليلات المبيعات       | إدارة الخصومات والحملات   |
+| واجهة ثنائية اللغة   | تحكم كامل في عملياتك   | تحليلات فورية             |
 
 ### التقنيات
 
