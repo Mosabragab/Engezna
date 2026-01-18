@@ -1,4 +1,5 @@
-import { createServerClient, createBrowserClient } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
 /**
@@ -43,6 +44,8 @@ export async function createClient() {
  * Creates an anonymous Supabase client for ISR/SSG pages
  * Use this for pages with revalidate that don't need user context
  * This client can read public data but has no user session
+ *
+ * Uses @supabase/supabase-js directly (not SSR) to avoid DYNAMIC_SERVER_USAGE error
  */
 export function createAnonymousClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -52,8 +55,8 @@ export function createAnonymousClient() {
     console.warn('Supabase environment variables missing in anonymous client');
   }
 
-  // Use createBrowserClient without cookies for stateless reads
-  return createBrowserClient(
+  // Use basic Supabase client without SSR features for ISR compatibility
+  return createSupabaseClient(
     supabaseUrl || 'https://placeholder.supabase.co',
     supabaseAnonKey || 'placeholder-key'
   );
