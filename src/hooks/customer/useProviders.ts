@@ -1,33 +1,42 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+/**
+ * useProviders Hook
+ *
+ * Provides React hooks for fetching and managing provider data.
+ * Now uses ProvidersRepository for data access (Phase 3.2).
+ */
 
-interface Provider {
-  id: string;
-  name_ar: string;
-  name_en: string;
-  description_ar: string | null;
-  description_en: string | null;
-  category: string;
-  logo_url: string | null;
-  cover_image_url: string | null;
-  rating: number;
-  total_reviews: number;
-  delivery_fee: number;
-  min_order_amount: number;
-  estimated_delivery_time_min: number;
-  status: string;
-  is_featured: boolean;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { ProvidersRepository, type Provider, type ProviderStatus } from '@/lib/repositories';
+
+// Sort options available in the UI (distance is handled separately)
+type UISortOption = 'rating' | 'delivery_time' | 'delivery_fee' | 'distance';
+
+// Map UI sort to repository sort (distance falls back to rating)
+type RepositorySortOption =
+  | 'rating'
+  | 'delivery_time'
+  | 'delivery_fee'
+  | 'created_at'
+  | 'name_ar'
+  | 'total_orders';
+
+const mapSortOption = (sort: UISortOption): RepositorySortOption => {
+  if (sort === 'distance') {
+    // Distance sorting requires geolocation calculation - fallback to rating
+    return 'rating';
+  }
+  return sort;
+};
 
 interface UseProvidersOptions {
   category?: string;
-  sort?: 'rating' | 'delivery_time' | 'delivery_fee' | 'distance';
+  sort?: UISortOption;
   search?: string;
   limit?: number;
   hasOffers?: boolean;
-  status?: string[];
+  status?: ProviderStatus[];
   cityId?: string | null;
 }
 
@@ -43,7 +52,6 @@ export function useProviders(options: UseProvidersOptions = {}) {
     sort = 'rating',
     search,
     limit = 20,
-    hasOffers,
     status = ['open', 'closed'],
     cityId,
   } = options;
@@ -53,50 +61,18 @@ export function useProviders(options: UseProvidersOptions = {}) {
       setIsLoading(true);
       setError(null);
 
-      const supabase = createClient();
-
       try {
-        let query = supabase.from('providers').select('*').in('status', status);
-
-        // City filter - filter providers by user's city
-        if (cityId) {
-          query = query.eq('city_id', cityId);
-        }
-
-        // Category filter
-        if (category && category !== 'all') {
-          query = query.eq('category', category);
-        }
-
-        // Search filter
-        if (search && search.trim()) {
-          query = query.or(`name_ar.ilike.%${search}%,name_en.ilike.%${search}%`);
-        }
-
-        // Sorting
-        switch (sort) {
-          case 'rating':
-            query = query
-              .order('is_featured', { ascending: false })
-              .order('rating', { ascending: false });
-            break;
-          case 'delivery_time':
-            query = query.order('estimated_delivery_time_min', { ascending: true });
-            break;
-          case 'delivery_fee':
-            query = query.order('delivery_fee', { ascending: true });
-            break;
-          default:
-            query = query
-              .order('is_featured', { ascending: false })
-              .order('rating', { ascending: false });
-        }
-
-        // Pagination
         const currentOffset = append ? offset : 0;
-        query = query.range(currentOffset, currentOffset + limit - 1);
 
-        const { data, error: fetchError } = await query;
+        const { data, error: fetchError } = await ProvidersRepository.listProviders({
+          status,
+          category,
+          cityId: cityId ?? undefined,
+          search,
+          sort: mapSortOption(sort),
+          limit,
+          offset: currentOffset,
+        });
 
         if (fetchError) {
           throw fetchError;
@@ -123,7 +99,7 @@ export function useProviders(options: UseProvidersOptions = {}) {
   useEffect(() => {
     setOffset(0);
     fetchProviders(false);
-  }, [category, sort, search, cityId]);
+  }, [category, sort, search, cityId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = useCallback(() => {
     if (!isLoading && hasMore) {
@@ -162,14 +138,7 @@ export function useFeaturedProviders(limit = 6) {
 
   useEffect(() => {
     async function fetch() {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('providers')
-        .select('*')
-        .eq('is_featured', true)
-        .in('status', ['open', 'closed'])
-        .order('rating', { ascending: false })
-        .limit(limit);
+      const { data } = await ProvidersRepository.getFeatured(limit);
 
       if (data) {
         setProviders(data);

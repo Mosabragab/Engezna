@@ -15,6 +15,22 @@ import type {
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
 
+// Optimized order select (Phase 4.1)
+const ORDER_SELECT = `
+  id, order_number, customer_id, provider_id, status,
+  subtotal, delivery_fee, discount, total, platform_commission,
+  payment_method, payment_status, delivery_address, notes,
+  promo_code_id, created_at, updated_at,
+  confirmed_at, preparing_at, ready_at, delivering_at, delivered_at,
+  cancelled_reason, cancelled_by
+`;
+
+// Optimized order items select
+const ORDER_ITEMS_SELECT = `
+  id, order_id, menu_item_id, variant_id, quantity,
+  unit_price, total_price, notes, addons
+`;
+
 // ═══════════════════════════════════════════════════════════════════════
 // جلب الطلبات - Fetch Orders
 // ═══════════════════════════════════════════════════════════════════════
@@ -150,7 +166,7 @@ export async function getOrderById(
     // Fetch order items
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
-      .select('*')
+      .select(ORDER_ITEMS_SELECT)
       .eq('order_id', orderId);
 
     if (itemsError) {
@@ -297,7 +313,7 @@ export async function initiateRefund(
     // Fetch current order
     const { data: current, error: fetchError } = await supabase
       .from('orders')
-      .select('*')
+      .select(ORDER_SELECT)
       .eq('id', orderId)
       .single();
 
@@ -405,7 +421,7 @@ export async function updateOrderStatus(
     // Fetch current order
     const { data: current, error: fetchError } = await supabase
       .from('orders')
-      .select('*')
+      .select(ORDER_SELECT)
       .eq('id', orderId)
       .single();
 

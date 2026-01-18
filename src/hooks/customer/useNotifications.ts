@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { setAppBadge, clearAppBadge } from '@/hooks/useBadge';
 import type { User, RealtimeChannel } from '@supabase/supabase-js';
 
@@ -84,7 +85,7 @@ export function useNotifications() {
     }
   }, []);
 
-  // Subscribe to real-time notifications
+  // Subscribe to real-time notifications with error handling
   const subscribeToNotifications = useCallback(
     async (userId: string) => {
       const supabase = createClient();
@@ -94,7 +95,7 @@ export function useNotifications() {
         supabase.removeChannel(channel);
       }
 
-      // Create new subscription
+      // Create new subscription channel
       const newChannel = supabase
         .channel(`customer_notifications:${userId}`)
         .on(
@@ -150,16 +151,31 @@ export function useNotifications() {
               return current;
             });
           }
-        )
-        .subscribe();
+        );
+
+      // Subscribe with error handling and polling fallback
+      const unsubscribe = subscribeWithErrorHandling(supabase, newChannel, {
+        channelName: `customer-notifications-${userId}`,
+        onStatusChange: (status) => {
+          if (status === 'error' || status === 'disconnected') {
+            console.warn('[Notifications] Realtime connection issue, using polling fallback');
+          }
+        },
+        pollingFallback: {
+          callback: async () => {
+            await loadNotifications(userId);
+          },
+          intervalMs: 10000, // Poll every 10 seconds when realtime fails
+        },
+        maxRetries: 3,
+        retryDelayMs: 2000,
+      });
 
       setChannel(newChannel);
 
-      return () => {
-        supabase.removeChannel(newChannel);
-      };
+      return unsubscribe;
     },
-    [channel]
+    [channel, loadNotifications]
   );
 
   // Initialize
@@ -328,10 +344,17 @@ export function useProviderOrderNotifications(providerId: string | null) {
     }
   }, [providerId]);
 
-  // Subscribe to real-time order updates
+  // Ref to store unsubscribe function
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  // Subscribe to real-time order updates with error handling
   useEffect(() => {
     if (!providerId) {
       // Clean up if providerId becomes null
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
       if (channelRef.current) {
         const supabase = createClient();
         supabase.removeChannel(channelRef.current);
@@ -346,6 +369,10 @@ export function useProviderOrderNotifications(providerId: string | null) {
     loadPendingCount();
 
     // Clean up existing subscription before creating new one
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
     if (channelRef.current) {
       supabase.removeChannel(channelRef.current);
       channelRef.current = null;
@@ -394,17 +421,34 @@ export function useProviderOrderNotifications(providerId: string | null) {
             setNewOrderCount((prev) => prev + 1);
           }
         }
-      )
-      .subscribe();
+      );
+
+    // Subscribe with error handling and polling fallback
+    const unsubscribe = subscribeWithErrorHandling(supabase, newChannel, {
+      channelName: `provider-order-notifications-${providerId}`,
+      onStatusChange: (status) => {
+        if (status === 'error' || status === 'disconnected') {
+          console.warn('[ProviderOrders] Realtime connection issue, using polling fallback');
+        }
+      },
+      pollingFallback: {
+        callback: loadPendingCount,
+        intervalMs: 15000, // Poll every 15 seconds when realtime fails
+      },
+      maxRetries: 3,
+      retryDelayMs: 2000,
+    });
 
     channelRef.current = newChannel;
+    unsubscribeRef.current = unsubscribe;
 
     // Cleanup function
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
+      channelRef.current = null;
     };
   }, [providerId, loadPendingCount]);
 

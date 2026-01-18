@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import withSerwistInit from '@serwist/next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -61,5 +62,43 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Apply both plugins: Serwist wraps NextIntl
-export default withSerwist(withNextIntl(nextConfig));
+// Sentry configuration options for bundle optimization
+const sentryWebpackPluginOptions = {
+  // Organization and project for source maps (optional, can be set via env)
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Only upload source maps in production
+  silent: process.env.NODE_ENV !== 'production',
+
+  // Upload source maps for better stack traces
+  widenClientFileUpload: true,
+
+  // Hide source maps from the client bundle (security)
+  hideSourceMaps: true,
+
+  // Disable automatic instrumentation for smaller bundle
+  disableLogger: true,
+
+  // Tree shake unused Sentry features for smaller bundle
+  tunnelRoute: '/monitoring',
+
+  // Automatically instrument React components (can increase bundle)
+  reactComponentAnnotation: {
+    enabled: false, // Disabled to reduce bundle size
+  },
+
+  // Automatic transaction/span creation
+  automaticVercelMonitors: true,
+};
+
+// Build the config pipeline: Serwist -> NextIntl
+const configWithPlugins = withSerwist(withNextIntl(nextConfig));
+
+// Apply Sentry only if DSN is configured (CI awareness)
+// This prevents build failures when Sentry credentials are not available
+const finalConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(configWithPlugins, sentryWebpackPluginOptions)
+  : configWithPlugins;
+
+export default finalConfig;

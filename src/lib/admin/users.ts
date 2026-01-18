@@ -9,6 +9,14 @@ import type { AdminUser, UserFilters, PaginatedResult, OperationResult, UserRole
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
 
+// Optimized profile select (Phase 4.1)
+const PROFILE_SELECT = `
+  id, email, phone, full_name, avatar_url, role, is_active,
+  governorate_id, city_id, district_id, preferred_language,
+  notification_preferences, total_orders, total_spent,
+  last_login_at, created_at, updated_at
+`;
+
 // ═══════════════════════════════════════════════════════════════════════
 // جلب المستخدمين - Fetch Users
 // ═══════════════════════════════════════════════════════════════════════
@@ -110,7 +118,11 @@ export async function getUserById(userId: string): Promise<OperationResult<Admin
   try {
     const supabase = createAdminClient();
 
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(PROFILE_SELECT)
+      .eq('id', userId)
+      .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -153,7 +165,7 @@ export async function banUser(
     // Step 1: Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_SELECT)
       .eq('id', userId)
       .single();
 
@@ -220,7 +232,7 @@ export async function banUser(
         updated_at: timestamp,
       })
       .eq('id', userId)
-      .select('*')
+      .select(PROFILE_SELECT)
       .single();
 
     if (updateError) {
@@ -261,7 +273,7 @@ export async function unbanUser(
     // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_SELECT)
       .eq('id', userId)
       .single();
 
@@ -277,7 +289,7 @@ export async function unbanUser(
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select('*')
+      .select(PROFILE_SELECT)
       .single();
 
     if (updateError) {
@@ -344,7 +356,7 @@ export async function changeUserRole(
     // Fetch current user from profiles table
     const { data: current, error: fetchError } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_SELECT)
       .eq('id', userId)
       .single();
 
@@ -365,7 +377,7 @@ export async function changeUserRole(
         updated_at: new Date().toISOString(),
       })
       .eq('id', userId)
-      .select('*')
+      .select(PROFILE_SELECT)
       .single();
 
     if (updateError) {

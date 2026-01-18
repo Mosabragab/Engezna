@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProviderLayout } from '@/components/provider';
@@ -23,6 +24,7 @@ import {
   User,
   Check,
   X,
+  WifiOff,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -181,6 +183,9 @@ export default function ProviderOrdersPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connected' | 'connecting' | 'disconnected' | 'error'
+  >('connecting');
 
   // Payment confirmation dialog state
   const [paymentConfirmDialog, setPaymentConfirmDialog] = useState<{
@@ -302,7 +307,7 @@ export default function ProviderOrdersPage() {
     return () => clearInterval(interval);
   }, [providerId, loadOrders]);
 
-  // Realtime subscription for new orders and updates
+  // Realtime subscription for new orders and updates with error handling
   useEffect(() => {
     if (!providerId) return;
 
@@ -345,11 +350,30 @@ export default function ProviderOrdersPage() {
           await loadOrders(providerId);
           setLastRefresh(new Date());
         }
-      )
-      .subscribe(() => {});
+      );
+
+    // Subscribe with error handling and polling fallback
+    const unsubscribe = subscribeWithErrorHandling(supabase, channel, {
+      channelName: `provider-orders-${providerId}`,
+      onStatusChange: (status) => {
+        setConnectionStatus(status);
+        if (status === 'error' || status === 'disconnected') {
+          console.warn('[Orders] Realtime connection issue, using polling fallback');
+        }
+      },
+      pollingFallback: {
+        callback: async () => {
+          await loadOrders(providerId);
+          setLastRefresh(new Date());
+        },
+        intervalMs: 15000, // Poll every 15 seconds when realtime fails
+      },
+      maxRetries: 3,
+      retryDelayMs: 2000,
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
   }, [providerId, loadOrders]);
 
@@ -590,8 +614,26 @@ export default function ProviderOrdersPage() {
       pageTitle={{ ar: 'إدارة الطلبات', en: 'Order Management' }}
       pageSubtitle={{ ar: 'إدارة طلبات متجرك', en: 'Manage your store orders' }}
     >
-      {/* Refresh Button */}
-      <div className="flex justify-end mb-4">
+      {/* Refresh Button and Connection Status */}
+      <div className="flex justify-between items-center mb-4">
+        {/* Connection Status Indicator */}
+        {connectionStatus !== 'connected' && (
+          <div className="flex items-center gap-2 text-sm">
+            {connectionStatus === 'error' || connectionStatus === 'disconnected' ? (
+              <div className="flex items-center gap-1.5 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full">
+                <WifiOff className="w-4 h-4" />
+                <span>{locale === 'ar' ? 'اتصال بديل' : 'Backup connection'}</span>
+              </div>
+            ) : connectionStatus === 'connecting' ? (
+              <div className="flex items-center gap-1.5 text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>{locale === 'ar' ? 'جاري الاتصال...' : 'Connecting...'}</span>
+              </div>
+            ) : null}
+          </div>
+        )}
+        {connectionStatus === 'connected' && <div />}
+
         <Button
           variant="ghost"
           size="sm"

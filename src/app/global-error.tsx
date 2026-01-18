@@ -5,10 +5,14 @@
  *
  * Ultimate fallback for the entire application.
  * Catches errors that propagate beyond route-level boundaries.
+ * Integrates with Sentry for critical error monitoring (Phase 4.2).
  *
- * @version 1.0.0 - Phase 1.5 Implementation
- * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5
+ * @version 1.1.0 - Added Sentry integration
+ * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5, 4.2
  */
+
+import { useEffect } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 export default function GlobalError({
   error,
@@ -17,6 +21,24 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Critical error - send to Sentry with high priority
+    Sentry.captureException(error, {
+      level: 'fatal',
+      tags: {
+        errorBoundary: 'global',
+        digest: error.digest ?? 'unknown',
+        critical: 'true',
+      },
+      extra: {
+        componentStack: error.stack,
+        location: typeof window !== 'undefined' ? window.location.href : 'unknown',
+      },
+    });
+
+    console.error('[Critical Application Error]:', error);
+  }, [error]);
+
   return (
     <html lang="ar" dir="rtl">
       <body>

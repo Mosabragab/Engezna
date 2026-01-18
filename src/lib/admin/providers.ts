@@ -19,6 +19,16 @@ import type {
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
 
+// Optimized provider select (Phase 4.1)
+const PROVIDER_SELECT = `
+  id, owner_id, name_ar, name_en, description_ar, description_en, category,
+  logo_url, cover_image_url, status, rejection_reason, commission_rate,
+  rating, total_reviews, total_orders, is_featured, is_verified,
+  phone, email, address, governorate_id, city_id,
+  opening_time, closing_time, delivery_fee, min_order_amount,
+  estimated_delivery_time_min, created_at, updated_at
+`;
+
 // ═══════════════════════════════════════════════════════════════════════
 // جلب مقدمي الخدمة - Fetch Providers
 // ═══════════════════════════════════════════════════════════════════════
@@ -208,7 +218,7 @@ export async function approveProvider(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
@@ -305,7 +315,7 @@ export async function rejectProvider(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
@@ -397,7 +407,7 @@ export async function suspendProvider(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
@@ -472,7 +482,7 @@ export async function reactivateProvider(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
@@ -568,7 +578,7 @@ export async function updateProviderCommission(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
@@ -632,7 +642,7 @@ export async function toggleProviderFeatured(
     // Fetch current provider
     const { data: current, error: fetchError } = await supabase
       .from('providers')
-      .select('*')
+      .select(PROVIDER_SELECT)
       .eq('id', providerId)
       .single();
 
