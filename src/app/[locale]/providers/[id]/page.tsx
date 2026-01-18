@@ -8,9 +8,9 @@ import ProviderDetailClient, {
   type MenuCategory,
 } from './ProviderDetailClient';
 
-// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
-// TODO: Investigate ISR compatibility with Next.js 16 and re-enable
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 60 seconds
+// Pages are generated on-demand and cached
+export const revalidate = 60;
 
 // Generate metadata for SEO
 export async function generateMetadata({
