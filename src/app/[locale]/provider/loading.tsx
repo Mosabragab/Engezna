@@ -7,13 +7,15 @@ import { Loader2, Menu, Bell, Settings } from 'lucide-react';
  * Provider Dashboard Loading State
  * Shows skeleton UI while provider pages are loading
  * Matches Engezna's provider dashboard design
+ *
+ * Uses delayed fade-in (400ms) to avoid "flash" on fast loads
  */
 export default function ProviderLoading() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex animate-[fadeIn_300ms_ease-out_400ms_forwards] opacity-0">
       {/* Sidebar Skeleton (Desktop) */}
       <aside className="hidden lg:flex flex-col w-64 bg-white border-e border-slate-200 p-4">
         {/* Logo */}

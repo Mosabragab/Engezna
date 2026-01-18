@@ -6,13 +6,17 @@ import { useLocale } from 'next-intl';
  * Customer Loading State
  * Shows skeleton UI while customer pages are loading
  * Matches Engezna's design system
+ *
+ * Uses delayed fade-in (400ms) to avoid "flash" on fast loads
  */
 export default function CustomerLoading() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div
+      className="min-h-screen bg-slate-50 animate-[fadeIn_300ms_ease-out_400ms_forwards] opacity-0"
+    >
       {/* Header Skeleton */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-100 shadow-sm">
         <div className="container mx-auto px-4">
