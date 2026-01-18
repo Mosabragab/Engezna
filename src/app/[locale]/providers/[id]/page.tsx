@@ -9,7 +9,7 @@ import ProviderDetailClient, {
 } from './ProviderDetailClient';
 
 // Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
-// TODO: Investigate ISR compatibility with Next.js 16 and re-enable
+// TODO: Re-enable ISR once root cause is identified
 export const dynamic = 'force-dynamic';
 
 // Generate metadata for SEO
@@ -20,6 +20,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    return { title: 'Provider | إنجزنا' };
+  }
+
   const { data: provider } = await supabase
     .from('providers')
     .select('name_ar, name_en, description_ar, description_en, cover_image_url, rating')
@@ -76,6 +82,11 @@ export default async function ProviderDetailPage({
 }) {
   const { id } = await params;
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    notFound();
+  }
 
   // Fetch provider data
   const { data: provider, error: providerError } = await supabase

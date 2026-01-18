@@ -3,7 +3,7 @@ import { createStaticClient } from '@/lib/supabase/static';
 import ProvidersClient, { type Provider } from './ProvidersClient';
 
 // Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
-// TODO: Investigate ISR compatibility with Next.js 16 and re-enable
+// TODO: Re-enable ISR once root cause is identified
 export const dynamic = 'force-dynamic';
 
 // Loading fallback for Suspense
@@ -30,6 +30,15 @@ function ProvidersLoading() {
 
 export default async function ProvidersPage() {
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    return (
+      <Suspense fallback={<ProvidersLoading />}>
+        <ProvidersClient initialProviders={[]} />
+      </Suspense>
+    );
+  }
 
   // Fetch initial providers (top 100 by rating, all active)
   const { data: providers } = await supabase
