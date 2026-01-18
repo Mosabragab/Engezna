@@ -8,9 +8,9 @@ import ProviderDetailClient, {
   type MenuCategory,
 } from './ProviderDetailClient';
 
-// ISR: Revalidate every 60 seconds
-// Pages are generated on-demand and cached
-export const revalidate = 60;
+// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
+// TODO: Re-enable ISR once root cause is identified
+export const dynamic = 'force-dynamic';
 
 // Generate metadata for SEO
 export async function generateMetadata({
