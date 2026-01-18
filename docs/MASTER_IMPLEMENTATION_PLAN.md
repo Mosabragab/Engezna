@@ -876,48 +876,58 @@ import { useLocation } from '@/lib/contexts'; // يجمع كل شيء
 
 ---
 
-### 3.2 🏗️ Repository Pattern
+### 3.2 🏗️ Repository Pattern ✅ (مكتمل 2026-01-18)
 
-**الهيكل المقترح:**
+**تم تنفيذه:** Data Access Layer (DAL) يفصل منطق الوصول للبيانات عن الـ hooks
+
+**الملفات الجديدة:**
 
 ```
-src/lib/
-├── repositories/              # Data Access Layer
-│   ├── base-repository.ts
-│   ├── providers-repository.ts
-│   ├── orders-repository.ts
-│   └── users-repository.ts
-├── services/                  # Business Logic Layer
-│   ├── providers-service.ts
-│   └── orders-service.ts
-└── hooks/                     # Presentation Layer (NO DB calls!)
-    └── useProviders.ts
+src/lib/repositories/
+├── index.ts                   # التصديرات المركزية
+├── base-repository.ts         # الـ Base class مع CRUD operations
+├── providers-repository.ts    # عمليات مقدمي الخدمة
+├── orders-repository.ts       # عمليات الطلبات
+└── profiles-repository.ts     # عمليات المستخدمين
 ```
 
-**مثال `base-repository.ts`:**
+**الاستخدام:**
 
 ```typescript
-export abstract class BaseRepository<T> {
-  constructor(
-    protected supabase: SupabaseClient,
-    protected tableName: string
-  ) {}
+import { ProvidersRepository, OrdersRepository, ProfilesRepository } from '@/lib/repositories';
 
-  async getAll(filters?: Record<string, unknown>): Promise<T[]> {
-    let query = this.supabase.from(this.tableName).select(this.getSelectColumns());
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as T[];
-  }
+// جلب مقدمي الخدمة المميزين
+const { data, error } = await ProvidersRepository.getFeatured(6);
 
-  protected abstract getSelectColumns(): string;
-}
+// جلب طلبات العميل
+const { data: orders } = await OrdersRepository.getCustomerOrders(customerId);
+
+// تحديث حالة الطلب
+await OrdersRepository.updateStatus(orderId, 'confirmed');
+
+// البحث عن المستخدمين
+const { data: users } = await ProfilesRepository.search('أحمد');
 ```
+
+**العمليات المدعومة في BaseRepository:**
+
+- `findById(id)` - جلب سجل واحد
+- `findAll(options)` - جلب مع filtering و pagination
+- `create(data)` / `createMany(items)` - إنشاء
+- `update(id, data)` / `updateWhere(column, value, data)` - تحديث
+- `delete(id)` / `deleteWhere(column, value)` - حذف
+- `count(filters)` / `exists(id)` - إحصائيات
+
+**الـ Hooks المحدثة:**
+
+- `useProviders.ts` - يستخدم الآن `ProvidersRepository`
+
+**الفوائد المحققة:**
+
+- فصل Data Access عن Business Logic
+- Type-safe database operations
+- Consistent error handling
+- Easier testing and mocking
 
 ---
 
