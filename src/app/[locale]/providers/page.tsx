@@ -2,13 +2,9 @@ import { Suspense } from 'react';
 import { createStaticClient } from '@/lib/supabase/static';
 import ProvidersClient, { type Provider } from './ProvidersClient';
 
-// ISR: Revalidate every 5 minutes
-export const revalidate = 300;
-
-// Generate static params for both locales
-export async function generateStaticParams() {
-  return [{ locale: 'ar' }, { locale: 'en' }];
-}
+// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
+// TODO: Investigate ISR compatibility with Next.js 16 and re-enable
+export const dynamic = 'force-dynamic';
 
 // Loading fallback for Suspense
 function ProvidersLoading() {

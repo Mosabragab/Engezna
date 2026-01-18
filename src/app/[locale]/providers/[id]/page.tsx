@@ -8,15 +8,9 @@ import ProviderDetailClient, {
   type MenuCategory,
 } from './ProviderDetailClient';
 
-// ISR: Revalidate every minute
-export const revalidate = 60;
-
-// Generate static params - return empty to use on-demand ISR
-// Note: Can't use cookies() in generateStaticParams (build time)
-export async function generateStaticParams() {
-  // Pages will be generated on-demand and cached with revalidate=60
-  return [];
-}
+// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
+// TODO: Investigate ISR compatibility with Next.js 16 and re-enable
+export const dynamic = 'force-dynamic';
 
 // Generate metadata for SEO
 export async function generateMetadata({
