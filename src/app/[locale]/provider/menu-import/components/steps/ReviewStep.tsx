@@ -18,9 +18,7 @@ import {
   FileText,
   Download,
 } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jsPDF (~150KB), xlsx (~45KB), and autoTable are dynamically imported in export functions
 import type {
   ExtractedCategory,
   ExtractedProduct,
@@ -210,7 +208,9 @@ export function ReviewStep({
   };
 
   // Export to Excel
-  const exportToExcel = useCallback(() => {
+  const exportToExcel = useCallback(async () => {
+    // Dynamic import XLSX to reduce bundle size (~45KB saved)
+    const XLSX = await import('xlsx');
     const workbook = XLSX.utils.book_new();
 
     // Prepare products data for Excel
@@ -281,7 +281,12 @@ export function ReviewStep({
   }, [categories, addons]);
 
   // Export to PDF
-  const exportToPDF = useCallback(() => {
+  const exportToPDF = useCallback(async () => {
+    // Dynamic imports to reduce bundle size (~150KB jsPDF + autoTable saved)
+    const { jsPDF } = await import('jspdf');
+    const autoTableModule = await import('jspdf-autotable');
+    const autoTable = autoTableModule.default;
+
     // Create PDF with Arabic font support
     const doc = new jsPDF({
       orientation: 'landscape',

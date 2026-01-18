@@ -8,7 +8,7 @@
  * - variants: Multiple options with different prices (pizza sizes, kebab weights)
  */
 
-import * as XLSX from 'xlsx';
+// XLSX is dynamically imported in readExcelFile to reduce bundle size (~45KB)
 import type { ExtractedCategory, ExtractedProduct, ExtractedVariant } from '@/types/menu-import';
 import {
   PRICING_TYPES,
@@ -210,6 +210,9 @@ export async function readExcelFile(file: File): Promise<{
   sheets: SheetData[];
   sheetNames: string[];
 }> {
+  // Dynamic import XLSX to reduce initial bundle size (~45KB saved)
+  const XLSX = await import('xlsx');
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
