@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createAnonymousClient } from '@/lib/supabase/server';
 import ProviderDetailClient, {
   type ProviderData,
   type MenuItem,
@@ -25,7 +25,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
   const { locale, id } = await params;
-  const supabase = await createClient();
+  const supabase = createAnonymousClient();
   const { data: provider } = await supabase
     .from('providers')
     .select('name_ar, name_en, description_ar, description_en, cover_image_url, rating')
@@ -81,7 +81,7 @@ export default async function ProviderDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createAnonymousClient();
 
   // Fetch provider data
   const { data: provider, error: providerError } = await supabase
