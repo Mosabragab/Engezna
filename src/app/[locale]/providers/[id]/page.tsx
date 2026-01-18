@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import ProviderDetailClient, {
   type ProviderData,
   type MenuItem,
@@ -13,7 +13,7 @@ export const revalidate = 60;
 
 // Generate static params for top providers
 export async function generateStaticParams() {
-  const supabase = await createServerClient();
+  const supabase = await createClient();
   const { data: providers } = await supabase
     .from('providers')
     .select('id')
@@ -37,7 +37,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string; id: string }>;
 }): Promise<Metadata> {
   const { locale, id } = await params;
-  const supabase = await createServerClient();
+  const supabase = await createClient();
   const { data: provider } = await supabase
     .from('providers')
     .select('name_ar, name_en, description_ar, description_en, cover_image_url, rating')
@@ -93,7 +93,7 @@ export default async function ProviderDetailPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createServerClient();
+  const supabase = await createClient();
 
   // Fetch provider data
   const { data: provider, error: providerError } = await supabase
