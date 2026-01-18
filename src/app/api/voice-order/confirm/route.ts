@@ -1,3 +1,12 @@
+/**
+ * Voice Order Confirmation API Route
+ *
+ * Handles the confirmation of voice orders.
+ *
+ * @version 1.1.0 - Added Rate Limiting (Phase 1.1)
+ * @version 1.2.0 - Added Zod Validation (Phase 1.3)
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import {
   orderCreationLimiter,
@@ -5,10 +14,36 @@ import {
   getClientIdentifier,
   rateLimitErrorResponse,
 } from '@/lib/utils/upstash-rate-limit';
+import { z } from 'zod';
 
-// This endpoint handles the confirmation of voice orders
-// The actual cart state management happens on the client side with Zustand
-// This endpoint can be used to log orders, validate items, etc.
+// =============================================================================
+// ZOD VALIDATION SCHEMA
+// =============================================================================
+
+const orderItemSchema = z.object({
+  productId: z.string().min(1, 'معرف المنتج مطلوب'),
+  providerId: z.string().min(1, 'معرف المزود مطلوب'),
+  quantity: z
+    .number()
+    .int('الكمية يجب أن تكون عدد صحيح')
+    .min(1, 'الكمية يجب أن تكون 1 على الأقل')
+    .max(100, 'الكمية كبيرة جداً'),
+  price: z.number().positive('السعر يجب أن يكون موجباً').max(100000, 'السعر كبير جداً'),
+  notes: z.string().max(500, 'الملاحظات طويلة جداً').optional(),
+});
+
+const voiceOrderConfirmSchema = z.object({
+  items: z
+    .array(orderItemSchema)
+    .min(1, 'يجب إضافة منتج واحد على الأقل')
+    .max(50, 'عدد المنتجات كبير جداً'),
+  locale: z.enum(['ar', 'en']).optional(),
+  customerId: z.string().uuid().optional(),
+});
+
+// =============================================================================
+// POST HANDLER
+// =============================================================================
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,31 +55,28 @@ export async function POST(request: NextRequest) {
       return rateLimitErrorResponse(rateLimitResult);
     }
 
-    const body = await request.json();
-    const { items, locale } = body;
+    // Zod Validation
+    const rawBody = await request.json();
+    const validationResult = voiceOrderConfirmSchema.safeParse(rawBody);
 
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: 'No items to confirm' }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation Error',
+          error_ar: 'خطأ في البيانات المدخلة',
+          details: validationResult.error.issues.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
     }
 
-    // Validate items structure
-    const validItems = items.every(
-      (item: Record<string, unknown>) =>
-        item.productId &&
-        item.providerId &&
-        typeof item.quantity === 'number' &&
-        typeof item.price === 'number'
-    );
-
-    if (!validItems) {
-      return NextResponse.json({ error: 'Invalid item structure' }, { status: 400 });
-    }
+    const { items, locale } = validationResult.data;
 
     // Calculate total
-    const total = items.reduce(
-      (sum: number, item: { quantity: number; price: number }) => sum + item.quantity * item.price,
-      0
-    );
+    const total = items.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
     // Here you could:
     // 1. Log the order for analytics

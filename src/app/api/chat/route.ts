@@ -6,6 +6,7 @@
  *
  * @version 2.1.0 - Added Customer Memory for personalized conversations
  * @version 2.2.0 - Added Upstash Redis Rate Limiting (Phase 1.1)
+ * @version 2.3.0 - Added Zod Validation (Phase 1.3)
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,6 +20,41 @@ import {
   getClientIdentifier,
   rateLimitErrorResponse,
 } from '@/lib/utils/upstash-rate-limit';
+import { z } from 'zod';
+
+// =============================================================================
+// ZOD VALIDATION SCHEMAS
+// =============================================================================
+
+const chatMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().min(1).max(10000),
+});
+
+const cartItemSchema = z.object({
+  menu_item_id: z.string(),
+  name_ar: z.string(),
+  quantity: z.number().int().positive(),
+  unit_price: z.number().positive(),
+  variant_id: z.string().optional(),
+  variant_name_ar: z.string().optional(),
+});
+
+const chatRequestSchema = z.object({
+  messages: z.array(chatMessageSchema).min(1).max(100),
+  customer_id: z.string().uuid().optional(),
+  city_id: z.string().uuid().optional(),
+  governorate_id: z.string().uuid().optional(),
+  customer_name: z.string().max(100).optional(),
+  selected_provider_id: z.string().uuid().optional(),
+  selected_provider_name: z.string().max(200).optional(),
+  selected_category: z.string().max(50).optional(),
+  cart_provider_id: z.string().uuid().optional(),
+  cart_provider_name: z.string().max(200).optional(),
+  cart_items: z.array(cartItemSchema).max(50).optional(),
+  cart_total: z.number().min(0).optional(),
+  memory: z.record(z.string(), z.unknown()).optional(),
+});
 
 // =============================================================================
 // TYPES
@@ -83,12 +119,25 @@ export async function POST(request: NextRequest) {
       return rateLimitErrorResponse(rateLimitResult);
     }
 
-    const body = (await request.json()) as ChatRequest;
+    // Zod Validation
+    const rawBody = await request.json();
+    const validationResult = chatRequestSchema.safeParse(rawBody);
 
-    // Validate required fields
-    if (!body.messages || body.messages.length === 0) {
-      return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation Error',
+          error_ar: 'خطأ في البيانات المدخلة',
+          details: validationResult.error.issues.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
     }
+
+    const body = validationResult.data as ChatRequest;
 
     // Calculate cart total if not provided
     const cartTotal =
@@ -313,11 +362,25 @@ export async function PUT(request: NextRequest) {
       return rateLimitErrorResponse(rateLimitResult);
     }
 
-    const body = (await request.json()) as ChatRequest;
+    // Zod Validation
+    const rawBody = await request.json();
+    const validationResult = chatRequestSchema.safeParse(rawBody);
 
-    if (!body.messages || body.messages.length === 0) {
-      return NextResponse.json({ error: 'Messages are required' }, { status: 400 });
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Validation Error',
+          error_ar: 'خطأ في البيانات المدخلة',
+          details: validationResult.error.issues.map((e) => ({
+            field: e.path.join('.'),
+            message: e.message,
+          })),
+        },
+        { status: 400 }
+      );
     }
+
+    const body = validationResult.data as ChatRequest;
 
     // Calculate cart total if not provided
     const cartTotal =
