@@ -1,10 +1,13 @@
 /**
  * PDF/Excel Export Service for Financial Reports
  * خدمة تصدير التقارير المالية
+ *
+ * @version 1.1.0 - Added XSS protection with escapeHtml (Phase 1.2)
  */
 
 import { Money } from './money';
 import type { Settlement, SettlementAuditLog } from '@/types/finance';
+import { escapeHtml } from '@/lib/security/xss';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -343,7 +346,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
     </div>
     <div class="info-box">
       <div class="info-label">${labels.provider}</div>
-      <div class="info-value">${providerName?.[locale] || '-'}</div>
+      <div class="info-value">${escapeHtml(providerName?.[locale] || '-')}</div>
     </div>
     <div class="info-box">
       <div class="info-label">${labels.period}</div>
@@ -438,11 +441,11 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
     </div>
     <div class="info-box">
       <div class="info-label">${labels.paymentMethod}</div>
-      <div class="info-value">${String(settlement.paymentMethod || '-')}</div>
+      <div class="info-value">${escapeHtml(String(settlement.paymentMethod || '-'))}</div>
     </div>
     <div class="info-box">
       <div class="info-label">${labels.paymentReference}</div>
-      <div class="info-value">${String(settlement.paymentReference || '-')}</div>
+      <div class="info-value">${escapeHtml(String(settlement.paymentReference || '-'))}</div>
     </div>
   </div>
   `
@@ -469,7 +472,7 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
           .map(
             (order) => `
           <tr>
-            <td>${order.orderNumber}</td>
+            <td>${escapeHtml(order.orderNumber)}</td>
             <td>${formatCurrency(order.total, locale)}</td>
             <td>${formatCurrency(order.commission, locale)}</td>
             <td>${order.paymentMethod === 'cash' ? (locale === 'ar' ? 'نقدي' : 'Cash') : locale === 'ar' ? 'إلكتروني' : 'Online'}</td>
@@ -504,9 +507,9 @@ export function generateSettlementHTML(data: SettlementExportData, options: Expo
           .map(
             (entry) => `
           <tr>
-            <td>${entry.action}</td>
-            <td>${entry.adminName || '-'}</td>
-            <td>${entry.notes || '-'}</td>
+            <td>${escapeHtml(entry.action)}</td>
+            <td>${escapeHtml(entry.adminName || '-')}</td>
+            <td>${escapeHtml(entry.notes || '-')}</td>
             <td>${formatDate(entry.createdAt, locale, 'long')}</td>
           </tr>
         `
