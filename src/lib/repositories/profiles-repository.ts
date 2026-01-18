@@ -77,13 +77,35 @@ export interface ProfileListOptions {
   offset?: number;
 }
 
+// Optimized profile selects (Phase 4.1)
+
+// Core profile fields for lists
+const PROFILE_LIST_SELECT = `
+  id, email, phone, full_name, avatar_url, role, is_active,
+  governorate_id, city_id, district_id, created_at
+`;
+
+// Profile detail with all needed fields
+const PROFILE_DETAIL_SELECT = `
+  id, email, phone, full_name, avatar_url, role, is_active,
+  governorate_id, city_id, district_id, preferred_language,
+  notification_preferences, total_orders, total_spent,
+  last_login_at, created_at, updated_at
+`;
+
 // Profile with relations select string
 const PROFILE_WITH_RELATIONS = `
-  *,
+  id, email, phone, full_name, avatar_url, role, is_active,
+  governorate_id, city_id, district_id, preferred_language,
+  notification_preferences, total_orders, total_spent,
+  last_login_at, created_at, updated_at,
   governorate:governorates(id, name_ar, name_en),
   city:cities(id, name_ar, name_en),
   district:districts(id, name_ar, name_en)
 `;
+
+// Minimal select for statistics
+const PROFILE_STATS_SELECT = 'id, role, is_active';
 
 /**
  * Profiles Repository
@@ -93,7 +115,8 @@ const PROFILE_WITH_RELATIONS = `
  */
 class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, ProfileUpdate> {
   constructor() {
-    super('profiles', '*');
+    // Use detail select as default (Phase 4.1)
+    super('profiles', PROFILE_DETAIL_SELECT);
   }
 
   /**
@@ -111,7 +134,7 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Profile, error: null };
+      return { data: data as unknown as Profile, error: null };
     } catch (err) {
       return {
         data: null,
@@ -125,9 +148,10 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
    */
   async findByEmail(email: string): Promise<RepositoryResult<Profile>> {
     try {
+      // Use detail select (Phase 4.1)
       const { data, error } = await this.supabase
         .from(this.tableName)
-        .select('*')
+        .select(PROFILE_DETAIL_SELECT)
         .eq('email', email)
         .single();
 
@@ -135,7 +159,7 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Profile, error: null };
+      return { data: data as unknown as Profile, error: null };
     } catch (err) {
       return {
         data: null,
@@ -149,9 +173,10 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
    */
   async findByPhone(phone: string): Promise<RepositoryResult<Profile>> {
     try {
+      // Use detail select (Phase 4.1)
       const { data, error } = await this.supabase
         .from(this.tableName)
-        .select('*')
+        .select(PROFILE_DETAIL_SELECT)
         .eq('phone', phone)
         .single();
 
@@ -159,7 +184,7 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Profile, error: null };
+      return { data: data as unknown as Profile, error: null };
     } catch (err) {
       return {
         data: null,
@@ -185,7 +210,10 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
         offset = 0,
       } = options;
 
-      let query = this.supabase.from(this.tableName).select('*', { count: 'exact' });
+      // Use list select for customer-facing views (Phase 4.1)
+      let query = this.supabase
+        .from(this.tableName)
+        .select(PROFILE_LIST_SELECT, { count: 'exact' });
 
       // Role filter
       if (role) {
@@ -227,7 +255,7 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
       }
 
       return {
-        data: (data as Profile[]) ?? [],
+        data: (data as unknown as Profile[]) ?? [],
         error: null,
         count: count ?? undefined,
       };
@@ -425,7 +453,8 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
     }>
   > {
     try {
-      const { data, error } = await this.supabase.from(this.tableName).select('role, is_active');
+      // Use minimal select for statistics (Phase 4.1)
+      const { data, error } = await this.supabase.from(this.tableName).select(PROFILE_STATS_SELECT);
 
       if (error) {
         return { data: null, error: new Error(error.message) };

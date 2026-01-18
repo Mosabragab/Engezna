@@ -89,10 +89,35 @@ export interface ProviderListOptions {
 
 // Provider with relations select string
 const PROVIDER_WITH_RELATIONS = `
-  *,
+  id, name_ar, name_en, description_ar, description_en, category,
+  logo_url, cover_image_url, status, rejection_reason, commission_rate,
+  rating, total_reviews, total_orders, is_featured, is_verified,
+  phone, email, address, governorate_id, city_id,
+  opening_time, closing_time, delivery_fee, min_order_amount,
+  estimated_delivery_time_min, created_at, updated_at,
   governorate:governorates(id, name_ar, name_en),
   city:cities(id, name_ar, name_en)
 `;
+
+// Optimized select for customer-facing provider listings (Phase 4.1)
+const PROVIDER_LIST_SELECT = `
+  id, name_ar, name_en, category, logo_url, cover_image_url,
+  status, rating, total_reviews, is_featured, is_verified,
+  delivery_fee, min_order_amount, estimated_delivery_time_min,
+  governorate_id, city_id
+`;
+
+// Optimized select for provider detail pages
+const PROVIDER_DETAIL_SELECT = `
+  id, name_ar, name_en, description_ar, description_en, category,
+  logo_url, cover_image_url, status, rating, total_reviews, total_orders,
+  is_featured, is_verified, phone, email, address,
+  governorate_id, city_id, opening_time, closing_time,
+  delivery_fee, min_order_amount, estimated_delivery_time_min, created_at
+`;
+
+// Select for admin statistics (minimal)
+const PROVIDER_STATS_SELECT = 'id, status, is_featured';
 
 /**
  * Providers Repository
@@ -102,7 +127,8 @@ const PROVIDER_WITH_RELATIONS = `
  */
 class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, ProviderUpdate> {
   constructor() {
-    super('providers', '*');
+    // Use optimized detail select as default (Phase 4.1)
+    super('providers', PROVIDER_DETAIL_SELECT);
   }
 
   /**
@@ -120,7 +146,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Provider, error: null };
+      return { data: data as unknown as Provider, error: null };
     } catch (err) {
       return {
         data: null,
@@ -149,7 +175,10 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         offset = 0,
       } = options;
 
-      let query = this.supabase.from(this.tableName).select('*', { count: 'exact' });
+      // Use optimized list select for customer-facing views (Phase 4.1)
+      let query = this.supabase
+        .from(this.tableName)
+        .select(PROVIDER_LIST_SELECT, { count: 'exact' });
 
       // Status filter
       if (status) {
@@ -224,7 +253,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
       }
 
       return {
-        data: (data as Provider[]) ?? [],
+        data: (data as unknown as Provider[]) ?? [],
         error: null,
         count: count ?? undefined,
       };
@@ -315,7 +344,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
 
       return {
         data: {
-          data: (data as Provider[]) ?? [],
+          data: (data as unknown as Provider[]) ?? [],
           count: totalCount,
           page,
           pageSize,
@@ -534,9 +563,10 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
     }>
   > {
     try {
+      // Use minimal select for statistics (Phase 4.1)
       const { data, error } = await this.supabase
         .from(this.tableName)
-        .select('status, is_featured');
+        .select(PROVIDER_STATS_SELECT);
 
       if (error) {
         return { data: null, error: new Error(error.message) };

@@ -113,19 +113,43 @@ export interface OrderListOptions {
   offset?: number;
 }
 
-// Order with relations select string
-const ORDER_SELECT = '*';
+// Optimized order selects (Phase 4.1)
 
+// Core order fields (includes all for type safety)
+const ORDER_LIST_SELECT = `
+  id, order_number, customer_id, provider_id, status,
+  subtotal, delivery_fee, discount, total, platform_commission,
+  payment_method, payment_status, delivery_address,
+  delivery_latitude, delivery_longitude, notes,
+  promo_code_id, created_at, updated_at,
+  confirmed_at, preparing_at, ready_at, delivering_at, delivered_at,
+  cancelled_reason, cancelled_by
+`;
+
+// Order with basic relations (for list views - includes all fields for type safety)
 const ORDER_WITH_RELATIONS = `
-  *,
+  id, order_number, customer_id, provider_id, status,
+  subtotal, delivery_fee, discount, total, platform_commission,
+  payment_method, payment_status, delivery_address,
+  delivery_latitude, delivery_longitude, notes,
+  promo_code_id, created_at, updated_at,
+  confirmed_at, preparing_at, ready_at, delivering_at, delivered_at,
+  cancelled_reason, cancelled_by,
   customer:profiles!customer_id(id, full_name, phone, email),
   provider:providers!provider_id(id, name_ar, name_en, phone)
 `;
 
+// Order with items for detail views (includes all fields for type safety)
 const ORDER_WITH_ITEMS = `
-  *,
+  id, order_number, customer_id, provider_id, status,
+  subtotal, delivery_fee, discount, total, platform_commission,
+  payment_method, payment_status, delivery_address,
+  delivery_latitude, delivery_longitude, notes,
+  promo_code_id, created_at, updated_at,
+  confirmed_at, preparing_at, ready_at, delivering_at, delivered_at,
+  cancelled_reason, cancelled_by,
   customer:profiles!customer_id(id, full_name, phone, email),
-  provider:providers!provider_id(id, name_ar, name_en, phone),
+  provider:providers!provider_id(id, name_ar, name_en, phone, logo_url),
   items:order_items(
     id,
     menu_item_id,
@@ -139,6 +163,9 @@ const ORDER_WITH_ITEMS = `
   )
 `;
 
+// Minimal select for statistics
+const ORDER_STATS_SELECT = 'id, status, total, platform_commission, created_at';
+
 /**
  * Orders Repository
  *
@@ -147,7 +174,8 @@ const ORDER_WITH_ITEMS = `
  */
 class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpdate> {
   constructor() {
-    super('orders', ORDER_SELECT);
+    // Use list select as default (Phase 4.1)
+    super('orders', ORDER_LIST_SELECT);
   }
 
   /**
@@ -165,7 +193,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Order, error: null };
+      return { data: data as unknown as Order, error: null };
     } catch (err) {
       return {
         data: null,
@@ -189,7 +217,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Order, error: null };
+      return { data: data as unknown as Order, error: null };
     } catch (err) {
       return {
         data: null,
@@ -213,7 +241,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
         return { data: null, error: new Error(error.message) };
       }
 
-      return { data: data as Order, error: null };
+      return { data: data as unknown as Order, error: null };
     } catch (err) {
       return {
         data: null,
@@ -297,7 +325,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
       }
 
       return {
-        data: (data as Order[]) ?? [],
+        data: (data as unknown as Order[]) ?? [],
         error: null,
         count: count ?? undefined,
       };
@@ -498,7 +526,8 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
     }>
   > {
     try {
-      let query = this.supabase.from(this.tableName).select('status, total, platform_commission');
+      // Use minimal select for statistics (Phase 4.1)
+      let query = this.supabase.from(this.tableName).select(ORDER_STATS_SELECT);
 
       if (dateFrom) {
         query = query.gte('created_at', dateFrom);
