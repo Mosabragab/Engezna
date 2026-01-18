@@ -1,0 +1,384 @@
+'use client';
+
+import { useEffect, useState, useMemo } from 'react';
+import { useLocale } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared';
+import { ChatFAB } from '@/components/customer/voice';
+import { useFavorites } from '@/hooks/customer';
+import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react';
+import { useUserLocation } from '@/lib/contexts';
+
+export type Provider = {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  description_ar: string | null;
+  description_en: string | null;
+  category: 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits';
+  logo_url: string | null;
+  cover_image_url: string | null;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
+  is_featured?: boolean;
+  city_id?: string;
+  governorate_id?: string;
+};
+
+type SortOption = 'rating' | 'delivery_time' | 'delivery_fee';
+
+interface ProvidersClientProps {
+  initialProviders: Provider[];
+}
+
+export default function ProvidersClient({ initialProviders }: ProvidersClientProps) {
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+
+  const [providers, setProviders] = useState<Provider[]>(initialProviders);
+  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>(categoryFromUrl || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption | null>(null);
+  const [showOpenOnly, setShowOpenOnly] = useState(false);
+  const [showOffersOnly, setShowOffersOnly] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  // Update category when URL changes
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
+
+  // Get location from context
+  const {
+    cityId: userCityId,
+    governorateId: userGovernorateId,
+    cityName: userCityNameObj,
+    governorateName: userGovernorateNameObj,
+    isLoading: isLocationLoading,
+  } = useUserLocation();
+
+  // Get display name based on locale
+  const userCityName = userCityNameObj
+    ? locale === 'ar'
+      ? userCityNameObj.ar
+      : userCityNameObj.en
+    : userGovernorateNameObj
+      ? locale === 'ar'
+        ? userGovernorateNameObj.ar
+        : userGovernorateNameObj.en
+      : null;
+
+  // Favorites hook
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
+
+  // Re-fetch providers when location or category changes
+  useEffect(() => {
+    if (!isLocationLoading && (userCityId || userGovernorateId)) {
+      fetchProviders();
+    }
+  }, [selectedCategory, userCityId, userGovernorateId, isLocationLoading]);
+
+  // Smart Arabic text normalization for search
+  const normalizeArabicText = (text: string): string => {
+    return (
+      text
+        .toLowerCase()
+        .replace(/[ةه]/g, 'ه')
+        .replace(/[أإآا]/g, 'ا')
+        .replace(/[يى]/g, 'ي')
+        .replace(/[\u064B-\u065F]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
+  };
+
+  // Filter and sort providers client-side
+  const filteredProviders = useMemo(() => {
+    let result = [...providers];
+
+    // Location filter (applied to initial data)
+    if (userCityId) {
+      result = result.filter((p) => p.city_id === userCityId);
+    } else if (userGovernorateId) {
+      result = result.filter((p) => p.governorate_id === userGovernorateId);
+    }
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      result = result.filter((p) => p.category === selectedCategory);
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const normalizedQuery = normalizeArabicText(searchQuery);
+      result = result.filter((p) => {
+        const nameAr = normalizeArabicText(p.name_ar || '');
+        const nameEn = (p.name_en || '').toLowerCase();
+        const descAr = normalizeArabicText(p.description_ar || '');
+        const descEn = (p.description_en || '').toLowerCase();
+
+        return (
+          nameAr.includes(normalizedQuery) ||
+          nameEn.includes(normalizedQuery) ||
+          descAr.includes(normalizedQuery) ||
+          descEn.includes(normalizedQuery)
+        );
+      });
+    }
+
+    // Open only filter
+    if (showOpenOnly) {
+      result = result.filter((p) => p.status === 'open');
+    }
+
+    // Offers filter (featured providers)
+    if (showOffersOnly) {
+      result = result.filter((p) => p.is_featured);
+    }
+
+    // Sort
+    if (sortBy) {
+      result.sort((a, b) => {
+        switch (sortBy) {
+          case 'rating':
+            return b.rating - a.rating;
+          case 'delivery_time':
+            return a.estimated_delivery_time_min - b.estimated_delivery_time_min;
+          case 'delivery_fee':
+            return a.delivery_fee - b.delivery_fee;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return result;
+  }, [
+    providers,
+    searchQuery,
+    sortBy,
+    showOpenOnly,
+    showOffersOnly,
+    selectedCategory,
+    userCityId,
+    userGovernorateId,
+  ]);
+
+  async function fetchProviders() {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+
+      let query = supabase
+        .from('providers')
+        .select(
+          'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id'
+        )
+        .in('status', ['open', 'closed'])
+        .order('is_featured', { ascending: false })
+        .order('rating', { ascending: false });
+
+      // STRICT filtering by city or governorate
+      if (userCityId) {
+        query = query.eq('city_id', userCityId);
+      } else if (userGovernorateId) {
+        query = query.eq('governorate_id', userGovernorateId);
+      }
+
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        setProviders([]);
+      } else {
+        setProviders(data || []);
+      }
+    } catch {
+      // Error handled silently
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Updated December 2025 - New categories
+  const categories = [
+    { id: 'all', name_ar: 'الكل', name_en: 'All' },
+    { id: 'restaurant_cafe', name_ar: 'مطاعم', name_en: 'Restaurants' },
+    { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
+    { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
+    { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
+  ];
+
+  const handleSortToggle = (option: SortOption) => {
+    setSortBy(sortBy === option ? null : option);
+  };
+
+  return (
+    <CustomerLayout showHeader={true} showBottomNav={true}>
+      {/* Page Content */}
+      <div className="px-4 py-4">
+        {/* Page Title with Location */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-slate-900">
+              {locale === 'ar' ? 'المتاجر' : 'Stores'}
+            </h1>
+            {userCityName && (
+              <a
+                href={`/${locale}/profile/governorate`}
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                <MapPin className="w-4 h-4" />
+                <span>{userCityName}</span>
+              </a>
+            )}
+          </div>
+          <p className="text-slate-500 text-sm">
+            {userCityName
+              ? locale === 'ar'
+                ? `متاجر متاحة في ${userCityName}`
+                : `Stores available in ${userCityName}`
+              : locale === 'ar'
+                ? 'اطلب من أفضل المطاعم والمتاجر'
+                : 'Order from the best restaurants and stores'}
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-4">
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onSearch={setSearchQuery}
+            placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
+          />
+        </div>
+
+        {/* Category Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+                selectedCategory === category.id
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
+              }`}
+            >
+              {locale === 'ar' ? category.name_ar : category.name_en}
+            </button>
+          ))}
+        </div>
+
+        {/* Filter Chips */}
+        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide -mx-4 px-4">
+          <FilterChip
+            label={locale === 'ar' ? 'مفتوح الآن' : 'Open Now'}
+            isActive={showOpenOnly}
+            onClick={() => setShowOpenOnly(!showOpenOnly)}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'عروض' : 'Offers'}
+            icon={<Percent className="w-3.5 h-3.5" />}
+            isActive={showOffersOnly}
+            onClick={() => setShowOffersOnly(!showOffersOnly)}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'الأعلى تقييماً' : 'Top Rated'}
+            icon={<Star className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'rating'}
+            onClick={() => handleSortToggle('rating')}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'الأسرع توصيلاً' : 'Fastest'}
+            icon={<Clock className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'delivery_time'}
+            onClick={() => handleSortToggle('delivery_time')}
+          />
+          <FilterChip
+            label={locale === 'ar' ? 'أقل رسوم توصيل' : 'Lowest Fee'}
+            icon={<ArrowUpDown className="w-3.5 h-3.5" />}
+            isActive={sortBy === 'delivery_fee'}
+            onClick={() => handleSortToggle('delivery_fee')}
+          />
+        </div>
+
+        {/* Results count */}
+        {!loading && (
+          <div className="text-sm text-slate-500 mb-4">
+            {locale === 'ar'
+              ? `${filteredProviders.length} متجر`
+              : `${filteredProviders.length} stores found`}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-xl border border-slate-100 animate-pulse">
+                <div className="h-40 bg-slate-100 rounded-t-xl" />
+                <div className="p-4 space-y-3">
+                  <div className="h-5 bg-slate-100 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 rounded w-full" />
+                  <div className="h-4 bg-slate-100 rounded w-2/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && filteredProviders.length === 0 && (
+          <EmptyState
+            icon="store"
+            title={locale === 'ar' ? 'لا توجد متاجر' : 'No stores found'}
+            description={
+              searchQuery
+                ? locale === 'ar'
+                  ? 'جرب البحث بكلمات أخرى'
+                  : 'Try searching with different keywords'
+                : locale === 'ar'
+                  ? 'لا توجد متاجر متاحة في هذا القسم'
+                  : 'No stores available in this category'
+            }
+            actionLabel={searchQuery ? (locale === 'ar' ? 'مسح البحث' : 'Clear search') : undefined}
+            onAction={searchQuery ? () => setSearchQuery('') : undefined}
+          />
+        )}
+
+        {/* Providers Grid */}
+        {!loading && filteredProviders.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredProviders.map((provider) => (
+              <ProviderCard
+                key={provider.id}
+                provider={provider}
+                variant="default"
+                isFavorite={isFavorite(provider.id)}
+                onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Chat FAB */}
+      <ChatFAB isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
+    </CustomerLayout>
+  );
+}

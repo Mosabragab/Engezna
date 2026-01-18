@@ -597,11 +597,13 @@ export default function ProviderBannerPage() {
                   </div>
 
                   {currentBanner.image_url && (
-                    <div className="w-20 h-20 flex-shrink-0">
-                      <img
+                    <div className="w-20 h-20 flex-shrink-0 relative">
+                      <Image
                         src={currentBanner.image_url}
                         alt=""
-                        className="w-full h-full object-contain drop-shadow-xl"
+                        fill
+                        sizes="80px"
+                        className="object-contain drop-shadow-xl"
                       />
                     </div>
                   )}
@@ -889,11 +891,15 @@ export default function ProviderBannerPage() {
                     </div>
                   ) : formData.image_url ? (
                     <div className="flex flex-col items-center gap-3">
-                      <img
-                        src={formData.image_url}
-                        alt="Preview"
-                        className="w-24 h-24 object-contain rounded-lg bg-slate-100"
-                      />
+                      <div className="w-24 h-24 relative">
+                        <Image
+                          src={formData.image_url}
+                          alt="Preview"
+                          fill
+                          sizes="96px"
+                          className="object-contain rounded-lg bg-slate-100"
+                        />
+                      </div>
                       <button
                         type="button"
                         onClick={() => setFormData({ ...formData, image_url: '' })}
@@ -1115,16 +1121,19 @@ export default function ProviderBannerPage() {
                     <div className="relative z-10 h-full p-4 flex flex-col items-center justify-center text-center">
                       {formData.image_url && (
                         <div
-                          className="flex-shrink-0 mb-2 flex items-center justify-center"
+                          className="flex-shrink-0 mb-2 relative"
                           style={{
                             height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            width: '40%',
                             maxWidth: '40%',
                           }}
                         >
-                          <img
+                          <Image
                             src={formData.image_url}
                             alt=""
-                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
+                            fill
+                            sizes="(max-width: 768px) 40vw, 200px"
+                            className="object-contain drop-shadow-xl"
                           />
                         </div>
                       )}
@@ -1186,16 +1195,19 @@ export default function ProviderBannerPage() {
 
                       {formData.image_url ? (
                         <div
-                          className="flex-shrink-0 flex items-center justify-center"
+                          className="flex-shrink-0 relative"
                           style={{
                             height: IMAGE_SIZE_CONFIG[formData.image_size].maxHeight,
+                            width: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth,
                             maxWidth: IMAGE_SIZE_CONFIG[formData.image_size].maxWidth,
                           }}
                         >
-                          <img
+                          <Image
                             src={formData.image_url}
                             alt=""
-                            className="w-auto h-full max-w-full object-contain drop-shadow-xl"
+                            fill
+                            sizes="(max-width: 768px) 30vw, 150px"
+                            className="object-contain drop-shadow-xl"
                           />
                         </div>
                       ) : (
