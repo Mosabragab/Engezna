@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
+import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { notoSans, notoSansArabic } from '@/lib/fonts';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { LocationProvider } from '@/lib/contexts';
@@ -105,6 +107,9 @@ export default async function LocaleLayout({ children, params }: Props) {
             </LocationProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
+        {/* Vercel Analytics & Speed Insights (Phase 4.3) */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

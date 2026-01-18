@@ -1078,15 +1078,37 @@ const finalConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
 
 ---
 
-### 4.3 Vercel Analytics & Cron Jobs
+### 4.3 Vercel Analytics & Cron Jobs ✅ (مكتمل 2026-01-18)
+
+**تم تنفيذه:** نظام تتبع الأداء وأتمتة التسويات اليومية
+
+**Task A: Vercel Analytics**
+
+الملفات المحدثة:
+
+- `src/app/[locale]/layout.tsx` - إضافة `<Analytics />` و `<SpeedInsights />`
+- `package.json` - إضافة `@vercel/analytics` و `@vercel/speed-insights`
+
+**Task B: Settlement Cron Job**
+
+الملف الجديد: `src/app/api/cron/settlements/route.ts`
+
+| الميزة         | التفاصيل                                           |
+| -------------- | -------------------------------------------------- |
+| Security       | `CRON_SECRET` header verification                  |
+| Schedule       | يوميا عند منتصف الليل (22:00 UTC = 00:00 Cairo)    |
+| Logic          | جلب الطلبات المُسلمة → تجميع بالمتجر → إنشاء تسوية |
+| Error Handling | Defensive coding مع graceful degradation           |
+| CI Awareness   | يعمل في development بدون secret                    |
+
+**Task C: vercel.json Configuration**
 
 ```json
-// vercel.json
 {
   "crons": [
     {
       "path": "/api/cron/settlements",
-      "schedule": "0 0 * * *"
+      "schedule": "0 22 * * *"
     }
   ]
 }
@@ -1135,7 +1157,7 @@ const finalConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
 
 - [ ] Select \* → specific columns
 - [x] Sentry integration (2026-01-18) ✅
-- [ ] Vercel cron jobs
+- [x] Vercel Analytics & Cron Jobs (2026-01-18) ✅
 - [ ] Bundle optimization
 
 ---
@@ -1168,7 +1190,7 @@ const finalConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
 ### بعد الإطلاق (Monitoring)
 
 - [x] Sentry يراقب الأخطاء (2026-01-18) ✅
-- [ ] Vercel Analytics يتتبع الأداء
+- [x] Vercel Analytics يتتبع الأداء (2026-01-18) ✅
 - [ ] Upstash Analytics يراقب Rate Limits
 
 ---
