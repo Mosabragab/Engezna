@@ -100,21 +100,19 @@ export interface UseAIChatReturn {
 export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
   const { userId, cityId, governorateId, customerName, providerContext } = options;
 
-  // Use Zustand store for persistent messages
-  const {
-    messages,
-    addMessage,
-    setMessages,
-    clearMessages,
-    selectedProviderId,
-    selectedProviderCategory,
-    selectedCategory,
-    memory,
-    setSelectedProviderId,
-    setSelectedProviderCategory,
-    setSelectedCategory,
-    setMemory,
-  } = useChatStore();
+  // ✅ Zustand Selectors: Only re-render when specific values change
+  const messages = useChatStore((state) => state.messages);
+  const addMessage = useChatStore((state) => state.addMessage);
+  const setMessages = useChatStore((state) => state.setMessages);
+  const clearMessages = useChatStore((state) => state.clearMessages);
+  const selectedProviderId = useChatStore((state) => state.selectedProviderId);
+  const selectedProviderCategory = useChatStore((state) => state.selectedProviderCategory);
+  const selectedCategory = useChatStore((state) => state.selectedCategory);
+  const memory = useChatStore((state) => state.memory);
+  const setSelectedProviderId = useChatStore((state) => state.setSelectedProviderId);
+  const setSelectedProviderCategory = useChatStore((state) => state.setSelectedProviderCategory);
+  const setSelectedCategory = useChatStore((state) => state.setSelectedCategory);
+  const setMemory = useChatStore((state) => state.setMemory);
 
   // Local state for UI
   const [isLoading, setIsLoading] = useState(false);
