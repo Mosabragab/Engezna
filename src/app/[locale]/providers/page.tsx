@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { createAnonymousClient } from '@/lib/supabase/server';
+import { createStaticClient } from '@/lib/supabase/static';
 import ProvidersClient, { type Provider } from './ProvidersClient';
 
 // ISR: Revalidate every 5 minutes
@@ -33,7 +33,7 @@ function ProvidersLoading() {
 }
 
 export default async function ProvidersPage() {
-  const supabase = createAnonymousClient();
+  const supabase = createStaticClient();
 
   // Fetch initial providers (top 100 by rating, all active)
   const { data: providers } = await supabase
