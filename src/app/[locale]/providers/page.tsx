@@ -31,6 +31,15 @@ function ProvidersLoading() {
 export default async function ProvidersPage() {
   const supabase = createStaticClient();
 
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    return (
+      <Suspense fallback={<ProvidersLoading />}>
+        <ProvidersClient initialProviders={[]} />
+      </Suspense>
+    );
+  }
+
   // Fetch initial providers (top 100 by rating, all active)
   const { data: providers } = await supabase
     .from('providers')

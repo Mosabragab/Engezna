@@ -20,6 +20,12 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale, id } = await params;
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    return { title: 'Provider | إنجزنا' };
+  }
+
   const { data: provider } = await supabase
     .from('providers')
     .select('name_ar, name_en, description_ar, description_en, cover_image_url, rating')
@@ -76,6 +82,11 @@ export default async function ProviderDetailPage({
 }) {
   const { id } = await params;
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    notFound();
+  }
 
   // Fetch provider data
   const { data: provider, error: providerError } = await supabase
