@@ -19,10 +19,9 @@ export function BottomNavigation() {
   const locale = useLocale();
   const pathname = usePathname();
   const t = useTranslations('bottomNav');
-  const { cart } = useCart();
+  // ✅ Zustand Selector: Only re-render when item count changes
+  const cartItemsCount = useCart((state) => state.getItemCount());
   const [pendingQuotes, setPendingQuotes] = useState(0);
-
-  const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Load pending quotes count (custom orders awaiting customer approval)
   const loadPendingQuotes = useCallback(async () => {

@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { guestLocationStorage, type GuestLocation } from '@/lib/hooks/useGuestLocation';
 
@@ -347,22 +355,41 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     };
   }, [isDataLoaded, loadUserLocation]);
 
-  const value: LocationContextValue = {
-    governorates,
-    cities,
-    districts,
-    userLocation,
-    isDataLoading,
-    isDataLoaded,
-    isUserLocationLoading,
-    getCitiesByGovernorate,
-    getDistrictsByCity,
-    getGovernorateById,
-    getCityById,
-    setUserLocation,
-    refreshLocationData: () => loadLocationData(true),
-    refreshUserLocation: loadUserLocation,
-  };
+  // ✅ useMemo: Prevent unnecessary re-renders of consumers
+  const value: LocationContextValue = useMemo(
+    () => ({
+      governorates,
+      cities,
+      districts,
+      userLocation,
+      isDataLoading,
+      isDataLoaded,
+      isUserLocationLoading,
+      getCitiesByGovernorate,
+      getDistrictsByCity,
+      getGovernorateById,
+      getCityById,
+      setUserLocation,
+      refreshLocationData: () => loadLocationData(true),
+      refreshUserLocation: loadUserLocation,
+    }),
+    [
+      governorates,
+      cities,
+      districts,
+      userLocation,
+      isDataLoading,
+      isDataLoaded,
+      isUserLocationLoading,
+      getCitiesByGovernorate,
+      getDistrictsByCity,
+      getGovernorateById,
+      getCityById,
+      setUserLocation,
+      loadLocationData,
+      loadUserLocation,
+    ]
+  );
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 }

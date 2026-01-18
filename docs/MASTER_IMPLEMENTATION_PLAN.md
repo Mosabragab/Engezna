@@ -1035,11 +1035,11 @@ npx @sentry/wizard@latest -i nextjs
 
 ### 🟡 عالية (الأسبوع الأول) - 20-30 ساعة
 
-- [ ] Zustand Selectors
-- [ ] Memoize Context Values
-- [ ] Loading States (5 ملفات)
-- [ ] img → next/image (4 تعديلات)
-- [ ] ISR للمتاجر
+- [x] Zustand Selectors (2026-01-18) ✅
+- [x] Memoize Context Values (2026-01-18) ✅
+- [x] Loading States (2026-01-18) ✅
+- [x] img → next/image (2026-01-18) ✅
+- [x] ISR للمتاجر (2026-01-18) ✅
 - [ ] Dynamic Imports
 
 ### 🟠 متوسطة (الأسبوع الثاني) - 15-25 ساعة
@@ -1101,5 +1101,5 @@ npx @sentry/wizard@latest -i nextjs
 
 ---
 
-_آخر تحديث: 17 يناير 2026_
+_آخر تحديث: 18 يناير 2026_
 _تم دمج: SECURITY_IMPLEMENTATION_PLAN.md + INFRASTRUCTURE_AUDIT_REPORT.md + CODE_QUALITY_AND_PERFORMANCE_PLAN.md + FRONTEND_PERFORMANCE_AUDIT.md_

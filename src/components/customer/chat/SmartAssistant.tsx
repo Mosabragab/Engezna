@@ -173,8 +173,8 @@ export function SmartAssistant({
     }
   }, [pendingNavigation, router, onClose, clearPendingNavigation]);
 
-  const { getItemCount } = useCart();
-  const cartCount = getItemCount();
+  // ✅ Zustand Selector: Only re-render when item count changes
+  const cartCount = useCart((state) => state.getItemCount());
 
   // Scroll to bottom on new messages
   useEffect(() => {

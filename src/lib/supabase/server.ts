@@ -4,6 +4,9 @@ import { cookies } from 'next/headers';
 /**
  * Creates a Supabase client for server-side operations
  * This should be used in Server Components, Server Actions, and Route Handlers
+ *
+ * WARNING: This function uses cookies() from next/headers.
+ * Do NOT use in ISR/SSG pages - use createStaticClient() from ./static.ts instead.
  */
 export async function createClient() {
   const cookieStore = await cookies();

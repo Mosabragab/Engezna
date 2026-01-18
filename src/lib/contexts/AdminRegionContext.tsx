@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  ReactNode,
+} from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -256,11 +264,18 @@ export function AdminRegionProvider({ children }: { children: ReactNode }) {
 
   const hasRegionFilter = data.isRegionalAdmin && data.allowedGovernorateIds.length > 0;
 
-  return (
-    <AdminRegionContext.Provider value={{ ...data, loading, refresh, hasRegionFilter }}>
-      {children}
-    </AdminRegionContext.Provider>
+  // ✅ useMemo: Prevent unnecessary re-renders of consumers
+  const value = useMemo(
+    () => ({
+      ...data,
+      loading,
+      refresh,
+      hasRegionFilter,
+    }),
+    [data, loading, refresh, hasRegionFilter]
   );
+
+  return <AdminRegionContext.Provider value={value}>{children}</AdminRegionContext.Provider>;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

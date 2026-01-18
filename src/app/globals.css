@@ -736,6 +736,16 @@ input[type='number'].price-input {
   opacity: 0;
 }
 
+/* Delayed Skeleton Fade-in - Prevents "flash" on fast loads */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /*
  * ACCESSIBILITY NOTES
  *

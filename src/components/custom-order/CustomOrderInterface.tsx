@@ -105,10 +105,12 @@ export function CustomOrderInterface({
   const [error, setError] = useState<string | null>(null);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
 
-  // Cart state for ActiveCartBanner
-  const cart = useCart();
-  const hasActiveCart = cart.cart.length > 0;
-  const activeCartProvider = cart.provider;
+  // ✅ Zustand Selectors: Only re-render when specific values change
+  const cartItems = useCart((state) => state.cart);
+  const activeCartProvider = useCart((state) => state.provider);
+  const getItemCount = useCart((state) => state.getItemCount);
+  const clearCart = useCart((state) => state.clearCart);
+  const hasActiveCart = cartItems.length > 0;
 
   // Draft management
   const { draft, saveDraft, deleteDraft, startAutoSave, hasDraft } = useDraftManager(
@@ -339,7 +341,7 @@ export function CustomOrderInterface({
 
       // Clear cart if needed
       if (hasActiveCart) {
-        cart.clearCart();
+        clearCart();
       }
     } catch (err) {
       console.error('Error submitting order:', err);
@@ -370,7 +372,7 @@ export function CustomOrderInterface({
         <ActiveCartBanner
           cartProvider={{
             name: isRTL ? activeCartProvider.name_ar : activeCartProvider.name_en,
-            itemCount: cart.getItemCount(),
+            itemCount: getItemCount(),
           }}
           onViewCart={handleViewCart}
           onDismiss={() => {}} // User can't dismiss, just for awareness
