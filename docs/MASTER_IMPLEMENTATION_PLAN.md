@@ -1030,11 +1030,50 @@ ProductCard.displayName = 'ProductCard';
 
 ---
 
-### 4.2 Sentry Error Monitoring
+### 4.2 Sentry Error Monitoring ✅ (مكتمل 2026-01-18)
 
-```bash
-npm install @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
+**تم تنفيذه:** نظام مراقبة الأخطاء المتكامل مع Sentry
+
+**الملفات الجديدة:**
+
+```
+sentry.client.config.ts    # Client-side Sentry (browser)
+sentry.server.config.ts    # Server-side Sentry (Node.js)
+sentry.edge.config.ts      # Edge runtime Sentry (minimal)
+```
+
+**التكامل مع Error Boundaries:**
+
+| الملف                                 | التكامل                                       |
+| ------------------------------------- | --------------------------------------------- |
+| `src/app/global-error.tsx`            | `Sentry.captureException` مع `level: 'fatal'` |
+| `src/app/[locale]/error.tsx`          | `Sentry.captureException` مع locale tags      |
+| `src/app/[locale]/admin/error.tsx`    | `Sentry.captureException` مع admin context    |
+| `src/app/[locale]/provider/error.tsx` | `Sentry.captureException` مع provider context |
+
+**ميزات الحماية:**
+
+- ✅ CI Awareness: لا يُفعّل بدون `SENTRY_DSN`
+- ✅ Defensive Coding: null checks على كل المتغيرات
+- ✅ Sensitive Data Scrubbing: حذف tokens و passwords
+- ✅ Bundle Size Optimization: `hideSourceMaps`, `disableLogger`
+- ✅ Error Filtering: تجاهل `ResizeObserver`, `ChunkLoadError`, etc.
+
+**Environment Variables المطلوبة:**
+
+```env
+NEXT_PUBLIC_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
+SENTRY_ORG=your-org
+SENTRY_PROJECT=engezna
+```
+
+**next.config.ts:**
+
+```typescript
+// Sentry يُفعّل فقط عند وجود DSN
+const finalConfig = process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(configWithPlugins, sentryWebpackPluginOptions)
+  : configWithPlugins;
 ```
 
 ---
@@ -1095,7 +1134,7 @@ npx @sentry/wizard@latest -i nextjs
 ### 🟢 منخفضة (مستقبلاً) - 30-50 ساعة
 
 - [ ] Select \* → specific columns
-- [ ] Sentry integration
+- [x] Sentry integration (2026-01-18) ✅
 - [ ] Vercel cron jobs
 - [ ] Bundle optimization
 
@@ -1128,7 +1167,7 @@ npx @sentry/wizard@latest -i nextjs
 
 ### بعد الإطلاق (Monitoring)
 
-- [ ] Sentry يراقب الأخطاء
+- [x] Sentry يراقب الأخطاء (2026-01-18) ✅
 - [ ] Vercel Analytics يتتبع الأداء
 - [ ] Upstash Analytics يراقب Rate Limits
 

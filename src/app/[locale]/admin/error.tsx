@@ -5,13 +5,15 @@
  *
  * Specialized error boundary for the admin dashboard.
  * Provides admin-specific error handling and recovery options.
+ * Integrates with Sentry for error monitoring (Phase 4.2).
  *
- * @version 1.0.0 - Phase 1.5 Implementation
- * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5
+ * @version 1.1.0 - Added Sentry integration
+ * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5, 4.2
  */
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 
 export default function AdminError({
   error,
@@ -21,9 +23,19 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error for monitoring
+    // Send error to Sentry with admin context
+    Sentry.captureException(error, {
+      tags: {
+        errorBoundary: 'admin',
+        digest: error.digest ?? 'unknown',
+        area: 'dashboard',
+      },
+      extra: {
+        componentStack: error.stack,
+      },
+    });
+
     console.error('[Admin Error]:', error);
-    // TODO: Send to Sentry when integrated
   }, [error]);
 
   return (

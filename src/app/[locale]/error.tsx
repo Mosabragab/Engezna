@@ -4,14 +4,15 @@
  * Locale Error Boundary
  *
  * Provides a themed error experience within the main application layout.
- * Logs errors for future Sentry integration.
+ * Integrates with Sentry for error monitoring (Phase 4.2).
  *
- * @version 1.0.0 - Phase 1.5 Implementation
- * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5
+ * @version 1.1.0 - Added Sentry integration
+ * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.5, 4.2
  */
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 
 export default function LocaleError({
   error,
@@ -21,10 +22,19 @@ export default function LocaleError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log error for monitoring (ready for Sentry integration)
+    // Send error to Sentry with digest for tracking
+    Sentry.captureException(error, {
+      tags: {
+        errorBoundary: 'locale',
+        digest: error.digest ?? 'unknown',
+      },
+      extra: {
+        componentStack: error.stack,
+      },
+    });
+
+    // Also log to console for development
     console.error('[Application Error]:', error);
-    // TODO: Send to Sentry when integrated
-    // Sentry.captureException(error);
   }, [error]);
 
   return (
