@@ -921,37 +921,52 @@ export abstract class BaseRepository<T> {
 
 ---
 
-### 3.3 🔔 Error Handling في Realtime
+### 3.3 🔔 Error Handling في Realtime ✅ (مكتمل 2026-01-18)
 
-**المشكلة:** 28 من 31 subscription بدون error handling
+**تم تنفيذه:** نظام مركزي لإدارة Realtime subscriptions مع error handling و polling fallback
 
-**الحل:**
+**الملفات الجديدة:**
+
+```
+src/lib/supabase/realtime-manager.ts  # إدارة مركزية للـ subscriptions
+src/hooks/useRealtimeStatus.ts        # React hook لمراقبة حالة الاتصال
+```
+
+**الاستخدام:**
 
 ```typescript
-// ❌ قبل
-const channel = supabase.channel('orders').on('postgres_changes', {...}).subscribe();
+import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 
-// ✅ بعد
 const channel = supabase
   .channel('orders')
-  .on('postgres_changes', {...}, (payload) => {
-    // handle update
-  })
-  .subscribe((status, err) => {
-    if (status === 'SUBSCRIBED') {
-      console.log('Connected to orders channel');
-    }
-    if (status === 'CHANNEL_ERROR') {
-      console.error('Orders channel error:', err);
-      // Implement polling fallback
-      startPollingFallback();
-    }
-    if (status === 'TIMED_OUT') {
-      console.warn('Orders channel timed out, retrying...');
-      channel.subscribe();
-    }
-  });
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, handler);
+
+const unsubscribe = subscribeWithErrorHandling(supabase, channel, {
+  channelName: 'provider-orders',
+  onStatusChange: (status) => setConnectionStatus(status),
+  pollingFallback: {
+    callback: loadOrders,
+    intervalMs: 15000, // Poll every 15 seconds when realtime fails
+  },
+  maxRetries: 3,
+  retryDelayMs: 2000, // Exponential backoff
+});
 ```
+
+**القنوات المحدثة:**
+
+| القناة                       | Polling Interval | الملف                                |
+| ---------------------------- | ---------------- | ------------------------------------ |
+| Provider Orders              | 15 seconds       | `provider/orders/page.tsx`           |
+| Customer Notifications       | 10 seconds       | `hooks/customer/useNotifications.ts` |
+| Provider Order Notifications | 15 seconds       | `hooks/customer/useNotifications.ts` |
+
+**الميزات المضافة:**
+
+- ✅ Automatic retry مع exponential backoff (2s → 4s → 8s)
+- ✅ Polling fallback عند فشل الاتصال
+- ✅ Connection status indicator في واجهة الطلبات
+- ✅ Graceful degradation - التطبيق يعمل حتى بدون WebSocket
 
 ---
 
@@ -1047,7 +1062,7 @@ npx @sentry/wizard@latest -i nextjs
 
 - [x] تقسيم LocationContext (2026-01-18) ✅
 - [ ] Repository Pattern
-- [ ] Error Handling في Realtime
+- [x] Error Handling في Realtime (2026-01-18) ✅
 - [ ] React.memo
 
 ### 🟢 منخفضة (مستقبلاً) - 30-50 ساعة
