@@ -1031,7 +1031,7 @@ npx @sentry/wizard@latest -i nextjs
 - [x] Zod Validation للـ critical routes (2026-01-18) ✅
 - [x] إصلاح N+1 في users.ts (2026-01-18) ✅
 - [x] إنشاء Error Boundaries (2026-01-18) ✅
-- [ ] إنشاء robots.txt و sitemap.ts
+- [x] إنشاء robots.txt و sitemap.ts (2026-01-18) ✅
 
 ### 🟡 عالية (الأسبوع الأول) - 20-30 ساعة
 
@@ -1080,7 +1080,7 @@ npx @sentry/wizard@latest -i nextjs
 - [x] Zod validation على `/api/chat`, `/api/voice-order/*` (2026-01-18) ✅
 - [x] N+1 queries محلولة (2026-01-18) ✅
 - [x] Error boundaries موجودة (2026-01-18) ✅
-- [ ] robots.txt و sitemap.ts يعملان
+- [x] robots.txt و sitemap.ts يعملان (2026-01-18) ✅
 - [ ] SEO metadata للمتاجر
 
 ### بعد الإطلاق (Monitoring)
