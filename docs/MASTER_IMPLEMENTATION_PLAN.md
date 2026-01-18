@@ -1029,7 +1029,7 @@ npx @sentry/wizard@latest -i nextjs
 - [x] Upstash Redis Rate Limiting (2026-01-17) ✅
 - [x] إصلاح XSS في export-service.ts (2026-01-17) ✅
 - [x] Zod Validation للـ critical routes (2026-01-18) ✅
-- [ ] إصلاح N+1 في users.ts
+- [x] إصلاح N+1 في users.ts (2026-01-18) ✅
 - [ ] إنشاء Error Boundaries
 - [ ] إنشاء robots.txt و sitemap.ts
 
@@ -1078,7 +1078,7 @@ npx @sentry/wizard@latest -i nextjs
 - [x] Rate limiting يعمل على Upstash Redis (2026-01-17) ✅
 - [x] XSS محمي في كل exports (2026-01-17) ✅
 - [x] Zod validation على `/api/chat`, `/api/voice-order/*` (2026-01-18) ✅
-- [ ] N+1 queries محلولة
+- [x] N+1 queries محلولة (2026-01-18) ✅
 - [ ] Error boundaries موجودة
 - [ ] robots.txt و sitemap.ts يعملان
 - [ ] SEO metadata للمتاجر

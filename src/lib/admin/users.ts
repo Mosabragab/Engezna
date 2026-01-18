@@ -183,30 +183,32 @@ export async function banUser(
         .in('status', activeStatuses);
 
       if (ordersToCancel && ordersToCancel.length > 0) {
-        for (const order of ordersToCancel) {
-          await supabase
-            .from('orders')
-            .update({
-              status: 'cancelled',
-              cancelled_at: timestamp,
-              cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
-              updated_at: timestamp,
-            })
-            .eq('id', order.id)
-            .select('id, status');
+        // ✅ Batch Update: O(1) instead of O(n)
+        const orderIds = ordersToCancel.map((o) => o.id);
 
-          // Send notification to provider (silently fail if error)
-          await supabase.from('provider_notifications').insert({
-            provider_id: order.provider_id,
-            type: 'order_cancelled',
-            title_ar: 'تم إلغاء طلب بسبب حظر العميل',
-            title_en: 'Order Cancelled - Customer Banned',
-            body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
-            body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
-            related_order_id: order.id,
-            related_customer_id: userId,
-          });
-        }
+        await supabase
+          .from('orders')
+          .update({
+            status: 'cancelled',
+            cancelled_at: timestamp,
+            cancellation_reason: `تم إلغاء الطلب بسبب حظر العميل - السبب: ${reason.trim()}`,
+            updated_at: timestamp,
+          })
+          .in('id', orderIds);
+
+        // ✅ Batch Insert Notifications: O(1) instead of O(n)
+        const notifications = ordersToCancel.map((order) => ({
+          provider_id: order.provider_id,
+          type: 'order_cancelled',
+          title_ar: 'تم إلغاء طلب بسبب حظر العميل',
+          title_en: 'Order Cancelled - Customer Banned',
+          body_ar: `تم إلغاء الطلب #${order.order_number} بقيمة ${order.total} ج.م بسبب حظر العميل. للاستفسار، تواصل مع خدمة عملاء إنجزنا.`,
+          body_en: `Order #${order.order_number} (${order.total} EGP) has been cancelled due to customer ban.`,
+          related_order_id: order.id,
+          related_customer_id: userId,
+        }));
+
+        await supabase.from('provider_notifications').insert(notifications);
       }
     }
 
