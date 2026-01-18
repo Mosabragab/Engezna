@@ -17,6 +17,16 @@ export async function GovernoratesList({ locale }: GovernoratesListProps) {
   const isRTL = locale === 'ar';
 
   const supabase = createStaticClient();
+
+  // Handle missing Supabase client (e.g., in test environments)
+  if (!supabase) {
+    return (
+      <p className="text-slate-500 mb-6">
+        {isRTL ? 'قريباً في محافظتك' : 'Coming soon to your governorate'}
+      </p>
+    );
+  }
+
   const { data: governorates } = await supabase
     .from('governorates')
     .select('id, name_ar, name_en, is_active')
