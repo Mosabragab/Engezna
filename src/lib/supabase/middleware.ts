@@ -59,11 +59,12 @@ export async function updateSession(request: NextRequest) {
 
   // Define protected routes that require authentication
   // IMPORTANT: Use specific patterns to avoid matching public routes like /providers
+  // NOTE: /checkout is NOT here - it's public so users can see totals, discount codes, etc.
+  // The checkout PAGE handles requiring login for completing the order
   const protectedPatterns = [
     '/admin', // Admin dashboard and all sub-routes (but not /admin/login)
     '/provider/', // Provider dashboard routes (note: trailing slash to NOT match /providers)
-    '/checkout', // Checkout page
-    '/profile', // Profile pages
+    '/profile', // Profile pages (except /profile/governorate and /profile/city which are public)
     '/orders', // Order history
   ];
 
@@ -80,9 +81,14 @@ export async function updateSession(request: NextRequest) {
     '/welcome', // Welcome/onboarding page
     '/', // Home page
     // Location selection - must be public for users to browse stores in their city
-    // Login is only required at checkout, not for browsing
     '/profile/governorate',
     '/profile/city',
+    // Checkout page is PUBLIC so users can see:
+    // - Total amount
+    // - Discount code field
+    // - Address field
+    // The page itself shows login requirement for completing the order
+    '/checkout',
   ];
 
   // Helper function to check if path matches protected patterns
