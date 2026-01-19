@@ -54,31 +54,49 @@ export async function updateSession(request: NextRequest) {
   const localeMatch = pathname.match(/^\/(ar|en)/);
   const locale = localeMatch ? localeMatch[1] : 'ar';
 
+  // Remove locale prefix for easier pattern matching
+  const pathWithoutLocale = pathname.replace(/^\/(ar|en)/, '');
+
   // Define protected routes that require authentication
+  // IMPORTANT: Use specific patterns to avoid matching public routes like /providers
   const protectedPatterns = [
-    '/admin', // Admin dashboard and all sub-routes
-    '/provider', // Provider dashboard (except /provider/login)
+    '/admin', // Admin dashboard and all sub-routes (but not /admin/login)
+    '/provider/', // Provider dashboard routes (note: trailing slash to NOT match /providers)
     '/checkout', // Checkout page
     '/profile', // Profile pages
-    '/orders', // Order history (except viewing confirmation)
+    '/orders', // Order history
   ];
 
   // Define public routes that don't require authentication
   const publicPatterns = [
     '/auth',
-    '/admin/login', // Admin login page - must be public!
+    '/admin/login',
     '/provider/login',
     '/provider/register',
     '/partner',
-    '/payment-result', // CRITICAL: Allow payment callbacks without auth redirect
-    '/confirmation', // Order confirmation page
+    '/providers', // PUBLIC: List of all providers/stores
+    '/payment-result',
+    '/confirmation',
+    '/welcome', // Welcome/onboarding page
+    '/', // Home page
   ];
 
-  // Check if the current path is protected
-  const isProtectedRoute = protectedPatterns.some((pattern) => pathname.includes(pattern));
+  // Helper function to check if path matches protected patterns
+  const isProtectedRoute = protectedPatterns.some((pattern) => {
+    if (pattern === '/provider/') {
+      // Special handling: match /provider but NOT /providers
+      return pathWithoutLocale === '/provider' || pathWithoutLocale.startsWith('/provider/');
+    }
+    return pathWithoutLocale.startsWith(pattern);
+  });
 
   // Check if the current path is explicitly public
-  const isPublicRoute = publicPatterns.some((pattern) => pathname.includes(pattern));
+  const isPublicRoute = publicPatterns.some((pattern) => {
+    if (pattern === '/') {
+      return pathWithoutLocale === '' || pathWithoutLocale === '/';
+    }
+    return pathWithoutLocale.startsWith(pattern);
+  });
 
   // Helper function to create redirect response
   const createRedirect = (redirectPath: string) => {
@@ -91,9 +109,9 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users from protected routes
   if (!user && isProtectedRoute && !isPublicRoute) {
     // Redirect to appropriate login page
-    if (pathname.includes('/admin')) {
+    if (pathWithoutLocale.startsWith('/admin')) {
       return createRedirect(`/${locale}/admin/login`);
-    } else if (pathname.includes('/provider')) {
+    } else if (pathWithoutLocale === '/provider' || pathWithoutLocale.startsWith('/provider/')) {
       return createRedirect(`/${locale}/provider/login`);
     } else {
       return createRedirect(`/${locale}/auth/login`);
@@ -104,7 +122,7 @@ export async function updateSession(request: NextRequest) {
   // ROLE-BASED ACCESS CONTROL (RBAC)
   // ============================================================================
   // If user is authenticated, check their role for admin/provider routes
-  if (user && !isPublicRoute) {
+  if (user && !isPublicRoute && isProtectedRoute) {
     // Get user role from profiles table
     const { data: profile } = await supabase
       .from('profiles')
@@ -115,7 +133,7 @@ export async function updateSession(request: NextRequest) {
     const userRole: UserRole | null = profile?.role as UserRole | null;
 
     // Check admin routes - only 'admin' role allowed
-    if (pathname.includes('/admin') && !pathname.includes('/admin/login')) {
+    if (pathWithoutLocale.startsWith('/admin') && !pathWithoutLocale.startsWith('/admin/login')) {
       if (userRole !== 'admin') {
         console.warn(
           `[RBAC] User ${user.id} with role '${userRole}' tried to access admin route: ${pathname}`
@@ -124,12 +142,15 @@ export async function updateSession(request: NextRequest) {
       }
     }
 
-    // Check provider routes - only 'provider_owner' and 'provider_staff' allowed
-    if (
-      pathname.includes('/provider') &&
-      !pathname.includes('/provider/login') &&
-      !pathname.includes('/provider/register')
-    ) {
+    // Check provider dashboard routes - only 'provider_owner' and 'provider_staff' allowed
+    // NOTE: /providers (public list) is NOT protected, only /provider (dashboard) is
+    const isProviderDashboard =
+      pathWithoutLocale === '/provider' || pathWithoutLocale.startsWith('/provider/');
+    const isProviderPublicPage =
+      pathWithoutLocale.startsWith('/provider/login') ||
+      pathWithoutLocale.startsWith('/provider/register');
+
+    if (isProviderDashboard && !isProviderPublicPage) {
       if (userRole !== 'provider_owner' && userRole !== 'provider_staff') {
         console.warn(
           `[RBAC] User ${user.id} with role '${userRole}' tried to access provider route: ${pathname}`
