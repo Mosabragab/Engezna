@@ -37,6 +37,74 @@ const TEST_USERS = {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// Location data to be fetched from database
+interface LocationData {
+  governorateId: string;
+  governorateName: { ar: string; en: string };
+  cityId: string | null;
+  cityName: { ar: string; en: string } | null;
+}
+
+// Default fallback location (will be overridden with real data)
+let beniSuefLocation: LocationData = {
+  governorateId: '',
+  governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+  cityId: null,
+  cityName: null,
+};
+
+async function fetchBeniSuefLocation(supabase: SupabaseClient): Promise<LocationData> {
+  console.log('   📍 Fetching real Beni Suef location IDs from database...');
+
+  try {
+    // Fetch Beni Suef governorate
+    const { data: governorate, error: govError } = await supabase
+      .from('governorates')
+      .select('id, name_ar, name_en')
+      .or('name_en.ilike.%Beni Suef%,name_ar.ilike.%بني سويف%')
+      .limit(1)
+      .single();
+
+    if (govError || !governorate) {
+      console.log('   ⚠️  Could not find Beni Suef governorate:', govError?.message);
+      return beniSuefLocation;
+    }
+
+    console.log(`   ✓ Found governorate: ${governorate.name_en} (${governorate.id})`);
+
+    // Fetch Beni Suef city (capital city usually has same name as governorate)
+    const { data: city, error: cityError } = await supabase
+      .from('cities')
+      .select('id, name_ar, name_en')
+      .eq('governorate_id', governorate.id)
+      .or('name_en.ilike.%Beni Suef%,name_ar.ilike.%بني سويف%')
+      .limit(1)
+      .single();
+
+    if (cityError || !city) {
+      console.log('   ⚠️  Could not find Beni Suef city, using governorate only');
+      return {
+        governorateId: governorate.id,
+        governorateName: { ar: governorate.name_ar, en: governorate.name_en },
+        cityId: null,
+        cityName: null,
+      };
+    }
+
+    console.log(`   ✓ Found city: ${city.name_en} (${city.id})`);
+
+    return {
+      governorateId: governorate.id,
+      governorateName: { ar: governorate.name_ar, en: governorate.name_en },
+      cityId: city.id,
+      cityName: { ar: city.name_ar, en: city.name_en },
+    };
+  } catch (error) {
+    console.log('   ⚠️  Error fetching location:', error instanceof Error ? error.message : error);
+    return beniSuefLocation;
+  }
+}
+
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
 
@@ -57,6 +125,44 @@ async function globalSetup(config: FullConfig) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Fetch real Beni Suef location IDs from database
+  beniSuefLocation = await fetchBeniSuefLocation(supabase);
+
+  if (!beniSuefLocation.governorateId) {
+    console.warn('   ⚠️  Could not fetch location data, tests may not find providers');
+  } else {
+    // Debug: Check if providers exist in this location with active status
+    let query = supabase
+      .from('providers')
+      .select('id, name_en, status, governorate_id, city_id')
+      .in('status', ['open', 'closed', 'temporarily_paused']);
+
+    // Filter by location
+    if (beniSuefLocation.cityId) {
+      query = query.eq('city_id', beniSuefLocation.cityId);
+    } else if (beniSuefLocation.governorateId) {
+      query = query.eq('governorate_id', beniSuefLocation.governorateId);
+    }
+
+    const { data: providers, error: provError } = await query.limit(5);
+
+    if (provError) {
+      console.log('   ⚠️  Error checking providers:', provError.message);
+    } else if (!providers || providers.length === 0) {
+      console.log('   ⚠️  No active providers found in Beni Suef!');
+      console.log('   💡 Make sure providers have status: open/closed/temporarily_paused');
+
+      // Also check how many providers exist in total (regardless of status)
+      const { count } = await supabase
+        .from('providers')
+        .select('*', { count: 'exact', head: true });
+      console.log(`   📊 Total providers in database: ${count || 0}`);
+    } else {
+      console.log(`   ✓ Found ${providers.length} active providers in Beni Suef`);
+      providers.forEach((p) => console.log(`     - ${p.name_en} (status: ${p.status})`));
+    }
+  }
 
   try {
     // Authenticate all users via API
@@ -125,7 +231,7 @@ async function authenticateViaAPI(
 
     // Set Supabase auth tokens in localStorage
     await page.evaluate(
-      ({ accessToken, refreshToken, expiresAt, user }) => {
+      ({ accessToken, refreshToken, expiresAt, user, location }) => {
         // Supabase stores auth in localStorage with a specific key format
         const supabaseKey =
           Object.keys(localStorage).find(
@@ -144,20 +250,15 @@ async function authenticateViaAPI(
         localStorage.setItem(supabaseKey, JSON.stringify(authData));
 
         // Set guest location to prevent redirect to welcome page
-        // Using actual Beni Suef IDs from database (where test providers exist)
-        const guestLocation = {
-          governorateId: '11111111-1111-1111-1111-111111111111',
-          governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-          cityId: '21111111-1111-1111-1111-111111111111',
-          cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-        };
-        localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+        // Using real Beni Suef IDs fetched from database
+        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
       },
       {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
         expiresAt: data.session.expires_at,
         user: data.user,
+        location: beniSuefLocation,
       }
     );
 
@@ -335,15 +436,10 @@ async function authenticateViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    await page.evaluate(() => {
-      const guestLocation = {
-        governorateId: '11111111-1111-1111-1111-111111111111',
-        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-        cityId: '21111111-1111-1111-1111-111111111111',
-        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-      };
-      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
-    });
+    // Using real Beni Suef IDs fetched from database
+    await page.evaluate((location) => {
+      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+    }, beniSuefLocation);
 
     await context.storageState({ path: storageStatePath });
     console.log(`   ✓ ${role} UI auth complete`);
@@ -390,15 +486,10 @@ async function authenticateCustomerViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    await page.evaluate(() => {
-      const guestLocation = {
-        governorateId: '11111111-1111-1111-1111-111111111111',
-        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-        cityId: '21111111-1111-1111-1111-111111111111',
-        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-      };
-      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
-    });
+    // Using real Beni Suef IDs fetched from database
+    await page.evaluate((location) => {
+      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+    }, beniSuefLocation);
 
     await context.storageState({ path: storageStatePath });
     console.log('   ✓ Customer UI auth complete');
