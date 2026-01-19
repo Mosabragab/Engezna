@@ -201,54 +201,47 @@ async function authenticateViaAPI(
     await page.goto(baseURL);
     await page.waitForLoadState('domcontentloaded');
 
+    // Extract project reference from Supabase URL for cookie name
+    const supabaseProjectRef =
+      SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase/)?.[1] || 'localhost';
+    const cookieName = `sb-${supabaseProjectRef}-auth-token`;
+
+    // Prepare the full session data for the cookie (same format as localStorage)
+    const sessionData = {
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      expires_at: data.session.expires_at,
+      expires_in: 3600,
+      token_type: 'bearer',
+      user: data.user,
+    };
+
+    // Base64 encode the session data for the cookie
+    const cookieValue = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+
     // Set Supabase auth tokens in localStorage
     await page.evaluate(
-      ({ accessToken, refreshToken, expiresAt, user, location }) => {
-        // Supabase stores auth in localStorage with a specific key format
-        const supabaseKey =
-          Object.keys(localStorage).find(
-            (key) => key.startsWith('sb-') && key.endsWith('-auth-token')
-          ) || `sb-${window.location.hostname.split('.')[0]}-auth-token`;
-
-        const authData = {
-          access_token: accessToken,
-          refresh_token: refreshToken,
-          expires_at: expiresAt,
-          expires_in: 3600,
-          token_type: 'bearer',
-          user: user,
-        };
-
-        localStorage.setItem(supabaseKey, JSON.stringify(authData));
+      ({ cookieName, sessionData, location }) => {
+        // Set localStorage (for client-side Supabase)
+        localStorage.setItem(cookieName, JSON.stringify(sessionData));
 
         // Set guest location to prevent redirect to welcome page
         // Using actual Beni Suef IDs from database (where test providers exist)
         localStorage.setItem('engezna_guest_location', JSON.stringify(location));
       },
       {
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresAt: data.session.expires_at,
-        user: data.user,
+        cookieName,
+        sessionData,
         location: testLocation,
       }
     );
 
-    // Also set the auth cookie if needed
+    // Set the auth cookie in the correct format for Supabase SSR
     const domain = new URL(baseURL).hostname;
     await context.addCookies([
       {
-        name: 'sb-access-token',
-        value: data.session.access_token,
-        domain: domain,
-        path: '/',
-        httpOnly: false,
-        secure: false,
-        sameSite: 'Lax',
-      },
-      {
-        name: 'sb-refresh-token',
-        value: data.session.refresh_token,
+        name: cookieName,
+        value: cookieValue,
         domain: domain,
         path: '/',
         httpOnly: false,
