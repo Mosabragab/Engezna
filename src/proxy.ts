@@ -12,8 +12,14 @@ const intlMiddleware = createMiddleware({
 });
 
 export default async function proxy(request: NextRequest) {
-  // First, handle Supabase session refresh
+  // First, handle Supabase session refresh and auth checks
   const supabaseResponse = await updateSession(request);
+
+  // IMPORTANT: If updateSession returned a redirect, use it immediately
+  // This ensures auth redirects (login required, unauthorized) are respected
+  if (supabaseResponse.status === 307 || supabaseResponse.status === 302) {
+    return supabaseResponse;
+  }
 
   // Then apply internationalization
   const intlResponse = intlMiddleware(request);
