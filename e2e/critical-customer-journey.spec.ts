@@ -102,16 +102,38 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     });
 
     test('should display provider cards on stores page', async ({ page }) => {
+      // DEBUG: Check localStorage state before navigation
+      await page.goto('/ar');
+      await page.waitForLoadState('domcontentloaded');
+
+      const debugInfo = await page.evaluate(() => {
+        const guestLocation = localStorage.getItem('engezna_guest_location');
+        const supabaseKeys = Object.keys(localStorage).filter(
+          (k) => k.startsWith('sb-') || k.includes('supabase')
+        );
+        return {
+          guestLocation: guestLocation ? JSON.parse(guestLocation) : null,
+          supabaseKeys,
+          localStorageKeys: Object.keys(localStorage),
+        };
+      });
+      console.log('DEBUG - localStorage state:', JSON.stringify(debugInfo, null, 2));
+
       await page.goto('/ar/providers');
       await page.waitForLoadState('networkidle');
 
       const url = page.url();
+      console.log('DEBUG - Current URL:', url);
 
       // If redirected to login, test passes (expected behavior)
       if (url.includes('/login') || url.includes('/auth')) {
+        console.log('DEBUG - Redirected to auth page');
         expect(true).toBeTruthy();
         return;
       }
+
+      // Wait a bit for client-side data fetching
+      await page.waitForTimeout(2000);
 
       // Check for provider cards using multiple selectors
       const storeCards = page.locator(
@@ -120,9 +142,18 @@ test.describe('Critical Customer Journey - Happy Path', () => {
       const cardCount = await storeCards.count();
       console.log('Provider cards found:', cardCount);
 
+      // DEBUG: Check for error messages or empty states
+      const pageContent = await page.textContent('body');
+      const hasNoStoresText =
+        pageContent?.includes('لا توجد متاجر') || pageContent?.includes('No stores found');
+      const hasLocationText =
+        pageContent?.includes('بني سويف') || pageContent?.includes('Beni Suef');
+      console.log('DEBUG - Has "no stores" text:', hasNoStoresText);
+      console.log('DEBUG - Has location text (Beni Suef):', hasLocationText);
+      console.log('DEBUG - Page content length:', pageContent?.length);
+
       // Page should load without errors
       // Test passes if: providers exist OR empty state is shown OR page loaded
-      const pageContent = await page.textContent('body');
       const hasProviders = cardCount > 0;
       const hasEmptyState =
         pageContent?.includes('لا يوجد') ||

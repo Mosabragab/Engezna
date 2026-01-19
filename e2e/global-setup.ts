@@ -117,6 +117,11 @@ async function globalSetup(config: FullConfig) {
   console.log('🔐 Starting global authentication setup...');
   console.log(`   Base URL: ${baseURL}`);
   console.log(`   Supabase URL: ${SUPABASE_URL ? '✓ configured' : '✗ missing'}`);
+  console.log(`   Supabase Anon Key: ${SUPABASE_ANON_KEY ? '✓ configured' : '✗ missing'}`);
+  // DEBUG: Show partial URL to verify correct configuration (first 30 chars)
+  if (SUPABASE_URL) {
+    console.log(`   URL prefix: ${SUPABASE_URL.substring(0, 30)}...`);
+  }
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.warn(
@@ -288,7 +293,26 @@ async function authenticateViaAPI(
 
     // Save storage state
     await context.storageState({ path: storageStatePath });
-    console.log(`   ✓ ${role} storage state saved`);
+    console.log(`   ✓ ${role} storage state saved to ${storageStatePath}`);
+
+    // DEBUG: Read and verify the saved storage state
+    const savedState = JSON.parse(fs.readFileSync(storageStatePath, 'utf-8'));
+    const hasLocalStorage = savedState.origins?.some(
+      (o: { localStorage?: { name: string }[] }) =>
+        o.localStorage?.some((ls) => ls.name === 'engezna_guest_location')
+    );
+    console.log(`   📦 Storage state contains localStorage: ${hasLocalStorage}`);
+    if (hasLocalStorage) {
+      const locationData = savedState.origins
+        ?.flatMap((o: { localStorage?: { name: string; value: string }[] }) => o.localStorage || [])
+        .find((ls: { name: string }) => ls.name === 'engezna_guest_location');
+      if (locationData) {
+        const location = JSON.parse(locationData.value);
+        console.log(
+          `   📍 Saved location: gov=${location.governorateId}, city=${location.cityId}`
+        );
+      }
+    }
 
     await browser.close();
 
