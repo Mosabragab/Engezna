@@ -45,62 +45,63 @@ interface LocationData {
   cityName: { ar: string; en: string } | null;
 }
 
-// Default fallback location (will be overridden with real data)
+// Known Beni Suef IDs from the database (these are the actual IDs used by providers)
+const KNOWN_BENI_SUEF_GOV_ID = '11111111-1111-1111-1111-111111111111';
+const KNOWN_BENI_SUEF_CITY_ID = '21111111-1111-1111-1111-111111111111';
+
+// Default location using known IDs (will be verified against database)
 let beniSuefLocation: LocationData = {
-  governorateId: '',
+  governorateId: KNOWN_BENI_SUEF_GOV_ID,
   governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-  cityId: null,
-  cityName: null,
+  cityId: KNOWN_BENI_SUEF_CITY_ID,
+  cityName: { ar: 'بني سويف', en: 'Beni Suef' },
 };
 
 async function fetchBeniSuefLocation(supabase: SupabaseClient): Promise<LocationData> {
-  console.log('   📍 Fetching real Beni Suef location IDs from database...');
+  console.log('   📍 Verifying Beni Suef location IDs...');
+  console.log(
+    `   📌 Using known IDs: gov=${KNOWN_BENI_SUEF_GOV_ID}, city=${KNOWN_BENI_SUEF_CITY_ID}`
+  );
 
   try {
-    // Fetch Beni Suef governorate
+    // Verify the known governorate ID exists
     const { data: governorate, error: govError } = await supabase
       .from('governorates')
       .select('id, name_ar, name_en')
-      .or('name_en.ilike.%Beni Suef%,name_ar.ilike.%بني سويف%')
-      .limit(1)
-      .single();
+      .eq('id', KNOWN_BENI_SUEF_GOV_ID)
+      .maybeSingle();
 
-    if (govError || !governorate) {
-      console.log('   ⚠️  Could not find Beni Suef governorate:', govError?.message);
-      return beniSuefLocation;
+    if (govError) {
+      console.log('   ⚠️  Error querying governorate:', govError.message);
+    } else if (governorate) {
+      console.log(`   ✓ Verified governorate: ${governorate.name_en} (${governorate.id})`);
+      beniSuefLocation.governorateName = { ar: governorate.name_ar, en: governorate.name_en };
+    } else {
+      console.log(`   ⚠️  Governorate ${KNOWN_BENI_SUEF_GOV_ID} not found in governorates table`);
+      console.log('   📌 Will use known ID anyway (providers reference it)');
     }
 
-    console.log(`   ✓ Found governorate: ${governorate.name_en} (${governorate.id})`);
-
-    // Fetch Beni Suef city (capital city usually has same name as governorate)
+    // Verify the known city ID exists
     const { data: city, error: cityError } = await supabase
       .from('cities')
       .select('id, name_ar, name_en')
-      .eq('governorate_id', governorate.id)
-      .or('name_en.ilike.%Beni Suef%,name_ar.ilike.%بني سويف%')
-      .limit(1)
-      .single();
+      .eq('id', KNOWN_BENI_SUEF_CITY_ID)
+      .maybeSingle();
 
-    if (cityError || !city) {
-      console.log('   ⚠️  Could not find Beni Suef city, using governorate only');
-      return {
-        governorateId: governorate.id,
-        governorateName: { ar: governorate.name_ar, en: governorate.name_en },
-        cityId: null,
-        cityName: null,
-      };
+    if (cityError) {
+      console.log('   ⚠️  Error querying city:', cityError.message);
+    } else if (city) {
+      console.log(`   ✓ Verified city: ${city.name_en} (${city.id})`);
+      beniSuefLocation.cityName = { ar: city.name_ar, en: city.name_en };
+    } else {
+      console.log(`   ⚠️  City ${KNOWN_BENI_SUEF_CITY_ID} not found in cities table`);
+      console.log('   📌 Will use known ID anyway (providers reference it)');
     }
 
-    console.log(`   ✓ Found city: ${city.name_en} (${city.id})`);
-
-    return {
-      governorateId: governorate.id,
-      governorateName: { ar: governorate.name_ar, en: governorate.name_en },
-      cityId: city.id,
-      cityName: { ar: city.name_ar, en: city.name_en },
-    };
+    return beniSuefLocation;
   } catch (error) {
-    console.log('   ⚠️  Error fetching location:', error instanceof Error ? error.message : error);
+    console.log('   ⚠️  Error verifying location:', error instanceof Error ? error.message : error);
+    console.log('   📌 Using known IDs as fallback');
     return beniSuefLocation;
   }
 }
@@ -129,39 +130,39 @@ async function globalSetup(config: FullConfig) {
   // Fetch real Beni Suef location IDs from database
   beniSuefLocation = await fetchBeniSuefLocation(supabase);
 
-  if (!beniSuefLocation.governorateId) {
-    console.warn('   ⚠️  Could not fetch location data, tests may not find providers');
+  // Debug: Check providers in database
+  console.log('   🔍 Checking providers in database...');
+
+  // First, check total providers
+  const { count: totalCount } = await supabase
+    .from('providers')
+    .select('*', { count: 'exact', head: true });
+  console.log(`   📊 Total providers in database: ${totalCount || 0}`);
+
+  // Check providers with matching location IDs
+  const { data: locationProviders, error: locProvError } = await supabase
+    .from('providers')
+    .select('id, name_en, status, governorate_id, city_id')
+    .or(`governorate_id.eq.${KNOWN_BENI_SUEF_GOV_ID},city_id.eq.${KNOWN_BENI_SUEF_CITY_ID}`)
+    .limit(10);
+
+  if (locProvError) {
+    console.log('   ⚠️  Error checking providers by location:', locProvError.message);
+  } else if (!locationProviders || locationProviders.length === 0) {
+    console.log(`   ⚠️  No providers found with Beni Suef location IDs`);
   } else {
-    // Debug: Check if providers exist in this location with active status
-    let query = supabase
-      .from('providers')
-      .select('id, name_en, status, governorate_id, city_id')
-      .in('status', ['open', 'closed', 'temporarily_paused']);
+    console.log(`   ✓ Found ${locationProviders.length} providers with Beni Suef location`);
+    locationProviders.forEach((p) =>
+      console.log(
+        `     - ${p.name_en} (status: ${p.status}, gov: ${p.governorate_id}, city: ${p.city_id})`
+      )
+    );
 
-    // Filter by location
-    if (beniSuefLocation.cityId) {
-      query = query.eq('city_id', beniSuefLocation.cityId);
-    } else if (beniSuefLocation.governorateId) {
-      query = query.eq('governorate_id', beniSuefLocation.governorateId);
-    }
-
-    const { data: providers, error: provError } = await query.limit(5);
-
-    if (provError) {
-      console.log('   ⚠️  Error checking providers:', provError.message);
-    } else if (!providers || providers.length === 0) {
-      console.log('   ⚠️  No active providers found in Beni Suef!');
-      console.log('   💡 Make sure providers have status: open/closed/temporarily_paused');
-
-      // Also check how many providers exist in total (regardless of status)
-      const { count } = await supabase
-        .from('providers')
-        .select('*', { count: 'exact', head: true });
-      console.log(`   📊 Total providers in database: ${count || 0}`);
-    } else {
-      console.log(`   ✓ Found ${providers.length} active providers in Beni Suef`);
-      providers.forEach((p) => console.log(`     - ${p.name_en} (status: ${p.status})`));
-    }
+    // Check how many have active status
+    const activeProviders = locationProviders.filter((p) =>
+      ['open', 'closed', 'temporarily_paused'].includes(p.status)
+    );
+    console.log(`   ✓ Active providers (open/closed/paused): ${activeProviders.length}`);
   }
 
   try {
