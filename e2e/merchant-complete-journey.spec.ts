@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { PROVIDER_STORAGE_STATE } from './global-setup';
+import { PROVIDER_STORAGE_STATE } from './fixtures/test-utils';
 
 /**
  * Merchant Complete Journey E2E Tests - Phase 2

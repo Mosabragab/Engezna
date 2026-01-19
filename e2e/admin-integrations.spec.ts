@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { ADMIN_STORAGE_STATE } from './global-setup';
+import { ADMIN_STORAGE_STATE } from './fixtures/test-utils';
 
 /**
  * Admin & Integrations E2E Tests - Phase 4

@@ -3,7 +3,7 @@ import {
   CUSTOMER_STORAGE_STATE,
   PROVIDER_STORAGE_STATE,
   ADMIN_STORAGE_STATE,
-} from './global-setup';
+} from './fixtures/test-utils';
 
 /**
  * Comprehensive E2E Tests - All Phases Combined

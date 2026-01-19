@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { CUSTOMER_STORAGE_STATE } from './global-setup';
+import { CUSTOMER_STORAGE_STATE } from './fixtures/test-utils';
 
 /**
  * Customer Complete Journey E2E Tests - Phase 1
