@@ -11,9 +11,10 @@ import { test, expect, Page, APIRequestContext } from '@playwright/test';
  * These tests verify that security measures are working correctly.
  */
 
-// CI-aware timeouts
+// Faster timeouts - networkidle was causing issues
 const isCI = process.env.CI === 'true';
-const DEFAULT_TIMEOUT = isCI ? 30000 : 15000;
+const DEFAULT_TIMEOUT = isCI ? 15000 : 10000;
+const NAVIGATION_TIMEOUT = isCI ? 20000 : 15000;
 
 /**
  * Wait for page to have meaningful content
@@ -196,7 +197,7 @@ test.describe('Error Boundaries', () => {
   test('should display error boundary on client error', async ({ page }) => {
     // Navigate to a page that might trigger an error
     await page.goto('/ar/providers/non-existent-id-12345');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Check if error boundary or 404 page is shown
     const content = await page.locator('body').innerText();
@@ -221,7 +222,7 @@ test.describe('Error Boundaries', () => {
   test('should have retry functionality in error boundaries', async ({ page }) => {
     // Navigate to error-prone route
     await page.goto('/ar/providers/invalid-uuid-format');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Look for retry button
     const retryButton = page.locator(
@@ -242,7 +243,7 @@ test.describe('Error Boundaries', () => {
   test('should display global error boundary for critical errors', async ({ page }) => {
     // This test verifies the error boundary structure exists
     await page.goto('/ar');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Inject a client-side error to test error boundary
     const hasErrorBoundary = await page.evaluate(() => {
@@ -303,7 +304,7 @@ test.describe('Sentry Error Tracking', () => {
   test('should track 404 pages for monitoring', async ({ page }) => {
     // Visit a non-existent page
     await page.goto('/ar/this-page-does-not-exist-12345');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     const content = await page.locator('body').innerText();
 

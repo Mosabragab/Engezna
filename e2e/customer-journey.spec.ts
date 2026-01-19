@@ -13,9 +13,10 @@ import { TEST_USERS, LOCATORS, ORDER_STATUS } from './fixtures/test-utils';
  * No mocking - uses real Supabase data.
  */
 
-// CI-aware timeouts
+// Faster timeouts - networkidle was causing issues
 const isCI = process.env.CI === 'true';
-const DEFAULT_TIMEOUT = isCI ? 30000 : 15000;
+const DEFAULT_TIMEOUT = isCI ? 15000 : 10000;
+const NAVIGATION_TIMEOUT = isCI ? 20000 : 15000;
 
 /**
  * Wait for page to have meaningful content
@@ -30,7 +31,7 @@ async function waitForContent(page: Page, minLength = 50): Promise<string> {
 test.describe('Customer Journey - Browsing', () => {
   test('should display home page with providers or welcome content', async ({ page }) => {
     await page.goto('/ar');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for content to load
     const content = await waitForContent(page, 50);
@@ -45,7 +46,7 @@ test.describe('Customer Journey - Browsing', () => {
 
   test('should display providers page with store cards', async ({ page }) => {
     await page.goto('/ar/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for content to load
     await waitForContent(page, 50);
@@ -65,7 +66,7 @@ test.describe('Customer Journey - Browsing', () => {
 
   test('should navigate to provider details page', async ({ page }) => {
     await page.goto('/ar/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 50);
 
     // Find a provider link and click it
@@ -73,7 +74,7 @@ test.describe('Customer Journey - Browsing', () => {
 
     if (await providerLink.isVisible().catch(() => false)) {
       await providerLink.click();
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Should be on provider details page
       const url = page.url();
@@ -89,7 +90,7 @@ test.describe('Customer Journey - Browsing', () => {
 
   test('should display product categories on provider page', async ({ page }) => {
     await page.goto('/ar/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 50);
 
     // Navigate to first provider
@@ -97,7 +98,7 @@ test.describe('Customer Journey - Browsing', () => {
 
     if (await providerLink.isVisible().catch(() => false)) {
       await providerLink.click();
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
       await waitForContent(page, 50);
 
       // Look for categories or products
@@ -121,7 +122,7 @@ test.describe('Customer Journey - Browsing', () => {
 test.describe('Customer Journey - Cart Operations', () => {
   test('should display cart page', async ({ page }) => {
     await page.goto('/ar/cart');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for content
     await waitForContent(page, 20);
@@ -139,7 +140,7 @@ test.describe('Customer Journey - Cart Operations', () => {
 
   test('should add item to cart from provider page', async ({ page }) => {
     await page.goto('/ar/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 50);
 
     // Navigate to first provider
@@ -147,7 +148,7 @@ test.describe('Customer Journey - Cart Operations', () => {
 
     if (await providerLink.isVisible().catch(() => false)) {
       await providerLink.click();
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
       await waitForContent(page, 50);
 
       // Find add to cart button
@@ -189,12 +190,12 @@ test.describe('Customer Journey - Cart Operations', () => {
   test('should update quantity in cart', async ({ page }) => {
     // First add something to cart by visiting a provider
     await page.goto('/ar/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     const providerLink = page.locator('a[href*="/providers/"]').first();
     if (await providerLink.isVisible().catch(() => false)) {
       await providerLink.click();
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       const addButton = page.locator(
         'button:has-text("أضف"), button:has-text("إضافة"), [data-testid="add-to-cart"]'
@@ -212,7 +213,7 @@ test.describe('Customer Journey - Cart Operations', () => {
 
     // Go to cart
     await page.goto('/ar/cart');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 20);
 
     // Look for quantity controls
@@ -235,7 +236,7 @@ test.describe('Customer Journey - Cart Operations', () => {
 test.describe('Customer Journey - Checkout', () => {
   test('should display checkout page with address and payment options', async ({ page }) => {
     await page.goto('/ar/checkout');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     const url = page.url();
 
@@ -261,7 +262,7 @@ test.describe('Customer Journey - Checkout', () => {
 
   test('should show payment method options on checkout', async ({ page }) => {
     await page.goto('/ar/checkout');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/checkout')) {
       await waitForContent(page, 50);
@@ -286,7 +287,7 @@ test.describe('Customer Journey - Checkout', () => {
 test.describe('Customer Journey - Orders', () => {
   test('should display orders page', async ({ page }) => {
     await page.goto('/ar/orders');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     const url = page.url();
 
@@ -309,7 +310,7 @@ test.describe('Customer Journey - Orders', () => {
 
   test('should show order details when orders exist', async ({ page }) => {
     await page.goto('/ar/orders');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       await waitForContent(page, 20);
@@ -321,7 +322,7 @@ test.describe('Customer Journey - Orders', () => {
 
       if ((await orderCards.count()) > 0) {
         await orderCards.first().click();
-        await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+        await page.waitForLoadState('domcontentloaded');
 
         // Should show order details
         await waitForContent(page, 50);
@@ -338,7 +339,7 @@ test.describe('Customer Journey - Navigation', () => {
   test('should have working bottom navigation on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/ar');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 50);
 
     // Look for bottom navigation
@@ -363,7 +364,7 @@ test.describe('Customer Journey - Navigation', () => {
 
       if ((await homeItem.count()) > 0) {
         await homeItem.first().click();
-        await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+        await page.waitForLoadState('domcontentloaded');
 
         // Navigation should work
         expect(page.url()).toBeTruthy();
@@ -374,7 +375,7 @@ test.describe('Customer Journey - Navigation', () => {
   test('should display header with location on desktop', async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/ar');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
     await waitForContent(page, 50);
 
     // Look for header
@@ -407,7 +408,7 @@ test.describe('Customer Journey - Responsiveness', () => {
     test(`should render correctly on ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await page.goto('/ar/providers');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
       await waitForContent(page, 50);
 
       // Check for horizontal scroll (should not exist)

@@ -13,9 +13,10 @@ import { TEST_USERS } from './fixtures/test-utils';
  * No mocking - uses real Supabase data.
  */
 
-// CI-aware timeouts
+// Faster timeouts - networkidle was causing issues
 const isCI = process.env.CI === 'true';
-const DEFAULT_TIMEOUT = isCI ? 30000 : 15000;
+const DEFAULT_TIMEOUT = isCI ? 15000 : 10000;
+const NAVIGATION_TIMEOUT = isCI ? 20000 : 15000;
 
 /**
  * Wait for page to have meaningful content
@@ -30,7 +31,7 @@ async function waitForContent(page: Page, minLength = 50): Promise<string> {
 test.describe('Admin Dashboard', () => {
   test('should display admin dashboard with system overview', async ({ page }) => {
     await page.goto('/ar/admin');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     const url = page.url();
 
@@ -55,7 +56,7 @@ test.describe('Admin Dashboard', () => {
 
   test('should display statistics cards', async ({ page }) => {
     await page.goto('/ar/admin');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/admin') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -75,7 +76,7 @@ test.describe('Admin Dashboard', () => {
 
   test('should have sidebar navigation', async ({ page }) => {
     await page.goto('/ar/admin');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/admin') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -100,7 +101,7 @@ test.describe('Admin Dashboard', () => {
 test.describe('Admin User Management', () => {
   test('should display users page', async ({ page }) => {
     await page.goto('/ar/admin/users');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/users') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -119,7 +120,7 @@ test.describe('Admin User Management', () => {
 
   test('should have user search functionality', async ({ page }) => {
     await page.goto('/ar/admin/users');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/users') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -142,7 +143,7 @@ test.describe('Admin User Management', () => {
 
   test('should display user details when clicking on user', async ({ page }) => {
     await page.goto('/ar/admin/users');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/users') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -154,7 +155,7 @@ test.describe('Admin User Management', () => {
 
       if ((await userItems.count()) > 0) {
         await userItems.first().click();
-        await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+        await page.waitForLoadState('domcontentloaded');
 
         // Should show user details or modal
         const content = await page.locator('body').innerText();
@@ -169,7 +170,7 @@ test.describe('Admin User Management', () => {
 test.describe('Admin Provider Management', () => {
   test('should display providers page', async ({ page }) => {
     await page.goto('/ar/admin/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/providers') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -188,7 +189,7 @@ test.describe('Admin Provider Management', () => {
 
   test('should have provider approval controls', async ({ page }) => {
     await page.goto('/ar/admin/providers');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/providers') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -210,7 +211,7 @@ test.describe('Admin Provider Management', () => {
 test.describe('Admin Settlements', () => {
   test('should display settlements page', async ({ page }) => {
     await page.goto('/ar/admin/settlements');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/settlements') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -229,7 +230,7 @@ test.describe('Admin Settlements', () => {
 
   test('should have settlement status filters', async ({ page }) => {
     await page.goto('/ar/admin/settlements');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/settlements') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -249,7 +250,7 @@ test.describe('Admin Settlements', () => {
 
   test('should display settlement details', async ({ page }) => {
     await page.goto('/ar/admin/settlements');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/settlements') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -275,7 +276,7 @@ test.describe('Admin Settlements', () => {
 
   test('should have process settlement action', async ({ page }) => {
     await page.goto('/ar/admin/settlements');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/settlements') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -298,7 +299,7 @@ test.describe('Admin Settlements', () => {
 test.describe('Admin Orders', () => {
   test('should display all orders page', async ({ page }) => {
     await page.goto('/ar/admin/orders');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       await waitForContent(page, 50);
@@ -316,7 +317,7 @@ test.describe('Admin Orders', () => {
 
   test('should have order search and filters', async ({ page }) => {
     await page.goto('/ar/admin/orders');
-    await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+    await page.waitForLoadState('domcontentloaded');
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       await waitForContent(page, 50);

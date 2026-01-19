@@ -8,15 +8,16 @@ import { TEST_USERS, LOCATORS } from './fixtures/test-utils';
  * No mocking - uses real Supabase authentication.
  */
 
-// CI-aware timeouts
+// Faster timeouts - networkidle was causing issues
 const isCI = process.env.CI === 'true';
-const DEFAULT_TIMEOUT = isCI ? 30000 : 15000;
+const DEFAULT_TIMEOUT = isCI ? 15000 : 10000;
+const NAVIGATION_TIMEOUT = isCI ? 20000 : 15000;
 
 test.describe('Authentication - Real Login Flows', () => {
   test.describe('Customer Authentication', () => {
     test('should login as customer and redirect to home', async ({ page }) => {
       await page.goto('/ar/auth/login');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Customer login requires clicking "Continue with Email" first
       const emailButton = page.locator(LOCATORS.continueWithEmailButton);
@@ -48,7 +49,7 @@ test.describe('Authentication - Real Login Flows', () => {
 
     test('should show error with invalid customer credentials', async ({ page }) => {
       await page.goto('/ar/auth/login');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Click continue with email
       const emailButton = page.locator(LOCATORS.continueWithEmailButton);
@@ -81,7 +82,7 @@ test.describe('Authentication - Real Login Flows', () => {
   test.describe('Provider Authentication', () => {
     test('should login as provider and redirect to dashboard', async ({ page }) => {
       await page.goto('/ar/provider/login');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth spinner to disappear and form to appear
       const emailInput = page.locator(LOCATORS.emailInput);
@@ -110,7 +111,7 @@ test.describe('Authentication - Real Login Flows', () => {
     test('should logout provider successfully', async ({ page }) => {
       // First login
       await page.goto('/ar/provider/login');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       const emailInput = page.locator(LOCATORS.emailInput);
       await expect(emailInput).toBeVisible({ timeout: DEFAULT_TIMEOUT });
@@ -118,7 +119,7 @@ test.describe('Authentication - Real Login Flows', () => {
       await emailInput.fill(TEST_USERS.provider.email);
       await page.locator(LOCATORS.passwordInput).fill(TEST_USERS.provider.password);
       await page.click(LOCATORS.submitButton);
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for dashboard to load
       await page.waitForTimeout(2000);
@@ -135,7 +136,7 @@ test.describe('Authentication - Real Login Flows', () => {
           .catch(() => false)
       ) {
         await logoutBtn.first().click();
-        await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+        await page.waitForLoadState('domcontentloaded');
 
         // Should redirect to login page
         const url = page.url();
@@ -171,7 +172,7 @@ test.describe('Authentication - Real Login Flows', () => {
   test.describe('Admin Authentication', () => {
     test('should login as admin and redirect to admin dashboard', async ({ page }) => {
       await page.goto('/ar/admin/login');
-      await page.waitForLoadState('networkidle', { timeout: DEFAULT_TIMEOUT });
+      await page.waitForLoadState('domcontentloaded');
 
       // Wait for auth spinner to disappear and form to appear
       const emailInput = page.locator(LOCATORS.emailInput);
