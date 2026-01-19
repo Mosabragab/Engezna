@@ -102,6 +102,20 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     });
 
     test('should display provider cards on stores page', async ({ page }) => {
+      // Capture console errors
+      const consoleErrors: string[] = [];
+      page.on('console', (msg) => {
+        if (msg.type() === 'error') {
+          consoleErrors.push(msg.text());
+        }
+      });
+
+      // Capture page errors (JavaScript exceptions)
+      const pageErrors: string[] = [];
+      page.on('pageerror', (error) => {
+        pageErrors.push(error.message);
+      });
+
       // DEBUG: Check localStorage state before navigation
       await page.goto('/ar');
       await page.waitForLoadState('domcontentloaded');
@@ -119,7 +133,11 @@ test.describe('Critical Customer Journey - Happy Path', () => {
       });
       console.log('DEBUG - localStorage state:', JSON.stringify(debugInfo, null, 2));
 
-      await page.goto('/ar/providers');
+      // Navigate to providers page and capture response
+      const response = await page.goto('/ar/providers');
+      console.log('DEBUG - Response status:', response?.status());
+      console.log('DEBUG - Response URL:', response?.url());
+
       await page.waitForLoadState('networkidle');
 
       const url = page.url();
@@ -134,6 +152,23 @@ test.describe('Critical Customer Journey - Happy Path', () => {
 
       // Wait a bit for client-side data fetching
       await page.waitForTimeout(2000);
+
+      // DEBUG: Get page HTML to see what's rendered
+      const pageHtml = await page.content();
+      console.log('DEBUG - Page HTML length:', pageHtml.length);
+      console.log('DEBUG - HTML has body:', pageHtml.includes('<body'));
+      console.log(
+        'DEBUG - HTML has error:',
+        pageHtml.includes('error') || pageHtml.includes('Error')
+      );
+
+      // Log any console/page errors
+      if (consoleErrors.length > 0) {
+        console.log('DEBUG - Console errors:', consoleErrors);
+      }
+      if (pageErrors.length > 0) {
+        console.log('DEBUG - Page errors:', pageErrors);
+      }
 
       // Check for provider cards using multiple selectors
       const storeCards = page.locator(
@@ -151,6 +186,11 @@ test.describe('Critical Customer Journey - Happy Path', () => {
       console.log('DEBUG - Has "no stores" text:', hasNoStoresText);
       console.log('DEBUG - Has location text (Beni Suef):', hasLocationText);
       console.log('DEBUG - Page content length:', pageContent?.length);
+
+      // If page content is empty, log first 500 chars of HTML for debugging
+      if (!pageContent || pageContent.length === 0) {
+        console.log('DEBUG - First 500 chars of HTML:', pageHtml.substring(0, 500));
+      }
 
       // Page should load without errors
       // Test passes if: providers exist OR empty state is shown OR page loaded
