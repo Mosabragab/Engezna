@@ -216,8 +216,10 @@ async function authenticateViaAPI(
       user: data.user,
     };
 
-    // Base64 encode the session data for the cookie
-    const cookieValue = Buffer.from(JSON.stringify(sessionData)).toString('base64');
+    // Supabase SSR expects cookies in format: "base64-" + base64url encoded JSON
+    const jsonString = JSON.stringify(sessionData);
+    const base64urlEncoded = Buffer.from(jsonString).toString('base64url');
+    const cookieValue = `base64-${base64urlEncoded}`;
 
     // Set Supabase auth tokens in localStorage
     await page.evaluate(
@@ -237,9 +239,23 @@ async function authenticateViaAPI(
     );
 
     // Set the auth cookie in the correct format for Supabase SSR
+    // Handle chunking if cookie value is too large (max ~4096 bytes per cookie)
     const domain = new URL(baseURL).hostname;
-    await context.addCookies([
-      {
+    const MAX_CHUNK_SIZE = 3180; // Safe size accounting for cookie overhead
+
+    const cookies: Array<{
+      name: string;
+      value: string;
+      domain: string;
+      path: string;
+      httpOnly: boolean;
+      secure: boolean;
+      sameSite: 'Lax' | 'Strict' | 'None';
+    }> = [];
+
+    if (cookieValue.length <= MAX_CHUNK_SIZE) {
+      // Single cookie - no chunking needed
+      cookies.push({
         name: cookieName,
         value: cookieValue,
         domain: domain,
@@ -247,8 +263,29 @@ async function authenticateViaAPI(
         httpOnly: false,
         secure: false,
         sameSite: 'Lax',
-      },
-    ]);
+      });
+    } else {
+      // Chunk the cookie value
+      let remaining = cookieValue;
+      let chunkIndex = 0;
+      while (remaining.length > 0) {
+        const chunk = remaining.slice(0, MAX_CHUNK_SIZE);
+        remaining = remaining.slice(MAX_CHUNK_SIZE);
+        cookies.push({
+          name: `${cookieName}.${chunkIndex}`,
+          value: chunk,
+          domain: domain,
+          path: '/',
+          httpOnly: false,
+          secure: false,
+          sameSite: 'Lax',
+        });
+        chunkIndex++;
+      }
+      console.log(`   → Session split into ${chunkIndex} cookie chunks`);
+    }
+
+    await context.addCookies(cookies);
 
     // Save storage state
     await context.storageState({ path: storageStatePath });
