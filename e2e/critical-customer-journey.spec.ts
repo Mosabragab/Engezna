@@ -33,16 +33,14 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display login page with proper elements', async ({ page }) => {
       await page.goto('/ar/auth/login');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1000); // Allow hydration
 
       // Customer login may show "Continue with Email" button first
       const continueWithEmail = page.locator(
         'button:has(svg.lucide-mail), button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email")'
       );
 
-      if (await continueWithEmail.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await continueWithEmail.isVisible({ timeout: 3000 }).catch(() => false)) {
         await continueWithEmail.click();
-        await page.waitForTimeout(500);
       }
 
       // Now check for login form elements
@@ -68,7 +66,6 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should navigate to providers/restaurants page', async ({ page }) => {
       await page.goto('/ar/providers');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(2000); // Allow content to load
 
       const url = page.url();
       const pageContent = await page.textContent('body');
@@ -87,7 +84,6 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display provider cards on stores page', async ({ page }) => {
       await page.goto('/ar/providers');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(2000);
 
       const url = page.url();
 
@@ -112,7 +108,6 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should handle add to cart interaction', async ({ page }) => {
       await page.goto('/ar/providers');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(2000);
 
       const url = page.url();
 
@@ -124,12 +119,11 @@ test.describe('Critical Customer Journey - Happy Path', () => {
 
       // Navigate to a store if available
       const storeLink = page.locator('a[href*="/providers/"]').first();
-      const hasStoreLink = await storeLink.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasStoreLink = await storeLink.isVisible({ timeout: 2000 }).catch(() => false);
 
       if (hasStoreLink) {
         await storeLink.click();
         await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(1500);
       }
 
       // Test passes if page loaded (any valid state)
@@ -140,7 +134,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should update item quantities in cart with 48px buttons', async ({ page }) => {
       await page.goto('/ar/cart');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       // Check if cart has items or shows empty state
       const pageContent = await page.textContent('body');
@@ -166,7 +160,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display checkout page elements', async ({ page }) => {
       await page.goto('/ar/checkout');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -184,7 +178,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display orders page', async ({ page }) => {
       await page.goto('/ar/orders');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -204,7 +198,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display custom order page', async ({ page }) => {
       await page.goto('/ar/custom-order');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -226,7 +220,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should have text input area for custom order', async ({ page }) => {
       await page.goto('/ar/custom-order');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       if (page.url().includes('/custom-order') && !page.url().includes('/login')) {
         // Look for text input area with getByRole
@@ -253,7 +247,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should have image upload capability', async ({ page }) => {
       await page.goto('/ar/custom-order');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       if (page.url().includes('/custom-order') && !page.url().includes('/login')) {
         // Look for image upload input
@@ -281,7 +275,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should have voice input capability', async ({ page }) => {
       await page.goto('/ar/custom-order');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       if (page.url().includes('/custom-order') && !page.url().includes('/login')) {
         // Look for voice/microphone button
@@ -301,7 +295,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display broadcast/submit button', async ({ page }) => {
       await page.goto('/ar/custom-order');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       if (page.url().includes('/custom-order') && !page.url().includes('/login')) {
         // Find submit/broadcast button
@@ -325,7 +319,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display payment options on checkout', async ({ page }) => {
       await page.goto('/ar/checkout');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -343,7 +337,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should have place order button', async ({ page }) => {
       await page.goto('/ar/checkout');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -361,7 +355,7 @@ test.describe('Critical Customer Journey - Happy Path', () => {
     test('should display order details structure', async ({ page }) => {
       await page.goto('/ar/orders');
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(300);
 
       const url = page.url();
 
@@ -386,7 +380,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display broadcast interface', async ({ page }) => {
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -404,7 +398,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should handle custom order detail page', async ({ page }) => {
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -422,7 +416,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display pending pricing section on orders', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -440,7 +434,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display notifications page', async ({ page }) => {
     await page.goto('/ar/notifications');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -458,7 +452,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should handle pricing status display', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -482,7 +476,7 @@ test.describe('Real-time Order Updates', () => {
   test('should have realtime infrastructure on orders page', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -500,7 +494,7 @@ test.describe('Real-time Order Updates', () => {
   test('should have notification UI in header', async ({ page }) => {
     await page.goto('/ar');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     // Check for notification bell or badge in header
     const header = page.locator('header');
@@ -526,7 +520,7 @@ test.describe('Order Flow Edge Cases', () => {
   test('should handle cart page gracefully', async ({ page }) => {
     await page.goto('/ar/cart');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     // Page loaded - verify content exists
     const pageContent = await page.textContent('body');
@@ -536,7 +530,7 @@ test.describe('Order Flow Edge Cases', () => {
   test('should handle checkout redirect behavior', async ({ page }) => {
     await page.goto('/ar/checkout');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     // Any page load is valid (checkout, cart, login, or home)
     const pageContent = await page.textContent('body');
@@ -550,7 +544,7 @@ test.describe('Order Flow Edge Cases', () => {
     for (const pageUrl of pages) {
       await page.goto(pageUrl);
       await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(200);
 
       // Just verify the page loaded (any response is valid)
       const url = page.url();
@@ -561,7 +555,7 @@ test.describe('Order Flow Edge Cases', () => {
   test('should have consistent header across pages', async ({ page }) => {
     await page.goto('/ar/providers');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(300);
 
     // Just verify the page loaded
     const url = page.url();
