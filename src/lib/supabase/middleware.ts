@@ -79,6 +79,10 @@ export async function updateSession(request: NextRequest) {
     '/confirmation',
     '/welcome', // Welcome/onboarding page
     '/', // Home page
+    // Location selection - must be public for users to browse stores in their city
+    // Login is only required at checkout, not for browsing
+    '/profile/governorate',
+    '/profile/city',
   ];
 
   // Helper function to check if path matches protected patterns
