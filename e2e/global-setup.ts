@@ -91,28 +91,32 @@ async function authenticateViaAPI(
   user: { email: string; password: string },
   storageStatePath: string
 ) {
-  console.log(`   Authenticating ${role} via API...`);
+  console.log(`[AUTH] Starting ${role} authentication...`);
+  console.log(`[AUTH] ${role} email: ${user.email}`);
 
   try {
     // Sign in via Supabase API
+    console.log(`[AUTH] ${role} calling signInWithPassword...`);
     const { data, error } = await supabase.auth.signInWithPassword({
       email: user.email,
       password: user.password,
     });
 
     if (error) {
-      console.log(`   ⚠️  ${role} API auth failed: ${error.message}`);
+      console.log(`[AUTH] ${role} FAILED: ${error.message}`);
+      console.log(`[AUTH] ${role} error code: ${error.status || 'unknown'}`);
       await createEmptyStorageState(storageStatePath);
       return;
     }
 
     if (!data.session) {
-      console.log(`   ⚠️  ${role} no session returned`);
+      console.log(`[AUTH] ${role} FAILED: no session returned`);
       await createEmptyStorageState(storageStatePath);
       return;
     }
 
-    console.log(`   ✓ ${role} authenticated via API`);
+    console.log(`[AUTH] ${role} SUCCESS - got session`);
+    console.log(`[AUTH] ${role} user id: ${data.user?.id?.substring(0, 8)}...`);
 
     // Now open browser and set the session cookies
     const browser = await chromium.launch();
@@ -185,18 +189,21 @@ async function authenticateViaAPI(
     ]);
 
     // Save storage state
+    console.log(`[AUTH] ${role} saving storage state to: ${storageStatePath}`);
     await context.storageState({ path: storageStatePath });
-    console.log(`   ✓ ${role} storage state saved`);
+    console.log(`[AUTH] ${role} storage state SAVED`);
 
     await browser.close();
 
     // Sign out from the API client to avoid session conflicts
     await supabase.auth.signOut();
+    console.log(`[AUTH] ${role} completed successfully`);
   } catch (error) {
-    console.log(
-      `   ⚠️  ${role} authentication error:`,
-      error instanceof Error ? error.message : error
-    );
+    console.log(`[AUTH] ${role} EXCEPTION:`);
+    console.log(`[AUTH] ${role} error: ${error instanceof Error ? error.message : String(error)}`);
+    if (error instanceof Error && error.stack) {
+      console.log(`[AUTH] ${role} stack: ${error.stack.split('\n').slice(0, 3).join(' | ')}`);
+    }
     await createEmptyStorageState(storageStatePath);
   }
 }
