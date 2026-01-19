@@ -144,11 +144,11 @@ async function authenticateViaAPI(
         localStorage.setItem(supabaseKey, JSON.stringify(authData));
 
         // Set guest location to prevent redirect to welcome page
-        // Using Beni Suef as the default test location (company HQ)
+        // Using actual Beni Suef IDs from database (where test providers exist)
         const guestLocation = {
-          governorateId: 'test-beni-suef-gov',
+          governorateId: '11111111-1111-1111-1111-111111111111',
           governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-          cityId: 'test-beni-suef-city',
+          cityId: '21111111-1111-1111-1111-111111111111',
           cityName: { ar: 'بني سويف', en: 'Beni Suef' },
         };
         localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
@@ -337,10 +337,10 @@ async function authenticateViaUI(
     // Set guest location to prevent redirect to welcome page
     await page.evaluate(() => {
       const guestLocation = {
-        governorateId: 'test-governorate-id',
-        governorateName: { ar: 'القاهرة', en: 'Cairo' },
-        cityId: 'test-city-id',
-        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+        governorateId: '11111111-1111-1111-1111-111111111111',
+        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+        cityId: '21111111-1111-1111-1111-111111111111',
+        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
       };
       localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
     });
@@ -392,10 +392,10 @@ async function authenticateCustomerViaUI(
     // Set guest location to prevent redirect to welcome page
     await page.evaluate(() => {
       const guestLocation = {
-        governorateId: 'test-governorate-id',
-        governorateName: { ar: 'القاهرة', en: 'Cairo' },
-        cityId: 'test-city-id',
-        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+        governorateId: '11111111-1111-1111-1111-111111111111',
+        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+        cityId: '21111111-1111-1111-1111-111111111111',
+        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
       };
       localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
     });
