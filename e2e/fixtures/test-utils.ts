@@ -1,9 +1,15 @@
 import { test as base, expect, Page } from '@playwright/test';
+import path from 'path';
 
 /**
  * Test Utilities and Fixtures for E2E Testing
  * Updated for Store Readiness - 48px Touch Targets
  */
+
+// Storage state paths for authenticated sessions
+export const ADMIN_STORAGE_STATE = path.join(__dirname, '../.auth/admin.json');
+export const PROVIDER_STORAGE_STATE = path.join(__dirname, '../.auth/provider.json');
+export const CUSTOMER_STORAGE_STATE = path.join(__dirname, '../.auth/customer.json');
 
 // Test user credentials (should match your test database)
 export const TEST_USERS = {
