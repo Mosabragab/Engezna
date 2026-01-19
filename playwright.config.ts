@@ -193,6 +193,37 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
+    // Authentication tests - no storage state needed
+    {
+      name: 'auth-tests',
+      testMatch: /auth.*\.spec\.ts/,
+      use: {
+        viewport: { width: 412, height: 915 },
+        isMobile: true,
+      },
+      dependencies: ['setup'],
+    },
+
+    // Security and Limits tests - mixed auth states (handled in test file)
+    {
+      name: 'security-tests',
+      testMatch: /security.*\.spec\.ts/,
+      use: {
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
+
+    // Infrastructure tests - no auth needed
+    {
+      name: 'infrastructure-tests',
+      testMatch: /infrastructure.*\.spec\.ts/,
+      use: {
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
+
     // ========== Multi-Device Testing (7 Devices) ==========
     // Run with: npx playwright test --project="device-*"
 
