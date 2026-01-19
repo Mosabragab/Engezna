@@ -23,10 +23,29 @@ import {
  * Updated: Touch targets 48px, audio handling, correct enum states
  */
 
+// Block analytics requests to allow networkidle to work properly
+async function blockAnalytics(page: Page) {
+  await page.route('**/*', (route) => {
+    const url = route.request().url();
+    if (
+      url.includes('vitals.vercel-insights.com') ||
+      url.includes('va.vercel-scripts.com') ||
+      url.includes('vercel.live') ||
+      url.includes('/_vercel/') ||
+      url.includes('vercel-analytics') ||
+      url.includes('vercel-insights')
+    ) {
+      return route.abort();
+    }
+    return route.continue();
+  });
+}
+
 test.describe('Merchant Operations - Order Management', () => {
   let helpers: TestHelpers;
 
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     helpers = new TestHelpers(page);
     // Set default timeout for all actions
     page.setDefaultTimeout(30000);
@@ -386,13 +405,13 @@ test.describe('Merchant Operations - Order Management', () => {
 
 test.describe('Merchant Dashboard Statistics', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should display dashboard with stats', async ({ page }) => {
     await page.goto('/ar/provider');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -409,8 +428,7 @@ test.describe('Merchant Dashboard Statistics', () => {
 
   test('should show orders count or summary', async ({ page }) => {
     await page.goto('/ar/provider');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -427,8 +445,7 @@ test.describe('Merchant Dashboard Statistics', () => {
 
   test('should navigate to reports', async ({ page }) => {
     await page.goto('/ar/provider');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -455,13 +472,13 @@ test.describe('Merchant Dashboard Statistics', () => {
 
 test.describe('Merchant Menu Management', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should display products page', async ({ page }) => {
     await page.goto('/ar/provider/products');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -478,8 +495,7 @@ test.describe('Merchant Menu Management', () => {
 
   test('should have add product functionality', async ({ page }) => {
     await page.goto('/ar/provider/products');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -496,8 +512,7 @@ test.describe('Merchant Menu Management', () => {
 
   test('should display product categories', async ({ page }) => {
     await page.goto('/ar/provider/products');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -514,8 +529,7 @@ test.describe('Merchant Menu Management', () => {
 
   test('should have availability toggles', async ({ page }) => {
     await page.goto('/ar/provider/products');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -533,13 +547,13 @@ test.describe('Merchant Menu Management', () => {
 
 test.describe('Merchant Real-time Updates', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should support real-time order updates', async ({ page }) => {
     await page.goto('/ar/provider/orders');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -556,8 +570,7 @@ test.describe('Merchant Real-time Updates', () => {
 
   test('should have badge elements for notifications', async ({ page }) => {
     await page.goto('/ar/provider');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 
@@ -574,8 +587,7 @@ test.describe('Merchant Real-time Updates', () => {
 
   test('should maintain data on navigation', async ({ page }) => {
     await page.goto('/ar/provider/orders');
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForTimeout(300);
+    await page.waitForLoadState('networkidle');
 
     const url = page.url();
 

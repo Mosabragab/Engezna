@@ -22,10 +22,29 @@ import {
  * Updated: Touch targets 48px, improved selectors, API wait patterns
  */
 
+// Block analytics requests to allow networkidle to work properly
+async function blockAnalytics(page: Page) {
+  await page.route('**/*', (route) => {
+    const url = route.request().url();
+    if (
+      url.includes('vitals.vercel-insights.com') ||
+      url.includes('va.vercel-scripts.com') ||
+      url.includes('vercel.live') ||
+      url.includes('/_vercel/') ||
+      url.includes('vercel-analytics') ||
+      url.includes('vercel-insights')
+    ) {
+      return route.abort();
+    }
+    return route.continue();
+  });
+}
+
 test.describe('Critical Customer Journey - Happy Path', () => {
   let helpers: TestHelpers;
 
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     helpers = new TestHelpers(page);
     // Set default timeout for all actions
     page.setDefaultTimeout(30000);
@@ -365,13 +384,13 @@ test.describe('Critical Customer Journey - Happy Path', () => {
 
 test.describe('Custom Order Broadcast System', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should display broadcast interface', async ({ page }) => {
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -389,7 +408,6 @@ test.describe('Custom Order Broadcast System', () => {
   test('should handle custom order detail page', async ({ page }) => {
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -407,7 +425,6 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display pending pricing section on orders', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -425,7 +442,6 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display notifications page', async ({ page }) => {
     await page.goto('/ar/notifications');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -443,7 +459,6 @@ test.describe('Custom Order Broadcast System', () => {
   test('should handle pricing status display', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -461,13 +476,13 @@ test.describe('Custom Order Broadcast System', () => {
 
 test.describe('Real-time Order Updates', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should have realtime infrastructure on orders page', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     const url = page.url();
 
@@ -485,7 +500,6 @@ test.describe('Real-time Order Updates', () => {
   test('should have notification UI in header', async ({ page }) => {
     await page.goto('/ar');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     // Check for notification bell or badge in header
     const header = page.locator('header');
@@ -505,13 +519,13 @@ test.describe('Real-time Order Updates', () => {
 
 test.describe('Order Flow Edge Cases', () => {
   test.beforeEach(async ({ page }) => {
+    await blockAnalytics(page);
     page.setDefaultTimeout(30000);
   });
 
   test('should handle cart page gracefully', async ({ page }) => {
     await page.goto('/ar/cart');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     // Page loaded - verify content exists
     const pageContent = await page.textContent('body');
@@ -521,7 +535,6 @@ test.describe('Order Flow Edge Cases', () => {
   test('should handle checkout redirect behavior', async ({ page }) => {
     await page.goto('/ar/checkout');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     // Any page load is valid (checkout, cart, login, or home)
     const pageContent = await page.textContent('body');
@@ -545,7 +558,6 @@ test.describe('Order Flow Edge Cases', () => {
   test('should have consistent header across pages', async ({ page }) => {
     await page.goto('/ar/providers');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(300);
 
     // Just verify the page loaded
     const url = page.url();
