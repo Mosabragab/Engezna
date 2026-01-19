@@ -37,6 +37,81 @@ const TEST_USERS = {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// Default location data (fallback if DB fetch fails)
+interface LocationData {
+  governorateId: string;
+  governorateName: { ar: string; en: string };
+  cityId: string;
+  cityName: { ar: string; en: string };
+}
+
+const DEFAULT_LOCATION: LocationData = {
+  governorateId: '11111111-1111-1111-1111-111111111111',
+  governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+  cityId: '21111111-1111-1111-1111-111111111111',
+  cityName: { ar: 'بني سويف', en: 'Beni Suef City' },
+};
+
+// Global location variable (populated from DB)
+let testLocation: LocationData = DEFAULT_LOCATION;
+
+/**
+ * Fetch Beni Suef governorate and city IDs from the database
+ * This ensures tests use actual IDs matching the test providers
+ */
+async function fetchBeniSuefLocation(supabase: SupabaseClient): Promise<LocationData> {
+  try {
+    console.log('   Fetching Beni Suef location from database...');
+
+    // Fetch Beni Suef governorate
+    const { data: govData, error: govError } = await supabase
+      .from('governorates')
+      .select('id, name_ar, name_en')
+      .or('name_en.eq.Beni Suef,name_ar.eq.بني سويف')
+      .limit(1)
+      .single();
+
+    if (govError || !govData) {
+      console.log('   ⚠️  Could not fetch Beni Suef governorate:', govError?.message);
+      return DEFAULT_LOCATION;
+    }
+
+    console.log(`   ✓ Found governorate: ${govData.name_en} (${govData.id})`);
+
+    // Fetch Beni Suef city within the governorate
+    const { data: cityData, error: cityError } = await supabase
+      .from('cities')
+      .select('id, name_ar, name_en')
+      .eq('governorate_id', govData.id)
+      .or('name_en.eq.Beni Suef,name_ar.eq.بني سويف')
+      .limit(1)
+      .single();
+
+    if (cityError || !cityData) {
+      console.log('   ⚠️  Could not fetch Beni Suef city:', cityError?.message);
+      // Return governorate with fallback city
+      return {
+        governorateId: govData.id,
+        governorateName: { ar: govData.name_ar, en: govData.name_en },
+        cityId: 'test-beni-suef-city',
+        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
+      };
+    }
+
+    console.log(`   ✓ Found city: ${cityData.name_en} (${cityData.id})`);
+
+    return {
+      governorateId: govData.id,
+      governorateName: { ar: govData.name_ar, en: govData.name_en },
+      cityId: cityData.id,
+      cityName: { ar: cityData.name_ar, en: cityData.name_en },
+    };
+  } catch (error) {
+    console.log('   ⚠️  Error fetching location:', error instanceof Error ? error.message : error);
+    return DEFAULT_LOCATION;
+  }
+}
+
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
 
@@ -57,6 +132,9 @@ async function globalSetup(config: FullConfig) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Fetch the actual Beni Suef location IDs from the database
+  testLocation = await fetchBeniSuefLocation(supabase);
 
   try {
     // Authenticate all users via API
@@ -125,7 +203,7 @@ async function authenticateViaAPI(
 
     // Set Supabase auth tokens in localStorage
     await page.evaluate(
-      ({ accessToken, refreshToken, expiresAt, user }) => {
+      ({ accessToken, refreshToken, expiresAt, user, location }) => {
         // Supabase stores auth in localStorage with a specific key format
         const supabaseKey =
           Object.keys(localStorage).find(
@@ -144,20 +222,15 @@ async function authenticateViaAPI(
         localStorage.setItem(supabaseKey, JSON.stringify(authData));
 
         // Set guest location to prevent redirect to welcome page
-        // Using Beni Suef as the default test location (company HQ)
-        const guestLocation = {
-          governorateId: 'test-beni-suef-gov',
-          governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-          cityId: 'test-beni-suef-city',
-          cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-        };
-        localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+        // Using actual Beni Suef IDs from database (where test providers exist)
+        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
       },
       {
         accessToken: data.session.access_token,
         refreshToken: data.session.refresh_token,
         expiresAt: data.session.expires_at,
         user: data.user,
+        location: testLocation,
       }
     );
 
@@ -335,16 +408,13 @@ async function authenticateViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    // Using Beni Suef as the default test location (where test providers exist)
-    await page.evaluate(() => {
-      const guestLocation = {
-        governorateId: 'test-beni-suef-gov',
-        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-        cityId: 'test-beni-suef-city',
-        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-      };
-      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
-    });
+    // Using actual Beni Suef IDs (where test providers exist)
+    await page.evaluate(
+      (location) => {
+        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+      },
+      testLocation
+    );
 
     await context.storageState({ path: storageStatePath });
     console.log(`   ✓ ${role} UI auth complete`);
@@ -391,16 +461,13 @@ async function authenticateCustomerViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    // Using Beni Suef as the default test location (where test providers exist)
-    await page.evaluate(() => {
-      const guestLocation = {
-        governorateId: 'test-beni-suef-gov',
-        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-        cityId: 'test-beni-suef-city',
-        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-      };
-      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
-    });
+    // Using actual Beni Suef IDs (where test providers exist)
+    await page.evaluate(
+      (location) => {
+        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+      },
+      testLocation
+    );
 
     await context.storageState({ path: storageStatePath });
     console.log('   ✓ Customer UI auth complete');
