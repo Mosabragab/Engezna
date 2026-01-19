@@ -360,6 +360,24 @@ export class TestHelpers {
 // Extended test fixture with helpers
 export const test = base.extend<{ helpers: TestHelpers }>({
   helpers: async ({ page }, use) => {
+    // Block analytics requests to allow networkidle to work properly
+    // Vercel Analytics and SpeedInsights send continuous requests that prevent networkidle
+    await page.route('**/*', (route) => {
+      const url = route.request().url();
+      // Block Vercel Analytics and SpeedInsights
+      if (
+        url.includes('vitals.vercel-insights.com') ||
+        url.includes('va.vercel-scripts.com') ||
+        url.includes('vercel.live') ||
+        url.includes('/_vercel/') ||
+        url.includes('vercel-analytics') ||
+        url.includes('vercel-insights')
+      ) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+
     const helpers = new TestHelpers(page);
     // eslint-disable-next-line react-hooks/rules-of-hooks -- This is Playwright's use(), not React's
     await use(helpers);

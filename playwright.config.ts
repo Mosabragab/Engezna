@@ -13,9 +13,6 @@ const ADMIN_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'admin.json');
 const PROVIDER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'provider.json');
 const CUSTOMER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'customer.json');
 
-// Skip device tests in CI to reduce test time (run with --project="device-*" to include)
-const isCI = !!process.env.CI;
-
 export default defineConfig({
   // Test directory
   testDir: './e2e',
@@ -78,6 +75,11 @@ export default defineConfig({
 
     // Navigation timeout
     navigationTimeout: 30000,
+
+    // Block analytics requests to allow networkidle to work properly
+    // Vercel Analytics and SpeedInsights send continuous requests that prevent networkidle
+    // This allows tests to use networkidle without being blocked by analytics
+    serviceWorkers: 'block',
   },
 
   // Configure projects for major browsers and devices
@@ -195,116 +197,87 @@ export default defineConfig({
     },
 
     // ========== Multi-Device Testing (7 Devices) ==========
-    // Skipped in CI by default - run with: npx playwright test --project="device-*"
-    // These tests run only when explicitly requested to reduce CI time
+    // Run with: npx playwright test --project="device-*"
 
     // 1. iPhone 14 Pro Max
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-iphone14',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['iPhone 14 Pro Max'],
-              storageState: CUSTOMER_STORAGE_STATE,
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-iphone14',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['iPhone 14 Pro Max'],
+        storageState: CUSTOMER_STORAGE_STATE,
+      },
+      dependencies: ['setup'],
+    },
 
     // 2. Samsung Galaxy S23 (Android)
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-samsung',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['Pixel 7'],
-              storageState: CUSTOMER_STORAGE_STATE,
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-samsung',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        storageState: CUSTOMER_STORAGE_STATE,
+      },
+      dependencies: ['setup'],
+    },
 
     // 3. iPad Pro 11
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-ipad',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['iPad Pro 11'],
-              storageState: CUSTOMER_STORAGE_STATE,
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-ipad',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['iPad Pro 11'],
+        storageState: CUSTOMER_STORAGE_STATE,
+      },
+      dependencies: ['setup'],
+    },
 
     // 4. Desktop Chrome
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-chrome',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['Desktop Chrome'],
-              storageState: CUSTOMER_STORAGE_STATE,
-              viewport: { width: 1920, height: 1080 },
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-chrome',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: CUSTOMER_STORAGE_STATE,
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
 
     // 5. Desktop Safari
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-safari',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['Desktop Safari'],
-              storageState: CUSTOMER_STORAGE_STATE,
-              viewport: { width: 1920, height: 1080 },
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-safari',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Safari'],
+        storageState: CUSTOMER_STORAGE_STATE,
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
 
     // 6. Desktop Firefox
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-firefox',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['Desktop Firefox'],
-              storageState: CUSTOMER_STORAGE_STATE,
-              viewport: { width: 1920, height: 1080 },
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-firefox',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: CUSTOMER_STORAGE_STATE,
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
 
     // 7. iPhone SE (smaller screen)
-    ...(isCI
-      ? []
-      : [
-          {
-            name: 'device-iphonese',
-            testMatch: /critical.*\.spec\.ts/,
-            use: {
-              ...devices['iPhone SE'],
-              storageState: CUSTOMER_STORAGE_STATE,
-            },
-            dependencies: ['setup'],
-          },
-        ]),
+    {
+      name: 'device-iphonese',
+      testMatch: /critical.*\.spec\.ts/,
+      use: {
+        ...devices['iPhone SE'],
+        storageState: CUSTOMER_STORAGE_STATE,
+      },
+      dependencies: ['setup'],
+    },
   ],
 
   // Run your local dev server before starting the tests

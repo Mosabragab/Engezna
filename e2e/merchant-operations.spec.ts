@@ -1,5 +1,7 @@
-import { test, expect, Page } from '@playwright/test';
+import { Page } from '@playwright/test';
 import {
+  test,
+  expect,
   TEST_USERS,
   LOCATORS,
   TestHelpers,
@@ -33,8 +35,7 @@ test.describe('Merchant Operations - Order Management', () => {
   test.describe('1. Order Notification System', () => {
     test('should display provider dashboard or login', async ({ page }) => {
       await page.goto('/ar/provider');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -46,8 +47,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display provider orders page', async ({ page }) => {
       await page.goto('/ar/provider/orders');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -67,8 +67,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display custom orders section', async ({ page }) => {
       await page.goto('/ar/provider/orders/custom');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -118,8 +117,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should have sidebar navigation', async ({ page }) => {
       await page.goto('/ar/provider');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       if (!page.url().includes('/login')) {
         // Check sidebar exists
@@ -137,8 +135,7 @@ test.describe('Merchant Operations - Order Management', () => {
   test.describe('2. Custom Order Pricing System', () => {
     test('should display pricing interface', async ({ page }) => {
       await page.goto('/ar/provider/orders/custom');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       if (page.url().includes('/custom') && !page.url().includes('/login')) {
         const pageContent = await page.textContent('body');
@@ -156,8 +153,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display pricing page', async ({ page }) => {
       await page.goto('/ar/provider/pricing');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -176,8 +172,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should have 48px touch target buttons on pricing', async ({ page }) => {
       await page.goto('/ar/provider/orders/custom');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       if (page.url().includes('/custom') && !page.url().includes('/login')) {
         // Check for action buttons with proper touch targets
@@ -201,8 +196,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display total calculation elements', async ({ page }) => {
       await page.goto('/ar/provider/orders/custom');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       if (page.url().includes('/custom') && !page.url().includes('/login')) {
         // Check for calculation display elements
@@ -215,8 +209,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should have submit pricing button', async ({ page }) => {
       await page.goto('/ar/provider/orders/custom');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       if (page.url().includes('/custom') && !page.url().includes('/login')) {
         // Find submit/send pricing button using getByRole
@@ -236,8 +229,7 @@ test.describe('Merchant Operations - Order Management', () => {
   test.describe('3. Order Status Management', () => {
     test('should display order status tabs or filters', async ({ page }) => {
       await page.goto('/ar/provider/orders');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -254,8 +246,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should have order confirmation button', async ({ page }) => {
       await page.goto('/ar/provider/orders');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -272,8 +263,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should have order status progression buttons', async ({ page }) => {
       await page.goto('/ar/provider/orders');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -290,8 +280,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should navigate to order details', async ({ page }) => {
       await page.goto('/ar/provider/orders');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -310,8 +299,7 @@ test.describe('Merchant Operations - Order Management', () => {
   test.describe('4. Financial Calculations', () => {
     test('should display finance page', async ({ page }) => {
       await page.goto('/ar/provider/finance');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -328,8 +316,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display revenue information', async ({ page }) => {
       await page.goto('/ar/provider/finance');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -346,8 +333,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display commission information', async ({ page }) => {
       await page.goto('/ar/provider/finance');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -364,8 +350,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should show payment method breakdown', async ({ page }) => {
       await page.goto('/ar/provider/finance');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
@@ -382,8 +367,7 @@ test.describe('Merchant Operations - Order Management', () => {
 
     test('should display settlements page', async ({ page }) => {
       await page.goto('/ar/provider/settlements');
-      await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(300);
+      await page.waitForLoadState('networkidle');
 
       const url = page.url();
 
