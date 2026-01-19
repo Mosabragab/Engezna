@@ -369,7 +369,6 @@ export const test = base.extend<{ helpers: TestHelpers }>({
         url.includes('vitals.vercel-insights.com') ||
         url.includes('va.vercel-scripts.com') ||
         url.includes('vercel.live') ||
-        url.includes('/_vercel/') ||
         url.includes('vercel-analytics') ||
         url.includes('vercel-insights')
       ) {
