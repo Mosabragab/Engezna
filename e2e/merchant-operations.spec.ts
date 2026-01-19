@@ -444,7 +444,7 @@ test.describe('Merchant Dashboard Statistics', () => {
   test('should display dashboard with stats', async ({ page }) => {
     await page.goto('/ar/provider');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Check for statistics cards
@@ -462,7 +462,7 @@ test.describe('Merchant Dashboard Statistics', () => {
   test('should show orders count or summary', async ({ page }) => {
     await page.goto('/ar/provider');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -481,7 +481,7 @@ test.describe('Merchant Dashboard Statistics', () => {
   test('should navigate to reports', async ({ page }) => {
     await page.goto('/ar/provider');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Look for analytics/reports link
@@ -506,7 +506,7 @@ test.describe('Merchant Menu Management', () => {
   test('should display products page', async ({ page }) => {
     await page.goto('/ar/provider/products');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/products') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -524,7 +524,7 @@ test.describe('Merchant Menu Management', () => {
   test('should have add product functionality', async ({ page }) => {
     await page.goto('/ar/provider/products');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/products') && !page.url().includes('/login')) {
       const addBtn = page
@@ -543,7 +543,7 @@ test.describe('Merchant Menu Management', () => {
   test('should display product categories', async ({ page }) => {
     await page.goto('/ar/provider/products');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/products') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -561,7 +561,7 @@ test.describe('Merchant Menu Management', () => {
   test('should have availability toggles', async ({ page }) => {
     await page.goto('/ar/provider/products');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/products') && !page.url().includes('/login')) {
       // Look for toggle switch
@@ -586,7 +586,7 @@ test.describe('Merchant Real-time Updates', () => {
   test('should support real-time order updates', async ({ page }) => {
     await page.goto('/ar/provider/orders');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       // Verify page can display updates (structure check)
@@ -598,7 +598,7 @@ test.describe('Merchant Real-time Updates', () => {
   test('should have badge elements for notifications', async ({ page }) => {
     await page.goto('/ar/provider');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/provider') && !page.url().includes('/login')) {
       // Check sidebar/header has badge capability
@@ -612,7 +612,7 @@ test.describe('Merchant Real-time Updates', () => {
   test('should maintain data on navigation', async ({ page }) => {
     await page.goto('/ar/provider/orders');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       // Get initial content

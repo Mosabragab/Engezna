@@ -419,7 +419,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display broadcast interface', async ({ page }) => {
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/custom-order') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -439,7 +439,7 @@ test.describe('Custom Order Broadcast System', () => {
     // Test the custom order detail route: /custom-order/[id]
     await page.goto('/ar/custom-order');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     // Verify custom order pages handle the [id] route
     const pageContent = await page.textContent('body');
@@ -449,7 +449,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display pending pricing section on orders', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -467,7 +467,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should display notifications page', async ({ page }) => {
     await page.goto('/ar/notifications');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/notifications') && !page.url().includes('/login')) {
       const pageContent = await page.textContent('body');
@@ -486,7 +486,7 @@ test.describe('Custom Order Broadcast System', () => {
   test('should handle pricing status display', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/orders')) {
       // System should handle different order statuses including 'priced'
@@ -507,7 +507,7 @@ test.describe('Real-time Order Updates', () => {
   test('should have realtime infrastructure on orders page', async ({ page }) => {
     await page.goto('/ar/orders');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     if (page.url().includes('/orders') && !page.url().includes('/login')) {
       // Verify page has real-time capability (structure check)
@@ -526,7 +526,7 @@ test.describe('Real-time Order Updates', () => {
   test('should have notification UI in header', async ({ page }) => {
     await page.goto('/ar');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     // Check for notification bell or badge in header
     const header = page.locator('header');
@@ -548,7 +548,7 @@ test.describe('Order Flow Edge Cases', () => {
   test('should handle cart page gracefully', async ({ page }) => {
     await page.goto('/ar/cart');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     const pageContent = await page.textContent('body');
 
@@ -567,7 +567,7 @@ test.describe('Order Flow Edge Cases', () => {
     // Try to access checkout
     await page.goto('/ar/checkout');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     const url = page.url();
 
@@ -602,7 +602,7 @@ test.describe('Order Flow Edge Cases', () => {
   test('should have consistent header across pages', async ({ page }) => {
     await page.goto('/ar/providers');
     await page.waitForLoadState('domcontentloaded');
-      await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
     const header = page.locator('header');
     const hasHeader = await header.isVisible().catch(() => false);
