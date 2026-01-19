@@ -335,12 +335,13 @@ async function authenticateViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
+    // Using Beni Suef as the default test location (where test providers exist)
     await page.evaluate(() => {
       const guestLocation = {
-        governorateId: 'test-governorate-id',
-        governorateName: { ar: 'القاهرة', en: 'Cairo' },
-        cityId: 'test-city-id',
-        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+        governorateId: 'test-beni-suef-gov',
+        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+        cityId: 'test-beni-suef-city',
+        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
       };
       localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
     });
@@ -390,12 +391,13 @@ async function authenticateCustomerViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
+    // Using Beni Suef as the default test location (where test providers exist)
     await page.evaluate(() => {
       const guestLocation = {
-        governorateId: 'test-governorate-id',
-        governorateName: { ar: 'القاهرة', en: 'Cairo' },
-        cityId: 'test-city-id',
-        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+        governorateId: 'test-beni-suef-gov',
+        governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+        cityId: 'test-beni-suef-city',
+        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
       };
       localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
     });
