@@ -327,82 +327,95 @@ test.describe('Phase 2: Merchant Journey', () => {
 
 // ============================================================================
 // PHASE 3: SECURITY & AUTHORIZATION
-// Note: These tests verify security behavior. Some apps handle auth client-side.
+// IMPORTANT: These tests MUST fail if security is broken - they find real bugs!
 // ============================================================================
 
 test.describe('Phase 3: Security', () => {
   test.describe('3.1 IDOR - Customer cannot access provider', () => {
     test.use({ storageState: CUSTOMER_STORAGE_STATE });
 
-    test('customer access to provider dashboard is controlled', async ({ page }) => {
+    test('SECURITY: customer must NOT access provider dashboard', async ({ page }) => {
       await page.goto('/ar/provider', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      // Either redirected, shows error, or page has content
-      expect(
-        url.includes('/login') ||
-          url.includes('/auth') ||
-          content.includes('غير مصرح') ||
-          content.includes('unauthorized') ||
-          content.length > 50
-      ).toBeTruthy();
+
+      // MUST redirect to login or provider login - NOT stay on /provider
+      const isBlocked =
+        url.includes('/login') || url.includes('/auth') || url.includes('/provider/login');
+
+      if (!isBlocked) {
+        console.error('🚨 SECURITY BUG: Customer can access provider dashboard!');
+        console.error('   URL:', url);
+      }
+
+      expect(isBlocked).toBeTruthy();
     });
 
-    test('customer access to admin is controlled', async ({ page }) => {
+    test('SECURITY: customer must NOT access admin panel', async ({ page }) => {
       await page.goto('/ar/admin', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      expect(
-        url.includes('/login') ||
-          url.includes('/auth') ||
-          content.includes('غير مصرح') ||
-          content.includes('unauthorized') ||
-          content.length > 50
-      ).toBeTruthy();
+
+      const isBlocked =
+        url.includes('/login') || url.includes('/auth') || url.includes('/admin/login');
+
+      if (!isBlocked) {
+        console.error('🚨 SECURITY BUG: Customer can access admin panel!');
+        console.error('   URL:', url);
+      }
+
+      expect(isBlocked).toBeTruthy();
     });
   });
 
   test.describe('3.2 IDOR - Provider cannot access admin', () => {
     test.use({ storageState: PROVIDER_STORAGE_STATE });
 
-    test('provider access to admin dashboard is controlled', async ({ page }) => {
+    test('SECURITY: provider must NOT access admin dashboard', async ({ page }) => {
       await page.goto('/ar/admin', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      expect(
+
+      // Provider should be redirected away from admin
+      const isBlocked =
         url.includes('/login') ||
-          url.includes('/auth') ||
-          url.includes('/provider') ||
-          content.includes('غير مصرح') ||
-          content.length > 50
-      ).toBeTruthy();
+        url.includes('/auth') ||
+        url.includes('/provider') ||
+        url.includes('/admin/login');
+
+      if (!isBlocked && url.includes('/admin')) {
+        console.error('🚨 SECURITY BUG: Provider can access admin dashboard!');
+        console.error('   URL:', url);
+      }
+
+      expect(isBlocked || !url.endsWith('/admin')).toBeTruthy();
     });
 
-    test('provider access to admin orders is controlled', async ({ page }) => {
+    test('SECURITY: provider must NOT access admin orders', async ({ page }) => {
       await page.goto('/ar/admin/orders', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      expect(
-        url.includes('/login') ||
-          url.includes('/auth') ||
-          content.includes('غير مصرح') ||
-          content.length > 50
-      ).toBeTruthy();
+
+      const isBlocked =
+        url.includes('/login') || url.includes('/auth') || url.includes('/provider');
+
+      if (!isBlocked && url.includes('/admin/orders')) {
+        console.error('🚨 SECURITY BUG: Provider can access admin orders!');
+        console.error('   URL:', url);
+      }
+
+      expect(isBlocked || !url.includes('/admin/orders')).toBeTruthy();
     });
   });
 
   test.describe('3.3 Unauthenticated Access', () => {
     test.use({ storageState: { cookies: [], origins: [] } });
 
-    test('public access to providers list', async ({ page }) => {
+    test('public access to providers list (OK)', async ({ page }) => {
       await page.goto('/ar/providers', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
@@ -410,42 +423,43 @@ test.describe('Phase 3: Security', () => {
       expect(content.length > 50).toBeTruthy();
     });
 
-    test('orders page handles unauthenticated access', async ({ page }) => {
+    test('SECURITY: orders page must require auth', async ({ page }) => {
       await page.goto('/ar/orders', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      // Either redirected to login or shows appropriate message
-      expect(
-        url.includes('/login') ||
-          url.includes('/auth') ||
-          content.includes('تسجيل') ||
-          content.includes('login') ||
-          content.length > 50
-      ).toBeTruthy();
+
+      const requiresAuth = url.includes('/login') || url.includes('/auth');
+
+      if (!requiresAuth && url.includes('/orders')) {
+        console.error('🚨 SECURITY BUG: Orders page accessible without login!');
+        console.error('   URL:', url);
+      }
+
+      expect(requiresAuth).toBeTruthy();
     });
 
-    test('profile page handles unauthenticated access', async ({ page }) => {
+    test('SECURITY: profile page must require auth', async ({ page }) => {
       await page.goto('/ar/profile', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
       const url = page.url();
-      const content = await page.locator('body').innerText();
-      expect(
-        url.includes('/login') ||
-          url.includes('/auth') ||
-          content.includes('تسجيل') ||
-          content.includes('login') ||
-          content.length > 50
-      ).toBeTruthy();
+
+      const requiresAuth = url.includes('/login') || url.includes('/auth');
+
+      if (!requiresAuth && url.includes('/profile')) {
+        console.error('🚨 SECURITY BUG: Profile page accessible without login!');
+        console.error('   URL:', url);
+      }
+
+      expect(requiresAuth).toBeTruthy();
     });
   });
 
   test.describe('3.4 XSS Protection', () => {
     test.use({ storageState: CUSTOMER_STORAGE_STATE });
 
-    test('XSS in URL parameters', async ({ page }) => {
+    test('XSS in URL parameters must be escaped', async ({ page }) => {
       await page.goto('/ar/providers?q=<script>alert(1)</script>', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       const content = await page.locator('body').innerText();
