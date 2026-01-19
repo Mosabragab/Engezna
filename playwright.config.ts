@@ -158,6 +158,16 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
+    // Comprehensive E2E tests - all phases combined (handles auth internally)
+    {
+      name: 'comprehensive-tests',
+      testMatch: /comprehensive.*\.spec\.ts/,
+      use: {
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
+
     // Merchant Operations tests - use provider storage state
     {
       name: 'merchant-tests',
