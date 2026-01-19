@@ -166,6 +166,16 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
+    // Business Flow tests - complete order lifecycle (handles auth internally)
+    {
+      name: 'business-flow-tests',
+      testMatch: /business-flow.*\.spec\.ts/,
+      use: {
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ['setup'],
+    },
+
     // Merchant Operations tests - use provider storage state
     {
       name: 'merchant-tests',
