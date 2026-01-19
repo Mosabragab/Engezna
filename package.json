@@ -16,7 +16,7 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report e2e/reports",
-    "test:e2e:critical": "playwright test comprehensive-e2e",
+    "test:e2e:critical": "playwright test comprehensive-e2e business-flow",
     "test:e2e:stability": "playwright test stability-edge-cases",
     "test:e2e:mobile": "playwright test mobile-responsiveness --project='iPhone 15' --project='Android Generic'",
     "test:e2e:iphone": "playwright test --project='iPhone 15 Pro Max' --project='iPhone 15'",
