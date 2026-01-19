@@ -1,7 +1,42 @@
-/**
- * Next.js Middleware Entry Point
- *
- * This file must be named 'middleware.ts' for Next.js to recognize it.
- * It re-exports from proxy.ts which contains the actual middleware logic.
- */
-export { default, config } from './proxy';
+import createMiddleware from 'next-intl/middleware';
+import { locales, defaultLocale } from './i18n/config';
+import { updateSession } from '@/lib/supabase/middleware';
+import { NextRequest } from 'next/server';
+
+// Create the internationalization middleware
+const intlMiddleware = createMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'always',
+  localeDetection: false, // Disable browser language detection - always use Arabic by default
+});
+
+export default async function middleware(request: NextRequest) {
+  // First, handle Supabase session refresh and auth checks
+  const supabaseResponse = await updateSession(request);
+
+  // IMPORTANT: If updateSession returned a redirect, use it immediately
+  // This ensures auth redirects (login required, unauthorized) are respected
+  if (supabaseResponse.status === 307 || supabaseResponse.status === 302) {
+    return supabaseResponse;
+  }
+
+  // Then apply internationalization
+  const intlResponse = intlMiddleware(request);
+
+  // Merge headers from both responses (keep Supabase auth cookies)
+  supabaseResponse.headers.forEach((value, key) => {
+    intlResponse.headers.set(key, value);
+  });
+
+  // Merge cookies from both responses
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    intlResponse.cookies.set(cookie.name, cookie.value);
+  });
+
+  return intlResponse;
+}
+
+export const config = {
+  matcher: ['/', '/(ar|en)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)'],
+};
