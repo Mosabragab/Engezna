@@ -409,12 +409,9 @@ async function authenticateViaUI(
 
     // Set guest location to prevent redirect to welcome page
     // Using actual Beni Suef IDs (where test providers exist)
-    await page.evaluate(
-      (location) => {
-        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
-      },
-      testLocation
-    );
+    await page.evaluate((location) => {
+      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+    }, testLocation);
 
     await context.storageState({ path: storageStatePath });
     console.log(`   ✓ ${role} UI auth complete`);
@@ -462,12 +459,9 @@ async function authenticateCustomerViaUI(
 
     // Set guest location to prevent redirect to welcome page
     // Using actual Beni Suef IDs (where test providers exist)
-    await page.evaluate(
-      (location) => {
-        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
-      },
-      testLocation
-    );
+    await page.evaluate((location) => {
+      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+    }, testLocation);
 
     await context.storageState({ path: storageStatePath });
     console.log('   ✓ Customer UI auth complete');
