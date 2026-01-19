@@ -52,8 +52,10 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for the app
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    // Base URL - use production in CI, localhost for local development
+    baseURL: process.env.CI
+      ? process.env.PLAYWRIGHT_BASE_URL || 'https://engezna.com'
+      : process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -275,17 +277,20 @@ export default defineConfig({
     },
   ],
 
-  // Run your local dev server before starting the tests
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-    // Explicitly pass environment variables to the webServer process
-    env: {
-      ...process.env,
-      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-    },
-  },
+  // Run your local dev server before starting the tests (only in local development)
+  // In CI, we use the production URL (engezna.com) so no need to start a server
+  webServer: process.env.CI
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: true,
+        timeout: 120 * 1000,
+        // Explicitly pass environment variables to the webServer process
+        env: {
+          ...process.env,
+          NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        },
+      },
 });
