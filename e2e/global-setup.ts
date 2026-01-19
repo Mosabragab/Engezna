@@ -297,9 +297,8 @@ async function authenticateViaAPI(
 
     // DEBUG: Read and verify the saved storage state
     const savedState = JSON.parse(fs.readFileSync(storageStatePath, 'utf-8'));
-    const hasLocalStorage = savedState.origins?.some(
-      (o: { localStorage?: { name: string }[] }) =>
-        o.localStorage?.some((ls) => ls.name === 'engezna_guest_location')
+    const hasLocalStorage = savedState.origins?.some((o: { localStorage?: { name: string }[] }) =>
+      o.localStorage?.some((ls) => ls.name === 'engezna_guest_location')
     );
     console.log(`   📦 Storage state contains localStorage: ${hasLocalStorage}`);
     if (hasLocalStorage) {
@@ -308,9 +307,7 @@ async function authenticateViaAPI(
         .find((ls: { name: string }) => ls.name === 'engezna_guest_location');
       if (locationData) {
         const location = JSON.parse(locationData.value);
-        console.log(
-          `   📍 Saved location: gov=${location.governorateId}, city=${location.cityId}`
-        );
+        console.log(`   📍 Saved location: gov=${location.governorateId}, city=${location.cityId}`);
       }
     }
 
