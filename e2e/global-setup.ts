@@ -37,81 +37,6 @@ const TEST_USERS = {
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Default location data (fallback if DB fetch fails)
-interface LocationData {
-  governorateId: string;
-  governorateName: { ar: string; en: string };
-  cityId: string;
-  cityName: { ar: string; en: string };
-}
-
-const DEFAULT_LOCATION: LocationData = {
-  governorateId: '11111111-1111-1111-1111-111111111111',
-  governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-  cityId: '21111111-1111-1111-1111-111111111111',
-  cityName: { ar: 'بني سويف', en: 'Beni Suef City' },
-};
-
-// Global location variable (populated from DB)
-let testLocation: LocationData = DEFAULT_LOCATION;
-
-/**
- * Fetch Beni Suef governorate and city IDs from the database
- * This ensures tests use actual IDs matching the test providers
- */
-async function fetchBeniSuefLocation(supabase: SupabaseClient): Promise<LocationData> {
-  try {
-    console.log('   Fetching Beni Suef location from database...');
-
-    // Fetch Beni Suef governorate
-    const { data: govData, error: govError } = await supabase
-      .from('governorates')
-      .select('id, name_ar, name_en')
-      .or('name_en.eq.Beni Suef,name_ar.eq.بني سويف')
-      .limit(1)
-      .single();
-
-    if (govError || !govData) {
-      console.log('   ⚠️  Could not fetch Beni Suef governorate:', govError?.message);
-      return DEFAULT_LOCATION;
-    }
-
-    console.log(`   ✓ Found governorate: ${govData.name_en} (${govData.id})`);
-
-    // Fetch Beni Suef city within the governorate
-    const { data: cityData, error: cityError } = await supabase
-      .from('cities')
-      .select('id, name_ar, name_en')
-      .eq('governorate_id', govData.id)
-      .or('name_en.eq.Beni Suef,name_ar.eq.بني سويف')
-      .limit(1)
-      .single();
-
-    if (cityError || !cityData) {
-      console.log('   ⚠️  Could not fetch Beni Suef city:', cityError?.message);
-      // Return governorate with fallback city
-      return {
-        governorateId: govData.id,
-        governorateName: { ar: govData.name_ar, en: govData.name_en },
-        cityId: 'test-beni-suef-city',
-        cityName: { ar: 'بني سويف', en: 'Beni Suef' },
-      };
-    }
-
-    console.log(`   ✓ Found city: ${cityData.name_en} (${cityData.id})`);
-
-    return {
-      governorateId: govData.id,
-      governorateName: { ar: govData.name_ar, en: govData.name_en },
-      cityId: cityData.id,
-      cityName: { ar: cityData.name_ar, en: cityData.name_en },
-    };
-  } catch (error) {
-    console.log('   ⚠️  Error fetching location:', error instanceof Error ? error.message : error);
-    return DEFAULT_LOCATION;
-  }
-}
-
 async function globalSetup(config: FullConfig) {
   const baseURL = config.projects[0]?.use?.baseURL || 'http://localhost:3000';
 
@@ -132,9 +57,6 @@ async function globalSetup(config: FullConfig) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Fetch the actual Beni Suef location IDs from the database
-  testLocation = await fetchBeniSuefLocation(supabase);
 
   try {
     // Authenticate all users via API
@@ -201,91 +123,66 @@ async function authenticateViaAPI(
     await page.goto(baseURL);
     await page.waitForLoadState('domcontentloaded');
 
-    // Extract project reference from Supabase URL for cookie name
-    const supabaseProjectRef =
-      SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase/)?.[1] || 'localhost';
-    const cookieName = `sb-${supabaseProjectRef}-auth-token`;
-
-    // Prepare the full session data for the cookie (same format as localStorage)
-    const sessionData = {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      expires_at: data.session.expires_at,
-      expires_in: 3600,
-      token_type: 'bearer',
-      user: data.user,
-    };
-
-    // Supabase SSR expects cookies in format: "base64-" + base64url encoded JSON
-    const jsonString = JSON.stringify(sessionData);
-    const base64urlEncoded = Buffer.from(jsonString).toString('base64url');
-    const cookieValue = `base64-${base64urlEncoded}`;
-
     // Set Supabase auth tokens in localStorage
     await page.evaluate(
-      ({ cookieName, sessionData, location }) => {
-        // Set localStorage (for client-side Supabase)
-        localStorage.setItem(cookieName, JSON.stringify(sessionData));
+      ({ accessToken, refreshToken, expiresAt, user }) => {
+        // Supabase stores auth in localStorage with a specific key format
+        const supabaseKey =
+          Object.keys(localStorage).find(
+            (key) => key.startsWith('sb-') && key.endsWith('-auth-token')
+          ) || `sb-${window.location.hostname.split('.')[0]}-auth-token`;
+
+        const authData = {
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: expiresAt,
+          expires_in: 3600,
+          token_type: 'bearer',
+          user: user,
+        };
+
+        localStorage.setItem(supabaseKey, JSON.stringify(authData));
 
         // Set guest location to prevent redirect to welcome page
-        // Using actual Beni Suef IDs from database (where test providers exist)
-        localStorage.setItem('engezna_guest_location', JSON.stringify(location));
+        // Using Beni Suef as the default test location (company HQ)
+        const guestLocation = {
+          governorateId: 'test-beni-suef-gov',
+          governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
+          cityId: 'test-beni-suef-city',
+          cityName: { ar: 'بني سويف', en: 'Beni Suef' },
+        };
+        localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
       },
       {
-        cookieName,
-        sessionData,
-        location: testLocation,
+        accessToken: data.session.access_token,
+        refreshToken: data.session.refresh_token,
+        expiresAt: data.session.expires_at,
+        user: data.user,
       }
     );
 
-    // Set the auth cookie in the correct format for Supabase SSR
-    // Handle chunking if cookie value is too large (max ~4096 bytes per cookie)
+    // Also set the auth cookie if needed
     const domain = new URL(baseURL).hostname;
-    const MAX_CHUNK_SIZE = 3180; // Safe size accounting for cookie overhead
-
-    const cookies: Array<{
-      name: string;
-      value: string;
-      domain: string;
-      path: string;
-      httpOnly: boolean;
-      secure: boolean;
-      sameSite: 'Lax' | 'Strict' | 'None';
-    }> = [];
-
-    if (cookieValue.length <= MAX_CHUNK_SIZE) {
-      // Single cookie - no chunking needed
-      cookies.push({
-        name: cookieName,
-        value: cookieValue,
+    await context.addCookies([
+      {
+        name: 'sb-access-token',
+        value: data.session.access_token,
         domain: domain,
         path: '/',
         httpOnly: false,
         secure: false,
         sameSite: 'Lax',
-      });
-    } else {
-      // Chunk the cookie value
-      let remaining = cookieValue;
-      let chunkIndex = 0;
-      while (remaining.length > 0) {
-        const chunk = remaining.slice(0, MAX_CHUNK_SIZE);
-        remaining = remaining.slice(MAX_CHUNK_SIZE);
-        cookies.push({
-          name: `${cookieName}.${chunkIndex}`,
-          value: chunk,
-          domain: domain,
-          path: '/',
-          httpOnly: false,
-          secure: false,
-          sameSite: 'Lax',
-        });
-        chunkIndex++;
-      }
-      console.log(`   → Session split into ${chunkIndex} cookie chunks`);
-    }
-
-    await context.addCookies(cookies);
+      },
+      {
+        name: 'sb-refresh-token',
+        value: data.session.refresh_token,
+        domain: domain,
+        path: '/',
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax',
+      },
+    ]);
 
     // Save storage state
     await context.storageState({ path: storageStatePath });
@@ -438,10 +335,15 @@ async function authenticateViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    // Using actual Beni Suef IDs (where test providers exist)
-    await page.evaluate((location) => {
-      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
-    }, testLocation);
+    await page.evaluate(() => {
+      const guestLocation = {
+        governorateId: 'test-governorate-id',
+        governorateName: { ar: 'القاهرة', en: 'Cairo' },
+        cityId: 'test-city-id',
+        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+      };
+      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+    });
 
     await context.storageState({ path: storageStatePath });
     console.log(`   ✓ ${role} UI auth complete`);
@@ -488,10 +390,15 @@ async function authenticateCustomerViaUI(
     await page.waitForTimeout(3000);
 
     // Set guest location to prevent redirect to welcome page
-    // Using actual Beni Suef IDs (where test providers exist)
-    await page.evaluate((location) => {
-      localStorage.setItem('engezna_guest_location', JSON.stringify(location));
-    }, testLocation);
+    await page.evaluate(() => {
+      const guestLocation = {
+        governorateId: 'test-governorate-id',
+        governorateName: { ar: 'القاهرة', en: 'Cairo' },
+        cityId: 'test-city-id',
+        cityName: { ar: 'مدينة نصر', en: 'Nasr City' },
+      };
+      localStorage.setItem('engezna_guest_location', JSON.stringify(guestLocation));
+    });
 
     await context.storageState({ path: storageStatePath });
     console.log('   ✓ Customer UI auth complete');
