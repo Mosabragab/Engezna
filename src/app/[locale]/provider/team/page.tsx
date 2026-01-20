@@ -431,13 +431,15 @@ export default function TeamManagementPage() {
       // Load provider info for email
       const { data: providerData, error: providerError } = await supabase
         .from('providers')
-        .select(`
+        .select(
+          `
           name_ar,
           name_en,
           profiles!providers_owner_id_fkey (
             full_name
           )
-        `)
+        `
+        )
         .eq('id', providerId)
         .single();
 
