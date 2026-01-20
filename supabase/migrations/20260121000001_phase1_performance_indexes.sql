@@ -89,9 +89,10 @@ CREATE INDEX IF NOT EXISTS idx_menu_items_category_available
 -- ============================================================================
 
 -- Composite index for settlement calculations
+-- Note: order_status enum only has 'delivered', not 'completed'
 CREATE INDEX IF NOT EXISTS idx_orders_settlement_lookup
   ON orders(provider_id, status, created_at DESC)
-  WHERE status IN ('completed', 'delivered');
+  WHERE status = 'delivered';
 
 -- ============================================================================
 -- VERIFICATION QUERY (Run after migration to verify indexes were created)
