@@ -320,69 +320,26 @@ export default function AdminRegisterPage() {
     setFormLoading(true);
     setFormError('');
 
-    const supabase = createClient();
-
     try {
-      // Create the auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: invitation.email,
-        password: password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            phone: phone.trim() || null,
-          },
-        },
+      // Call API to register admin
+      const response = await fetch('/api/auth/admin-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: invitation.email,
+          password,
+          fullName: fullName.trim(),
+          phone: phone.trim() || undefined,
+          invitationToken: token,
+          locale,
+        }),
       });
 
-      if (signUpError) {
-        if (signUpError.message.includes('already registered')) {
-          setFormError(
-            locale === 'ar'
-              ? 'هذا البريد مسجل بالفعل. جرب تسجيل الدخول.'
-              : 'This email is already registered. Try logging in.'
-          );
-        } else {
-          setFormError(signUpError.message);
-        }
-        setFormLoading(false);
-        return;
-      }
+      const result = await response.json();
 
-      if (!authData.user) {
-        setFormError(locale === 'ar' ? 'فشل إنشاء الحساب' : 'Failed to create account');
-        setFormLoading(false);
-        return;
-      }
-
-      // Use the database function to create admin account (bypasses RLS)
-      const { data: registerResult, error: registerError } = await supabase.rpc(
-        'register_admin_from_invitation',
-        {
-          p_user_id: authData.user.id,
-          p_invitation_token: token,
-          p_full_name: fullName.trim(),
-          p_phone: phone.trim() || null,
-        }
-      );
-
-      if (registerError) {
-        console.error('Register RPC error:', registerError);
+      if (!response.ok) {
         setFormError(
-          locale === 'ar'
-            ? `خطأ في إنشاء حساب المشرف: ${registerError.message}`
-            : `Error creating admin account: ${registerError.message}`
-        );
-        setFormLoading(false);
-        return;
-      }
-
-      if (registerResult && !registerResult.success) {
-        console.error('Register function error:', registerResult.error);
-        setFormError(
-          locale === 'ar'
-            ? `خطأ في إنشاء حساب المشرف: ${registerResult.error || 'Unknown error'}`
-            : `Error creating admin account: ${registerResult.error || 'Unknown error'}`
+          result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed')
         );
         setFormLoading(false);
         return;

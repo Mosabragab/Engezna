@@ -138,6 +138,7 @@ export default function InviteSupervisorPage() {
     id: string;
     token: string;
     url: string;
+    emailSent: boolean;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -407,10 +408,76 @@ export default function InviteSupervisorPage() {
       const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
       const invitationUrl = `${baseUrl}/${locale}/admin/register/${invitation.invitation_token}`;
 
+      // Get current user's name for the email
+      const { data: inviterProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user?.id)
+        .single();
+
+      const inviterName =
+        inviterProfile?.full_name || (locale === 'ar' ? 'مدير النظام' : 'System Admin');
+
+      // Get expiry text
+      const expiresInText =
+        expiresHours === 24
+          ? locale === 'ar'
+            ? '24 ساعة'
+            : '24 hours'
+          : expiresHours === 48
+            ? locale === 'ar'
+              ? '48 ساعة'
+              : '48 hours'
+            : expiresHours === 72
+              ? locale === 'ar'
+                ? '72 ساعة'
+                : '72 hours'
+              : locale === 'ar'
+                ? '7 أيام'
+                : '7 days';
+
+      // Send the invitation email via API
+      let emailSent = false;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session?.access_token) {
+        try {
+          const emailResponse = await fetch('/api/emails/admin-invitation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              to: email.toLowerCase().trim(),
+              adminName: fullName.trim() || email.split('@')[0],
+              roleName: locale === 'ar' ? selectedRole.name_ar : selectedRole.name_en,
+              roleColor: selectedRole.color,
+              inviterName,
+              inviteUrl: invitationUrl,
+              expiresIn: expiresInText,
+              message: message.trim() || undefined,
+            }),
+          });
+
+          if (!emailResponse.ok) {
+            console.error('[Invite] Email sending failed, but invitation was created');
+          } else {
+            console.log('[Invite] Email sent successfully');
+            emailSent = true;
+          }
+        } catch (emailError) {
+          console.error('[Invite] Email sending error:', emailError);
+        }
+      }
+
       setInvitationResult({
         id: invitation.id,
         token: invitation.invitation_token,
         url: invitationUrl,
+        emailSent,
       });
     } catch {
       setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
@@ -531,11 +598,27 @@ export default function InviteSupervisorPage() {
                   {locale === 'ar' ? 'تم إنشاء الدعوة بنجاح!' : 'Invitation Created Successfully!'}
                 </h2>
                 <p className="text-slate-600">
-                  {locale === 'ar'
-                    ? 'انسخ الرابط أدناه وأرسله للمشرف الجديد'
-                    : 'Copy the link below and send it to the new supervisor'}
+                  {invitationResult.emailSent
+                    ? locale === 'ar'
+                      ? 'تم إرسال الدعوة عبر البريد الإلكتروني'
+                      : 'Invitation email has been sent'
+                    : locale === 'ar'
+                      ? 'انسخ الرابط أدناه وأرسله للمشرف الجديد'
+                      : 'Copy the link below and send it to the new supervisor'}
                 </p>
               </div>
+
+              {/* Email Status */}
+              {invitationResult.emailSent && (
+                <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-3 rounded-lg mb-4">
+                  <Send className="w-5 h-5 flex-shrink-0" />
+                  <span>
+                    {locale === 'ar'
+                      ? `تم إرسال الدعوة إلى ${email}`
+                      : `Invitation sent to ${email}`}
+                  </span>
+                </div>
+              )}
 
               <div className="bg-slate-50 rounded-xl p-4 mb-6">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
