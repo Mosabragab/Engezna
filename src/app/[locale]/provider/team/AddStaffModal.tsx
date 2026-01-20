@@ -89,7 +89,14 @@ const permissionOptions: PermissionOption[] = [
   },
 ];
 
-export function AddStaffModal({ locale, providerId, storeName, merchantName, onClose, onSuccess }: AddStaffModalProps) {
+export function AddStaffModal({
+  locale,
+  providerId,
+  storeName,
+  merchantName,
+  onClose,
+  onSuccess,
+}: AddStaffModalProps) {
   const [email, setEmail] = useState('');
   const [permissions, setPermissions] = useState<Record<string, boolean>>({
     can_manage_orders: true,
