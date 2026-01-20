@@ -71,6 +71,18 @@ async function loginAsUser(
   await page.waitForLoadState('domcontentloaded');
   await waitForPageReady(page);
 
+  // For customer login, we need to click "الدخول عبر الإيميل" button first
+  // because the email form is hidden by default
+  if (userType === 'customer') {
+    const emailButton = page.locator(
+      'button:has-text("الدخول عبر الإيميل"), button:has-text("Continue with Email"), button:has-text("البريد")'
+    );
+    if ((await emailButton.count()) > 0) {
+      await emailButton.first().click();
+      await page.waitForTimeout(500);
+    }
+  }
+
   // Try to find and fill login form
   const emailInput = page.locator('input[type="email"], input[name="email"]');
   const passwordInput = page.locator('input[type="password"], input[name="password"]');
@@ -386,7 +398,8 @@ test.describe('Phase 6: Complete Business Flow', () => {
 
     test('should view settlements history', async ({ page }) => {
       await loginAsUser(page, 'provider');
-      await page.goto('/ar/provider/finance/settlements', { timeout: NAVIGATION_TIMEOUT });
+      // Note: Settlements are shown in the main finance page, not a separate route
+      await page.goto('/ar/provider/finance', { timeout: NAVIGATION_TIMEOUT });
       await page.waitForLoadState('domcontentloaded');
       await waitForPageReady(page);
 
@@ -396,6 +409,7 @@ test.describe('Phase 6: Complete Business Flow', () => {
           content.includes('تسوية') ||
             content.includes('settlement') ||
             content.includes('فترة') ||
+            content.includes('مالية') ||
             content.length > 50
         ).toBeTruthy();
       }
