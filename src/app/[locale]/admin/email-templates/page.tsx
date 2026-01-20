@@ -198,6 +198,46 @@ const sampleData: Record<string, Record<string, string | number>> = {
     submittedAt: '15 يناير 2024 - 10:30 ص',
     reviewUrl: 'https://www.engezna.com/ar/admin/stores/pending/123',
   },
+  'admin-invitation': {
+    adminName: 'محمد أحمد',
+    inviterName: 'أحمد سليم',
+    roleName: 'مدير المحتوى',
+    roleColor: '#3B82F6',
+    email: 'mohamed@example.com',
+    inviteUrl: 'https://www.engezna.com/ar/admin/register/abc123',
+    expiresIn: '7 أيام',
+    message: 'مرحباً بك في فريق إنجزنا! نحن سعداء بانضمامك.',
+  },
+  'admin-daily-report': {
+    reportDate: '15 يناير 2024',
+    totalOrders: 150,
+    totalRevenue: '25,500 ج.م',
+    newMerchants: 5,
+    pendingApprovals: 12,
+    reportUrl: 'https://www.engezna.com/ar/admin/reports/daily',
+  },
+  'admin-escalation-alert': {
+    priority: 'عالي',
+    issueType: 'شكوى عميل',
+    description: 'العميل يشكو من تأخر الطلب لأكثر من ساعتين',
+    merchantName: 'مطعم الشرق',
+    orderNumber: '1234',
+    actionUrl: 'https://www.engezna.com/ar/admin/support/123',
+  },
+  // Support templates
+  'support-ticket-created': {
+    ticketNumber: 'TKT-2024-001',
+    customerName: 'محمد علي',
+    subject: 'استفسار عن الطلب',
+    ticketUrl: 'https://www.engezna.com/ar/support/tickets/TKT-2024-001',
+  },
+  'support-ticket-resolved': {
+    ticketNumber: 'TKT-2024-001',
+    customerName: 'محمد علي',
+    subject: 'استفسار عن الطلب',
+    resolution: 'تم حل المشكلة وإعادة جدولة التوصيل',
+    feedbackUrl: 'https://www.engezna.com/ar/support/feedback/TKT-2024-001',
+  },
 };
 
 const categoryLabels: Record<string, { ar: string; en: string }> = {
@@ -332,6 +372,19 @@ export default function AdminEmailTemplatesPage() {
 
   function replaceVariables(html: string, variables: Record<string, string | number>): string {
     let result = html;
+
+    // Handle Handlebars conditionals {{#if variable}}...{{/if}}
+    // If variable exists and is truthy, show the content; otherwise, hide it
+    const conditionalRegex = /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+    result = result.replace(conditionalRegex, (match, varName, content) => {
+      const value = variables[varName];
+      if (value !== undefined && value !== null && value !== '') {
+        return content;
+      }
+      return '';
+    });
+
+    // Replace simple variables {{variableName}}
     for (const [key, value] of Object.entries(variables)) {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
       result = result.replace(regex, String(value));
