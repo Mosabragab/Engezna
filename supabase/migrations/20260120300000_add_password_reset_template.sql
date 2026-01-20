@@ -29,7 +29,7 @@ VALUES (
 
                     <!-- Header -->
                     <tr>
-                        <td align="center" style="background: linear-gradient(135deg, #009DE0 0%, #0077B6 100%); padding: 36px 24px;">
+                        <td align="center" style="background-color: #0F172A; padding: 36px 24px;">
                             <a href="https://www.engezna.com" style="text-decoration: none;">
                                 <img src="https://pub-d5c502abfebf4696b788ed0496257a40.r2.dev/engezna-transparent-white-transparent.png" alt="إنجزنا | Engezna" width="140" style="height: auto; display: block; margin: 0 auto;">
                             </a>
