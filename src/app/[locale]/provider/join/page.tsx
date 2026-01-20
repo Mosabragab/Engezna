@@ -33,7 +33,7 @@ interface InvitationDetails {
   email: string;
   status: string;
   expires_at: string;
-  token: string;
+  invitation_token: string;
   can_manage_orders: boolean;
   can_manage_menu: boolean;
   can_manage_customers: boolean;
@@ -136,7 +136,7 @@ export default function JoinProviderPage() {
           email,
           status,
           expires_at,
-          token,
+          invitation_token,
           can_manage_orders,
           can_manage_menu,
           can_manage_customers,
@@ -150,7 +150,7 @@ export default function JoinProviderPage() {
           )
         `
         )
-        .eq('token', token)
+        .eq('invitation_token', token)
         .single();
 
       if (inviteError || !inviteData) {

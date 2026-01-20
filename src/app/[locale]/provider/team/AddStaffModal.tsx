@@ -135,7 +135,7 @@ export function AddStaffModal({
       }
 
       // Send invitation email
-      const inviteUrl = `${window.location.origin}/${locale}/provider/join?token=${data.token}`;
+      const inviteUrl = `${window.location.origin}/${locale}/provider/join?token=${data.invitation_token}`;
 
       try {
         const emailResult = await sendStaffInvitationEmail({
