@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -10,13 +11,27 @@ import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider'
 import { locales } from '@/i18n/config';
 import '../globals.css';
 
+/**
+ * Viewport configuration (Next.js 14+)
+ * Separated from metadata as per Next.js best practices
+ * @see https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  // Brand color for browser status bar
+  themeColor: '#0F172A',
+};
+
 export function generateMetadata() {
   return {
     title: 'Engezna - إنجزنا | Local Marketplace in Egypt',
     description:
       'منصة إنجزنا لتلبية احتياجات البيت اليومية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات',
     manifest: '/manifest.json',
-    themeColor: '#0F172A',
     appleWebApp: {
       capable: true,
       statusBarStyle: 'black-translucent',
@@ -24,13 +39,6 @@ export function generateMetadata() {
     },
     formatDetection: {
       telephone: true,
-    },
-    viewport: {
-      width: 'device-width',
-      initialScale: 1,
-      maximumScale: 1,
-      userScalable: false,
-      viewportFit: 'cover',
     },
     icons: {
       icon: [

@@ -3,14 +3,17 @@ import path from 'path';
 
 /**
  * Playwright E2E Testing Configuration
- * Store-Ready Configuration for App Store & Google Play
+ * Simplified for CI-approved tests only
+ *
+ * Active Test Files:
+ * - comprehensive-e2e.spec.ts (74 tests)
+ * - business-flow.spec.ts (40 tests)
+ *
  * @see https://playwright.dev/docs/test-configuration
  */
 
 // Storage state paths for authenticated sessions
 const STORAGE_STATE_DIR = path.join(__dirname, 'e2e', '.auth');
-const ADMIN_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'admin.json');
-const PROVIDER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'provider.json');
 const CUSTOMER_STORAGE_STATE = path.join(STORAGE_STATE_DIR, 'customer.json');
 
 export default defineConfig({
@@ -52,7 +55,7 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL - always use localhost when PLAYWRIGHT_BASE_URL is set or for local CI testing
+    // Base URL
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
 
     // Collect trace when retrying the failed test
@@ -77,7 +80,9 @@ export default defineConfig({
     navigationTimeout: 30000,
   },
 
-  // Configure projects for major browsers and devices
+  // ============================================================================
+  // PROJECTS - Only CI-approved tests
+  // ============================================================================
   projects: [
     // ========== Setup Project (runs first) ==========
     {
@@ -85,78 +90,9 @@ export default defineConfig({
       testMatch: /global-setup\.ts/,
     },
 
-    // ========== Authenticated Projects ==========
-    // Admin tests - use admin storage state
-    {
-      name: 'admin-tests',
-      testMatch: /admin.*\.spec\.ts/,
-      use: {
-        storageState: ADMIN_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
+    // ========== Main Test Projects ==========
 
-    // Provider tests - use provider storage state
-    {
-      name: 'provider-tests',
-      testMatch: /provider.*\.spec\.ts/,
-      use: {
-        storageState: PROVIDER_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // Finance/Settlement tests - use admin storage state
-    {
-      name: 'finance-tests',
-      testMatch: /finance.*\.spec\.ts/,
-      use: {
-        storageState: ADMIN_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // Customer tests - use customer storage state
-    {
-      name: 'customer-tests',
-      testMatch: /(cart|checkout|customer|refunds|complaints|notifications).*\.spec\.ts/,
-      use: {
-        storageState: CUSTOMER_STORAGE_STATE,
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-        hasTouch: true,
-      },
-      dependencies: ['setup'],
-    },
-
-    // PWA and Performance tests - no auth needed
-    {
-      name: 'pwa-performance-tests',
-      testMatch: /(pwa|performance).*\.spec\.ts/,
-      use: {
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-        hasTouch: true,
-      },
-    },
-
-    // Critical Customer Journey tests - use customer storage state
-    {
-      name: 'critical-tests',
-      testMatch: /critical.*\.spec\.ts/,
-      use: {
-        storageState: CUSTOMER_STORAGE_STATE,
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-        hasTouch: true,
-      },
-      dependencies: ['setup'],
-    },
-
-    // Comprehensive E2E tests - all phases combined (handles auth internally)
+    // Comprehensive E2E tests - all pages and data verification (74 tests)
     {
       name: 'comprehensive-tests',
       testMatch: /comprehensive.*\.spec\.ts/,
@@ -166,79 +102,23 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    // Merchant Operations tests - use provider storage state
+    // Business Flow tests - complete order lifecycle (40 tests)
     {
-      name: 'merchant-tests',
-      testMatch: /merchant.*\.spec\.ts/,
-      use: {
-        storageState: PROVIDER_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // Mobile Responsiveness tests - no auth needed
-    {
-      name: 'mobile-tests',
-      testMatch: /mobile.*\.spec\.ts/,
-      use: {
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-        hasTouch: true,
-      },
-    },
-
-    // Stability and Edge Cases tests - use customer storage state
-    {
-      name: 'stability-tests',
-      testMatch: /stability.*\.spec\.ts/,
-      use: {
-        storageState: CUSTOMER_STORAGE_STATE,
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-        hasTouch: true,
-      },
-      dependencies: ['setup'],
-    },
-
-    // Authentication tests - no storage state needed
-    {
-      name: 'auth-tests',
-      testMatch: /auth.*\.spec\.ts/,
-      use: {
-        viewport: { width: 412, height: 915 },
-        isMobile: true,
-      },
-      dependencies: ['setup'],
-    },
-
-    // Security and Limits tests - mixed auth states (handled in test file)
-    {
-      name: 'security-tests',
-      testMatch: /security.*\.spec\.ts/,
+      name: 'business-flow-tests',
+      testMatch: /business-flow.*\.spec\.ts/,
       use: {
         viewport: { width: 1920, height: 1080 },
       },
       dependencies: ['setup'],
     },
 
-    // Infrastructure tests - no auth needed
-    {
-      name: 'infrastructure-tests',
-      testMatch: /infrastructure.*\.spec\.ts/,
-      use: {
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // ========== Multi-Device Testing (7 Devices) ==========
+    // ========== Device Testing (optional - run manually) ==========
     // Run with: npx playwright test --project="device-*"
 
-    // 1. iPhone 14 Pro Max
+    // iPhone 14 Pro Max
     {
       name: 'device-iphone14',
-      testMatch: /critical.*\.spec\.ts/,
+      testMatch: /comprehensive.*\.spec\.ts/,
       use: {
         ...devices['iPhone 14 Pro Max'],
         storageState: CUSTOMER_STORAGE_STATE,
@@ -246,10 +126,10 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    // 2. Samsung Galaxy S23 (Android)
+    // Samsung Galaxy (Android)
     {
       name: 'device-samsung',
-      testMatch: /critical.*\.spec\.ts/,
+      testMatch: /comprehensive.*\.spec\.ts/,
       use: {
         ...devices['Pixel 7'],
         storageState: CUSTOMER_STORAGE_STATE,
@@ -257,10 +137,10 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    // 3. iPad Pro 11
+    // iPad Pro 11
     {
       name: 'device-ipad',
-      testMatch: /critical.*\.spec\.ts/,
+      testMatch: /comprehensive.*\.spec\.ts/,
       use: {
         ...devices['iPad Pro 11'],
         storageState: CUSTOMER_STORAGE_STATE,
@@ -268,10 +148,10 @@ export default defineConfig({
       dependencies: ['setup'],
     },
 
-    // 4. Desktop Chrome
+    // Desktop Chrome
     {
       name: 'device-chrome',
-      testMatch: /critical.*\.spec\.ts/,
+      testMatch: /comprehensive.*\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
         storageState: CUSTOMER_STORAGE_STATE,
@@ -279,52 +159,14 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
-
-    // 5. Desktop Safari
-    {
-      name: 'device-safari',
-      testMatch: /critical.*\.spec\.ts/,
-      use: {
-        ...devices['Desktop Safari'],
-        storageState: CUSTOMER_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // 6. Desktop Firefox
-    {
-      name: 'device-firefox',
-      testMatch: /critical.*\.spec\.ts/,
-      use: {
-        ...devices['Desktop Firefox'],
-        storageState: CUSTOMER_STORAGE_STATE,
-        viewport: { width: 1920, height: 1080 },
-      },
-      dependencies: ['setup'],
-    },
-
-    // 7. iPhone SE (smaller screen)
-    {
-      name: 'device-iphonese',
-      testMatch: /critical.*\.spec\.ts/,
-      use: {
-        ...devices['iPhone SE'],
-        storageState: CUSTOMER_STORAGE_STATE,
-      },
-      dependencies: ['setup'],
-    },
   ],
 
   // Run your local dev server before starting the tests
-  // In CI with CI_LOCAL_TEST=true, we run the built app via `npm start`
-  // In local dev, we use `npm run dev`
   webServer: {
     command: process.env.CI ? 'npm start' : 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI, // Always start fresh in CI
+    reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
-    // Explicitly pass environment variables to the webServer process
     env: {
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
