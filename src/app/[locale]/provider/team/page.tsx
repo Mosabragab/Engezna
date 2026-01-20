@@ -59,7 +59,7 @@ interface PendingInvitation {
   status: string;
   expires_at: string;
   created_at: string;
-  token: string;
+  invitation_token: string;
   can_manage_orders: boolean;
   can_manage_menu: boolean;
   can_manage_customers: boolean;
@@ -576,7 +576,7 @@ export default function TeamManagementPage() {
   // Copy invitation link
   const handleCopyInvitationLink = (invitation: PendingInvitation) => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.token}`;
+    const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.invitation_token}`;
 
     navigator.clipboard.writeText(invitationLink).catch(() => {
       // Fallback for older browsers
