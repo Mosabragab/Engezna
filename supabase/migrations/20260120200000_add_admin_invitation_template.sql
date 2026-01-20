@@ -158,7 +158,7 @@ VALUES (
     </table>
 </body>
 </html>',
-  ARRAY['adminName', 'inviterName', 'roleName', 'roleColor', 'email', 'inviteUrl', 'expiresIn', 'message'],
+  '["adminName", "inviterName", "roleName", "roleColor", "email", "inviteUrl", "expiresIn", "message"]'::jsonb,
   'admin',
   true
 )
