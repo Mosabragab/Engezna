@@ -51,7 +51,12 @@ interface Notification {
     provider_id?: string;
     total?: number;
     is_custom_order?: boolean;
-  } | null; // Extra data for custom orders
+    // Support ticket fields
+    ticket_id?: string;
+    ticket_number?: string;
+    subject?: string;
+    full_message?: string;
+  } | null; // Extra data for custom orders and support tickets
 }
 
 export function useNotifications() {
