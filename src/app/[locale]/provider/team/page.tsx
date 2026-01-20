@@ -59,12 +59,18 @@ interface PendingInvitation {
   status: string;
   expires_at: string;
   created_at: string;
-  invitation_token: string;
+  token: string;
   can_manage_orders: boolean;
   can_manage_menu: boolean;
   can_manage_customers: boolean;
   can_view_analytics: boolean;
   can_manage_offers: boolean;
+}
+
+interface ProviderInfo {
+  name_ar: string;
+  name_en: string;
+  owner_name: string;
 }
 
 // ============================================================================
@@ -403,6 +409,7 @@ export default function TeamManagementPage() {
 
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
+  const [providerInfo, setProviderInfo] = useState<ProviderInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
@@ -421,6 +428,30 @@ export default function TeamManagementPage() {
     const supabase = createClient();
 
     try {
+      // Load provider info for email
+      const { data: providerData, error: providerError } = await supabase
+        .from('providers')
+        .select(`
+          name_ar,
+          name_en,
+          profiles!providers_owner_id_fkey (
+            full_name
+          )
+        `)
+        .eq('id', providerId)
+        .single();
+
+      if (providerError) {
+        console.error('Error loading provider info:', providerError);
+      } else if (providerData) {
+        const ownerProfile = providerData.profiles as unknown as { full_name: string } | null;
+        setProviderInfo({
+          name_ar: providerData.name_ar,
+          name_en: providerData.name_en,
+          owner_name: ownerProfile?.full_name || '',
+        });
+      }
+
       // Load team members
       const { data: staffData, error: staffError } = await supabase
         .from('provider_staff')
@@ -543,7 +574,7 @@ export default function TeamManagementPage() {
   // Copy invitation link
   const handleCopyInvitationLink = (invitation: PendingInvitation) => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-    const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.invitation_token}`;
+    const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.token}`;
 
     navigator.clipboard.writeText(invitationLink).catch(() => {
       // Fallback for older browsers
@@ -727,10 +758,12 @@ export default function TeamManagementPage() {
       )}
 
       {/* Add Staff Modal */}
-      {showAddModal && providerId && (
+      {showAddModal && providerId && providerInfo && (
         <AddStaffModal
           locale={locale}
           providerId={providerId}
+          storeName={locale === 'ar' ? providerInfo.name_ar : providerInfo.name_en}
+          merchantName={providerInfo.owner_name}
           onClose={() => setShowAddModal(false)}
           onSuccess={() => {
             setShowAddModal(false);

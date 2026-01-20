@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,10 +18,13 @@ import {
   BarChart3,
   Tag,
 } from 'lucide-react';
+import { sendStaffInvitationEmail } from '@/lib/email/resend';
 
 interface AddStaffModalProps {
   locale: string;
   providerId: string;
+  storeName: string;
+  merchantName: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -86,7 +89,7 @@ const permissionOptions: PermissionOption[] = [
   },
 ];
 
-export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddStaffModalProps) {
+export function AddStaffModal({ locale, providerId, storeName, merchantName, onClose, onSuccess }: AddStaffModalProps) {
   const [email, setEmail] = useState('');
   const [permissions, setPermissions] = useState<Record<string, boolean>>({
     can_manage_orders: true,
@@ -122,6 +125,29 @@ export function AddStaffModal({ locale, providerId, onClose, onSuccess }: AddSta
       if (!data?.success) {
         setError(data?.error || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'));
         return;
+      }
+
+      // Send invitation email
+      const inviteUrl = `${window.location.origin}/${locale}/provider/join?token=${data.token}`;
+
+      try {
+        const emailResult = await sendStaffInvitationEmail({
+          to: email.toLowerCase().trim(),
+          staffName: data.user_name || email.split('@')[0],
+          storeName: storeName,
+          merchantName: merchantName,
+          role: 'staff',
+          inviteUrl: inviteUrl,
+        });
+
+        if (!emailResult.success) {
+          console.error('Failed to send invitation email:', emailResult.error);
+          // Don't fail the whole operation, just log the error
+          // The invitation is already created in the database
+        }
+      } catch (emailErr) {
+        console.error('Error sending invitation email:', emailErr);
+        // Don't fail the whole operation
       }
 
       setSuccess({
