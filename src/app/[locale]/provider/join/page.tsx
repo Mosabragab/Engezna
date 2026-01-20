@@ -33,7 +33,7 @@ interface InvitationDetails {
   email: string;
   status: string;
   expires_at: string;
-  invitation_token: string;
+  token: string;
   can_manage_orders: boolean;
   can_manage_menu: boolean;
   can_manage_customers: boolean;
@@ -136,7 +136,7 @@ export default function JoinProviderPage() {
           email,
           status,
           expires_at,
-          invitation_token,
+          token,
           can_manage_orders,
           can_manage_menu,
           can_manage_customers,
@@ -150,7 +150,7 @@ export default function JoinProviderPage() {
           )
         `
         )
-        .eq('invitation_token', token)
+        .eq('token', token)
         .single();
 
       if (inviteError || !inviteData) {
@@ -202,7 +202,7 @@ export default function JoinProviderPage() {
 
     try {
       const { data, error: rpcError } = await supabase.rpc('accept_provider_invitation', {
-        p_invitation_token: token,
+        invitation_token: token,
       });
 
       if (rpcError) throw rpcError;
