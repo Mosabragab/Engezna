@@ -266,7 +266,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get provider info for response
-    const provider = invitation.providers as { name_ar: string; name_en: string } | null;
+    // Supabase join can return object or array depending on relationship inference
+    const providersData = invitation.providers as
+      | { id: string; name_ar: string; name_en: string }
+      | { id: string; name_ar: string; name_en: string }[]
+      | null;
+    const provider = Array.isArray(providersData) ? providersData[0] : providersData;
     const providerName = locale === 'ar' ? provider?.name_ar : provider?.name_en;
 
     console.log(
