@@ -2,9 +2,11 @@
 
 import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import Link from 'next/link';
 import {
@@ -20,8 +22,11 @@ import {
   Tag,
   Loader2,
   LogIn,
-  UserPlus,
   AlertTriangle,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 // ============================================================================
@@ -49,12 +54,13 @@ interface InvitationDetails {
 
 type PageState =
   | 'loading'
-  | 'not_authenticated'
+  | 'register' // New: Show registration form for unauthenticated users
   | 'invalid'
   | 'expired'
   | 'email_mismatch'
   | 'ready'
   | 'accepting'
+  | 'registering' // New: Processing registration
   | 'success'
   | 'error';
 
@@ -89,7 +95,6 @@ function PermissionItem({
 
 export default function JoinProviderPage() {
   const locale = useLocale();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
 
@@ -97,10 +102,18 @@ export default function JoinProviderPage() {
   const [invitation, setInvitation] = useState<InvitationDetails | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication and load invitation
+  // Registration form state
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formError, setFormError] = useState('');
+
+  // Load invitation and check auth status
   useEffect(() => {
-    async function checkAndLoad() {
+    async function loadInvitation() {
       if (!token) {
         setPageState('invalid');
         return;
@@ -108,26 +121,7 @@ export default function JoinProviderPage() {
 
       const supabase = createClient();
 
-      // Check if user is authenticated
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setPageState('not_authenticated');
-        return;
-      }
-
-      // Get user email
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', user.id)
-        .single();
-
-      setUserEmail(profile?.email || user.email || null);
-
-      // Fetch invitation details
+      // First, fetch invitation details (regardless of auth status)
       const { data: inviteData, error: inviteError } = await supabase
         .from('provider_invitations')
         .select(
@@ -178,6 +172,30 @@ export default function JoinProviderPage() {
         return;
       }
 
+      // Now check if user is authenticated
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Not authenticated - show registration form
+        setIsAuthenticated(false);
+        setPageState('register');
+        return;
+      }
+
+      // User is authenticated
+      setIsAuthenticated(true);
+
+      // Get user email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+
+      setUserEmail(profile?.email || user.email || null);
+
       // Check email match
       const inviteEmail = inviteData.email.toLowerCase();
       const currentEmail = (profile?.email || user.email || '').toLowerCase();
@@ -190,10 +208,84 @@ export default function JoinProviderPage() {
       setPageState('ready');
     }
 
-    checkAndLoad();
+    loadInvitation();
   }, [token]);
 
-  // Accept invitation
+  // Handle registration form submission
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    // Validate passwords
+    if (password.length < 6) {
+      setFormError(
+        locale === 'ar'
+          ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
+          : 'Password must be at least 6 characters'
+      );
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError(locale === 'ar' ? 'كلمات المرور غير متطابقة' : 'Passwords do not match');
+      return;
+    }
+
+    if (!invitation || !token) return;
+
+    setPageState('registering');
+
+    try {
+      const supabase = createClient();
+
+      // Call API to register and accept invitation
+      const response = await fetch('/api/auth/staff-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: invitation.email,
+          password,
+          invitationToken: token,
+          locale,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setFormError(
+          result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed')
+        );
+        setPageState('register');
+        return;
+      }
+
+      // Sign in the user to establish a session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: invitation.email,
+        password,
+      });
+
+      if (signInError) {
+        console.error('Sign in error after registration:', signInError);
+        // Still show success - user can login manually
+      }
+
+      // Success
+      setPageState('success');
+
+      // Redirect to provider dashboard after 2 seconds
+      setTimeout(() => {
+        window.location.href = `/${locale}/provider`;
+      }, 2000);
+    } catch (err) {
+      console.error('Registration error:', err);
+      setFormError(locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed');
+      setPageState('register');
+    }
+  };
+
+  // Accept invitation (for authenticated users)
   const handleAccept = async () => {
     if (!token) return;
 
@@ -262,38 +354,180 @@ export default function JoinProviderPage() {
             </div>
           )}
 
-          {/* Not Authenticated */}
-          {pageState === 'not_authenticated' && (
+          {/* Registration Form (for unauthenticated users) */}
+          {pageState === 'register' && invitation && (
+            <>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-primary to-primary/80 px-6 py-5 text-white text-center">
+                <div className="w-16 h-16 mx-auto mb-3 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Store className="w-8 h-8" />
+                </div>
+                <h2 className="text-xl font-bold mb-1">
+                  {locale === 'ar' ? 'انضم إلى الفريق' : 'Join the Team'}
+                </h2>
+                <p className="text-white/80 text-sm">{providerName}</p>
+              </div>
+
+              {/* Registration Form */}
+              <form onSubmit={handleRegister} className="p-6 space-y-5">
+                {/* Error Message */}
+                {formError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm">{formError}</span>
+                  </div>
+                )}
+
+                {/* Email (read-only) */}
+                <div className="space-y-2">
+                  <Label htmlFor="email">{locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}</Label>
+                  <div className="relative">
+                    <Mail
+                      className={`absolute ${locale === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                    />
+                    <Input
+                      id="email"
+                      type="email"
+                      value={invitation.email}
+                      readOnly
+                      className={`${locale === 'ar' ? 'pr-10' : 'pl-10'} bg-slate-50 text-slate-600`}
+                      dir="ltr"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    {locale === 'ar'
+                      ? 'هذا هو البريد الإلكتروني المرتبط بالدعوة'
+                      : 'This is the email associated with the invitation'}
+                  </p>
+                </div>
+
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="password">{locale === 'ar' ? 'كلمة المرور' : 'Password'}</Label>
+                  <div className="relative">
+                    <Lock
+                      className={`absolute ${locale === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                    />
+                    <Input
+                      id="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={locale === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
+                      className={`${locale === 'ar' ? 'pr-10 pl-10' : 'pl-10 pr-10'}`}
+                      dir="ltr"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={`absolute ${locale === 'ar' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">
+                    {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                  </Label>
+                  <div className="relative">
+                    <Lock
+                      className={`absolute ${locale === 'ar' ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400`}
+                    />
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder={locale === 'ar' ? 'أعد إدخال كلمة المرور' : 'Re-enter password'}
+                      className={`${locale === 'ar' ? 'pr-10 pl-10' : 'pl-10 pr-10'}`}
+                      dir="ltr"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className={`absolute ${locale === 'ar' ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-5 h-5" />
+                      ) : (
+                        <Eye className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Permissions Preview */}
+                <div className="p-4 bg-slate-50 rounded-xl">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Shield className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-slate-700">
+                      {locale === 'ar' ? 'الصلاحيات الممنوحة:' : 'Granted Permissions:'}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <PermissionItem
+                      enabled={invitation.can_manage_orders}
+                      icon={ShoppingBag}
+                      label={permissionLabels.orders}
+                    />
+                    <PermissionItem
+                      enabled={invitation.can_manage_menu}
+                      icon={Package}
+                      label={permissionLabels.menu}
+                    />
+                    <PermissionItem
+                      enabled={invitation.can_manage_customers}
+                      icon={Users}
+                      label={permissionLabels.customers}
+                    />
+                    <PermissionItem
+                      enabled={invitation.can_view_analytics}
+                      icon={BarChart3}
+                      label={permissionLabels.analytics}
+                    />
+                    <PermissionItem
+                      enabled={invitation.can_manage_offers}
+                      icon={Tag}
+                      label={permissionLabels.offers}
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <Button type="submit" className="w-full" size="lg">
+                  <CheckCircle className="w-5 h-5 me-2" />
+                  {locale === 'ar' ? 'إنشاء الحساب والانضمام' : 'Create Account & Join'}
+                </Button>
+
+                {/* Login Link */}
+                <p className="text-center text-sm text-slate-500">
+                  {locale === 'ar' ? 'لديك حساب بالفعل؟' : 'Already have an account?'}{' '}
+                  <Link
+                    href={`/${locale}/provider/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    <LogIn className="w-4 h-4 inline me-1" />
+                    {locale === 'ar' ? 'سجل دخول' : 'Login'}
+                  </Link>
+                </p>
+              </form>
+            </>
+          )}
+
+          {/* Registering State */}
+          {pageState === 'registering' && (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 bg-amber-100 rounded-xl flex items-center justify-center">
-                <LogIn className="w-8 h-8 text-amber-600" />
-              </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">
-                {locale === 'ar' ? 'يجب تسجيل الدخول أولاً' : 'Login Required'}
-              </h2>
-              <p className="text-slate-500 mb-6">
-                {locale === 'ar'
-                  ? 'يجب عليك تسجيل الدخول أو إنشاء حساب جديد لقبول الدعوة'
-                  : 'You need to login or create an account to accept this invitation'}
+              <Loader2 className="w-12 h-12 text-primary animate-spin mx-auto mb-4" />
+              <p className="text-slate-600">
+                {locale === 'ar' ? 'جاري إنشاء الحساب...' : 'Creating account...'}
               </p>
-              <div className="space-y-3">
-                <Button asChild className="w-full">
-                  <Link
-                    href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}
-                  >
-                    <LogIn className="w-5 h-5 me-2" />
-                    {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full">
-                  <Link
-                    href={`/${locale}/auth/signup?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}
-                  >
-                    <UserPlus className="w-5 h-5 me-2" />
-                    {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
-                  </Link>
-                </Button>
-              </div>
             </div>
           )}
 
@@ -368,7 +602,7 @@ export default function JoinProviderPage() {
               </p>
               <Button asChild variant="outline">
                 <Link
-                  href={`/${locale}/auth/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}
+                  href={`/${locale}/provider/login?redirect=${encodeURIComponent(`/${locale}/provider/join?token=${token}`)}`}
                 >
                   {locale === 'ar' ? 'تسجيل الدخول بحساب آخر' : 'Login with Different Account'}
                 </Link>
@@ -376,7 +610,7 @@ export default function JoinProviderPage() {
             </div>
           )}
 
-          {/* Ready to Accept */}
+          {/* Ready to Accept (for authenticated users) */}
           {pageState === 'ready' && invitation && (
             <>
               {/* Header */}
@@ -471,7 +705,7 @@ export default function JoinProviderPage() {
                 <CheckCircle className="w-8 h-8 text-emerald-500" />
               </div>
               <h2 className="text-xl font-bold text-slate-800 mb-2">
-                {locale === 'ar' ? 'تم قبول الدعوة!' : 'Invitation Accepted!'}
+                {locale === 'ar' ? 'تم بنجاح!' : 'Success!'}
               </h2>
               <p className="text-slate-500 mb-4">
                 {locale === 'ar'
@@ -503,7 +737,9 @@ export default function JoinProviderPage() {
 
         {/* Footer */}
         <p className="text-center mt-6 text-sm text-slate-400">
-          {locale === 'ar' ? 'انجزنا - منصة توصيل' : 'Engezna - Delivery Platform'}
+          {locale === 'ar'
+            ? 'إنجزنا - منصة لتلبية احتياجات البيت اليومية'
+            : 'Engezna - Daily Home Needs Platform'}
         </p>
       </div>
     </div>
