@@ -4,6 +4,9 @@
 -- This migration ONLY adds missing indexes to improve query performance.
 -- It does NOT change any RLS policies or security settings.
 -- Safe to run on production - will only SPEED UP the application.
+--
+-- NOTE: Using regular CREATE INDEX (not CONCURRENTLY) because Supabase
+-- migrations run inside transactions. Safe for pre-launch with small tables.
 -- ============================================================================
 
 -- ============================================================================
@@ -11,54 +14,54 @@
 -- ============================================================================
 
 -- Index for user's tickets lookup (critical for /profile page)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_user_id
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id
   ON support_tickets(user_id);
 
 -- Index for provider's tickets lookup
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_provider_id
+CREATE INDEX IF NOT EXISTS idx_support_tickets_provider_id
   ON support_tickets(provider_id);
 
 -- Index for order-related tickets
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_order_id
+CREATE INDEX IF NOT EXISTS idx_support_tickets_order_id
   ON support_tickets(order_id);
 
 -- Index for filtering by status (admin dashboard)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_status
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status
   ON support_tickets(status);
 
 -- Index for sorting by creation date
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_created_at
+CREATE INDEX IF NOT EXISTS idx_support_tickets_created_at
   ON support_tickets(created_at DESC);
 
 -- Composite index for common query pattern (user's tickets by status)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_support_tickets_user_status
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user_status
   ON support_tickets(user_id, status);
 
 -- ============================================================================
 -- SECTION 2: approval_requests indexes
 -- ============================================================================
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_approval_requests_provider_id
+CREATE INDEX IF NOT EXISTS idx_approval_requests_provider_id
   ON approval_requests(provider_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_approval_requests_status
+CREATE INDEX IF NOT EXISTS idx_approval_requests_status
   ON approval_requests(status);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_approval_requests_created_at
+CREATE INDEX IF NOT EXISTS idx_approval_requests_created_at
   ON approval_requests(created_at DESC);
 
 -- ============================================================================
 -- SECTION 3: activity_log indexes
 -- ============================================================================
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activity_log_user_id
+CREATE INDEX IF NOT EXISTS idx_activity_log_user_id
   ON activity_log(user_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activity_log_created_at
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at
   ON activity_log(created_at DESC);
 
 -- Composite for user's recent activity
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activity_log_user_created
+CREATE INDEX IF NOT EXISTS idx_activity_log_user_created
   ON activity_log(user_id, created_at DESC);
 
 -- ============================================================================
@@ -66,12 +69,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_activity_log_user_created
 -- ============================================================================
 
 -- Partial index for available items by provider (most common query)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_menu_items_provider_available
+CREATE INDEX IF NOT EXISTS idx_menu_items_provider_available
   ON menu_items(provider_id, is_available)
   WHERE is_available = true;
 
 -- Partial index for category browsing
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_menu_items_category_available
+CREATE INDEX IF NOT EXISTS idx_menu_items_category_available
   ON menu_items(category_id, is_available)
   WHERE is_available = true;
 
@@ -80,7 +83,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_menu_items_category_available
 -- ============================================================================
 
 -- Composite index for settlement calculations
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_orders_settlement_lookup
+CREATE INDEX IF NOT EXISTS idx_orders_settlement_lookup
   ON orders(provider_id, status, created_at DESC)
   WHERE status IN ('completed', 'delivered');
 
