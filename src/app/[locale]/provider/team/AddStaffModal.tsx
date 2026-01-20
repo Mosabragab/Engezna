@@ -18,7 +18,6 @@ import {
   BarChart3,
   Tag,
 } from 'lucide-react';
-import { sendStaffInvitationEmail } from '@/lib/email/resend';
 
 interface AddStaffModalProps {
   locale: string;
@@ -134,21 +133,26 @@ export function AddStaffModal({
         return;
       }
 
-      // Send invitation email
+      // Send invitation email via API (server-side)
       const inviteUrl = `${window.location.origin}/${locale}/provider/join?token=${data.invitation_token}`;
 
       try {
-        const emailResult = await sendStaffInvitationEmail({
-          to: email.toLowerCase().trim(),
-          staffName: data.user_name || email.split('@')[0],
-          storeName: storeName,
-          merchantName: merchantName,
-          role: 'staff',
-          inviteUrl: inviteUrl,
+        const emailResponse = await fetch('/api/emails/staff-invitation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: email.toLowerCase().trim(),
+            staffName: data.user_name || email.split('@')[0],
+            storeName: storeName,
+            merchantName: merchantName,
+            role: 'staff',
+            inviteUrl: inviteUrl,
+          }),
         });
 
-        if (!emailResult.success) {
-          console.error('Failed to send invitation email:', emailResult.error);
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error('Failed to send invitation email:', errorData);
           // Don't fail the whole operation, just log the error
           // The invitation is already created in the database
         }
