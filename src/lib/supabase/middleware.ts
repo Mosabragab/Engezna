@@ -74,6 +74,7 @@ export async function updateSession(request: NextRequest) {
     '/admin/login',
     '/provider/login',
     '/provider/register',
+    '/provider/join', // Staff invitation acceptance - must be public for new staff to register
     '/partner',
     '/providers', // PUBLIC: List of all providers/stores
     '/payment-result',
