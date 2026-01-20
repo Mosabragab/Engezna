@@ -72,6 +72,7 @@ export async function updateSession(request: NextRequest) {
   const publicPatterns = [
     '/auth',
     '/admin/login',
+    '/admin/register', // Admin invitation acceptance - must be public for new admins to register
     '/provider/login',
     '/provider/register',
     '/provider/join', // Staff invitation acceptance - must be public for new staff to register
