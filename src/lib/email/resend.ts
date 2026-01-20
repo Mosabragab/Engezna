@@ -1202,6 +1202,46 @@ export async function sendDisputeResolvedEmail(
 }
 
 // ============================================================================
+// Admin Invitation Email
+// ============================================================================
+
+export interface AdminInvitationData {
+  to: string;
+  adminName: string;
+  roleName: string;
+  roleColor: string;
+  inviterName: string;
+  inviteUrl: string;
+  expiresIn: string;
+  message?: string;
+}
+
+/**
+ * Send admin invitation email
+ */
+export async function sendAdminInvitationEmail(
+  data: AdminInvitationData
+): Promise<SendEmailResult> {
+  const variables = {
+    adminName: data.adminName,
+    roleName: data.roleName,
+    roleColor: data.roleColor,
+    inviterName: data.inviterName,
+    email: data.to,
+    inviteUrl: data.inviteUrl,
+    expiresIn: data.expiresIn,
+    message: data.message || '',
+  };
+
+  return sendTemplateEmail(
+    'admin-invitation',
+    data.to,
+    variables,
+    `دعوة للانضمام لفريق إدارة إنجزنا - ${data.roleName}`
+  );
+}
+
+// ============================================================================
 // Export getter for advanced use cases
 // ============================================================================
 

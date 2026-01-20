@@ -110,12 +110,14 @@ function TeamMemberCard({
   locale,
   onEdit,
   onDeactivate,
+  onDelete,
 }: {
   member: TeamMember;
   isCurrentUser: boolean;
   locale: string;
   onEdit: () => void;
   onDeactivate: () => void;
+  onDelete: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isOwner = member.role === 'owner';
@@ -218,10 +220,20 @@ function TeamMemberCard({
                       setMenuOpen(false);
                       onDeactivate();
                     }}
-                    className="w-full px-4 py-2 text-start text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-4 py-2 text-start text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-2"
                   >
                     <UserX className="w-4 h-4" />
                     {locale === 'ar' ? 'إيقاف المشرف' : 'Deactivate Staff'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onDelete();
+                    }}
+                    className="w-full px-4 py-2 text-start text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {locale === 'ar' ? 'حذف نهائي' : 'Delete Permanently'}
                   </button>
                 </div>
               </>
@@ -545,6 +557,51 @@ export default function TeamManagementPage() {
     }
   };
 
+  // Delete staff member permanently
+  const handleDelete = async (member: TeamMember) => {
+    if (
+      !confirm(
+        locale === 'ar'
+          ? `⚠️ تحذير: هل أنت متأكد من حذف ${member.profile.full_name} نهائياً؟\n\nهذا الإجراء لا يمكن التراجع عنه.`
+          : `⚠️ Warning: Are you sure you want to permanently delete ${member.profile.full_name}?\n\nThis action cannot be undone.`
+      )
+    )
+      return;
+
+    const supabase = createClient();
+
+    try {
+      // Delete from provider_staff table
+      const { error: staffError } = await supabase
+        .from('provider_staff')
+        .delete()
+        .eq('id', member.id);
+
+      if (staffError) throw staffError;
+
+      // Update the user's profile role back to customer (if they don't have other roles)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ role: 'customer' })
+        .eq('id', member.user_id);
+
+      if (profileError) {
+        console.error('Error updating profile role:', profileError);
+        // Continue anyway - the main deletion succeeded
+      }
+
+      await loadTeamData();
+      alert(
+        locale === 'ar'
+          ? `تم حذف ${member.profile.full_name} بنجاح`
+          : `${member.profile.full_name} has been deleted successfully`
+      );
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+      alert(locale === 'ar' ? 'حدث خطأ أثناء حذف المشرف' : 'Error deleting staff member');
+    }
+  };
+
   // Cancel invitation
   const handleCancelInvitation = async (invitation: PendingInvitation) => {
     if (
@@ -714,6 +771,7 @@ export default function TeamManagementPage() {
               locale={locale}
               onEdit={() => {}}
               onDeactivate={() => {}}
+              onDelete={() => {}}
             />
           ))}
 
@@ -727,6 +785,7 @@ export default function TeamManagementPage() {
               locale={locale}
               onEdit={() => setEditingMember(member)}
               onDeactivate={() => handleDeactivate(member)}
+              onDelete={() => handleDelete(member)}
             />
           ))
         ) : (

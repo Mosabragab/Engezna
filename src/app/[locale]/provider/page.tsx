@@ -338,21 +338,46 @@ export default function ProviderDashboard() {
     setUser(user);
 
     if (user) {
-      // Load provider owned by current user
-      const { data: providerData } = await supabase
+      // First, check if user owns a provider
+      const { data: ownedProviderData } = await supabase
         .from('providers')
         .select('*')
         .eq('owner_id', user.id)
         .order('created_at', { ascending: true })
         .limit(1);
 
-      if (providerData && providerData.length > 0) {
-        const providerRecord = providerData[0];
+      if (ownedProviderData && ownedProviderData.length > 0) {
+        const providerRecord = ownedProviderData[0];
         setProvider(providerRecord);
         // Calculate commission info
         const info = getCommissionInfo(providerRecord);
         setCommissionInfo(info);
         await loadStats(providerRecord.id, supabase);
+      } else {
+        // If not an owner, check if user is a staff member
+        const { data: staffData } = await supabase
+          .from('provider_staff')
+          .select('provider_id, is_active')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .limit(1);
+
+        if (staffData && staffData.length > 0) {
+          // Load the provider the staff is assigned to
+          const { data: staffProviderData } = await supabase
+            .from('providers')
+            .select('*')
+            .eq('id', staffData[0].provider_id)
+            .single();
+
+          if (staffProviderData) {
+            setProvider(staffProviderData);
+            // Calculate commission info
+            const info = getCommissionInfo(staffProviderData);
+            setCommissionInfo(info);
+            await loadStats(staffProviderData.id, supabase);
+          }
+        }
       }
     }
 
