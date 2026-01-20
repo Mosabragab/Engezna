@@ -54,18 +54,18 @@ DROP POLICY IF EXISTS "approval_requests_insert_policy" ON approval_requests;
 DROP POLICY IF EXISTS "approval_requests_update_policy" ON approval_requests;
 DROP POLICY IF EXISTS "approval_requests_delete_policy" ON approval_requests;
 
--- SELECT: Admins see all, provider owners see their own
+-- SELECT: Admins see all, provider owners see their related requests
+-- Note: Column is "related_provider_id" not "provider_id"
 CREATE POLICY "approval_requests_select_policy" ON approval_requests
   FOR SELECT USING (
     is_admin(auth.uid()) OR
-    user_owns_provider(provider_id, auth.uid())
+    user_owns_provider(related_provider_id, auth.uid())
   );
 
--- INSERT: Admins or provider owners creating their own request
+-- INSERT: Admins only (approval requests are created by admins)
 CREATE POLICY "approval_requests_insert_policy" ON approval_requests
   FOR INSERT WITH CHECK (
-    is_admin(auth.uid()) OR
-    user_owns_provider(provider_id, auth.uid())
+    is_admin(auth.uid())
   );
 
 -- UPDATE: Only admins can approve/reject
@@ -95,16 +95,17 @@ ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "activity_log_select_policy" ON activity_log;
 DROP POLICY IF EXISTS "activity_log_insert_policy" ON activity_log;
 
--- SELECT: Admins see all, users see only their own activity
+-- SELECT: Admins see all activity (this is admin activity log only)
+-- Note: Column is "admin_id" not "user_id" - this table is for ADMIN actions
 CREATE POLICY "activity_log_select_policy" ON activity_log
   FOR SELECT USING (
-    is_admin(auth.uid()) OR user_id = auth.uid()
+    is_admin(auth.uid())
   );
 
--- INSERT: Users can log their own activity, admins can log any
+-- INSERT: Only admins can log activity (triggered by admin actions)
 CREATE POLICY "activity_log_insert_policy" ON activity_log
   FOR INSERT WITH CHECK (
-    user_id = auth.uid() OR is_admin(auth.uid())
+    is_admin(auth.uid())
   );
 
 -- Note: No UPDATE/DELETE - activity logs should be immutable

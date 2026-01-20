@@ -41,8 +41,9 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_user_status
 -- SECTION 2: approval_requests indexes
 -- ============================================================================
 
-CREATE INDEX IF NOT EXISTS idx_approval_requests_provider_id
-  ON approval_requests(provider_id);
+-- Note: Column is "related_provider_id" not "provider_id"
+CREATE INDEX IF NOT EXISTS idx_approval_requests_related_provider_id
+  ON approval_requests(related_provider_id);
 
 CREATE INDEX IF NOT EXISTS idx_approval_requests_status
   ON approval_requests(status);
@@ -50,19 +51,24 @@ CREATE INDEX IF NOT EXISTS idx_approval_requests_status
 CREATE INDEX IF NOT EXISTS idx_approval_requests_created_at
   ON approval_requests(created_at DESC);
 
+-- Index for requester lookup
+CREATE INDEX IF NOT EXISTS idx_approval_requests_requested_by
+  ON approval_requests(requested_by);
+
 -- ============================================================================
 -- SECTION 3: activity_log indexes
 -- ============================================================================
 
-CREATE INDEX IF NOT EXISTS idx_activity_log_user_id
-  ON activity_log(user_id);
+-- Note: Column is "admin_id" not "user_id"
+CREATE INDEX IF NOT EXISTS idx_activity_log_admin_id
+  ON activity_log(admin_id);
 
 CREATE INDEX IF NOT EXISTS idx_activity_log_created_at
   ON activity_log(created_at DESC);
 
--- Composite for user's recent activity
-CREATE INDEX IF NOT EXISTS idx_activity_log_user_created
-  ON activity_log(user_id, created_at DESC);
+-- Composite for admin's recent activity
+CREATE INDEX IF NOT EXISTS idx_activity_log_admin_created
+  ON activity_log(admin_id, created_at DESC);
 
 -- ============================================================================
 -- SECTION 4: menu_items optimization (74% sequential scan rate)
