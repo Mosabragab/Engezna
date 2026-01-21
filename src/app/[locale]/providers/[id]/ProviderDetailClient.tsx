@@ -420,8 +420,8 @@ export default function ProviderDetailClient({
 
       {/* Provider Cover & Info */}
       <div className="bg-white border-b">
-        {/* Cover Image */}
-        <div className="h-44 bg-slate-100 relative">
+        {/* Cover Image - aspect-[3/1] matches provider settings recommended dimensions (1080×360) */}
+        <div className="aspect-[3/1] bg-slate-100 relative">
           {provider.cover_image_url ? (
             <img
               src={provider.cover_image_url}
