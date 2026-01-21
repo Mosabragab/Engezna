@@ -24,7 +24,17 @@ import {
   Info,
   FolderOpen,
   Plus,
+  Crop,
+  AlertCircle,
 } from 'lucide-react';
+
+// Image upload constants
+const IMAGE_CONFIG = {
+  minDimension: 400, // Minimum 400px
+  recommendedDimension: 800, // Recommended 800×800
+  maxFileSize: 3 * 1024 * 1024, // 3MB
+  acceptedFormats: ['image/jpeg', 'image/png', 'image/webp'],
+};
 
 type Category = {
   id: string;
@@ -150,27 +160,84 @@ export default function AddProductPage() {
     setSavingCategory(false);
   };
 
+  // Crop image to square (center crop)
+  const cropToSquare = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const size = Math.min(img.width, img.height);
+        const targetSize = Math.min(size, IMAGE_CONFIG.recommendedDimension);
+
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        // Calculate center crop position
+        const sx = (img.width - size) / 2;
+        const sy = (img.height - size) / 2;
+
+        // Draw cropped and resized image
+        ctx.drawImage(img, sx, sy, size, size, 0, 0, targetSize, targetSize);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Could not create blob'));
+            }
+          },
+          'image/jpeg',
+          0.9
+        );
+      };
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Validate image dimensions
+  const validateImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+      };
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setErrors((prev) => ({
-        ...prev,
-        image: locale === 'ar' ? 'الملف يجب أن يكون صورة' : 'File must be an image',
-      }));
-      return;
-    }
-
-    // Validate file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
+    if (!IMAGE_CONFIG.acceptedFormats.includes(file.type)) {
       setErrors((prev) => ({
         ...prev,
         image:
           locale === 'ar'
-            ? 'حجم الصورة يجب أن يكون أقل من 2 ميجابايت'
-            : 'Image must be less than 2MB',
+            ? 'صيغة الصورة غير مدعومة. استخدم JPEG, PNG, أو WebP'
+            : 'Image format not supported. Use JPEG, PNG, or WebP',
+      }));
+      return;
+    }
+
+    // Validate file size
+    if (file.size > IMAGE_CONFIG.maxFileSize) {
+      setErrors((prev) => ({
+        ...prev,
+        image:
+          locale === 'ar'
+            ? `حجم الصورة يجب أن يكون أقل من ${IMAGE_CONFIG.maxFileSize / 1024 / 1024}MB`
+            : `Image must be less than ${IMAGE_CONFIG.maxFileSize / 1024 / 1024}MB`,
       }));
       return;
     }
@@ -179,13 +246,33 @@ export default function AddProductPage() {
     setErrors((prev) => ({ ...prev, image: '' }));
 
     try {
-      const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `products/${providerId}/${Date.now()}.${fileExt}`;
+      // Validate dimensions
+      const dimensions = await validateImageDimensions(file);
 
-      const { data, error } = await supabase.storage
+      if (
+        dimensions.width < IMAGE_CONFIG.minDimension ||
+        dimensions.height < IMAGE_CONFIG.minDimension
+      ) {
+        setErrors((prev) => ({
+          ...prev,
+          image:
+            locale === 'ar'
+              ? `أبعاد الصورة صغيرة جداً. الحد الأدنى ${IMAGE_CONFIG.minDimension}×${IMAGE_CONFIG.minDimension} بكسل`
+              : `Image dimensions too small. Minimum ${IMAGE_CONFIG.minDimension}×${IMAGE_CONFIG.minDimension}px`,
+        }));
+        setUploading(false);
+        return;
+      }
+
+      // Crop to square
+      const croppedBlob = await cropToSquare(file);
+
+      const supabase = createClient();
+      const fileName = `products/${providerId}/${Date.now()}.jpg`;
+
+      const { error } = await supabase.storage
         .from('public')
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, croppedBlob, { upsert: true, contentType: 'image/jpeg' });
 
       if (error) {
         setErrors((prev) => ({
@@ -346,49 +433,106 @@ export default function AddProductPage() {
                 {locale === 'ar' ? 'صورة المنتج' : 'Product Image'}
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Image Guidelines */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-blue-700">
+                    <p className="font-medium mb-1">
+                      {locale === 'ar' ? 'معايير الصورة المثالية:' : 'Ideal image standards:'}
+                    </p>
+                    <ul className="space-y-1 text-blue-600">
+                      <li className="flex items-center gap-1">
+                        <Crop className="w-3 h-3" />
+                        {locale === 'ar'
+                          ? 'نسبة 1:1 (مربعة) - يتم القص تلقائياً'
+                          : '1:1 ratio (square) - auto-cropped'}
+                      </li>
+                      <li>
+                        {locale === 'ar'
+                          ? `الأبعاد المثالية: ${IMAGE_CONFIG.recommendedDimension}×${IMAGE_CONFIG.recommendedDimension} بكسل`
+                          : `Recommended: ${IMAGE_CONFIG.recommendedDimension}×${IMAGE_CONFIG.recommendedDimension}px`}
+                      </li>
+                      <li>
+                        {locale === 'ar'
+                          ? `الحد الأدنى: ${IMAGE_CONFIG.minDimension}×${IMAGE_CONFIG.minDimension} بكسل`
+                          : `Minimum: ${IMAGE_CONFIG.minDimension}×${IMAGE_CONFIG.minDimension}px`}
+                      </li>
+                      <li>
+                        {locale === 'ar'
+                          ? `الحد الأقصى: ${IMAGE_CONFIG.maxFileSize / 1024 / 1024}MB`
+                          : `Max size: ${IMAGE_CONFIG.maxFileSize / 1024 / 1024}MB`}
+                      </li>
+                      <li>
+                        {locale === 'ar' ? 'الصيغ: JPEG, PNG, WebP' : 'Formats: JPEG, PNG, WebP'}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Image Preview - Square */}
               {imagePreview ? (
-                <div className="relative">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-lg"
-                  />
+                <div className="relative max-w-xs mx-auto">
+                  <div className="aspect-square rounded-xl overflow-hidden border-2 border-slate-200 shadow-sm">
+                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
                   <Button
                     type="button"
                     variant="destructive"
                     size="sm"
-                    className="absolute top-2 right-2"
+                    className="absolute top-2 right-2 rounded-full w-8 h-8 p-0"
                     onClick={removeImage}
                   >
                     <X className="w-4 h-4" />
                   </Button>
+                  <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                    <Crop className="w-3 h-3" />
+                    1:1
+                  </div>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-primary transition-colors bg-slate-50">
+                <label className="flex flex-col items-center justify-center w-full aspect-square max-w-xs mx-auto border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-primary transition-colors bg-slate-50">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     className="hidden"
                     onChange={handleImageUpload}
                     disabled={uploading}
                   />
                   {uploading ? (
-                    <RefreshCw className="w-8 h-8 text-slate-400 animate-spin" />
+                    <div className="text-center">
+                      <RefreshCw className="w-10 h-10 text-primary animate-spin mx-auto mb-2" />
+                      <span className="text-sm text-slate-500">
+                        {locale === 'ar' ? 'جاري معالجة الصورة...' : 'Processing image...'}
+                      </span>
+                    </div>
                   ) : (
                     <>
-                      <ImagePlus className="w-8 h-8 text-slate-400 mb-2" />
-                      <span className="text-sm text-slate-500">
+                      <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-3">
+                        <ImagePlus className="w-8 h-8 text-slate-400" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-600">
                         {locale === 'ar' ? 'اضغط لرفع صورة' : 'Click to upload image'}
                       </span>
                       <span className="text-xs text-slate-400 mt-1">
-                        {locale === 'ar' ? 'الحد الأقصى 2 ميجابايت' : 'Max 2MB'}
+                        {locale === 'ar'
+                          ? 'سيتم قص الصورة تلقائياً لتصبح مربعة'
+                          : 'Image will be auto-cropped to square'}
                       </span>
                     </>
                   )}
                 </label>
               )}
-              {errors.image && <p className="text-red-500 text-sm mt-2">{errors.image}</p>}
+
+              {/* Error Message */}
+              {errors.image && (
+                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-50 p-3 rounded-lg">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {errors.image}
+                </div>
+              )}
             </CardContent>
           </Card>
 

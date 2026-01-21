@@ -255,7 +255,9 @@ export default function ProviderDetailClient({
 
       if (orderItems && orderItems.length > 0) {
         // Get unique menu item IDs
-        const menuItemIds = [...new Set(orderItems.map((item) => item.menu_item_id).filter(Boolean))];
+        const menuItemIds = [
+          ...new Set(orderItems.map((item) => item.menu_item_id).filter(Boolean)),
+        ];
 
         // Filter menu items that match and are available
         const orderedItems = menuItems.filter(

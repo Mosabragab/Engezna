@@ -319,7 +319,9 @@ export default function ProviderSettingsPage() {
     if (!error) {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      setProvider((prev) => (prev ? { ...prev, logo_url: logoUrl, cover_image_url: coverUrl } : null));
+      setProvider((prev) =>
+        prev ? { ...prev, logo_url: logoUrl, cover_image_url: coverUrl } : null
+      );
       // Fix: Update previews to match saved URLs
       setLogoPreview(logoUrl);
       setCoverPreview(coverUrl);
