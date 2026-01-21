@@ -187,6 +187,7 @@ export default function ProviderDetailClient({
   } | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [orderAgainItems, setOrderAgainItems] = useState<MenuItem[]>([]);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
   // Popular items are initialized from server-side data (bypasses RLS)
   const [popularItems] = useState<MenuItem[]>(() => {
     return initialPopularItemIds
@@ -205,6 +206,43 @@ export default function ProviderDetailClient({
       .replace(/[\u064B-\u065F]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+  };
+
+  // Share provider functionality
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareTitle = getName(provider);
+    const shareText =
+      locale === 'ar' ? `تصفح ${shareTitle} على إنجزنا` : `Check out ${shareTitle} on Engezna`;
+
+    // Use Web Share API if available (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed - fallback to copy
+        if ((err as Error).name !== 'AbortError') {
+          copyToClipboard(shareUrl);
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setShowCopiedToast(true);
+      setTimeout(() => setShowCopiedToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   // Get user info for SmartAssistant
@@ -500,7 +538,10 @@ export default function ProviderDetailClient({
             >
               <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
             </button>
-            <button className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors">
+            <button
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
+            >
               <Share2 className="w-5 h-5" />
             </button>
           </div>
@@ -1001,6 +1042,13 @@ export default function ProviderDetailClient({
 
       {/* Bottom Navigation */}
       <BottomNavigation />
+
+      {/* Copied Toast */}
+      {showCopiedToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in">
+          {locale === 'ar' ? 'تم نسخ الرابط' : 'Link copied'}
+        </div>
+      )}
     </div>
   );
 }
