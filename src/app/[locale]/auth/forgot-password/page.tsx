@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
 
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+          <h1 className="text-2xl font-bold text-primary mb-3">
             {locale === 'ar' ? 'تفقد الإيميل' : 'Check Your Email'}
           </h1>
 
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
               setEmailSent(false);
               setEmail('');
             }}
-            className="text-[#009DE0] font-medium hover:underline"
+            className="text-primary font-medium hover:underline"
           >
             {locale === 'ar' ? 'استخدام إيميل آخر' : 'Use a different email'}
           </button>
@@ -116,7 +116,7 @@ export default function ForgotPasswordPage() {
       <div className="w-full max-w-[340px]">
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}
           </h1>
           <p className="text-slate-500">
@@ -141,7 +141,7 @@ export default function ForgotPasswordPage() {
               htmlFor="email"
               className="flex items-center gap-2 text-sm font-medium text-slate-700"
             >
-              <Mail className="w-4 h-4 text-[#009DE0]" />
+              <Mail className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
             </label>
             <input
@@ -151,7 +151,7 @@ export default function ForgotPasswordPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
               disabled={isLoading}
-              className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+              className="w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
               dir="ltr"
               autoFocus
             />
@@ -161,7 +161,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={isLoading || !email}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -173,10 +173,7 @@ export default function ForgotPasswordPage() {
 
         {/* Back to Login Link */}
         <div className="text-center mt-8">
-          <Link
-            href={`/${locale}/auth/login`}
-            className="text-[#009DE0] font-medium hover:underline"
-          >
+          <Link href={`/${locale}/auth/login`} className="text-primary font-medium hover:underline">
             {locale === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to Login'}
           </Link>
         </div>

@@ -21,6 +21,8 @@ import {
   Phone,
   ShoppingBag,
   HeadphonesIcon,
+  FileText,
+  Shield,
 } from 'lucide-react';
 
 interface UserProfile {
@@ -124,6 +126,16 @@ export default function SettingsPage() {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
+    },
+    {
+      icon: FileText,
+      label: isRTL ? 'الشروط والأحكام' : 'Terms & Conditions',
+      href: `/${locale}/terms`,
+    },
+    {
+      icon: Shield,
+      label: isRTL ? 'سياسة الخصوصية' : 'Privacy Policy',
+      href: `/${locale}/privacy`,
     },
     {
       icon: MapPinned,

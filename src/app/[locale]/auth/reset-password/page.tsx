@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
         <Link href={`/${locale}`} className="mb-12">
           <EngeznaLogo size="lg" static showPen={false} />
         </Link>
-        <Loader2 className="w-8 h-8 animate-spin text-[#009DE0]" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <p className="mt-4 text-slate-500">{locale === 'ar' ? 'جاري التحقق...' : 'Verifying...'}</p>
       </div>
     );
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
 
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+          <h1 className="text-2xl font-bold text-primary mb-3">
             {locale === 'ar' ? 'تم تغيير كلمة المرور!' : 'Password Changed!'}
           </h1>
 
@@ -142,7 +142,7 @@ export default function ResetPasswordPage() {
 
           <Link
             href={`/${locale}/auth/login`}
-            className="inline-flex items-center justify-center w-full h-[52px] bg-[#009DE0] text-white font-medium rounded-xl hover:bg-[#0080b8] transition-all"
+            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-all"
           >
             {locale === 'ar' ? 'تسجيل الدخول' : 'Go to Login'}
           </Link>
@@ -176,7 +176,7 @@ export default function ResetPasswordPage() {
 
           <Link
             href={`/${locale}/auth/forgot-password`}
-            className="inline-flex items-center justify-center w-full h-[52px] bg-[#009DE0] text-white font-medium rounded-xl hover:bg-[#0080b8] transition-all"
+            className="inline-flex items-center justify-center w-full h-[52px] bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-all"
           >
             {locale === 'ar' ? 'طلب رابط جديد' : 'Request New Link'}
           </Link>
@@ -204,7 +204,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-[340px]">
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
           </h1>
           <p className="text-slate-500">
@@ -227,7 +227,7 @@ export default function ResetPasswordPage() {
               htmlFor="password"
               className="flex items-center gap-2 text-sm font-medium text-slate-700"
             >
-              <Lock className="w-4 h-4 text-[#009DE0]" />
+              <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
             </label>
             <div className="relative">
@@ -238,7 +238,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters'}
                 disabled={isLoading}
-                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
                 dir="ltr"
               />
               <button
@@ -257,7 +257,7 @@ export default function ResetPasswordPage() {
               htmlFor="confirmPassword"
               className="flex items-center gap-2 text-sm font-medium text-slate-700"
             >
-              <Lock className="w-4 h-4 text-[#009DE0]" />
+              <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
             </label>
             <div className="relative">
@@ -268,7 +268,7 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={locale === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter password'}
                 disabled={isLoading}
-                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50"
+                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
                 dir="ltr"
               />
               <button
@@ -285,7 +285,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={isLoading || !password || !confirmPassword}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />

@@ -99,21 +99,22 @@ export default async function ProviderDetailPage({
     notFound();
   }
 
-  // Parallel fetch for menu items, categories, reviews, and promotions
-  const [categoriesResult, menuItemsResult, reviewsResult, promotionsResult] = await Promise.all([
-    // Categories
-    supabase
-      .from('provider_categories')
-      .select('*')
-      .eq('provider_id', id)
-      .eq('is_active', true)
-      .order('display_order'),
+  // Parallel fetch for menu items, categories, reviews, promotions, and popular items
+  const [categoriesResult, menuItemsResult, reviewsResult, promotionsResult, popularItemsResult] =
+    await Promise.all([
+      // Categories
+      supabase
+        .from('provider_categories')
+        .select('*')
+        .eq('provider_id', id)
+        .eq('is_active', true)
+        .order('display_order'),
 
-    // Menu items with variants
-    supabase
-      .from('menu_items')
-      .select(
-        `
+      // Menu items with variants
+      supabase
+        .from('menu_items')
+        .select(
+          `
         *,
         product_variants (
           id,
@@ -127,15 +128,15 @@ export default async function ProviderDetailPage({
           is_available
         )
       `
-      )
-      .eq('provider_id', id)
-      .order('display_order'),
+        )
+        .eq('provider_id', id)
+        .order('display_order'),
 
-    // Reviews
-    supabase
-      .from('reviews')
-      .select(
-        `
+      // Reviews
+      supabase
+        .from('reviews')
+        .select(
+          `
         id,
         rating,
         comment,
@@ -146,20 +147,36 @@ export default async function ProviderDetailPage({
           full_name
         )
       `
-      )
-      .eq('provider_id', id)
-      .order('created_at', { ascending: false })
-      .limit(10),
+        )
+        .eq('provider_id', id)
+        .order('created_at', { ascending: false })
+        .limit(10),
 
-    // Promotions
-    supabase
-      .from('promotions')
-      .select('*')
-      .eq('provider_id', id)
-      .eq('is_active', true)
-      .lte('start_date', new Date().toISOString())
-      .gte('end_date', new Date().toISOString()),
-  ]);
+      // Promotions
+      supabase
+        .from('promotions')
+        .select('*')
+        .eq('provider_id', id)
+        .eq('is_active', true)
+        .lte('start_date', new Date().toISOString())
+        .gte('end_date', new Date().toISOString()),
+
+      // Most Popular items - count order_items grouped by menu_item_id
+      // Server-side query bypasses RLS to get accurate popularity data
+      supabase
+        .from('order_items')
+        .select(
+          `
+        menu_item_id,
+        orders!inner (
+          provider_id,
+          status
+        )
+      `
+        )
+        .eq('orders.provider_id', id)
+        .eq('orders.status', 'delivered'),
+    ]);
 
   // Process menu items with variants
   const menuItems =
@@ -169,6 +186,22 @@ export default async function ProviderDetailPage({
         item.product_variants?.filter((v: { is_available: boolean }) => v.is_available) || [],
     })) || [];
 
+  // Process popular items - count occurrences and sort by popularity
+  let popularItemIds: string[] = [];
+  if (popularItemsResult.data && popularItemsResult.data.length > 0) {
+    const countMap = new Map<string, number>();
+    popularItemsResult.data.forEach((item: { menu_item_id: string | null }) => {
+      if (item.menu_item_id) {
+        countMap.set(item.menu_item_id, (countMap.get(item.menu_item_id) || 0) + 1);
+      }
+    });
+    // Sort by count and get top 6 IDs
+    popularItemIds = [...countMap.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([itemId]) => itemId);
+  }
+
   return (
     <Suspense fallback={<ProviderLoading />}>
       <ProviderDetailClient
@@ -177,6 +210,7 @@ export default async function ProviderDetailPage({
         initialCategories={(categoriesResult.data as MenuCategory[]) || []}
         initialReviews={reviewsResult.data || []}
         initialPromotions={promotionsResult.data || []}
+        initialPopularItemIds={popularItemIds}
       />
     </Suspense>
   );

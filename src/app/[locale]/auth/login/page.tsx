@@ -299,7 +299,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[340px]">
         {/* Welcome Text */}
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'أهلاً بك في إنجزنا' : 'Welcome to Engezna'}
           </h1>
           <p className="text-slate-500">
@@ -339,7 +339,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setShowEmailForm(true)}
               disabled={isLoading}
-              className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+              className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
             >
               <Mail className="w-5 h-5" />
               <span>{locale === 'ar' ? 'الدخول عبر الإيميل' : 'Continue with Email'}</span>
@@ -353,7 +353,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
-                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 autoFocus
               />
 
@@ -365,7 +365,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
                   disabled={isEmailLoading}
-                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#009DE0] focus:ring-1 focus:ring-[#009DE0] transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
                 <button
                   type="button"
@@ -380,7 +380,7 @@ export default function LoginPage() {
               <div className="text-end">
                 <Link
                   href={`/${locale}/auth/forgot-password`}
-                  className="text-sm text-[#009DE0] hover:underline"
+                  className="text-sm text-primary hover:underline"
                 >
                   {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                 </Link>
@@ -390,7 +390,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isEmailLoading || !email || !password}
-                className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+                className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
               >
                 {isEmailLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -412,7 +412,7 @@ export default function LoginPage() {
                   ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
                   : `/${locale}/auth/register`
               }
-              className="text-[#009DE0] font-medium hover:underline"
+              className="text-primary font-medium hover:underline"
             >
               {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
             </Link>
@@ -430,7 +430,7 @@ export default function LoginPage() {
           <div className="flex justify-center gap-6 text-sm">
             <Link
               href={`/${locale}/provider/login`}
-              className="text-[#009DE0] font-medium hover:underline"
+              className="text-primary font-medium hover:underline"
             >
               {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
             </Link>
@@ -448,22 +448,22 @@ export default function LoginPage() {
           {locale === 'ar' ? (
             <>
               بالمتابعة، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By continuing, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 Privacy Policy
               </Link>
             </>

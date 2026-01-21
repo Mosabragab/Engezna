@@ -32,6 +32,8 @@ import {
   User,
   Search,
   X,
+  RotateCcw,
+  TrendingUp,
 } from 'lucide-react';
 
 export type ProviderData = {
@@ -138,6 +140,7 @@ interface ProviderDetailClientProps {
   initialCategories: MenuCategory[];
   initialReviews: Review[];
   initialPromotions: Promotion[];
+  initialPopularItemIds?: string[];
 }
 
 export default function ProviderDetailClient({
@@ -146,6 +149,7 @@ export default function ProviderDetailClient({
   initialCategories,
   initialReviews,
   initialPromotions,
+  initialPopularItemIds = [],
 }: ProviderDetailClientProps) {
   const locale = useLocale();
   const router = useRouter();
@@ -182,6 +186,14 @@ export default function ProviderDetailClient({
     newProvider: string;
   } | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [orderAgainItems, setOrderAgainItems] = useState<MenuItem[]>([]);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
+  // Popular items are initialized from server-side data (bypasses RLS)
+  const [popularItems] = useState<MenuItem[]>(() => {
+    return initialPopularItemIds
+      .map((itemId) => initialMenuItems.find((item) => item.id === itemId && item.is_available))
+      .filter(Boolean) as MenuItem[];
+  });
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   // Smart Arabic text normalization for search
@@ -194,6 +206,43 @@ export default function ProviderDetailClient({
       .replace(/[\u064B-\u065F]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+  };
+
+  // Share provider functionality
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const shareTitle = getName(provider);
+    const shareText =
+      locale === 'ar' ? `تصفح ${shareTitle} على إنجزنا` : `Check out ${shareTitle} on Engezna`;
+
+    // Use Web Share API if available (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed - fallback to copy
+        if ((err as Error).name !== 'AbortError') {
+          copyToClipboard(shareUrl);
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setShowCopiedToast(true);
+      setTimeout(() => setShowCopiedToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   };
 
   // Get user info for SmartAssistant
@@ -217,6 +266,48 @@ export default function ProviderDetailClient({
     }
     fetchUserData();
   }, []);
+
+  // Fetch "Order Again" items - products the user previously ordered from this provider
+  useEffect(() => {
+    async function fetchOrderAgainItems() {
+      if (!userId || !provider.id) return;
+
+      const supabase = createClient();
+
+      // Get unique menu_item_ids from user's completed orders at this provider
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select(
+          `
+          menu_item_id,
+          orders!inner (
+            customer_id,
+            provider_id,
+            status
+          )
+        `
+        )
+        .eq('orders.customer_id', userId)
+        .eq('orders.provider_id', provider.id)
+        .eq('orders.status', 'delivered');
+
+      if (orderItems && orderItems.length > 0) {
+        // Get unique menu item IDs
+        const menuItemIds = [
+          ...new Set(orderItems.map((item) => item.menu_item_id).filter(Boolean)),
+        ];
+
+        // Filter menu items that match and are available
+        const orderedItems = menuItems.filter(
+          (item) => menuItemIds.includes(item.id) && item.is_available
+        );
+
+        setOrderAgainItems(orderedItems.slice(0, 6)); // Max 6 items
+      }
+    }
+
+    fetchOrderAgainItems();
+  }, [userId, provider.id, menuItems]);
 
   // Get promotion for a specific product
   const getProductPromotion = (productId: string) => {
@@ -420,8 +511,8 @@ export default function ProviderDetailClient({
 
       {/* Provider Cover & Info */}
       <div className="bg-white border-b">
-        {/* Cover Image */}
-        <div className="h-44 bg-slate-100 relative">
+        {/* Cover Image - aspect-[3/1] matches provider settings recommended dimensions (1080×360) */}
+        <div className="aspect-[3/1] bg-slate-100 relative">
           {provider.cover_image_url ? (
             <img
               src={provider.cover_image_url}
@@ -447,7 +538,10 @@ export default function ProviderDetailClient({
             >
               <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
             </button>
-            <button className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors">
+            <button
+              onClick={handleShare}
+              className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
+            >
               <Share2 className="w-5 h-5" />
             </button>
           </div>
@@ -621,6 +715,112 @@ export default function ProviderDetailClient({
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order Again Section - Shows items the user previously ordered */}
+      {orderAgainItems.length > 0 && provider.operation_mode !== 'custom' && (
+        <div className="bg-white border-b">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <RotateCcw className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {locale === 'ar' ? 'اطلب تاني' : 'Order Again'}
+              </h2>
+            </div>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-3" style={{ width: 'max-content' }}>
+                {orderAgainItems.map((item) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleProductClick(item)}
+                    className="w-36 flex-shrink-0 cursor-pointer"
+                  >
+                    <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100 hover:border-primary/30 hover:shadow-sm transition-all">
+                      <div className="aspect-square relative">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={locale === 'ar' ? item.name_ar : item.name_en}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                            <span className="text-3xl">🍽️</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <h3 className="text-sm font-medium text-slate-800 truncate">
+                          {locale === 'ar' ? item.name_ar : item.name_en}
+                        </h3>
+                        <p className="text-sm font-bold text-primary mt-1">
+                          {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Most Popular Section - Shows top ordered items */}
+      {popularItems.length > 0 && provider.operation_mode !== 'custom' && (
+        <div className="bg-white border-b">
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-amber-600" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {locale === 'ar' ? 'الأكثر طلباً' : 'Most Popular'}
+              </h2>
+            </div>
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-3" style={{ width: 'max-content' }}>
+                {popularItems.map((item, index) => (
+                  <div
+                    key={item.id}
+                    onClick={() => handleProductClick(item)}
+                    className="w-36 flex-shrink-0 cursor-pointer"
+                  >
+                    <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100 hover:border-primary/30 hover:shadow-sm transition-all">
+                      <div className="aspect-square relative">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={locale === 'ar' ? item.name_ar : item.name_en}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                            <span className="text-3xl">🍽️</span>
+                          </div>
+                        )}
+                        {/* Popularity Badge */}
+                        <div className="absolute top-2 start-2 bg-amber-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          #{index + 1}
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <h3 className="text-sm font-medium text-slate-800 truncate">
+                          {locale === 'ar' ? item.name_ar : item.name_en}
+                        </h3>
+                        <p className="text-sm font-bold text-primary mt-1">
+                          {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -842,6 +1042,13 @@ export default function ProviderDetailClient({
 
       {/* Bottom Navigation */}
       <BottomNavigation />
+
+      {/* Copied Toast */}
+      {showCopiedToast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in">
+          {locale === 'ar' ? 'تم نسخ الرابط' : 'Link copied'}
+        </div>
+      )}
     </div>
   );
 }

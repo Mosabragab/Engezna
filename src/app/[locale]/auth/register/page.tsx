@@ -374,7 +374,7 @@ export default function RegisterPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
 
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-3">
+          <h1 className="text-2xl font-bold text-primary mb-3">
             {locale === 'ar' ? 'تم إنشاء حسابك!' : 'Account Created!'}
           </h1>
 
@@ -400,10 +400,7 @@ export default function RegisterPage() {
               : "Didn't receive the email? Check your spam folder"}
           </p>
 
-          <Link
-            href={`/${locale}/auth/login`}
-            className="text-[#009DE0] font-medium hover:underline"
-          >
+          <Link href={`/${locale}/auth/login`} className="text-primary font-medium hover:underline">
             {locale === 'ar' ? 'الذهاب لتسجيل الدخول' : 'Go to Login'}
           </Link>
         </div>
@@ -430,7 +427,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-[400px]">
         {/* Welcome Text */}
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
           </h1>
           <p className="text-slate-500">
@@ -479,7 +476,7 @@ export default function RegisterPage() {
           {/* Email */}
           <div className="space-y-1">
             <Label htmlFor="email" className="flex items-center gap-2 text-sm">
-              <Mail className="w-4 h-4 text-[#009DE0]" />
+              <Mail className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}
               <span className="text-red-500">*</span>
             </Label>
@@ -499,7 +496,7 @@ export default function RegisterPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label htmlFor="firstName" className="flex items-center gap-2 text-sm">
-                <User className="w-4 h-4 text-[#009DE0]" />
+                <User className="w-4 h-4 text-primary" />
                 {locale === 'ar' ? 'الاسم الأول' : 'First Name'}
                 <span className="text-red-500">*</span>
               </Label>
@@ -538,7 +535,7 @@ export default function RegisterPage() {
           {/* Phone Number */}
           <div className="space-y-1">
             <Label htmlFor="phone" className="flex items-center gap-2 text-sm">
-              <Phone className="w-4 h-4 text-[#009DE0]" />
+              <Phone className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'رقم الهاتف' : 'Phone Number'}
               <span className="text-red-500">*</span>
             </Label>
@@ -563,7 +560,7 @@ export default function RegisterPage() {
             {/* Governorate */}
             <div className="space-y-1">
               <Label htmlFor="governorateId" className="flex items-center gap-2 text-sm">
-                <MapPin className="w-4 h-4 text-[#009DE0]" />
+                <MapPin className="w-4 h-4 text-primary" />
                 {locale === 'ar' ? 'المحافظة' : 'Governorate'}
                 <span className="text-red-500">*</span>
               </Label>
@@ -642,7 +639,7 @@ export default function RegisterPage() {
           {/* Password */}
           <div className="space-y-1">
             <Label htmlFor="password" className="flex items-center gap-2 text-sm">
-              <Lock className="w-4 h-4 text-[#009DE0]" />
+              <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'كلمة المرور' : 'Password'}
               <span className="text-red-500">*</span>
             </Label>
@@ -669,7 +666,7 @@ export default function RegisterPage() {
           {/* Confirm Password */}
           <div className="space-y-1">
             <Label htmlFor="confirmPassword" className="flex items-center gap-2 text-sm">
-              <Lock className="w-4 h-4 text-[#009DE0]" />
+              <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
               <span className="text-red-500">*</span>
             </Label>
@@ -698,7 +695,7 @@ export default function RegisterPage() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-[48px] bg-[#009DE0] hover:bg-[#0080b8] text-white font-medium"
+            className="w-full h-[48px] bg-primary hover:bg-primary/90 text-white font-medium"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -719,22 +716,22 @@ export default function RegisterPage() {
           {locale === 'ar' ? (
             <>
               بالتسجيل، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By signing up, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 Privacy Policy
               </Link>
             </>
@@ -754,7 +751,7 @@ export default function RegisterPage() {
                   ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`
                   : `/${locale}/auth/login`
               }
-              className="text-[#009DE0] font-medium hover:underline"
+              className="text-primary font-medium hover:underline"
             >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
             </Link>

@@ -549,7 +549,7 @@ When electronic payment is activated:
               <span>{isRTL ? 'الرئيسية' : 'Home'}</span>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#009DE0] rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -569,7 +569,7 @@ When electronic payment is activated:
                 className={cn(
                   'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'customer'
-                    ? 'border-[#009DE0] text-[#009DE0]'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 )}
               >
@@ -581,7 +581,7 @@ When electronic payment is activated:
                 className={cn(
                   'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors',
                   activeTab === 'provider'
-                    ? 'border-[#009DE0] text-[#009DE0]'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-slate-500 hover:text-slate-700'
                 )}
               >
@@ -609,8 +609,8 @@ When electronic payment is activated:
                     className="w-full flex items-center justify-between p-4 md:p-6 text-left hover:bg-slate-50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#009DE0]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <IconComponent className="w-5 h-5 text-[#009DE0]" />
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <IconComponent className="w-5 h-5 text-primary" />
                       </div>
                       <h2 className="text-base md:text-lg font-bold text-[#0F172A]">
                         {section.title}
@@ -638,7 +638,7 @@ When electronic payment is activated:
 
             {/* Footer Note */}
             <div className="bg-[#0F172A] rounded-xl p-6 text-center mt-8">
-              <Scale className="w-8 h-8 text-[#009DE0] mx-auto mb-3" />
+              <Scale className="w-8 h-8 text-primary mx-auto mb-3" />
               <p className="text-white font-semibold text-sm mb-1">{t.footer.company}</p>
               <p className="text-slate-400 text-xs mb-3">{t.footer.address}</p>
               <p className="text-slate-300 text-sm mb-2">{t.footer.law}</p>
@@ -649,7 +649,7 @@ When electronic payment is activated:
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link
                 href={`/${locale}/privacy`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0F172A] text-white rounded-lg hover:bg-[#1e293b] transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               >
                 {isRTL ? 'سياسة الخصوصية' : 'Privacy Policy'}
               </Link>
