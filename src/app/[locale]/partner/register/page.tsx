@@ -24,6 +24,7 @@ import {
   ShoppingCart,
   Apple,
   UtensilsCrossed,
+  Pill,
   User,
   Briefcase,
   ArrowLeft,
@@ -57,7 +58,7 @@ interface City {
 }
 
 // Business category options with icons
-// Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
+// Updated January 2026 - Added pharmacy category
 const businessCategories = [
   { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم', labelEn: 'Restaurants' },
   {
@@ -73,6 +74,7 @@ const businessCategories = [
     labelAr: 'خضروات وفواكه',
     labelEn: 'Fruits & Vegetables',
   },
+  { value: 'pharmacy', icon: Pill, labelAr: 'صيدليات', labelEn: 'Pharmacies' },
 ];
 
 // Partner role options

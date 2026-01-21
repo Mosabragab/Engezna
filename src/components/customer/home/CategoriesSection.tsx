@@ -49,6 +49,14 @@ const categories: Category[] = [
     emoji: '🍌',
     gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
   },
+  {
+    id: '5',
+    key: 'pharmacy',
+    nameAr: 'صيدليات',
+    nameEn: 'Pharmacies',
+    emoji: '💊',
+    gradient: 'linear-gradient(145deg, rgba(252,231,243,0.9) 0%, rgba(249,168,212,0.7) 100%)',
+  },
 ];
 
 interface CategoriesSectionProps {
@@ -87,7 +95,7 @@ export function CategoriesSection({
       </div>
 
       {/* Categories Grid - Elegant Design with Hover Effects */}
-      <div className="grid grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-5 gap-2 sm:gap-3">
         {categories.map((category, index) => {
           const isSelected = selectedCategory === category.key;
 
@@ -99,7 +107,7 @@ export function CategoriesSection({
               {/* Card - Elegant floating design */}
               <div
                 className={cn(
-                  'w-[76px] h-[76px] sm:w-[88px] sm:h-[88px] md:w-[100px] md:h-[100px] lg:w-[120px] lg:h-[120px]',
+                  'w-[64px] h-[64px] sm:w-[72px] sm:h-[72px] md:w-[84px] md:h-[84px] lg:w-[100px] lg:h-[100px]',
                   'rounded-2xl md:rounded-3xl flex items-center justify-center',
                   'transition-all duration-300 cursor-pointer relative',
                   'hover:scale-[1.08] hover:-translate-y-1',
@@ -116,7 +124,7 @@ export function CategoriesSection({
                 {/* Subtle inner glow */}
                 <div className="absolute inset-0 rounded-2xl md:rounded-3xl bg-gradient-to-br from-white/30 to-transparent pointer-events-none" />
                 <span
-                  className="text-[32px] sm:text-[38px] md:text-[44px] lg:text-[52px] leading-none select-none relative z-10"
+                  className="text-[26px] sm:text-[30px] md:text-[36px] lg:text-[44px] leading-none select-none relative z-10"
                   style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.12))' }}
                 >
                   {category.emoji}

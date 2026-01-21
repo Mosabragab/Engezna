@@ -7,7 +7,7 @@
  * NEW VALUES: 'restaurant_cafe', 'coffee_patisserie', 'grocery', 'vegetables_fruits'
  */
 
-import { UtensilsCrossed, Coffee, ShoppingCart, Apple } from 'lucide-react';
+import { UtensilsCrossed, Coffee, ShoppingCart, Apple, Pill } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const BUSINESS_CATEGORIES = {
@@ -47,6 +47,15 @@ export const BUSINESS_CATEGORIES = {
     icon: '🍌',
     color: '#8BC34A',
   },
+  pharmacy: {
+    code: 'pharmacy' as const,
+    name_ar: 'صيدليات',
+    name_en: 'Pharmacies',
+    description_ar: 'صيدليات ومستلزمات طبية',
+    description_en: 'Pharmacies and medical supplies',
+    icon: '💊',
+    color: '#E91E63',
+  },
 } as const;
 
 export type BusinessCategoryCode = keyof typeof BUSINESS_CATEGORIES;
@@ -71,6 +80,7 @@ export const CATEGORY_ICONS: Record<BusinessCategoryCode, LucideIcon> = {
   coffee_patisserie: Coffee,
   grocery: ShoppingCart,
   vegetables_fruits: Apple,
+  pharmacy: Pill,
 };
 
 // For forms and selectors
@@ -79,6 +89,7 @@ export const BUSINESS_CATEGORY_OPTIONS = [
   { value: 'coffee_patisserie', labelAr: 'البن والحلويات', labelEn: 'Coffee & Patisserie' },
   { value: 'grocery', labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
   { value: 'vegetables_fruits', labelAr: 'خضروات وفواكه', labelEn: 'Fruits & Vegetables' },
+  { value: 'pharmacy', labelAr: 'صيدليات', labelEn: 'Pharmacies' },
 ] as const;
 
 // Filter categories for provider browsing
@@ -88,4 +99,5 @@ export const PROVIDER_FILTER_CATEGORIES = [
   { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
   { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
   { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
+  { id: 'pharmacy', name_ar: 'صيدليات', name_en: 'Pharmacies' },
 ] as const;
