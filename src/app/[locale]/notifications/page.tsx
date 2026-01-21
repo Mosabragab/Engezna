@@ -122,6 +122,8 @@ export default function NotificationsPage() {
         return <RefreshCw className="w-5 h-5 text-green-500" />;
       case 'payment_confirmed':
         return <CreditCard className="w-5 h-5 text-green-500" />;
+      case 'support_message':
+        return <MessageCircle className="w-5 h-5 text-blue-500" />;
       case 'promotion':
       case 'promo':
         return <Tag className="w-5 h-5 text-red-500" />;
@@ -242,6 +244,9 @@ export default function NotificationsPage() {
             // Check if it's a custom order notification (UPPERCASE from DB trigger)
             const isCustomOrderNotification = notification.type === 'CUSTOM_ORDER_PRICED';
 
+            // Check if it's a support message notification
+            const isSupportNotification = notification.type === 'support_message';
+
             const handleNotificationClick = () => {
               // Mark as read if not already
               if (!notification.is_read) {
@@ -256,6 +261,17 @@ export default function NotificationsPage() {
                   router.push(`/${locale}/orders/custom-review/${broadcastId}`);
                   return;
                 }
+              }
+
+              // Handle support message notifications - show full message
+              if (isSupportNotification) {
+                const fullMessage = notification.data?.full_message;
+                const subject = notification.data?.subject || notification.title_ar;
+                if (fullMessage) {
+                  // Use browser alert for simplicity, or can implement a modal
+                  alert(`${locale === 'ar' ? 'رسالة من فريق الدعم' : 'Message from Support'}\n\n${fullMessage}`);
+                }
+                return;
               }
 
               // Handle standard order notifications
@@ -273,8 +289,10 @@ export default function NotificationsPage() {
                     ? 'border-slate-100'
                     : notification.type === 'CUSTOM_ORDER_PRICED'
                       ? 'border-emerald-300 bg-emerald-50'
-                      : 'border-primary/30 bg-primary/5'
-                } ${isOrderNotification || isCustomOrderNotification ? 'cursor-pointer hover:shadow-md' : ''}`}
+                      : notification.type === 'support_message'
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-primary/30 bg-primary/5'
+                } ${isOrderNotification || isCustomOrderNotification || isSupportNotification ? 'cursor-pointer hover:shadow-md' : ''}`}
               >
                 <div className="flex gap-3">
                   {/* Icon */}

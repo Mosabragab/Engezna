@@ -306,16 +306,32 @@ export default function AdminSupportTicketDetailPage() {
     // Send notification to customer if message is to customer
     if (activeChat === 'customer' && ticket?.user_id) {
       try {
+        // Get the message content that was just sent
+        const messageContent = newMessage.trim();
+        // Create preview (first 100 chars)
+        const previewAr = messageContent.length > 100
+          ? messageContent.substring(0, 100) + '...'
+          : messageContent;
+        const previewEn = messageContent.length > 100
+          ? messageContent.substring(0, 100) + '...'
+          : messageContent;
+
         await supabase.from('customer_notifications').insert({
           customer_id: ticket.user_id,
           type: 'support_message',
           title_ar: 'رسالة جديدة من فريق الدعم',
           title_en: 'New message from Support',
-          body_ar: `رد على شكواك: ${ticket.subject}`,
-          body_en: `Reply to your complaint: ${ticket.subject}`,
-          related_order_id: null,
-          related_provider_id: null,
+          body_ar: previewAr,
+          body_en: previewEn,
+          related_order_id: ticket.order_id || null,
+          related_provider_id: ticket.provider_id || null,
           is_read: false,
+          data: {
+            ticket_id: ticketId,
+            ticket_number: ticket.ticket_number,
+            subject: ticket.subject,
+            full_message: messageContent,
+          },
         });
       } catch (notifError) {
         console.error('Error sending notification:', notifError);
