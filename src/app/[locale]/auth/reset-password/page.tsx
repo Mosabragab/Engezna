@@ -285,7 +285,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={isLoading || !password || !confirmPassword}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-[primary/90] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
