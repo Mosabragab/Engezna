@@ -140,6 +140,7 @@ interface ProviderDetailClientProps {
   initialCategories: MenuCategory[];
   initialReviews: Review[];
   initialPromotions: Promotion[];
+  initialPopularItemIds?: string[];
 }
 
 export default function ProviderDetailClient({
@@ -148,6 +149,7 @@ export default function ProviderDetailClient({
   initialCategories,
   initialReviews,
   initialPromotions,
+  initialPopularItemIds = [],
 }: ProviderDetailClientProps) {
   const locale = useLocale();
   const router = useRouter();
@@ -185,7 +187,12 @@ export default function ProviderDetailClient({
   } | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [orderAgainItems, setOrderAgainItems] = useState<MenuItem[]>([]);
-  const [popularItems, setPopularItems] = useState<MenuItem[]>([]);
+  // Popular items are initialized from server-side data (bypasses RLS)
+  const [popularItems] = useState<MenuItem[]>(() => {
+    return initialPopularItemIds
+      .map((itemId) => initialMenuItems.find((item) => item.id === itemId && item.is_available))
+      .filter(Boolean) as MenuItem[];
+  });
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   // Smart Arabic text normalization for search
@@ -261,55 +268,6 @@ export default function ProviderDetailClient({
 
     fetchOrderAgainItems();
   }, [userId, provider.id, menuItems]);
-
-  // Fetch "Most Popular" items - top ordered products from this provider
-  useEffect(() => {
-    async function fetchPopularItems() {
-      if (!provider.id) return;
-
-      const supabase = createClient();
-
-      // Count orders per menu item for this provider
-      const { data: itemCounts } = await supabase
-        .from('order_items')
-        .select(
-          `
-          menu_item_id,
-          orders!inner (
-            provider_id,
-            status
-          )
-        `
-        )
-        .eq('orders.provider_id', provider.id)
-        .in('orders.status', ['delivered', 'completed', 'customer_confirmed']);
-
-      if (itemCounts && itemCounts.length > 0) {
-        // Count occurrences of each menu_item_id
-        const countMap = new Map<string, number>();
-        itemCounts.forEach((item) => {
-          if (item.menu_item_id) {
-            countMap.set(item.menu_item_id, (countMap.get(item.menu_item_id) || 0) + 1);
-          }
-        });
-
-        // Sort by count and get top items
-        const sortedIds = [...countMap.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 6)
-          .map(([id]) => id);
-
-        // Filter menu items that match, are available, and maintain order by popularity
-        const popular = sortedIds
-          .map((id) => menuItems.find((item) => item.id === id && item.is_available))
-          .filter(Boolean) as MenuItem[];
-
-        setPopularItems(popular);
-      }
-    }
-
-    fetchPopularItems();
-  }, [provider.id, menuItems]);
 
   // Get promotion for a specific product
   const getProductPromotion = (productId: string) => {
