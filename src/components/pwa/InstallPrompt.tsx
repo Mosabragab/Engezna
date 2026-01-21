@@ -114,10 +114,10 @@ export function InstallPrompt() {
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-3 mt-4">
           <Button
             onClick={handleInstall}
-            className="flex-1 bg-[#0F172A] hover:bg-[#1e293b] text-white"
+            className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl h-11 font-medium"
           >
             <Download className="w-4 h-4 me-2" />
             {t('installButton')}
@@ -125,7 +125,7 @@ export function InstallPrompt() {
           <Button
             onClick={handleDismiss}
             variant="outline"
-            className="flex-1 border-[#0F172A] text-[#0F172A] hover:bg-[#0F172A] hover:text-white"
+            className="flex-1 border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl h-11 font-medium"
           >
             {t('later')}
           </Button>

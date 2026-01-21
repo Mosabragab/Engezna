@@ -105,12 +105,12 @@ export function CustomOrderWelcomeBanner({
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={`relative overflow-hidden ${className}`}
       >
-        {/* Vibrant Gradient Background */}
+        {/* Brand Blue Gradient Background */}
         <div
           className="relative rounded-2xl shadow-xl overflow-hidden"
           style={{
             background:
-              'linear-gradient(135deg, #059669 0%, #10B981 25%, #34D399 50%, #10B981 75%, #059669 100%)',
+              'linear-gradient(135deg, #0077B6 0%, #009DE0 25%, #00B4D8 50%, #009DE0 75%, #0077B6 100%)',
           }}
         >
           {/* Decorative Pattern Overlay */}
@@ -128,8 +128,8 @@ export function CustomOrderWelcomeBanner({
 
           {/* Decorative Circles */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/15 rounded-full blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-emerald-300/20 rounded-full blur-xl" />
-          <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-teal-400/15 rounded-full blur-lg" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-sky-300/20 rounded-full blur-xl" />
+          <div className="absolute top-1/2 right-1/4 w-20 h-20 bg-cyan-400/15 rounded-full blur-lg" />
 
           <div className="relative p-4 md:p-6">
             {/* Dismiss Button */}
@@ -146,7 +146,7 @@ export function CustomOrderWelcomeBanner({
               {/* Icon & Badge */}
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-emerald-600" />
+                  <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-primary" />
                 </div>
                 <div className="md:hidden">
                   <span className="inline-block px-3 py-1 bg-amber-400 rounded-full text-xs font-bold text-amber-900 shadow-md">
@@ -188,7 +188,7 @@ export function CustomOrderWelcomeBanner({
                 {onStartCustomOrder ? (
                   <Button
                     onClick={onStartCustomOrder}
-                    className="w-full md:w-auto bg-white text-emerald-700 hover:bg-emerald-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
+                    className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
                   >
                     {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                     {isRTL ? (
@@ -199,7 +199,7 @@ export function CustomOrderWelcomeBanner({
                   </Button>
                 ) : (
                   <Link href={`/${locale}/custom-order?provider=${providerId}`}>
-                    <Button className="w-full md:w-auto bg-white text-emerald-700 hover:bg-emerald-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6">
+                    <Button className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6">
                       {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                       {isRTL ? (
                         <ArrowLeft className="w-5 h-5 ms-2" />
@@ -225,7 +225,7 @@ export function CustomOrderWelcomeBanner({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
-                      <span className="text-emerald-600 font-bold text-lg">1</span>
+                      <span className="text-primary font-bold text-lg">1</span>
                     </div>
                     <p className="text-white text-sm font-medium">
                       {isRTL
@@ -235,7 +235,7 @@ export function CustomOrderWelcomeBanner({
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
-                      <span className="text-emerald-600 font-bold text-lg">2</span>
+                      <span className="text-primary font-bold text-lg">2</span>
                     </div>
                     <p className="text-white text-sm font-medium">
                       {isRTL ? 'نقوم بتسعير طلبك خلال دقائق' : 'We price your order within minutes'}
@@ -243,7 +243,7 @@ export function CustomOrderWelcomeBanner({
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">
-                      <span className="text-emerald-600 font-bold text-lg">3</span>
+                      <span className="text-primary font-bold text-lg">3</span>
                     </div>
                     <p className="text-white text-sm font-medium">
                       {isRTL ? 'وافق على السعر وسنوصّل طلبك' : 'Approve the price and we deliver'}
@@ -292,7 +292,7 @@ export function CustomOrderBadge({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary to-emerald-500 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
+      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-primary to-sky-400 text-white rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
     >
       <Sparkles className="w-4 h-4" />
       {isRTL ? 'طلب خاص متاح' : 'Custom Orders Available'}
@@ -326,7 +326,7 @@ export function CustomOrderFloatingButton({
           <div className="absolute inset-0 bg-primary rounded-full animate-ping opacity-25" />
 
           {/* Button */}
-          <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-emerald-500 text-white rounded-full shadow-xl">
+          <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-sky-400 text-white rounded-full shadow-xl">
             <Mic className="w-5 h-5" />
             <span className="font-semibold text-sm whitespace-nowrap">
               {isRTL ? 'طلب خاص' : 'Custom Order'}

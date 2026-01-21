@@ -35,7 +35,6 @@ import {
   RotateCcw,
   TrendingUp,
 } from 'lucide-react';
-import { getCoverGradientStyle } from '@/lib/utils/generate-cover';
 
 export type ProviderData = {
   id: string;
@@ -66,7 +65,6 @@ export type ProviderData = {
     welcome_banner_text_ar?: string;
     welcome_banner_text_en?: string;
   };
-  metadata?: { brand_color?: string } | null;
 };
 
 type ProductVariant = {
@@ -516,21 +514,19 @@ export default function ProviderDetailClient({
         {/* Cover Image - aspect-[3/1] matches provider settings recommended dimensions (1080×360) */}
         <div className="aspect-[3/1] bg-slate-100 relative">
           {provider.cover_image_url ? (
-            <img
-              src={provider.cover_image_url}
-              alt={getName(provider)}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={provider.cover_image_url}
+                alt={getName(provider)}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            </>
           ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                background: getCoverGradientStyle(provider.metadata?.brand_color || '#009DE0'),
-              }}
-            >
-              {/* Show logo centered on gradient if available, otherwise store emoji */}
+            <div className="w-full h-full flex items-center justify-center bg-white">
+              {/* Clean minimalist: logo on white background */}
               {provider.logo_url ? (
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-lg bg-white/95">
+                <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-lg border border-slate-100">
                   <img
                     src={provider.logo_url}
                     alt={getName(provider)}
@@ -538,11 +534,12 @@ export default function ProviderDetailClient({
                   />
                 </div>
               ) : (
-                <span className="text-6xl">🏪</span>
+                <div className="w-28 h-28 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                  <span className="text-5xl">🏪</span>
+                </div>
               )}
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
           {/* Provider Actions */}
           <div className="absolute top-3 start-3 flex items-center gap-2">

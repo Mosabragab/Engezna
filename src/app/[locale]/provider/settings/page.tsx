@@ -45,7 +45,6 @@ import {
 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { BRAND_COLORS } from '@/lib/utils/generate-cover';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -101,8 +100,6 @@ type Provider = {
   // Custom order settings
   operation_mode: 'standard' | 'custom' | 'hybrid';
   custom_order_settings: CustomOrderSettings | null;
-  // Metadata for brand color
-  metadata: { brand_color?: string } | null;
 };
 
 export default function ProviderSettingsPage() {
@@ -158,8 +155,6 @@ export default function ProviderSettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [brandColor, setBrandColor] = useState('#009DE0');
-
   // Pickup settings
   const [supportsPickup, setSupportsPickup] = useState(false);
   const [pickupInstructionsAr, setPickupInstructionsAr] = useState('');
@@ -214,11 +209,6 @@ export default function ProviderSettingsPage() {
     setDeliveryRadius(providerData.delivery_radius_km?.toString() || '');
     setLogoPreview(providerData.logo_url);
     setCoverPreview(providerData.cover_image_url);
-
-    // Load brand color from metadata
-    if (providerData.metadata?.brand_color) {
-      setBrandColor(providerData.metadata.brand_color);
-    }
 
     // Load pickup settings
     setSupportsPickup(providerData.supports_pickup || false);
@@ -311,12 +301,6 @@ export default function ProviderSettingsPage() {
       }
     }
 
-    // Prepare metadata with brand color
-    const updatedMetadata = {
-      ...(provider.metadata || {}),
-      brand_color: brandColor,
-    };
-
     const { error } = await supabase
       .from('providers')
       .update({
@@ -327,7 +311,6 @@ export default function ProviderSettingsPage() {
         address_en: addressEn || null,
         logo_url: logoUrl,
         cover_image_url: coverUrl,
-        metadata: updatedMetadata,
         updated_at: new Date().toISOString(),
       })
       .eq('id', provider.id);
@@ -336,9 +319,7 @@ export default function ProviderSettingsPage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       setProvider((prev) =>
-        prev
-          ? { ...prev, logo_url: logoUrl, cover_image_url: coverUrl, metadata: updatedMetadata }
-          : null
+        prev ? { ...prev, logo_url: logoUrl, cover_image_url: coverUrl } : null
       );
       // Fix: Update previews to match saved URLs
       setLogoPreview(logoUrl);
@@ -706,48 +687,9 @@ export default function ProviderSettingsPage() {
                   </div>
                   <p className="text-xs text-slate-400">
                     {locale === 'ar'
-                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • تظهر في أعلى صفحة المتجر'
-                      : 'Max 5MB • JPG, PNG or WebP • Displayed at top of store page'}
+                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • إذا لم ترفع صورة سيظهر الشعار على خلفية بيضاء'
+                      : 'Max 5MB • JPG, PNG or WebP • If not uploaded, logo will display on white background'}
                   </p>
-
-                  {/* Brand Color Picker for Auto-generated Cover */}
-                  <div className="mt-4 p-3 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="w-4 h-4 text-primary" />
-                      <span className="text-sm font-medium text-slate-700">
-                        {locale === 'ar' ? 'لون الغلاف التلقائي' : 'Auto-generated Cover Color'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mb-3">
-                      {locale === 'ar'
-                        ? 'إذا لم ترفع صورة غلاف، سيتم إنشاء غلاف تلقائياً من الشعار واللون المحدد'
-                        : 'If no cover is uploaded, a cover will be auto-generated from logo and selected color'}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {BRAND_COLORS.map((color) => (
-                        <button
-                          key={color.value}
-                          type="button"
-                          onClick={() => setBrandColor(color.value)}
-                          className={`w-8 h-8 rounded-full border-2 transition-all ${
-                            brandColor === color.value
-                              ? 'border-slate-900 scale-110 ring-2 ring-offset-2 ring-slate-400'
-                              : 'border-transparent hover:scale-105'
-                          }`}
-                          style={{ backgroundColor: color.value }}
-                          title={locale === 'ar' ? color.label : color.labelEn}
-                        />
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-2">
-                      {locale === 'ar' ? 'اللون المحدد: ' : 'Selected: '}
-                      <span className="font-medium">
-                        {locale === 'ar'
-                          ? BRAND_COLORS.find((c) => c.value === brandColor)?.label || brandColor
-                          : BRAND_COLORS.find((c) => c.value === brandColor)?.labelEn || brandColor}
-                      </span>
-                    </p>
-                  </div>
                 </div>
 
                 {/* Logo */}
