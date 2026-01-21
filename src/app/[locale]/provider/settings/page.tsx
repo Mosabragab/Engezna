@@ -86,6 +86,7 @@ type Provider = {
   address_ar: string | null;
   address_en: string | null;
   logo_url: string | null;
+  cover_image_url: string | null;
   status: string;
   delivery_fee: number | null;
   estimated_delivery_time_min: number | null;
@@ -152,6 +153,8 @@ export default function ProviderSettingsPage() {
   const [deliveryRadius, setDeliveryRadius] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
 
   // Pickup settings
   const [supportsPickup, setSupportsPickup] = useState(false);
@@ -206,6 +209,7 @@ export default function ProviderSettingsPage() {
     setMinimumOrder(providerData.min_order_amount?.toString() || '');
     setDeliveryRadius(providerData.delivery_radius_km?.toString() || '');
     setLogoPreview(providerData.logo_url);
+    setCoverPreview(providerData.cover_image_url);
 
     // Load pickup settings
     setSupportsPickup(providerData.supports_pickup || false);
@@ -241,6 +245,20 @@ export default function ProviderSettingsPage() {
     }
   };
 
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(
+          locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5MB' : 'Image must be less than 5MB'
+        );
+        return;
+      }
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSaveStore = async () => {
     if (!provider) return;
 
@@ -248,6 +266,7 @@ export default function ProviderSettingsPage() {
     const supabase = createClient();
 
     let logoUrl = provider.logo_url;
+    let coverUrl = provider.cover_image_url;
 
     // Upload new logo if selected
     if (logoFile) {
@@ -266,6 +285,23 @@ export default function ProviderSettingsPage() {
       }
     }
 
+    // Upload new cover image if selected
+    if (coverFile) {
+      const fileExt = coverFile.name.split('.').pop();
+      const fileName = `provider-covers/${provider.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(fileName, coverFile, { upsert: true });
+
+      if (!uploadError) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('public').getPublicUrl(fileName);
+        coverUrl = publicUrl;
+      }
+    }
+
     const { error } = await supabase
       .from('providers')
       .update({
@@ -275,6 +311,7 @@ export default function ProviderSettingsPage() {
         address_ar: addressAr || null,
         address_en: addressEn || null,
         logo_url: logoUrl,
+        cover_image_url: coverUrl,
         updated_at: new Date().toISOString(),
       })
       .eq('id', provider.id);
@@ -282,7 +319,13 @@ export default function ProviderSettingsPage() {
     if (!error) {
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-      setProvider((prev) => (prev ? { ...prev, logo_url: logoUrl } : null));
+      setProvider((prev) => (prev ? { ...prev, logo_url: logoUrl, cover_image_url: coverUrl } : null));
+      // Fix: Update previews to match saved URLs
+      setLogoPreview(logoUrl);
+      setCoverPreview(coverUrl);
+      // Clear file states after successful upload
+      setLogoFile(null);
+      setCoverFile(null);
     }
 
     setSaving(false);
@@ -591,8 +634,64 @@ export default function ProviderSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Cover Image / Banner */}
+                <div className="space-y-2">
+                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                    <ImageIcon className="w-4 h-4" />
+                    {locale === 'ar' ? 'صورة الغلاف (البانر)' : 'Cover Image (Banner)'}
+                  </label>
+                  <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-primary transition-colors">
+                    {coverPreview ? (
+                      <>
+                        <Image
+                          src={coverPreview}
+                          alt="Cover"
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <label className="px-4 py-2 bg-white rounded-lg cursor-pointer flex items-center gap-2 hover:bg-slate-100">
+                            <Camera className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              {locale === 'ar' ? 'تغيير الصورة' : 'Change Image'}
+                            </span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleCoverChange}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      </>
+                    ) : (
+                      <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
+                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                        <span className="text-sm text-slate-500">
+                          {locale === 'ar' ? 'اضغط لإضافة صورة الغلاف' : 'Click to add cover image'}
+                        </span>
+                        <span className="text-xs text-slate-400 mt-1">
+                          {locale === 'ar' ? 'الحجم الموصى به: 1200×400 بكسل' : 'Recommended: 1200×400px'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverChange}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {locale === 'ar' ? 'الحد الأقصى 5MB - تظهر في أعلى صفحة المتجر' : 'Max 5MB - Displayed at top of store page'}
+                  </p>
+                </div>
+
                 {/* Logo */}
                 <div className="text-center">
+                  <label className="block text-sm text-slate-500 mb-2">
+                    {locale === 'ar' ? 'شعار المتجر (Logo)' : 'Store Logo'}
+                  </label>
                   <div className="relative w-24 h-24 mx-auto mb-3">
                     {logoPreview ? (
                       <Image
