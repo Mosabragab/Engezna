@@ -29,6 +29,21 @@
 | [CONTRIBUTING.md](CONTRIBUTING.md)                                       | Contribution guidelines        |
 | [docs/MASTER_IMPLEMENTATION_PLAN.md](docs/MASTER_IMPLEMENTATION_PLAN.md) | Engezna 2026 Implementation    |
 
+### Code Formatting (Prettier)
+
+**Always run Prettier before committing to avoid CI failures:**
+
+```bash
+npx prettier --write .                    # Format all files
+npx prettier --write "src/path/file.tsx"  # Format specific file
+npx prettier --check .                    # Check without modifying
+```
+
+### Database Notes
+
+- **order_status enum**: Only contains `'delivered'` - don't use `'completed'` or `'customer_confirmed'`
+- **RLS restrictions**: Use server-side queries in `page.tsx` for cross-user data (e.g., "Most Popular" items)
+
 ### Latest Session (Engezna 2026 - January 18, 2026)
 
 **Phase 4: Production Optimization - COMPLETE ✅**
