@@ -95,7 +95,7 @@ export function CategoriesSection({
       </div>
 
       {/* Categories Grid - Elegant Design with Hover Effects */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3">
+      <div className="grid grid-cols-5 gap-2 sm:gap-3 items-start">
         {categories.map((category, index) => {
           const isSelected = selectedCategory === category.key;
 
@@ -131,10 +131,11 @@ export function CategoriesSection({
                 </span>
               </div>
 
-              {/* Label - Elegant typography */}
+              {/* Label - Elegant typography with fixed height for alignment */}
               <span
                 className={cn(
-                  'mt-3 text-xs sm:text-sm font-semibold text-center leading-tight line-clamp-2',
+                  'mt-2 text-[10px] sm:text-xs font-semibold text-center leading-tight',
+                  'min-h-[28px] sm:min-h-[32px] flex items-start justify-center',
                   isSelected ? 'text-primary' : 'text-slate-700'
                 )}
               >
