@@ -316,7 +316,7 @@ export default function HomePage() {
       const { data: provider, error: providerError } = await supabase
         .from('providers')
         .select(
-          'id, name_ar, name_en, delivery_fee, min_order_amount, estimated_delivery_time_min, commission_rate, category'
+          'id, name_ar, name_en, delivery_fee, min_order_amount, estimated_delivery_time_min, commission_rate, category, logo_url'
         )
         .eq('id', lastOrder.providerId)
         .single();

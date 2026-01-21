@@ -284,8 +284,16 @@ export default function CartPage() {
         {provider && (
           <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <Store className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-primary/10">
+                {provider.logo_url ? (
+                  <img
+                    src={provider.logo_url}
+                    alt={getName(provider)}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Store className="w-5 h-5 text-primary" />
+                )}
               </div>
               <div>
                 <h3 className="font-semibold text-slate-900">{getName(provider)}</h3>
