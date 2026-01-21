@@ -155,7 +155,6 @@ export default function ProviderSettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-
   // Pickup settings
   const [supportsPickup, setSupportsPickup] = useState(false);
   const [pickupInstructionsAr, setPickupInstructionsAr] = useState('');
@@ -688,8 +687,8 @@ export default function ProviderSettingsPage() {
                   </div>
                   <p className="text-xs text-slate-400">
                     {locale === 'ar'
-                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • تظهر في أعلى صفحة المتجر'
-                      : 'Max 5MB • JPG, PNG or WebP • Displayed at top of store page'}
+                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • إذا لم ترفع صورة سيظهر الشعار على خلفية زرقاء فاتحة'
+                      : 'Max 5MB • JPG, PNG or WebP • If not uploaded, logo displays on light blue background'}
                   </p>
                 </div>
 

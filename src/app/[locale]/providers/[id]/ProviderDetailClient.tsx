@@ -514,17 +514,32 @@ export default function ProviderDetailClient({
         {/* Cover Image - aspect-[3/1] matches provider settings recommended dimensions (1080×360) */}
         <div className="aspect-[3/1] bg-slate-100 relative">
           {provider.cover_image_url ? (
-            <img
-              src={provider.cover_image_url}
-              alt={getName(provider)}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={provider.cover_image_url}
+                alt={getName(provider)}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+            </>
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <span className="text-6xl">🏪</span>
+            <div className="w-full h-full flex items-center justify-center bg-sky-50/70">
+              {/* Clean minimalist: logo on subtle pastel background */}
+              {provider.logo_url ? (
+                <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-sm bg-white border border-white">
+                  <img
+                    src={provider.logo_url}
+                    alt={getName(provider)}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-28 h-28 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                  <span className="text-5xl">🏪</span>
+                </div>
+              )}
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
 
           {/* Provider Actions */}
           <div className="absolute top-3 start-3 flex items-center gap-2">
