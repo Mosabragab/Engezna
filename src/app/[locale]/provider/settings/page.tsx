@@ -687,8 +687,8 @@ export default function ProviderSettingsPage() {
                   </div>
                   <p className="text-xs text-slate-400">
                     {locale === 'ar'
-                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • إذا لم ترفع صورة سيظهر الشعار على خلفية بيضاء'
-                      : 'Max 5MB • JPG, PNG or WebP • If not uploaded, logo will display on white background'}
+                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • إذا لم ترفع صورة سيظهر الشعار على خلفية زرقاء فاتحة'
+                      : 'Max 5MB • JPG, PNG or WebP • If not uploaded, logo displays on light blue background'}
                   </p>
                 </div>
 

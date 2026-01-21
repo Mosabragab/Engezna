@@ -523,10 +523,10 @@ export default function ProviderDetailClient({
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-white">
-              {/* Clean minimalist: logo on white background */}
+            <div className="w-full h-full flex items-center justify-center bg-sky-50/70">
+              {/* Clean minimalist: logo on subtle pastel background */}
               {provider.logo_url ? (
-                <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-lg border border-slate-100">
+                <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-sm bg-white border border-white">
                   <img
                     src={provider.logo_url}
                     alt={getName(provider)}
@@ -534,7 +534,7 @@ export default function ProviderDetailClient({
                   />
                 </div>
               ) : (
-                <div className="w-28 h-28 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                <div className="w-28 h-28 rounded-2xl bg-white flex items-center justify-center shadow-sm">
                   <span className="text-5xl">🏪</span>
                 </div>
               )}
