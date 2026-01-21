@@ -119,79 +119,22 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
     }
   }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds]);
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPTIMIZED: Polling only - removed Realtime channels for admin badges
+  // Admin badges don't need instant updates - 30s polling is sufficient
+  // This reduces 3 Realtime channels per admin session
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     // Don't load badge counts on login page or while region data is loading
     if (isLoginPage || regionLoading) return;
 
     // Load badge counts using cached region data
     loadBadgeCounts();
-    // Refresh badge counts every 60 seconds
-    const interval = setInterval(loadBadgeCounts, 60000);
-    return () => clearInterval(interval);
-  }, [isLoginPage, regionLoading, loadBadgeCounts]);
 
-  // Real-time subscription for admin badge counts
-  useEffect(() => {
-    if (isLoginPage || regionLoading) return;
+    // Poll every 30 seconds for admin badge updates
+    const pollingInterval = setInterval(loadBadgeCounts, 30000);
 
-    const supabase = createClient();
-
-    // Subscribe to refunds changes
-    const refundsChannel = supabase
-      .channel('admin-refunds-badges')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'refunds',
-        },
-        () => {
-          // Reload badge counts when refunds change
-          loadBadgeCounts();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to support_tickets changes
-    const ticketsChannel = supabase
-      .channel('admin-tickets-badges')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'support_tickets',
-        },
-        () => {
-          // Reload badge counts when tickets change
-          loadBadgeCounts();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to providers changes (for pending approvals)
-    const providersChannel = supabase
-      .channel('admin-providers-badges')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'providers',
-        },
-        () => {
-          // Reload badge counts when providers change
-          loadBadgeCounts();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(refundsChannel);
-      supabase.removeChannel(ticketsChannel);
-      supabase.removeChannel(providersChannel);
-    };
+    return () => clearInterval(pollingInterval);
   }, [isLoginPage, regionLoading, loadBadgeCounts]);
 
   // Always render sidebar to prevent mounting issues on navigation

@@ -225,16 +225,23 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     return () => subscription.unsubscribe();
   }, [checkAuth]);
 
-  // Realtime subscription for provider_notifications
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPTIMIZED: Single unified Realtime channel for critical updates
+  // Merged: notifications + orders + custom_orders (3 tables, 1 channel)
+  // This reduces Realtime connections by 80%
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!provider?.id) return;
 
     const supabase = createClient();
     const providerId = provider.id;
 
-    // Subscribe to provider_notifications changes
-    const notificationsChannel = supabase
-      .channel(`provider-notifications-${providerId}`)
+    // Single unified channel for all critical realtime updates
+    const unifiedChannel = supabase
+      .channel(`provider-unified-${providerId}`)
+      // ─────────────────────────────────────────────────────────────────────────
+      // NOTIFICATIONS: Real-time updates for notification bell
+      // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
         {
@@ -264,11 +271,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         (payload) => {
           const oldNotif = payload.old as { is_read: boolean };
           const newNotif = payload.new as { is_read: boolean };
-          // Decrement if was unread and now read
           if (!oldNotif.is_read && newNotif.is_read) {
             setUnreadCount((prev) => Math.max(0, prev - 1));
           }
-          // Increment if was read and now unread (unlikely but handle it)
           if (oldNotif.is_read && !newNotif.is_read) {
             setUnreadCount((prev) => prev + 1);
           }
@@ -284,17 +289,14 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         (payload) => {
           const deleted = payload.old as { is_read: boolean };
-          // Decrement if deleted notification was unread
           if (!deleted.is_read) {
             setUnreadCount((prev) => Math.max(0, prev - 1));
           }
         }
       )
-      .subscribe();
-
-    // Also subscribe to orders for pending count and on_hold count (sidebar badge)
-    const ordersChannel = supabase
-      .channel(`layout-orders-${providerId}`)
+      // ─────────────────────────────────────────────────────────────────────────
+      // ORDERS: Real-time updates for pending orders badge (critical)
+      // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
         {
@@ -318,104 +320,21 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           table: 'orders',
           filter: `provider_id=eq.${providerId}`,
         },
-        async (payload) => {
-          const oldOrder = payload.old as { status: string; settlement_status?: string };
-          const newOrder = payload.new as { status: string; settlement_status?: string };
+        (payload) => {
+          const oldOrder = payload.old as { status: string };
+          const newOrder = payload.new as { status: string };
 
-          // Track pending orders count
           if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
             setPendingOrders((prev) => Math.max(0, prev - 1));
           }
           if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
             setPendingOrders((prev) => prev + 1);
           }
-
-          // Track on_hold orders count (part of refunds badge)
-          if (oldOrder.settlement_status !== newOrder.settlement_status) {
-            const { count: onHoldCount } = await supabase
-              .from('orders')
-              .select('*', { count: 'exact', head: true })
-              .eq('provider_id', providerId)
-              .eq('settlement_status', 'on_hold');
-            setOnHoldOrders(onHoldCount || 0);
-          }
         }
       )
-      .subscribe();
-
-    // Also subscribe to refunds for pending refunds count (sidebar badge)
-    // Use simpler approach: reload count on any refund change
-    const refundsChannel = supabase
-      .channel(`layout-refunds-${providerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'refunds',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        async () => {
-          // Reload pending refunds count
-          const { count } = await supabase
-            .from('refunds')
-            .select('*', { count: 'exact', head: true })
-            .eq('provider_id', providerId)
-            .eq('status', 'pending')
-            .eq('provider_action', 'pending');
-          setPendingRefunds(count || 0);
-        }
-      )
-      .subscribe();
-
-    // Also subscribe to support_tickets for pending complaints count (sidebar badge)
-    const complaintsChannel = supabase
-      .channel(`layout-complaints-${providerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'support_tickets',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        (payload) => {
-          const newTicket = payload.new as { status: string };
-          if (newTicket.status === 'open' || newTicket.status === 'in_progress') {
-            setPendingComplaints((prev) => prev + 1);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'support_tickets',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        (payload) => {
-          const oldTicket = payload.old as { status: string };
-          const newTicket = payload.new as { status: string };
-          const wasPending = oldTicket.status === 'open' || oldTicket.status === 'in_progress';
-          const isPending = newTicket.status === 'open' || newTicket.status === 'in_progress';
-
-          if (wasPending && !isPending) {
-            setPendingComplaints((prev) => Math.max(0, prev - 1));
-          }
-          if (!wasPending && isPending) {
-            setPendingComplaints((prev) => prev + 1);
-          }
-        }
-      )
-      .subscribe();
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Realtime subscription for custom_order_requests (الطلبات المفتوحة)
-    // عداد الإشعارات اللحظي - يظهر في القائمة الجانبية
-    // ═══════════════════════════════════════════════════════════════════════════
-    const customOrdersChannel = supabase
-      .channel(`layout-custom-orders-${providerId}`)
+      // ─────────────────────────────────────────────────────────────────────────
+      // CUSTOM ORDERS: Real-time updates for custom order requests (critical)
+      // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
         {
@@ -426,14 +345,12 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         (payload) => {
           const newRequest = payload.new as { status: string };
-          // New pending custom order arrives - increment badge
           if (newRequest.status === 'pending') {
             setPendingCustomOrders((prev) => prev + 1);
             // Play DISTINCT notification sound for custom orders
-            // صوت مختلف للطلبات الخاصة لتمييزها عن الطلبات العادية
             try {
               const audio = new Audio('/sounds/custom-order.mp3');
-              audio.volume = 0.7; // Slightly louder for custom orders
+              audio.volume = 0.7;
               audio.play().catch(() => {});
             } catch {}
           }
@@ -451,12 +368,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const oldRequest = payload.old as { status: string };
           const newRequest = payload.new as { status: string };
 
-          // Status changed from pending to something else (priced, expired, cancelled)
-          // Decrement badge when merchant sends pricing or order expires
           if (oldRequest.status === 'pending' && newRequest.status !== 'pending') {
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
-          // Handle edge case: status changed back to pending
           if (oldRequest.status !== 'pending' && newRequest.status === 'pending') {
             setPendingCustomOrders((prev) => prev + 1);
           }
@@ -472,7 +386,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         (payload) => {
           const deleted = payload.old as { status: string };
-          // If a pending request was deleted, decrement badge
           if (deleted.status === 'pending') {
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
@@ -481,11 +394,57 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .subscribe();
 
     return () => {
-      supabase.removeChannel(notificationsChannel);
-      supabase.removeChannel(ordersChannel);
-      supabase.removeChannel(refundsChannel);
-      supabase.removeChannel(complaintsChannel);
-      supabase.removeChannel(customOrdersChannel);
+      supabase.removeChannel(unifiedChannel);
+    };
+  }, [provider?.id]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // POLLING: Non-critical badges updated every 30 seconds
+  // refunds, complaints, on_hold orders - less time-sensitive
+  // This reduces Realtime load significantly while keeping UI updated
+  // ═══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!provider?.id) return;
+
+    const supabase = createClient();
+    const providerId = provider.id;
+
+    // Function to fetch non-critical badge counts
+    const fetchBadgeCounts = async () => {
+      // Fetch pending refunds count
+      const { count: refundsCount } = await supabase
+        .from('refunds')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .eq('status', 'pending')
+        .eq('provider_action', 'pending');
+      setPendingRefunds(refundsCount || 0);
+
+      // Fetch pending complaints count
+      const { count: complaintsCount } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .in('status', ['open', 'in_progress']);
+      setPendingComplaints(complaintsCount || 0);
+
+      // Fetch on_hold orders count
+      const { count: onHoldCount } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .eq('settlement_status', 'on_hold');
+      setOnHoldOrders(onHoldCount || 0);
+    };
+
+    // Initial fetch
+    fetchBadgeCounts();
+
+    // Poll every 30 seconds for non-critical updates
+    const pollingInterval = setInterval(fetchBadgeCounts, 30000);
+
+    return () => {
+      clearInterval(pollingInterval);
     };
   }, [provider?.id]);
 

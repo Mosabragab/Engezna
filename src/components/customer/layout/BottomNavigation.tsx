@@ -58,49 +58,20 @@ export const BottomNavigation = memo(function BottomNavigation() {
     setPendingQuotes(count || 0);
   }, []);
 
-  // Load on mount and set up realtime subscription
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OPTIMIZED: Polling instead of Realtime for non-critical badge updates
+  // Pending quotes badge doesn't need instant updates - 30s polling is sufficient
+  // This reduces Realtime connections significantly
+  // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
+    // Initial load
     loadPendingQuotes();
 
-    const supabase = createClient();
-
-    // Subscribe to custom_order_requests status changes
-    const requestsChannel = supabase
-      .channel('customer-pending-quotes-requests')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'custom_order_requests',
-        },
-        () => {
-          // Reload count when any request changes
-          loadPendingQuotes();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to broadcast status changes (e.g., when completed)
-    const broadcastsChannel = supabase
-      .channel('customer-pending-quotes-broadcasts')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'custom_order_broadcasts',
-        },
-        () => {
-          // Reload count when any broadcast changes
-          loadPendingQuotes();
-        }
-      )
-      .subscribe();
+    // Poll every 30 seconds for pending quotes updates
+    const pollingInterval = setInterval(loadPendingQuotes, 30000);
 
     return () => {
-      supabase.removeChannel(requestsChannel);
-      supabase.removeChannel(broadcastsChannel);
+      clearInterval(pollingInterval);
     };
   }, [loadPendingQuotes]);
 
