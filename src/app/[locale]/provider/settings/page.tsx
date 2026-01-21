@@ -640,7 +640,7 @@ export default function ProviderSettingsPage() {
                     <ImageIcon className="w-4 h-4" />
                     {locale === 'ar' ? 'صورة الغلاف (البانر)' : 'Cover Image (Banner)'}
                   </label>
-                  <div className="relative w-full h-32 rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-primary transition-colors">
+                  <div className="relative w-full aspect-[3/1] rounded-xl overflow-hidden border-2 border-dashed border-slate-300 hover:border-primary transition-colors">
                     {coverPreview ? (
                       <>
                         <Image
@@ -648,6 +648,8 @@ export default function ProviderSettingsPage() {
                           alt="Cover"
                           fill
                           className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 600px"
+                          priority={false}
                         />
                         <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
                           <label className="px-4 py-2 bg-white rounded-lg cursor-pointer flex items-center gap-2 hover:bg-slate-100">
@@ -657,7 +659,7 @@ export default function ProviderSettingsPage() {
                             </span>
                             <input
                               type="file"
-                              accept="image/*"
+                              accept="image/jpeg,image/png,image/webp"
                               onChange={handleCoverChange}
                               className="hidden"
                             />
@@ -671,11 +673,11 @@ export default function ProviderSettingsPage() {
                           {locale === 'ar' ? 'اضغط لإضافة صورة الغلاف' : 'Click to add cover image'}
                         </span>
                         <span className="text-xs text-slate-400 mt-1">
-                          {locale === 'ar' ? 'الحجم الموصى به: 1200×400 بكسل' : 'Recommended: 1200×400px'}
+                          {locale === 'ar' ? '1080×360 بكسل (نسبة 3:1)' : '1080×360px (3:1 ratio)'}
                         </span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png,image/webp"
                           onChange={handleCoverChange}
                           className="hidden"
                         />
@@ -683,7 +685,9 @@ export default function ProviderSettingsPage() {
                     )}
                   </div>
                   <p className="text-xs text-slate-400">
-                    {locale === 'ar' ? 'الحد الأقصى 5MB - تظهر في أعلى صفحة المتجر' : 'Max 5MB - Displayed at top of store page'}
+                    {locale === 'ar'
+                      ? 'الحد الأقصى 5MB • صيغة JPG أو PNG أو WebP • تظهر في أعلى صفحة المتجر'
+                      : 'Max 5MB • JPG, PNG or WebP • Displayed at top of store page'}
                   </p>
                 </div>
 
