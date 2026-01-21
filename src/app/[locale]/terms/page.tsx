@@ -649,7 +649,7 @@ When electronic payment is activated:
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
               <Link
                 href={`/${locale}/privacy`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0F172A] text-white rounded-lg hover:bg-[#1e293b] transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
               >
                 {isRTL ? 'سياسة الخصوصية' : 'Privacy Policy'}
               </Link>
