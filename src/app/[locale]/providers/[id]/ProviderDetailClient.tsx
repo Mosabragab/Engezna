@@ -35,6 +35,7 @@ import {
   RotateCcw,
   TrendingUp,
 } from 'lucide-react';
+import { getCoverGradientStyle } from '@/lib/utils/generate-cover';
 
 export type ProviderData = {
   id: string;
@@ -65,6 +66,7 @@ export type ProviderData = {
     welcome_banner_text_ar?: string;
     welcome_banner_text_en?: string;
   };
+  metadata?: { brand_color?: string } | null;
 };
 
 type ProductVariant = {
@@ -520,8 +522,24 @@ export default function ProviderDetailClient({
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <span className="text-6xl">🏪</span>
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                background: getCoverGradientStyle(provider.metadata?.brand_color || '#009DE0'),
+              }}
+            >
+              {/* Show logo centered on gradient if available, otherwise store emoji */}
+              {provider.logo_url ? (
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/30 shadow-lg bg-white/95">
+                  <img
+                    src={provider.logo_url}
+                    alt={getName(provider)}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <span className="text-6xl">🏪</span>
+              )}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
