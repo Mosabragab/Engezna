@@ -199,11 +199,13 @@ export default function ProviderSettingsPage() {
 
     const { data: providersData } = await supabase
       .from('providers')
-      .select(`
+      .select(
+        `
         *,
         governorates:governorate_id(name_ar, name_en),
         cities:city_id(name_ar, name_en)
-      `)
+      `
+      )
       .eq('owner_id', user.id)
       .limit(1);
 
@@ -794,9 +796,10 @@ export default function ProviderSettingsPage() {
                         {provider?.category && BUSINESS_CATEGORIES[provider.category]?.icon}
                       </span>
                       <span className="font-medium text-slate-900">
-                        {provider?.category && (locale === 'ar'
-                          ? BUSINESS_CATEGORIES[provider.category]?.name_ar
-                          : BUSINESS_CATEGORIES[provider.category]?.name_en)}
+                        {provider?.category &&
+                          (locale === 'ar'
+                            ? BUSINESS_CATEGORIES[provider.category]?.name_ar
+                            : BUSINESS_CATEGORIES[provider.category]?.name_en)}
                       </span>
                     </div>
                   </div>
@@ -809,8 +812,12 @@ export default function ProviderSettingsPage() {
                     </div>
                     <span className="font-medium text-slate-900">
                       {governorateName
-                        ? (locale === 'ar' ? governorateName.ar : governorateName.en)
-                        : (locale === 'ar' ? 'غير محدد' : 'Not set')}
+                        ? locale === 'ar'
+                          ? governorateName.ar
+                          : governorateName.en
+                        : locale === 'ar'
+                          ? 'غير محدد'
+                          : 'Not set'}
                     </span>
                   </div>
 
@@ -822,8 +829,12 @@ export default function ProviderSettingsPage() {
                     </div>
                     <span className="font-medium text-slate-900">
                       {cityName
-                        ? (locale === 'ar' ? cityName.ar : cityName.en)
-                        : (locale === 'ar' ? 'غير محدد' : 'Not set')}
+                        ? locale === 'ar'
+                          ? cityName.ar
+                          : cityName.en
+                        : locale === 'ar'
+                          ? 'غير محدد'
+                          : 'Not set'}
                     </span>
                   </div>
 
