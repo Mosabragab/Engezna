@@ -26,7 +26,7 @@ export default async function WelcomePage({ params }: PageProps) {
   const { locale } = await params;
   const isRTL = locale === 'ar';
 
-  // Categories with emoji and gradient backgrounds
+  // Categories with emoji and gradient backgrounds - Updated January 2026
   const categories = [
     {
       id: 'restaurant_cafe',
@@ -55,6 +55,13 @@ export default async function WelcomePage({ params }: PageProps) {
       name_en: 'Vegetables & Fruits',
       emoji: '🍌',
       gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
+    },
+    {
+      id: 'pharmacy',
+      name_ar: 'صيدليات',
+      name_en: 'Pharmacies',
+      emoji: '💊',
+      gradient: 'linear-gradient(145deg, rgba(252,231,243,0.9) 0%, rgba(249,168,212,0.7) 100%)',
     },
   ];
 
@@ -205,7 +212,7 @@ export default async function WelcomePage({ params }: PageProps) {
               {isRTL ? 'ماذا نقدم؟' : 'What We Offer'}
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-3xl mx-auto">
               {categories.map((category, index) => (
                 <div
                   key={category.id}
