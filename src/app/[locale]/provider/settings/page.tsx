@@ -331,11 +331,10 @@ export default function ProviderSettingsPage() {
       }
     }
 
+    // Note: name_ar and name_en are no longer editable by the provider
     const { error } = await supabase
       .from('providers')
       .update({
-        name_ar: nameAr,
-        name_en: nameEn,
         phone: phone || null,
         address_ar: addressAr || null,
         address_en: addressEn || null,
@@ -755,11 +754,33 @@ export default function ProviderSettingsPage() {
                   </p>
                 </div>
 
-                {/* Read-only Section: Category & Location */}
+                {/* Read-only Section: Category, Location & Store Name */}
                 <div className="bg-slate-50 rounded-xl p-4 space-y-3 border border-slate-200">
                   <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
                     <Lock className="w-4 h-4 text-amber-500" />
                     {locale === 'ar' ? 'معلومات غير قابلة للتغيير' : 'Non-editable Information'}
+                  </div>
+
+                  {/* Store Name AR */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Store className="w-4 h-4" />
+                      {locale === 'ar' ? 'اسم المتجر (عربي)' : 'Store Name (Arabic)'}
+                    </div>
+                    <span className="font-medium text-slate-900" dir="rtl">
+                      {provider?.name_ar || '-'}
+                    </span>
+                  </div>
+
+                  {/* Store Name EN */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Store className="w-4 h-4" />
+                      {locale === 'ar' ? 'اسم المتجر (إنجليزي)' : 'Store Name (English)'}
+                    </div>
+                    <span className="font-medium text-slate-900" dir="ltr">
+                      {provider?.name_en || '-'}
+                    </span>
                   </div>
 
                   {/* Category */}
@@ -808,35 +829,9 @@ export default function ProviderSettingsPage() {
 
                   <p className="text-xs text-slate-400 mt-2">
                     {locale === 'ar'
-                      ? 'لتغيير هذه البيانات، يرجى التواصل مع إدارة إنجزنا'
+                      ? 'لتغيير هذه البيانات، يرجى التواصل مع الدعم الفني لإنجزنا'
                       : 'To change this information, please contact Engezna support'}
                   </p>
-                </div>
-
-                {/* Name AR */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    {locale === 'ar' ? 'اسم المتجر (عربي)' : 'Store Name (Arabic)'}
-                  </label>
-                  <Input
-                    value={nameAr}
-                    onChange={(e) => setNameAr(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    dir="rtl"
-                  />
-                </div>
-
-                {/* Name EN */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1">
-                    {locale === 'ar' ? 'اسم المتجر (إنجليزي)' : 'Store Name (English)'}
-                  </label>
-                  <Input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    dir="ltr"
-                  />
                 </div>
 
                 {/* Phone */}

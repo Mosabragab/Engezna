@@ -40,6 +40,7 @@ import {
   RefreshCw,
   MapPin,
   ChevronDown,
+  Tag,
 } from 'lucide-react';
 
 interface Governorate {
@@ -652,7 +653,13 @@ export default function PartnerRegisterPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label>{t('businessCategory')}</Label>
+                  <Label className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-primary" />
+                    {t('businessCategory')}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
+                  </Label>
                   <Select
                     value={businessCategory}
                     onValueChange={(value) => setValue('businessCategory', value)}
@@ -685,6 +692,9 @@ export default function PartnerRegisterPage() {
                   <Label className="flex items-center gap-2">
                     <Store className="w-4 h-4 text-primary" />
                     {locale === 'ar' ? 'اسم المتجر' : 'Store Name'}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
                   </Label>
                   <Input
                     placeholder={locale === 'ar' ? 'أدخل اسم متجرك' : 'Enter your store name'}

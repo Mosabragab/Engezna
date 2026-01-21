@@ -309,7 +309,7 @@
       "successTitle": "Registration Successful!",
       "successMessage": "Your partner account has been created. Redirecting to dashboard...",
       "completeProfileNote": "Note: Complete your business information in the dashboard to get approved and start receiving orders.",
-      "completeProfileLater": "Note: After registration, you'll need to complete your store information (name, address, logo, delivery settings) to get approved."
+      "completeProfileLater": "Note: After registration, you'll need to complete your store information (address, logo, delivery settings) to get approved."
     },
     "completeProfile": {
       "title": "Complete Business Profile",
