@@ -52,7 +52,7 @@ realtime_subscription_manager_pub:   2
 
 ## Changes Implemented
 
-### 1. ProviderLayout.tsx - Channel Consolidation
+### 1. ProviderLayout.tsx - Channel Consolidation (5 → 1 channel)
 **File:** `src/components/provider/ProviderLayout.tsx`
 
 **Before (5 channels):**
@@ -80,6 +80,37 @@ setInterval(fetchBadgeCounts, 30000);  // refunds, complaints, on_hold
 All Realtime subscriptions now use proper filters:
 ```typescript
 filter: `provider_id=eq.${providerId}`
+```
+
+### 3. BottomNavigation.tsx - Removed Realtime (2 → 0 channels)
+**File:** `src/components/customer/layout/BottomNavigation.tsx`
+
+**Before (2 channels):**
+```typescript
+channel('customer-pending-quotes-requests')   // Channel 1
+channel('customer-pending-quotes-broadcasts') // Channel 2
+```
+
+**After (polling only):**
+```typescript
+// Non-critical badge - 30 second polling
+setInterval(loadPendingQuotes, 30000);
+```
+
+### 4. Admin Layout - Removed Realtime (3 → 0 channels)
+**File:** `src/app/[locale]/admin/layout.tsx`
+
+**Before (3 channels):**
+```typescript
+channel('admin-refunds-badges')    // Channel 1
+channel('admin-tickets-badges')    // Channel 2
+channel('admin-providers-badges')  // Channel 3
+```
+
+**After (polling only):**
+```typescript
+// Admin badges - 30 second polling (was 60s)
+setInterval(loadBadgeCounts, 30000);
 ```
 
 ---
@@ -121,10 +152,17 @@ LIMIT 10;
 
 ## Expected Results
 
+| Component | Before | After | Channels Removed |
+|-----------|--------|-------|------------------|
+| ProviderLayout | 5 channels | 1 channel | **-4** |
+| BottomNavigation | 2 channels | 0 (polling) | **-2** |
+| Admin Layout | 3 channels | 0 (polling) | **-3** |
+| **Total** | **10 channels** | **1 channel** | **-9** |
+
 | Metric | Baseline (BEFORE) | Target (AFTER) | Improvement |
 |--------|-------------------|----------------|-------------|
-| Channels per Provider | 5 | 1 | -80% |
-| Realtime Query Growth Rate | ~10M/period | ~2-3M/period | -70% |
+| Realtime Channels Total | 10 | 1 | **-90%** |
+| Realtime Query Growth Rate | ~10M/period | ~1-2M/period | **-80%** |
 | Non-critical Badge Latency | 0ms | 30s max | Acceptable |
 
 ---
@@ -171,7 +209,9 @@ git revert c87281a
 
 ## Related Files
 
-- `src/components/provider/ProviderLayout.tsx` - Main optimization
+- `src/components/provider/ProviderLayout.tsx` - Provider channels optimization (5→1)
+- `src/components/customer/layout/BottomNavigation.tsx` - Customer channels removed (2→0)
+- `src/app/[locale]/admin/layout.tsx` - Admin channels removed (3→0)
 - `src/lib/store/cart.ts` - Added `logo_url` to Provider type
 - `src/app/[locale]/cart/page.tsx` - Store logo display
 - `src/app/[locale]/providers/[id]/ProviderDetailClient.tsx` - Pass logo_url to cart
@@ -182,6 +222,8 @@ git revert c87281a
 
 | Commit | Description |
 |--------|-------------|
+| `b785f2a` | perf: optimize customer & admin realtime - convert to polling |
+| `d7b02fb` | docs: add Realtime optimization baseline and comparison plan |
 | `c87281a` | perf: optimize ProviderLayout realtime - merge 5 channels into 1 |
 | `2e01f5f` | style: fix Prettier formatting in provider settings page |
 | `5765999` | feat: display store logo instead of generic icon in cart header |
