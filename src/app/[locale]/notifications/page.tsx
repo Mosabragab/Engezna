@@ -269,7 +269,9 @@ export default function NotificationsPage() {
                 const subject = notification.data?.subject || notification.title_ar;
                 if (fullMessage) {
                   // Use browser alert for simplicity, or can implement a modal
-                  alert(`${locale === 'ar' ? 'رسالة من فريق الدعم' : 'Message from Support'}\n\n${fullMessage}`);
+                  alert(
+                    `${locale === 'ar' ? 'رسالة من فريق الدعم' : 'Message from Support'}\n\n${fullMessage}`
+                  );
                 }
                 return;
               }
