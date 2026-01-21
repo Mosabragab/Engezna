@@ -242,7 +242,7 @@ Note: Some data may be retained for a limited period to comply with legal and ta
               <span>{isRTL ? 'الرئيسية' : 'Home'}</span>
             </Link>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#009DE0] rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -264,8 +264,8 @@ Note: Some data may be retained for a limited period to comply with legal and ta
                   className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 bg-[#009DE0]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <IconComponent className="w-5 h-5 text-[#009DE0]" />
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <IconComponent className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <h2 className="text-lg font-bold text-[#0F172A] mb-3">{section.title}</h2>
