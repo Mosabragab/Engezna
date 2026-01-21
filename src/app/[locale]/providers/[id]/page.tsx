@@ -175,7 +175,7 @@ export default async function ProviderDetailPage({
       `
         )
         .eq('orders.provider_id', id)
-        .in('orders.status', ['delivered', 'completed', 'customer_confirmed']),
+        .eq('orders.status', 'delivered'),
     ]);
 
   // Process menu items with variants

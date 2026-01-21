@@ -251,7 +251,7 @@ export default function ProviderDetailClient({
         )
         .eq('orders.customer_id', userId)
         .eq('orders.provider_id', provider.id)
-        .in('orders.status', ['delivered', 'completed', 'customer_confirmed']);
+        .eq('orders.status', 'delivered');
 
       if (orderItems && orderItems.length > 0) {
         // Get unique menu item IDs

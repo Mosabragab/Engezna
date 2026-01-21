@@ -179,7 +179,7 @@ export default function HomePage() {
       `
       )
       .eq('customer_id', currentUserId)
-      .in('status', ['delivered', 'completed', 'customer_confirmed'])
+      .eq('status', 'delivered')
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
