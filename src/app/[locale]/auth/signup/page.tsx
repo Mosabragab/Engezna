@@ -173,7 +173,7 @@ export default function SignupPage() {
       <div className="w-full max-w-[340px]">
         {/* Welcome Text */}
         <div className="text-center mb-10">
-          <h1 className="text-2xl font-bold text-[#009DE0] mb-2">
+          <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
           </h1>
           <p className="text-slate-500">
@@ -212,7 +212,7 @@ export default function SignupPage() {
             type="button"
             onClick={handleEmailSignup}
             disabled={isGoogleLoading}
-            className="w-full h-[52px] flex items-center justify-center gap-3 bg-[#009DE0] border border-[#009DE0] rounded-xl text-white font-medium transition-all hover:bg-[#0080b8] hover:border-[#0080b8] active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-[primary/90] active:scale-[0.98] disabled:opacity-50"
           >
             <Mail className="w-5 h-5" />
             <span>{locale === 'ar' ? 'التسجيل عبر الإيميل' : 'Sign up with Email'}</span>
@@ -224,22 +224,22 @@ export default function SignupPage() {
           {locale === 'ar' ? (
             <>
               بالتسجيل، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By signing up, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-[#009DE0] hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
                 Privacy Policy
               </Link>
             </>
@@ -259,7 +259,7 @@ export default function SignupPage() {
                   ? `/${locale}/auth/login?redirect=${encodeURIComponent(redirectTo)}`
                   : `/${locale}/auth/login`
               }
-              className="text-[#009DE0] font-medium hover:underline"
+              className="text-primary font-medium hover:underline"
             >
               {locale === 'ar' ? 'تسجيل الدخول' : 'Sign in'}
             </Link>
