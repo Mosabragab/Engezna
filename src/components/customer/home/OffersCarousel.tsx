@@ -616,11 +616,16 @@ export function OffersCarousel({
     // Set flag to prevent handleScroll from interfering
     setIsAutoScrolling(true);
 
-    // Use scrollIntoView for better cross-browser and RTL support
-    card.scrollIntoView({
+    // Calculate the scroll position to center the card
+    // Use scrollLeft directly to avoid any vertical page scrolling
+    const cardWidth = card.offsetWidth;
+    const containerWidth = container.offsetWidth;
+    const cardLeft = card.offsetLeft;
+    const scrollTarget = cardLeft - (containerWidth - cardWidth) / 2;
+
+    container.scrollTo({
+      left: scrollTarget,
       behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
     });
 
     // Update scroll progress
