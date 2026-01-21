@@ -309,12 +309,10 @@ export default function AdminSupportTicketDetailPage() {
         // Get the message content that was just sent
         const messageContent = newMessage.trim();
         // Create preview (first 100 chars)
-        const previewAr = messageContent.length > 100
-          ? messageContent.substring(0, 100) + '...'
-          : messageContent;
-        const previewEn = messageContent.length > 100
-          ? messageContent.substring(0, 100) + '...'
-          : messageContent;
+        const previewAr =
+          messageContent.length > 100 ? messageContent.substring(0, 100) + '...' : messageContent;
+        const previewEn =
+          messageContent.length > 100 ? messageContent.substring(0, 100) + '...' : messageContent;
 
         await supabase.from('customer_notifications').insert({
           customer_id: ticket.user_id,
