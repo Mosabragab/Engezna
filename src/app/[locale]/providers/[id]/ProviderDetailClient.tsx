@@ -388,6 +388,7 @@ export default function ProviderDetailClient({
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
         category: provider.category,
+        logo_url: provider.logo_url,
       });
 
       if (result.requiresConfirmation) {
@@ -415,6 +416,7 @@ export default function ProviderDetailClient({
         estimated_delivery_time_min: provider.estimated_delivery_time_min,
         commission_rate: provider.commission_rate,
         category: provider.category,
+        logo_url: provider.logo_url,
       };
 
       let result;

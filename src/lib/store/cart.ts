@@ -43,6 +43,7 @@ export type Provider = {
   estimated_delivery_time_min: number;
   commission_rate?: number;
   category?: string;
+  logo_url?: string | null;
 };
 
 export type CartItem = {
