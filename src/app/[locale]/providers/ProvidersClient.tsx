@@ -211,13 +211,14 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     }
   }
 
-  // Updated December 2025 - New categories
+  // Updated January 2026 - Added pharmacy category
   const categories = [
     { id: 'all', name_ar: 'الكل', name_en: 'All' },
     { id: 'restaurant_cafe', name_ar: 'مطاعم', name_en: 'Restaurants' },
     { id: 'coffee_patisserie', name_ar: 'البن والحلويات', name_en: 'Coffee & Patisserie' },
     { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
     { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
+    { id: 'pharmacy', name_ar: 'صيدليات', name_en: 'Pharmacies' },
   ];
 
   const handleSortToggle = (option: SortOption) => {

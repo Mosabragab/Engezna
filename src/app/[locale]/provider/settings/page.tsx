@@ -42,7 +42,11 @@ import {
   Users,
   Plus,
   X,
+  Tag,
+  Building2,
 } from 'lucide-react';
+import { BUSINESS_CATEGORIES } from '@/lib/constants/categories';
+import type { ProviderCategory } from '@/types/database';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
@@ -92,6 +96,10 @@ type Provider = {
   estimated_delivery_time_min: number | null;
   min_order_amount: number | null;
   delivery_radius_km: number | null;
+  // Category & Location (read-only)
+  category: ProviderCategory;
+  governorate_id: string | null;
+  city_id: string | null;
   // Pickup settings
   supports_pickup: boolean;
   pickup_instructions_ar: string | null;
@@ -171,6 +179,10 @@ export default function ProviderSettingsPage() {
   const [savingCustomOrders, setSavingCustomOrders] = useState(false);
   const [savedCustomOrders, setSavedCustomOrders] = useState(false);
 
+  // Location display (read-only)
+  const [governorateName, setGovernorateName] = useState<{ ar: string; en: string } | null>(null);
+  const [cityName, setCityName] = useState<{ ar: string; en: string } | null>(null);
+
   const checkAuthAndLoadProvider = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
@@ -187,7 +199,11 @@ export default function ProviderSettingsPage() {
 
     const { data: providersData } = await supabase
       .from('providers')
-      .select('*')
+      .select(`
+        *,
+        governorates:governorate_id(name_ar, name_en),
+        cities:city_id(name_ar, name_en)
+      `)
       .eq('owner_id', user.id)
       .limit(1);
 
@@ -198,6 +214,20 @@ export default function ProviderSettingsPage() {
     }
 
     setProvider(providerData);
+
+    // Set location names for display
+    if (providerData.governorates) {
+      setGovernorateName({
+        ar: providerData.governorates.name_ar,
+        en: providerData.governorates.name_en,
+      });
+    }
+    if (providerData.cities) {
+      setCityName({
+        ar: providerData.cities.name_ar,
+        en: providerData.cities.name_en,
+      });
+    }
     setNameAr(providerData.name_ar || '');
     setNameEn(providerData.name_en || '');
     setPhone(providerData.phone || '');
@@ -301,11 +331,10 @@ export default function ProviderSettingsPage() {
       }
     }
 
+    // Note: name_ar and name_en are no longer editable by the provider
     const { error } = await supabase
       .from('providers')
       .update({
-        name_ar: nameAr,
-        name_en: nameEn,
         phone: phone || null,
         address_ar: addressAr || null,
         address_en: addressEn || null,
@@ -725,30 +754,84 @@ export default function ProviderSettingsPage() {
                   </p>
                 </div>
 
-                {/* Name AR */}
-                <div>
-                  <label className="block text-sm text-slate-400 mb-1">
-                    {locale === 'ar' ? 'اسم المتجر (عربي)' : 'Store Name (Arabic)'}
-                  </label>
-                  <Input
-                    value={nameAr}
-                    onChange={(e) => setNameAr(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    dir="rtl"
-                  />
-                </div>
+                {/* Read-only Section: Category, Location & Store Name */}
+                <div className="bg-slate-50 rounded-xl p-4 space-y-3 border border-slate-200">
+                  <div className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-2">
+                    <Lock className="w-4 h-4 text-amber-500" />
+                    {locale === 'ar' ? 'معلومات غير قابلة للتغيير' : 'Non-editable Information'}
+                  </div>
 
-                {/* Name EN */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1">
-                    {locale === 'ar' ? 'اسم المتجر (إنجليزي)' : 'Store Name (English)'}
-                  </label>
-                  <Input
-                    value={nameEn}
-                    onChange={(e) => setNameEn(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    dir="ltr"
-                  />
+                  {/* Store Name AR */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Store className="w-4 h-4" />
+                      {locale === 'ar' ? 'اسم المتجر (عربي)' : 'Store Name (Arabic)'}
+                    </div>
+                    <span className="font-medium text-slate-900" dir="rtl">
+                      {provider?.name_ar || '-'}
+                    </span>
+                  </div>
+
+                  {/* Store Name EN */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Store className="w-4 h-4" />
+                      {locale === 'ar' ? 'اسم المتجر (إنجليزي)' : 'Store Name (English)'}
+                    </div>
+                    <span className="font-medium text-slate-900" dir="ltr">
+                      {provider?.name_en || '-'}
+                    </span>
+                  </div>
+
+                  {/* Category */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Tag className="w-4 h-4" />
+                      {locale === 'ar' ? 'نوع النشاط' : 'Business Type'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
+                        {provider?.category && BUSINESS_CATEGORIES[provider.category]?.icon}
+                      </span>
+                      <span className="font-medium text-slate-900">
+                        {provider?.category && (locale === 'ar'
+                          ? BUSINESS_CATEGORIES[provider.category]?.name_ar
+                          : BUSINESS_CATEGORIES[provider.category]?.name_en)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Governorate */}
+                  <div className="flex items-center justify-between py-2 border-b border-slate-200">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Building2 className="w-4 h-4" />
+                      {locale === 'ar' ? 'المحافظة' : 'Governorate'}
+                    </div>
+                    <span className="font-medium text-slate-900">
+                      {governorateName
+                        ? (locale === 'ar' ? governorateName.ar : governorateName.en)
+                        : (locale === 'ar' ? 'غير محدد' : 'Not set')}
+                    </span>
+                  </div>
+
+                  {/* City */}
+                  <div className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <MapPin className="w-4 h-4" />
+                      {locale === 'ar' ? 'المدينة' : 'City'}
+                    </div>
+                    <span className="font-medium text-slate-900">
+                      {cityName
+                        ? (locale === 'ar' ? cityName.ar : cityName.en)
+                        : (locale === 'ar' ? 'غير محدد' : 'Not set')}
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-400 mt-2">
+                    {locale === 'ar'
+                      ? 'لتغيير هذه البيانات، يرجى التواصل مع الدعم الفني لإنجزنا'
+                      : 'To change this information, please contact Engezna support'}
+                  </p>
                 </div>
 
                 {/* Phone */}

@@ -24,6 +24,7 @@ import {
   ShoppingCart,
   Apple,
   UtensilsCrossed,
+  Pill,
   User,
   Briefcase,
   ArrowLeft,
@@ -39,6 +40,7 @@ import {
   RefreshCw,
   MapPin,
   ChevronDown,
+  Tag,
 } from 'lucide-react';
 
 interface Governorate {
@@ -57,7 +59,7 @@ interface City {
 }
 
 // Business category options with icons
-// Updated December 2025 - New categories: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
+// Updated January 2026 - Added pharmacy category
 const businessCategories = [
   { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم', labelEn: 'Restaurants' },
   {
@@ -73,6 +75,7 @@ const businessCategories = [
     labelAr: 'خضروات وفواكه',
     labelEn: 'Fruits & Vegetables',
   },
+  { value: 'pharmacy', icon: Pill, labelAr: 'صيدليات', labelEn: 'Pharmacies' },
 ];
 
 // Partner role options
@@ -650,7 +653,13 @@ export default function PartnerRegisterPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label>{t('businessCategory')}</Label>
+                  <Label className="flex items-center gap-2">
+                    <Tag className="w-4 h-4 text-primary" />
+                    {t('businessCategory')}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
+                  </Label>
                   <Select
                     value={businessCategory}
                     onValueChange={(value) => setValue('businessCategory', value)}
@@ -683,6 +692,9 @@ export default function PartnerRegisterPage() {
                   <Label className="flex items-center gap-2">
                     <Store className="w-4 h-4 text-primary" />
                     {locale === 'ar' ? 'اسم المتجر' : 'Store Name'}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
                   </Label>
                   <Input
                     placeholder={locale === 'ar' ? 'أدخل اسم متجرك' : 'Enter your store name'}
