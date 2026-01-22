@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { CustomerLayout } from '@/components/customer/layout';
@@ -14,17 +15,72 @@ import {
   Clock,
   Mail,
   Trash2,
+  Cookie,
+  Globe,
+  CreditCard,
+  Download,
+  Baby,
+  FileText,
+  Loader2,
 } from 'lucide-react';
 
 export default function PrivacyPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState(false);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportError(null);
+    setExportSuccess(false);
+
+    try {
+      const response = await fetch('/api/auth/export-data');
+
+      if (response.status === 401) {
+        setExportError(isRTL ? 'يجب تسجيل الدخول أولاً' : 'Please login first');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `engezna-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 5000);
+    } catch {
+      setExportError(isRTL ? 'حدث خطأ أثناء التصدير' : 'Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const content = {
     ar: {
       title: 'سياسة الخصوصية',
-      lastUpdated: 'آخر تحديث: ديسمبر 2025',
+      lastUpdated: 'آخر تحديث: يناير 2026',
       sections: [
         {
           icon: Shield,
@@ -44,30 +100,27 @@ export default function PrivacyPage() {
 • عناوين التوصيل - لتنفيذ الطلبات
 • المحافظة والمدينة - لعرض المتاجر المتاحة في منطقتك
 
-⚠️ هام: إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا نتتبع موقعك المباشر ولا نراقب تحركاتك. يتم تحديد موقعك فقط من خلال المحافظة والمدينة التي تختارها يدوياً.`,
+⚠️ هام: إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا نتتبع موقعك المباشر ولا نراقب تحركاتك.`,
         },
         {
           icon: Share2,
           title: '٣. مشاركة المعلومات',
           content: `نشارك المعلومات التالية مع المتاجر لتنفيذ طلباتك:
-• اسمك
-• عنوان التوصيل
-• رقم الهاتف
-• تفاصيل الطلب
+• اسمك وعنوان التوصيل ورقم الهاتف وتفاصيل الطلب
 
-مقدمو الخدمة ملزمون تعاقدياً باستخدام هذه المعلومات فقط لتنفيذ الطلبات، ويُحظر عليهم استخدامها للتسويق أو أي أغراض أخرى.
+مقدمو الخدمة ملزمون تعاقدياً باستخدام هذه المعلومات فقط لتنفيذ الطلبات.
 
-🔒 نحن لا نبيع أو نؤجر أو نتاجر بمعلوماتك الشخصية لأطراف ثالثة لأغراض تسويقية.`,
+🔒 نحن لا نبيع أو نؤجر بياناتك لأطراف ثالثة.`,
         },
         {
           icon: Lock,
           title: '٤. أمان البيانات',
           content: `نطبق إجراءات أمنية مناسبة لحماية معلوماتك:
 
-• التشفير: جميع البيانات المنقولة مشفرة باستخدام SSL/TLS
-• التحكم في الوصول: فقط الموظفون المصرح لهم يمكنهم الوصول إلى البيانات
-• التخزين الآمن: البيانات مخزنة على خوادم آمنة مع عمليات تدقيق منتظمة
-• حماية كلمات المرور: كلمات المرور مشفرة ولا تُخزن كنص عادي`,
+• التشفير: جميع البيانات مشفرة باستخدام SSL/TLS
+• التحكم في الوصول: فقط الموظفون المصرح لهم
+• التخزين الآمن: خوادم آمنة مع تدقيق منتظم
+• حماية كلمات المرور: مشفرة ولا تُخزن كنص عادي`,
         },
         {
           icon: UserCheck,
@@ -75,57 +128,109 @@ export default function PrivacyPage() {
           content: `لديك الحق في:
 
 • الوصول: طلب نسخة من بياناتك الشخصية
-• التصحيح: تحديث أو تصحيح المعلومات غير الدقيقة
+• التصحيح: تحديث المعلومات غير الدقيقة
 • الحذف: طلب حذف حسابك وبياناتك
-• إلغاء الاشتراك: إلغاء الاشتراك من الرسائل الترويجية
+• إلغاء الاشتراك: من الرسائل الترويجية
 
-لممارسة هذه الحقوق، تواصل معنا على: privacy@engezna.com`,
+📧 لممارسة هذه الحقوق: privacy@engezna.com`,
+        },
+        {
+          icon: Baby,
+          title: '٦. خصوصية الأطفال',
+          content: `إنجزنا غير مخصصة للأطفال دون ١٦ عاماً. نحن لا نجمع معلومات شخصية من الأطفال عن قصد. إذا كنت والداً وتعتقد أن طفلك قدم لنا معلومات شخصية، يُرجى التواصل معنا.`,
+        },
+        {
+          icon: Cookie,
+          id: 'cookies',
+          title: '٧. الكوكيز والتقنيات المشابهة',
+          content: `نستخدم ملفات تعريف الارتباط (الكوكيز) لتحسين تجربتك:
+
+🔹 أنواع الكوكيز:
+• كوكيز أساسية (Supabase) - للمصادقة والأمان
+• كوكيز التحليلات (Vercel) - إحصائيات مجهولة
+• كوكيز الأمان (Sentry) - تتبع الأخطاء
+• كوكيز الإشعارات (Firebase) - الإشعارات المهمة
+
+⚙️ يمكنك إدارة الكوكيز من إعدادات متصفحك. تعطيل الكوكيز الأساسية سيمنعك من تسجيل الدخول.`,
+        },
+        {
+          icon: Globe,
+          title: '٨. عناوين IP وبيانات التصفح',
+          content: `عند استخدامك للخدمة، نجمع تلقائياً:
+
+• عنوان IP - لأغراض الأمان
+• معلومات المتصفح والجهاز
+• سجلات الوصول (الصفحات، الوقت)
+
+🔒 يتم إخفاء هوية عناوين IP بعد ٣٠ يوماً ولا تُستخدم للإعلانات.`,
+        },
+        {
+          icon: CreditCard,
+          title: '٩. معلومات الدفع',
+          content: `ندعم الدفع الإلكتروني عبر Kashier والدفع عند الاستلام.
+
+🔐 أمان الدفع:
+• لا نخزن أرقام البطاقات الكاملة
+• لا نملك وصولاً لرمز CVV أو PIN
+• Kashier متوافق مع PCI-DSS
+• البيانات مشفرة من طرف إلى طرف
+
+نتلقى فقط: تأكيد المعاملة وآخر ٤ أرقام من البطاقة.`,
         },
         {
           icon: Trash2,
-          title: '٦. حذف البيانات',
-          content: `كيفية حذف حسابك وبياناتك:
+          title: '١٠. كيفية حذف حسابك',
+          content: `🔹 خطوات الحذف:
+١. افتح تطبيق إنجزنا
+٢. اذهب إلى الإعدادات → الحساب
+٣. اضغط على "حذف الحساب"
+٤. أكد قرارك
 
-🔹 من التطبيق:
-١. اذهب إلى الملف الشخصي → الحساب
-٢. انزل للأسفل واضغط على "حذف الحساب"
-٣. أكد عملية الحذف
+✅ ما يُحذف: الملف الشخصي، العناوين، المفضلة، الإشعارات، التقييمات
 
-🔹 عبر البريد الإلكتروني:
-أرسل طلب حذف إلى: privacy@engezna.com
-مع ذكر البريد الإلكتروني المسجل به
+📌 ما نحتفظ به قانونياً:
+• سجل الطلبات (مجهول الهوية) - للضرائب
+• سجلات المعاملات - القانون التجاري المصري
 
-⏱️ مدة المعالجة: خلال 7 أيام عمل
+⏱️ يتم الحذف خلال ٢٤ ساعة.`,
+        },
+        {
+          icon: Download,
+          id: 'data-export',
+          title: '١١. تصدير البيانات',
+          content: `لديك الحق في الحصول على نسخة من بياناتك بتنسيق منظم.
 
-⚠️ ما يتم حذفه:
-• معلومات الحساب (الاسم، البريد، رقم الهاتف)
-• عناوين التوصيل
-• سجل الطلبات
-• المفضلات
+📦 يتضمن التصدير: الملف الشخصي، الطلبات، العناوين، المفضلة، التقييمات
 
-📌 ملاحظة: بعض البيانات قد نحتفظ بها لفترة محدودة للامتثال للمتطلبات القانونية والضريبية.`,
+⬇️ اضغط الزر أدناه لتحميل بياناتك فوراً (يتطلب تسجيل الدخول)`,
         },
         {
           icon: Clock,
-          title: '٧. الاحتفاظ بالبيانات',
-          content: `نحتفظ بمعلوماتك الشخصية طالما حسابك نشط أو حسب الحاجة لتقديم الخدمات. يمكنك طلب حذف حسابك والبيانات المرتبطة به في أي وقت عن طريق التواصل مع فريق الدعم.`,
+          title: '١٢. الاحتفاظ بالبيانات',
+          content: `نحتفظ بمعلوماتك طالما حسابك نشط. يمكنك طلب حذف حسابك في أي وقت.`,
+        },
+        {
+          icon: FileText,
+          title: '١٣. التغييرات على السياسة',
+          content: `قد نحدّث هذه السياسة من وقت لآخر. سنُخطرك بالتغييرات عبر:
+• نشر السياسة الجديدة هنا
+• تحديث تاريخ "آخر تحديث"
+• إشعار داخل التطبيق للتغييرات الجوهرية`,
         },
         {
           icon: Mail,
-          title: '٨. تواصل معنا',
-          content: `إذا كانت لديك أسئلة حول سياسة الخصوصية:
-
-🏢 الشركة: سويفكم للتجارة والتصدير (ذ.م.م)
-📍 العنوان: ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر
+          title: '١٤. تواصل معنا',
+          content: `🏢 الشركة: سويفكم للتجارة والتصدير (ذ.م.م)
+📍 العنوان: ش صالح حمام، بني سويف، مصر
 📋 السجل التجاري: 2767
-📧 البريد الإلكتروني: support@engezna.com
-💬 الدعم الفني: من خلال قسم المساعدة في التطبيق`,
+📧 البريد: support@engezna.com
+🔒 الخصوصية: privacy@engezna.com`,
         },
       ],
     },
     en: {
       title: 'Privacy Policy',
-      lastUpdated: 'Last Updated: December 2025',
+      lastUpdated: 'Last Updated: January 2026',
       sections: [
         {
           icon: Shield,
@@ -137,38 +242,35 @@ By using Engezna, you agree to the collection and use of information in accordan
         {
           icon: Database,
           title: '2. Information We Collect',
-          content: `We collect only the minimum information necessary to provide our services:
+          content: `We collect only the minimum information necessary:
 
 • Full Name - Account identification and order processing
 • Email Address - Account verification and communications
-• Phone Number - Order confirmation and delivery coordination
+• Phone Number - Order confirmation and delivery
 • Delivery Addresses - Order fulfillment
-• Governorate & City - Displaying relevant stores in your area
+• Governorate & City - Displaying relevant stores
 
-⚠️ Important: Engezna does NOT use real-time GPS tracking. We do not track your live location or monitor your movements. Your location is determined solely by the governorate and city you manually select.`,
+⚠️ Important: Engezna does NOT use real-time GPS tracking. We do not track your live location.`,
         },
         {
           icon: Share2,
           title: '3. Information Sharing',
-          content: `We share the following information with stores to fulfill your orders:
-• Your name
-• Delivery address
-• Phone number
-• Order details
+          content: `We share with stores to fulfill your orders:
+• Your name, delivery address, phone number, order details
 
-Service providers are contractually obligated to use this information solely for order fulfillment and are prohibited from using it for marketing or other purposes.
+Service providers are contractually obligated to use this information solely for order fulfillment.
 
-🔒 We NEVER sell, rent, or trade your personal information to third parties for marketing purposes.`,
+🔒 We NEVER sell your personal information to third parties.`,
         },
         {
           icon: Lock,
           title: '4. Data Security',
-          content: `We implement appropriate security measures to protect your personal information:
+          content: `We implement appropriate security measures:
 
-• Encryption: All transmitted data is encrypted using SSL/TLS
-• Access Control: Only authorized personnel can access personal data
-• Secure Storage: Data is stored on secure servers with regular audits
-• Password Protection: Passwords are hashed and never stored in plain text`,
+• Encryption: All data encrypted using SSL/TLS
+• Access Control: Only authorized personnel
+• Secure Storage: Secure servers with regular audits
+• Password Protection: Hashed, never stored in plain text`,
         },
         {
           icon: UserCheck,
@@ -176,51 +278,103 @@ Service providers are contractually obligated to use this information solely for
           content: `You have the right to:
 
 • Access: Request a copy of your personal data
-• Correction: Update or correct inaccurate information
-• Deletion: Request deletion of your account and data
+• Correction: Update inaccurate information
+• Deletion: Request deletion of your account
 • Opt-out: Unsubscribe from promotional communications
 
-To exercise these rights, contact us at: privacy@engezna.com`,
+📧 Contact: privacy@engezna.com`,
+        },
+        {
+          icon: Baby,
+          title: "6. Children's Privacy",
+          content: `Engezna is not intended for children under 16 years of age. We do not knowingly collect personal information from children. If you are a parent and believe your child has provided us with personal information, please contact us.`,
+        },
+        {
+          icon: Cookie,
+          id: 'cookies',
+          title: '7. Cookies and Similar Technologies',
+          content: `We use cookies to enhance your experience:
+
+🔹 Cookie Types:
+• Essential (Supabase) - Authentication & security
+• Analytics (Vercel) - Anonymous statistics
+• Security (Sentry) - Error tracking
+• Notifications (Firebase) - Push notifications
+
+⚙️ Manage cookies in your browser settings. Disabling essential cookies will prevent login.`,
+        },
+        {
+          icon: Globe,
+          title: '8. IP Addresses and Browsing Data',
+          content: `When you use our Service, we automatically collect:
+
+• IP Address - For security purposes
+• Browser and device information
+• Access logs (pages visited, time spent)
+
+🔒 IP addresses are anonymized after 30 days and never used for advertising.`,
+        },
+        {
+          icon: CreditCard,
+          title: '9. Payment Information',
+          content: `We support online payment via Kashier and Cash on Delivery.
+
+🔐 Payment Security:
+• We DO NOT store full card numbers
+• We DO NOT have access to CVV or PIN
+• Kashier is PCI-DSS compliant
+• End-to-end encryption
+
+We only receive: Transaction confirmation and last 4 card digits.`,
         },
         {
           icon: Trash2,
-          title: '6. Data Deletion',
-          content: `How to delete your account and data:
+          title: '10. How to Delete Your Account',
+          content: `🔹 Deletion Steps:
+1. Open Engezna app
+2. Go to Settings → Account
+3. Tap "Delete Account"
+4. Confirm your decision
 
-From the App:
-1. Go to Profile → Account
-2. Scroll down and tap "Delete Account"
-3. Confirm the deletion
+✅ What's deleted: Profile, addresses, favorites, notifications, reviews
 
-Via Email:
-Send a deletion request to: privacy@engezna.com
-Include the email address registered with your account
+📌 What we keep legally:
+• Order history (anonymized) - Tax records
+• Transaction records - Egyptian commercial law
 
-Processing Time: Within 7 business days
+⏱️ Deletion within 24 hours.`,
+        },
+        {
+          icon: Download,
+          id: 'data-export',
+          title: '11. Data Export',
+          content: `You have the right to receive a copy of your data in a structured format.
 
-What Gets Deleted:
-• Account information (name, email, phone)
-• Delivery addresses
-• Order history
-• Favorites
+📦 Export includes: Profile, orders, addresses, favorites, reviews
 
-Note: Some data may be retained for a limited period to comply with legal and tax requirements.`,
+⬇️ Click the button below to download your data instantly (requires login)`,
         },
         {
           icon: Clock,
-          title: '7. Data Retention',
-          content: `We retain your personal information for as long as your account is active or as needed to provide services. You may request deletion of your account and associated data at any time by contacting our support team.`,
+          title: '12. Data Retention',
+          content: `We retain your information as long as your account is active. You may request deletion at any time.`,
+        },
+        {
+          icon: FileText,
+          title: '13. Changes to This Policy',
+          content: `We may update this policy from time to time. We will notify you by:
+• Posting the new policy here
+• Updating the "Last Updated" date
+• In-app notification for significant changes`,
         },
         {
           icon: Mail,
-          title: '8. Contact Us',
-          content: `If you have questions about this Privacy Policy:
-
-🏢 Company: Sweifcom for Trade and Export (LLC)
-📍 Address: Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt
+          title: '14. Contact Us',
+          content: `🏢 Company: Sweifcom for Trade and Export (LLC)
+📍 Address: Saleh Hammam St., Beni Suef, Egypt
 📋 Commercial Registry: 2767
 📧 Email: support@engezna.com
-💬 Support: Through the app's Help section`,
+🔒 Privacy: privacy@engezna.com`,
         },
       ],
     },
@@ -258,10 +412,12 @@ Note: Some data may be retained for a limited period to comply with legal and ta
           <div className="max-w-3xl mx-auto space-y-6">
             {t.sections.map((section, index) => {
               const IconComponent = section.icon;
+              const sectionId = 'id' in section ? (section as { id?: string }).id : undefined;
               return (
                 <div
                   key={index}
-                  className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow"
+                  id={sectionId}
+                  className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow scroll-mt-24"
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -272,6 +428,36 @@ Note: Some data may be retained for a limited period to comply with legal and ta
                       <div className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
                         {section.content}
                       </div>
+                      {/* Data Export Button */}
+                      {sectionId === 'data-export' && (
+                        <div className="mt-4 space-y-3">
+                          <button
+                            onClick={handleExportData}
+                            disabled={isExporting}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isExporting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                {isRTL ? 'جارٍ التصدير...' : 'Exporting...'}
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4" />
+                                {isRTL ? 'تحميل بياناتي' : 'Download My Data'}
+                              </>
+                            )}
+                          </button>
+                          {exportError && <p className="text-red-500 text-sm">{exportError}</p>}
+                          {exportSuccess && (
+                            <p className="text-green-600 text-sm">
+                              {isRTL
+                                ? '✅ تم تحميل بياناتك بنجاح!'
+                                : '✅ Your data has been downloaded successfully!'}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

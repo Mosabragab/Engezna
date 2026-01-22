@@ -3,8 +3,8 @@
 ## Engezna - إنجزنا
 
 > **Status:** DRAFT - For Review Before Implementation
-> **Version:** 1.0
-> **Last Updated:** December 2025
+> **Version:** 1.1
+> **Last Updated:** January 2026
 > **Effective Date:** [To be determined upon approval]
 
 ---
@@ -120,7 +120,144 @@ To exercise these rights, contact us at: privacy@engezna.com
 
 Engezna is not intended for children under 16 years of age. We do not knowingly collect personal information from children. If you are a parent or guardian and believe your child has provided us with personal information, please contact us.
 
-### 9. Changes to This Policy
+### 9. Cookies and Similar Technologies
+
+#### 9.1 What Are Cookies?
+
+Cookies are small text files stored on your device when you use our Service. We use cookies and similar technologies to enhance your experience and ensure our platform functions properly.
+
+#### 9.2 Types of Cookies We Use
+
+| Cookie Type              | Provider | Purpose                                            | Duration         |
+| ------------------------ | -------- | -------------------------------------------------- | ---------------- |
+| **Essential Cookies**    | Supabase | Authentication, session management, security       | Session / 7 days |
+| **Analytics Cookies**    | Vercel   | Anonymous usage statistics, performance monitoring | 24 hours         |
+| **Security Cookies**     | Sentry   | Error tracking and crash reporting                 | Session          |
+| **Notification Cookies** | Firebase | Push notification preferences and tokens           | Until logout     |
+
+#### 9.3 Managing Cookies
+
+You can control cookies through your browser settings:
+
+- **Block all cookies:** This may prevent you from using certain features
+- **Delete cookies:** Clear existing cookies through browser settings
+- **Essential cookies:** Cannot be disabled as they are required for the Service to function
+
+**Note:** Disabling essential cookies will prevent you from logging in and using the Service.
+
+### 10. IP Addresses and Browsing Data
+
+#### 10.1 What We Collect
+
+When you access our Service, we automatically collect:
+
+- **IP Address:** Your device's internet protocol address
+- **Browser Information:** Browser type, version, and language settings
+- **Device Information:** Operating system, screen resolution, device type
+- **Access Logs:** Pages visited, time spent, referring URLs
+
+#### 10.2 How We Use This Data
+
+This information is used for:
+
+- Security and fraud prevention
+- Service optimization and performance improvement
+- Troubleshooting technical issues
+- Generating anonymous aggregate statistics
+
+#### 10.3 Data Anonymization
+
+IP addresses are anonymized after 30 days and are never used for tracking individual users across sessions or for advertising purposes.
+
+### 11. Payment Information
+
+#### 11.1 Payment Methods
+
+Engezna supports the following payment methods:
+
+| Method               | Provider | Data Collected                      |
+| -------------------- | -------- | ----------------------------------- |
+| **Online Payment**   | Kashier  | Card last 4 digits, transaction ID  |
+| **Cash on Delivery** | Internal | Order amount, delivery confirmation |
+
+#### 11.2 Payment Security
+
+- **We DO NOT store** full credit/debit card numbers
+- **We DO NOT have access** to your CVV or PIN
+- All payment processing is handled by Kashier, a PCI-DSS compliant payment provider
+- Transaction data is encrypted end-to-end
+
+#### 11.3 Kashier Privacy
+
+For online payments, Kashier processes your payment information according to their own privacy policy. We only receive:
+
+- Confirmation of successful/failed transactions
+- Transaction reference numbers
+- Last 4 digits of your card (for display purposes only)
+
+### 12. How to Delete Your Account
+
+#### 12.1 Deletion Process
+
+You can delete your account at any time through the following steps:
+
+1. Open the Engezna app
+2. Go to **Settings** (الإعدادات)
+3. Select **Account** (الحساب)
+4. Tap **Delete Account** (حذف الحساب)
+5. Confirm your decision
+
+#### 12.2 What Gets Deleted
+
+When you delete your account, we permanently remove:
+
+- Your profile information (name, email, phone)
+- Your saved addresses
+- Your favorites list
+- Your notification preferences
+- Your reviews and ratings
+
+#### 12.3 What We Keep
+
+For legal and business purposes, we retain:
+
+- **Order history:** Required for tax and accounting records (anonymized)
+- **Transaction records:** Required by Egyptian commercial law
+- **Refund records:** Required for financial auditing
+
+These records are kept without personal identifiers and cannot be linked back to you.
+
+#### 12.4 Deletion Timeline
+
+Account deletion is processed immediately. All personal data is permanently removed within 24 hours.
+
+### 13. Data Export (Data Portability)
+
+#### 13.1 Your Right to Data Portability
+
+You have the right to receive a copy of your personal data in a structured, commonly used format.
+
+#### 13.2 How to Request Your Data
+
+1. Contact us at: privacy@engezna.com
+2. Include "Data Export Request" in the subject line
+3. Verify your identity using your registered email
+
+#### 13.3 What's Included
+
+Your data export will include:
+
+- Profile information
+- Order history
+- Saved addresses
+- Favorites list
+- Review history
+
+#### 13.4 Processing Time
+
+Data export requests are processed within 30 days of verification.
+
+### 14. Changes to This Policy
 
 We may update this Privacy Policy from time to time. We will notify you of any changes by:
 
@@ -128,7 +265,7 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 - Updating the "Last Updated" date
 - Sending an in-app notification for significant changes
 
-### 10. Contact Us
+### 15. Contact Us
 
 If you have questions about this Privacy Policy, please contact us:
 
@@ -254,7 +391,144 @@ If you have questions about this Privacy Policy, please contact us:
 
 إنجزنا غير مخصصة للأطفال دون ١٦ عاماً. نحن لا نجمع معلومات شخصية من الأطفال عن قصد. إذا كنت والداً أو وصياً وتعتقد أن طفلك قدم لنا معلومات شخصية، يُرجى التواصل معنا.
 
-### ٩. التغييرات على هذه السياسة
+### ٩. الكوكيز والتقنيات المشابهة
+
+#### ٩.١ ما هي الكوكيز؟
+
+الكوكيز هي ملفات نصية صغيرة تُخزن على جهازك عند استخدام خدمتنا. نستخدم الكوكيز والتقنيات المشابهة لتحسين تجربتك وضمان عمل منصتنا بشكل صحيح.
+
+#### ٩.٢ أنواع الكوكيز التي نستخدمها
+
+| نوع الكوكيز          | المزود   | الغرض                                  | المدة            |
+| -------------------- | -------- | -------------------------------------- | ---------------- |
+| **الكوكيز الأساسية** | Supabase | المصادقة، إدارة الجلسة، الأمان         | الجلسة / ٧ أيام  |
+| **كوكيز التحليلات**  | Vercel   | إحصائيات استخدام مجهولة، مراقبة الأداء | ٢٤ ساعة          |
+| **كوكيز الأمان**     | Sentry   | تتبع الأخطاء وتقارير الأعطال           | الجلسة           |
+| **كوكيز الإشعارات**  | Firebase | تفضيلات الإشعارات ورموز الدفع          | حتى تسجيل الخروج |
+
+#### ٩.٣ إدارة الكوكيز
+
+يمكنك التحكم في الكوكيز من خلال إعدادات متصفحك:
+
+- **حظر جميع الكوكيز:** قد يمنعك هذا من استخدام بعض الميزات
+- **حذف الكوكيز:** امسح الكوكيز الموجودة من إعدادات المتصفح
+- **الكوكيز الأساسية:** لا يمكن تعطيلها لأنها ضرورية لعمل الخدمة
+
+**ملاحظة:** تعطيل الكوكيز الأساسية سيمنعك من تسجيل الدخول واستخدام الخدمة.
+
+### ١٠. عناوين IP وبيانات التصفح
+
+#### ١٠.١ ما نجمعه
+
+عند وصولك لخدمتنا، نجمع تلقائياً:
+
+- **عنوان IP:** عنوان بروتوكول الإنترنت لجهازك
+- **معلومات المتصفح:** نوع المتصفح، الإصدار، وإعدادات اللغة
+- **معلومات الجهاز:** نظام التشغيل، دقة الشاشة، نوع الجهاز
+- **سجلات الوصول:** الصفحات التي تمت زيارتها، الوقت المستغرق، روابط الإحالة
+
+#### ١٠.٢ كيف نستخدم هذه البيانات
+
+تُستخدم هذه المعلومات من أجل:
+
+- الأمان ومنع الاحتيال
+- تحسين الخدمة والأداء
+- معالجة المشكلات التقنية
+- إنشاء إحصائيات مجمعة مجهولة الهوية
+
+#### ١٠.٣ إخفاء هوية البيانات
+
+يتم إخفاء هوية عناوين IP بعد ٣٠ يوماً ولا تُستخدم أبداً لتتبع المستخدمين الفرديين عبر الجلسات أو لأغراض إعلانية.
+
+### ١١. معلومات الدفع
+
+#### ١١.١ طرق الدفع
+
+تدعم إنجزنا طرق الدفع التالية:
+
+| الطريقة                | المزود  | البيانات المجمعة                     |
+| ---------------------- | ------- | ------------------------------------ |
+| **الدفع الإلكتروني**   | Kashier | آخر ٤ أرقام من البطاقة، رقم المعاملة |
+| **الدفع عند الاستلام** | داخلي   | مبلغ الطلب، تأكيد التوصيل            |
+
+#### ١١.٢ أمان الدفع
+
+- **لا نخزن** أرقام بطاقات الائتمان/الخصم الكاملة
+- **لا نملك وصولاً** إلى رمز CVV أو PIN الخاص بك
+- جميع عمليات الدفع تتم عبر Kashier، مزود دفع متوافق مع PCI-DSS
+- بيانات المعاملات مشفرة من طرف إلى طرف
+
+#### ١١.٣ خصوصية Kashier
+
+للمدفوعات الإلكترونية، يعالج Kashier معلومات الدفع الخاصة بك وفقاً لسياسة الخصوصية الخاصة به. نتلقى فقط:
+
+- تأكيد نجاح/فشل المعاملات
+- أرقام مرجعية للمعاملات
+- آخر ٤ أرقام من بطاقتك (للعرض فقط)
+
+### ١٢. كيفية حذف حسابك
+
+#### ١٢.١ عملية الحذف
+
+يمكنك حذف حسابك في أي وقت من خلال الخطوات التالية:
+
+١. افتح تطبيق إنجزنا
+٢. اذهب إلى **الإعدادات**
+٣. اختر **الحساب**
+٤. اضغط على **حذف الحساب**
+٥. أكد قرارك
+
+#### ١٢.٢ ما يتم حذفه
+
+عند حذف حسابك، نزيل نهائياً:
+
+- معلومات ملفك الشخصي (الاسم، البريد الإلكتروني، رقم الهاتف)
+- عناوينك المحفوظة
+- قائمة المفضلة
+- تفضيلات الإشعارات
+- تقييماتك ومراجعاتك
+
+#### ١٢.٣ ما نحتفظ به
+
+لأغراض قانونية وتجارية، نحتفظ بـ:
+
+- **سجل الطلبات:** مطلوب للسجلات الضريبية والمحاسبية (مجهول الهوية)
+- **سجلات المعاملات:** مطلوب بموجب القانون التجاري المصري
+- **سجلات الاسترداد:** مطلوب للتدقيق المالي
+
+تُحفظ هذه السجلات بدون معرفات شخصية ولا يمكن ربطها بك.
+
+#### ١٢.٤ الجدول الزمني للحذف
+
+يتم معالجة حذف الحساب فوراً. تُزال جميع البيانات الشخصية نهائياً خلال ٢٤ ساعة.
+
+### ١٣. تصدير البيانات (قابلية نقل البيانات)
+
+#### ١٣.١ حقك في نقل البيانات
+
+لديك الحق في الحصول على نسخة من بياناتك الشخصية بتنسيق منظم وشائع الاستخدام.
+
+#### ١٣.٢ كيفية طلب بياناتك
+
+١. تواصل معنا على: privacy@engezna.com
+٢. ضع "طلب تصدير البيانات" في عنوان الرسالة
+٣. تحقق من هويتك باستخدام بريدك الإلكتروني المسجل
+
+#### ١٣.٣ ما يتضمنه التصدير
+
+سيتضمن تصدير بياناتك:
+
+- معلومات الملف الشخصي
+- سجل الطلبات
+- العناوين المحفوظة
+- قائمة المفضلة
+- سجل التقييمات
+
+#### ١٣.٤ وقت المعالجة
+
+تتم معالجة طلبات تصدير البيانات خلال ٣٠ يوماً من التحقق.
+
+### ١٤. التغييرات على هذه السياسة
 
 قد نحدّث سياسة الخصوصية هذه من وقت لآخر. سنُخطرك بأي تغييرات عن طريق:
 
@@ -262,7 +536,7 @@ If you have questions about this Privacy Policy, please contact us:
 - تحديث تاريخ "آخر تحديث"
 - إرسال إشعار داخل التطبيق للتغييرات الجوهرية
 
-### ١٠. تواصل معنا
+### ١٥. تواصل معنا
 
 إذا كانت لديك أسئلة حول سياسة الخصوصية هذه، يُرجى التواصل معنا:
 
@@ -290,8 +564,10 @@ While primarily serving Egypt, this policy incorporates GDPR-inspired principles
 
 - Data minimization
 - Purpose limitation
-- User rights (access, rectification, erasure)
-- Transparency
+- User rights (access, rectification, erasure, portability)
+- Cookie transparency and consent
+- Clear data retention policies
+- Right to data export
 
 ---
 
