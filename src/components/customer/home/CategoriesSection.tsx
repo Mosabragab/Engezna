@@ -86,7 +86,8 @@ export function CategoriesSection({
         {showViewAll && (
           <button
             onClick={onViewAll}
-            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+            aria-label={locale === 'ar' ? 'عرض جميع الأقسام' : 'View all categories'}
+            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
           >
             {locale === 'ar' ? 'عرض الكل' : 'View All'}
             <span className={`${locale === 'ar' ? 'rotate-180' : ''}`}>→</span>
@@ -101,24 +102,21 @@ export function CategoriesSection({
 
           const cardContent = (
             <div
-              className={`flex flex-col items-center animate-slide-up opacity-0 stagger-${index + 1}`}
-              style={{ animationFillMode: 'forwards' }}
+              className="flex flex-col items-center"
             >
               {/* Card - Elegant floating design */}
               <div
                 className={cn(
                   'w-[64px] h-[64px] sm:w-[72px] sm:h-[72px] md:w-[84px] md:h-[84px] lg:w-[100px] lg:h-[100px]',
                   'rounded-2xl md:rounded-3xl flex items-center justify-center',
-                  'transition-all duration-300 cursor-pointer relative',
-                  'hover:scale-[1.08] hover:-translate-y-1',
-                  'active:scale-[0.98]',
-                  isSelected && 'scale-[1.05]'
+                  'transition-transform duration-300 cursor-pointer relative will-change-transform',
+                  'hover:scale-105',
+                  'active:scale-95',
+                  isSelected && 'scale-105 ring-2 ring-primary'
                 )}
                 style={{
                   background: category.gradient,
-                  boxShadow: isSelected
-                    ? '0 0 0 3px #009DE0, 0 12px 32px rgba(0,157,224,0.25)'
-                    : '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)',
                 }}
               >
                 {/* Subtle inner glow */}
@@ -144,12 +142,16 @@ export function CategoriesSection({
             </div>
           );
 
+          const categoryName = locale === 'ar' ? category.nameAr : category.nameEn;
+
           if (onCategoryClick) {
             return (
               <button
                 key={category.id}
                 onClick={() => onCategoryClick(category.key)}
-                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
+                aria-label={locale === 'ar' ? `اختيار قسم ${categoryName}` : `Select ${categoryName} category`}
+                aria-pressed={isSelected}
+                className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl min-h-[44px]"
               >
                 {cardContent}
               </button>
@@ -160,6 +162,7 @@ export function CategoriesSection({
             <Link
               key={category.id}
               href={`/${locale}/providers?category=${category.key}`}
+              aria-label={locale === 'ar' ? `تصفح ${categoryName}` : `Browse ${categoryName}`}
               className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
             >
               {cardContent}

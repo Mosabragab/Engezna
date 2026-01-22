@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, Clock, Truck, MapPin, Heart } from 'lucide-react';
 import { useState } from 'react';
 
@@ -67,11 +68,13 @@ export function ProviderCard({
           {/* 16:9 aspect ratio */}
           <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
             {provider.cover_image_url ? (
-              <img
+              <Image
                 src={provider.cover_image_url}
                 alt={name}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-cover img-zoom"
                 loading="lazy"
-                className="w-full h-full object-cover img-zoom"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
@@ -111,11 +114,13 @@ export function ProviderCard({
         {/* Cover Image - 16:9 aspect ratio */}
         <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
           {provider.cover_image_url ? (
-            <img
+            <Image
               src={provider.cover_image_url}
               alt={name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              className="object-cover img-zoom"
               loading="lazy"
-              className="w-full h-full object-cover img-zoom"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
@@ -133,15 +138,20 @@ export function ProviderCard({
             </div>
           )}
 
-          {/* Favorite Button */}
+          {/* Favorite Button - min 44x44px for touch targets (WCAG) */}
           {onFavoriteToggle && (
             <button
               onClick={handleFavoriteClick}
-              className="absolute top-3 end-3 w-9 h-9 bg-white/95 backdrop-blur-md rounded-xl flex items-center justify-center shadow-elegant hover:bg-white hover:shadow-elegant-lg transition-all duration-200 active:scale-95"
+              aria-label={favorite
+                ? (locale === 'ar' ? 'إزالة من المفضلة' : 'Remove from favorites')
+                : (locale === 'ar' ? 'إضافة للمفضلة' : 'Add to favorites')
+              }
+              aria-pressed={favorite}
+              className="absolute top-2 end-2 w-11 h-11 bg-white/95 backdrop-blur-md rounded-xl flex items-center justify-center shadow-elegant hover:bg-white hover:shadow-elegant-lg transition-all duration-200 active:scale-95"
             >
               <Heart
-                className={`w-4 h-4 transition-all duration-200 ${
-                  favorite ? 'fill-red-500 text-red-500 scale-110' : 'text-slate-400'
+                className={`w-5 h-5 transition-colors duration-200 ${
+                  favorite ? 'fill-red-500 text-red-500' : 'text-slate-400'
                 }`}
               />
             </button>
@@ -159,11 +169,13 @@ export function ProviderCard({
           {/* Logo - Elegant floating */}
           {provider.logo_url && (
             <div className="absolute bottom-3 end-3 w-14 h-14 bg-white rounded-2xl border-2 border-white shadow-elegant overflow-hidden">
-              <img
+              <Image
                 src={provider.logo_url}
-                alt={name}
+                alt={`${name} logo`}
+                width={56}
+                height={56}
+                className="object-cover"
                 loading="lazy"
-                className="w-full h-full object-cover"
               />
             </div>
           )}

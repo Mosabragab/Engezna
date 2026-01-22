@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import { RefreshCw, FileText, Clock, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -74,12 +75,14 @@ export function ReorderSection({
       <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
         <div className="flex gap-3">
           {/* Provider Logo */}
-          <div className="w-14 h-14 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="relative w-14 h-14 rounded-lg bg-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
             {lastOrder.providerLogo ? (
-              <img
+              <Image
                 src={lastOrder.providerLogo}
                 alt={providerName}
-                className="w-full h-full object-cover"
+                width={56}
+                height={56}
+                className="object-cover"
               />
             ) : (
               <Store className="w-6 h-6 text-slate-400" />
@@ -109,18 +112,20 @@ export function ReorderSection({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - min 44px touch targets */}
         <div className="flex gap-3 mt-4">
           <button
             onClick={() => onReorder?.(lastOrder.id)}
-            className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-2.5 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            aria-label={isRTL ? `إعادة طلب من ${providerName}` : `Reorder from ${providerName}`}
+            className="flex-1 flex items-center justify-center gap-2 bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors min-h-[44px]"
           >
             <RefreshCw className="w-4 h-4" />
             {isRTL ? 'اطلب تاني' : 'Reorder'}
           </button>
           <button
             onClick={() => onViewDetails?.(lastOrder.id)}
-            className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-700 py-2.5 px-4 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+            aria-label={isRTL ? 'عرض تفاصيل الطلب' : 'View order details'}
+            className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-700 py-3 px-4 rounded-lg font-medium hover:bg-slate-200 transition-colors min-h-[44px]"
           >
             <FileText className="w-4 h-4" />
             {isRTL ? 'التفاصيل' : 'Details'}
