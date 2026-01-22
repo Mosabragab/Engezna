@@ -4,19 +4,26 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useFavorites } from '@/hooks/customer';
 import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
 import { Button } from '@/components/ui/button';
-import {
-  ProductCard,
-  RatingStars,
-  StatusBadge,
-  EmptyState,
-  ProductDetailModal,
-} from '@/components/customer/shared';
-import { ChatFAB, SmartAssistant } from '@/components/customer/chat';
+import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared';
+
+// Lazy load heavy components to reduce initial bundle size
+const ProductDetailModal = dynamic(
+  () => import('@/components/customer/shared').then((mod) => mod.ProductDetailModal),
+  { ssr: false }
+);
+const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
+  ssr: false,
+});
+const SmartAssistant = dynamic(
+  () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
+  { ssr: false }
+);
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout';
 import { CustomOrderWelcomeBanner } from '@/components/custom-order';
 import {
