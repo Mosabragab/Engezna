@@ -19,8 +19,8 @@ import '../globals.css';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5, // Allow zoom up to 5x for accessibility
+  userScalable: true, // WCAG: Must allow user scaling
   viewportFit: 'cover',
   // Brand color for browser status bar
   themeColor: '#0F172A',

@@ -2,6 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Star, Clock, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +57,8 @@ export function TopRatedSection({
         {showViewAll && onViewAll && (
           <button
             onClick={onViewAll}
-            className="flex items-center gap-1 text-primary text-sm font-medium hover:underline"
+            aria-label={isRTL ? 'عرض جميع المتاجر الأعلى تقييماً' : 'View all top rated stores'}
+            className="flex items-center gap-1 text-primary text-sm font-medium hover:underline min-h-[44px] min-w-[44px] justify-center"
           >
             {isRTL ? 'عرض الكل' : 'View All'}
             {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -90,14 +92,16 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
         'will-change-transform' // GPU acceleration
       )}
     >
-      {/* Image - 16:9 aspect ratio */}
+      {/* Image - 16:10 aspect ratio with reserved space */}
       <div className="relative aspect-[16/10] bg-slate-100">
         {provider.cover_image_url || provider.logo_url ? (
-          <img
-            src={provider.cover_image_url || provider.logo_url || undefined}
+          <Image
+            src={provider.cover_image_url || provider.logo_url || ''}
             alt={name}
-            loading="lazy" // Lazy loading for performance
-            className="w-full h-full object-cover"
+            fill
+            sizes="144px"
+            className="object-cover"
+            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-2xl">🏪</div>
