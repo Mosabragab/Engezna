@@ -3,8 +3,8 @@
 ## قائمة مراجعة جاهزية إنجزنا للإطلاق
 
 **تاريخ الإنشاء:** 2026-01-22
-**آخر تحديث:** 2026-01-22 (Pre-Launch Pages + Performance Improvements)
-**الحالة:** قيد المراجعة - تم إكمال: الأمان، قاعدة البيانات، الأداء، صفحات ما قبل الإطلاق
+**آخر تحديث:** 2026-01-22 (PWA Features Audit)
+**الحالة:** قيد المراجعة - تم إكمال: الأمان، قاعدة البيانات، الأداء، صفحات ما قبل الإطلاق، PWA
 
 > ⚠️ **ملاحظة هامة:** يجب تحديث هذا الملف مع كل مرحلة منتهية حتى الانتهاء من تنفيذ كل المراحل.
 > قم بتغيير ☐ إلى ✅ عند اكتمال كل بند، وتحديث التقييم والملاحظات.
@@ -522,18 +522,52 @@
 
 ### 5.3 PWA Features
 
-**الحالة:** ✅ جيد
+**الحالة:** ✅ ممتاز (تم الفحص الشامل - 2026-01-22)
 
-| البند                             | الحالة   | ملاحظات                  |
-| --------------------------------- | -------- | ------------------------ |
-| manifest.json صحيح                | ✅ مكتمل | في public/manifest.json  |
-| جميع أحجام الأيقونات موجودة       | ⚠️ للفحص | يجب التحقق من الأحجام    |
-| Splash screen يعمل                | ⚠️ للفحص | يجب اختباره على الموبايل |
-| Add to Home Screen يعمل           | ⚠️ للفحص | يجب اختباره              |
-| Offline page موجود                | ✅ مكتمل | PWA offline support      |
-| Service Worker يعمل               | ✅ مكتمل | Serwist                  |
-| Push Notifications (Android)      | ⚠️ جزئي  | Firebase setup موجود     |
-| التطبيق يعمل بدون إنترنت (جزئياً) | ✅ مكتمل | Cached content           |
+| البند                             | الحالة   | ملاحظات                                       |
+| --------------------------------- | -------- | --------------------------------------------- |
+| manifest.json صحيح                | ✅ مكتمل | شامل: icons, shortcuts, screenshots, categories |
+| جميع أحجام الأيقونات موجودة       | ✅ مكتمل | 192x192 + 512x512 (any + maskable)            |
+| Splash screen يعمل                | ✅ مكتمل | معرف في manifest.json                         |
+| Add to Home Screen يعمل           | ✅ مكتمل | display: standalone + shortcuts               |
+| Offline page موجود                | ✅ ممتاز | صفحة شاملة مع retry + دعم العملاء             |
+| Service Worker يعمل               | ✅ ممتاز | Serwist مع caching strategies متقدمة          |
+| Push Notifications (Android)      | ✅ مكتمل | Firebase Cloud Messaging مع interactive actions |
+| التطبيق يعمل بدون إنترنت (جزئياً) | ✅ مكتمل | Cached content + offline fallback             |
+
+**تفاصيل الفحص (2026-01-22):**
+
+**manifest.json شامل:**
+- `name`: إنجزنا - Engezna
+- `short_name`: إنجزنا
+- `icons`: 192x192 + 512x512 (any + maskable)
+- `screenshots`: 4 صور (3 mobile + 1 desktop)
+- `shortcuts`: المتاجر + الطلبات
+- `categories`: food, shopping, lifestyle
+- `privacy_policy_url`: /ar/privacy
+
+**Service Worker (Serwist) متقدم:**
+- **NetworkFirst**: للـ API الحساسة (orders, prices, cart) - timeout 10s
+- **StaleWhileRevalidate**: للمتاجر والمنتجات والفئات
+- **CacheFirst**: للصور والـ storage
+- **Offline fallback**: /ar/offline
+- **Background Sync**: للطلبات offline
+- **App Badge API**: لعدد الإشعارات
+
+**Push Notifications (Firebase) مكتمل:**
+- Token management مع حفظ في قاعدة البيانات
+- Foreground + Background message handling
+- Interactive notifications مع actions:
+  - `new_order`: عرض الطلب + قبول
+  - `chat_message`: رد + فتح المحادثة
+  - `order_update`: عرض التفاصيل
+- Deep linking للصفحات المناسبة
+
+**Offline Page شاملة:**
+- إعادة المحاولة التلقائية
+- اتصال بخدمة العملاء (هاتف + واتساب)
+- عرض المتاجر المخزنة مؤقتاً
+- إعادة توجيه تلقائي عند عودة الاتصال
 
 ### 5.4 الإضافات المقترحة - Force Update
 
@@ -899,6 +933,7 @@ _تم إنشاؤه بناءً على مراجعة شاملة للمشروع_
 
 | التاريخ    | التحديث                                                       |
 | ---------- | ------------------------------------------------------------- |
+| 2026-01-22 | فحص شامل لقسم PWA Features (manifest, SW, Push, Offline)      |
 | 2026-01-22 | إضافة صفحات About و Contact + تحسينات الأداء (next/image, lazy loading) |
 | 2026-01-22 | مراجعة الأداء وإصلاح Lighthouse issues                        |
 | 2026-01-22 | إصلاح RLS policies + إضافة database indexes                   |
