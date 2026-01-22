@@ -79,7 +79,12 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
-        {/* Google Fonts */}
+        {/* Preconnect to external resources for faster loading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
+        <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
+        {/* Google Fonts - Aref Ruqaa for branding */}
         <link
           href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap"
           rel="stylesheet"

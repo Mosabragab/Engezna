@@ -7,6 +7,33 @@ import { type NextRequest, NextResponse } from 'next/server';
 type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin';
 
 /**
+ * Check if maintenance mode is enabled
+ * Returns cached result for 30 seconds to reduce DB queries
+ */
+let maintenanceCache: { enabled: boolean; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30 seconds
+
+async function checkMaintenanceMode(
+  supabase: ReturnType<typeof createServerClient>
+): Promise<boolean> {
+  // Return cached result if still valid
+  if (maintenanceCache && Date.now() - maintenanceCache.timestamp < CACHE_DURATION) {
+    return maintenanceCache.enabled;
+  }
+
+  try {
+    const { data } = await supabase.from('platform_settings').select('maintenance_mode').single();
+
+    const isEnabled = data?.maintenance_mode === true;
+    maintenanceCache = { enabled: isEnabled, timestamp: Date.now() };
+    return isEnabled;
+  } catch {
+    // If query fails, assume not in maintenance mode
+    return false;
+  }
+}
+
+/**
  * Creates a Supabase client for middleware operations
  * This handles session refresh, cookie management, and role-based access control
  */
@@ -54,8 +81,33 @@ export async function updateSession(request: NextRequest) {
   const localeMatch = pathname.match(/^\/(ar|en)/);
   const locale = localeMatch ? localeMatch[1] : 'ar';
 
-  // Remove locale prefix for easier pattern matching
-  const pathWithoutLocale = pathname.replace(/^\/(ar|en)/, '');
+  // ============================================================================
+  // MAINTENANCE MODE CHECK (Kill Switch)
+  // ============================================================================
+  // Skip maintenance check for:
+  // - Admin routes (so admins can disable maintenance mode)
+  // - Maintenance page itself
+  // - API routes
+  // - Static files
+  const pathWithoutLocaleForMaintenance = pathname.replace(/^\/(ar|en)/, '');
+  const isAdminRoute = pathWithoutLocaleForMaintenance.startsWith('/admin');
+  const isMaintenancePage = pathWithoutLocaleForMaintenance === '/maintenance';
+  const isApiRoute = pathname.startsWith('/api');
+  const isStaticFile = pathname.includes('.');
+
+  if (!isAdminRoute && !isMaintenancePage && !isApiRoute && !isStaticFile) {
+    const isMaintenanceMode = await checkMaintenanceMode(supabase);
+    if (isMaintenanceMode) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}/maintenance`;
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Continue with auth checks
+
+  // Remove locale prefix for easier pattern matching (reuse pathWithoutLocaleForMaintenance)
+  const pathWithoutLocale = pathWithoutLocaleForMaintenance;
 
   // Define protected routes that require authentication
   // IMPORTANT: Use specific patterns to avoid matching public routes like /providers
