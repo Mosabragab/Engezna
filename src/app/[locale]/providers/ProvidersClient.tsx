@@ -243,7 +243,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
                     ? `تغيير الموقع: ${userCityName}`
                     : `Change location: ${userCityName}`
                 }
-                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors min-h-[44px] min-w-[44px] justify-center"
+                className="flex items-center gap-1.5 text-sm text-slate-700 hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] justify-center"
               >
                 <MapPin className="w-4 h-4" />
                 <span>{userCityName}</span>
@@ -287,7 +287,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
               onClick={() => setSelectedCategory(category.id)}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] ${
                 selectedCategory === category.id
-                  ? 'bg-primary text-white shadow-sm'
+                  ? 'bg-sky-700 text-white shadow-sm'
                   : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
               }`}
             >

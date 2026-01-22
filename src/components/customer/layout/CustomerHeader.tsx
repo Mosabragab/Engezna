@@ -306,7 +306,7 @@ export const CustomerHeader = memo(function CustomerHeader({
                 className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]"
               >
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium max-w-[100px] truncate text-sm text-primary">
+                <span className="font-medium max-w-[100px] truncate text-sm text-slate-700">
                   {locationDisplayText}
                 </span>
               </button>
