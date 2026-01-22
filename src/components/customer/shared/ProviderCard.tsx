@@ -199,7 +199,7 @@ export function ProviderCard({
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               <span className="font-bold text-sm text-amber-700">{provider.rating.toFixed(1)}</span>
             </div>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-slate-500">
               ({provider.total_reviews} {t('reviews')})
             </span>
           </div>

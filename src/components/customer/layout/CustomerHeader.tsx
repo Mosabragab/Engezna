@@ -332,6 +332,7 @@ export const CustomerHeader = memo(function CustomerHeader({
             {/* Cart - Hidden on mobile (bottom nav has cart) */}
             <button
               onClick={() => router.push(`/${locale}/cart`)}
+              aria-label={locale === 'ar' ? 'سلة التسوق' : 'Shopping cart'}
               className="hidden md:flex h-10 w-10 items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
             >
               <ShoppingCart className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
@@ -515,10 +516,12 @@ export const CustomerHeader = memo(function CustomerHeader({
             </div>
 
             {/* Profile */}
-            <Link href={user ? `/${locale}/profile` : `/${locale}/auth/login`}>
-              <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 group">
-                <User className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
-              </button>
+            <Link
+              href={user ? `/${locale}/profile` : `/${locale}/auth/login`}
+              aria-label={locale === 'ar' ? 'الملف الشخصي' : 'Profile'}
+              className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 group"
+            >
+              <User className="h-5 w-5 text-slate-500 group-hover:text-slate-700 transition-colors" />
             </Link>
           </div>
         </div>

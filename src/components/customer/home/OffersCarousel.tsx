@@ -280,7 +280,13 @@ function BannerCard({
       {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
-          <img src={banner.image_url} alt="" className="w-full h-full object-cover opacity-30" />
+          <img
+            src={banner.image_url}
+            alt=""
+            className="w-full h-full object-cover opacity-30"
+            loading="eager"
+            decoding="async"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
       )}
@@ -368,6 +374,7 @@ function BannerCard({
             style={{
               height: sizeConfig.maxHeight,
               maxWidth: imageOnCenter ? '40%' : '35%',
+              minWidth: imageOnCenter ? '30%' : '25%',
             }}
           >
             <motion.img
@@ -377,6 +384,8 @@ function BannerCard({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.3 }}
+              loading="eager"
+              decoding="async"
               style={{
                 filter:
                   'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
@@ -698,7 +707,10 @@ export function OffersCarousel({
     );
   }
 
-  if (banners.length === 0) return null;
+  if (banners.length === 0) {
+    // Return empty placeholder to prevent CLS
+    return <div className="h-0" aria-hidden="true" />;
+  }
 
   // Desktop: Show 3 cards
   const visibleBanners = isDesktop
