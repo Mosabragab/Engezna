@@ -8,9 +8,9 @@ import ProviderDetailClient, {
   type MenuCategory,
 } from './ProviderDetailClient';
 
-// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
-// TODO: Re-enable ISR once root cause is identified
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 60 seconds for fresh data
+// Provider details (menu, reviews) change more frequently
+export const revalidate = 60;
 
 // Generate metadata for SEO
 export async function generateMetadata({

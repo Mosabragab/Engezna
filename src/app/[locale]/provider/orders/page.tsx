@@ -29,7 +29,6 @@ import {
 } from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 type OrderItem = {
   id: string;

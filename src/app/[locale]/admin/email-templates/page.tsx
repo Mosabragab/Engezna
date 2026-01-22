@@ -31,7 +31,6 @@ import {
   ToggleRight,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface EmailTemplate {
   id: string;

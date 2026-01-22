@@ -32,7 +32,6 @@ import {
   Calendar,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface ActivityLog {
   id: string;

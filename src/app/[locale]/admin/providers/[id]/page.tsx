@@ -36,7 +36,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface Provider {
   id: string;

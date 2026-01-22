@@ -28,7 +28,6 @@ import {
   Info,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface TicketMessage {
   id: string;

@@ -2,9 +2,9 @@ import { Suspense } from 'react';
 import { createStaticClient } from '@/lib/supabase/static';
 import ProvidersClient, { type Provider } from './ProvidersClient';
 
-// Force dynamic rendering to avoid DYNAMIC_SERVER_USAGE error
-// TODO: Re-enable ISR once root cause is identified
-export const dynamic = 'force-dynamic';
+// ISR: Revalidate every 5 minutes for optimal performance
+// Provider list changes less frequently, so 5-minute cache is safe
+export const revalidate = 300;
 
 // Loading fallback for Suspense
 function ProvidersLoading() {

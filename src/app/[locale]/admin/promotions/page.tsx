@@ -27,7 +27,6 @@ import {
   Gift,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface PromoCode {
   id: string;

@@ -32,7 +32,6 @@ import {
 import { OrderChat } from '@/components/shared/OrderChat';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 // Cancellation reasons mapping for translation
 const CANCELLATION_REASONS: Record<string, { ar: string; en: string }> = {

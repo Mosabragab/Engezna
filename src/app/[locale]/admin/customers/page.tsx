@@ -26,7 +26,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface Customer {
   id: string;

@@ -41,7 +41,6 @@ import {
   Gift,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface Settlement {
   id: string;

@@ -34,7 +34,6 @@ import {
   UserCog,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface EscalationRule {
   id: string;

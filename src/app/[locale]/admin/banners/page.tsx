@@ -79,7 +79,6 @@ const PASTEL_PRESETS = [
 
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 
-export const dynamic = 'force-dynamic';
 
 interface HomepageBanner {
   id: string;

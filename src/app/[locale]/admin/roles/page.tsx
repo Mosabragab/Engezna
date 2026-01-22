@@ -52,7 +52,6 @@ import {
   Store,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // Database permission with joined relations
 interface DbPermission {

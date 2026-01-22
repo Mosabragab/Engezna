@@ -41,7 +41,6 @@ import {
   Activity,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface Governorate {
   id: string;

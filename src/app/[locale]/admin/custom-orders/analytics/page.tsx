@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const dynamic = 'force-dynamic';
 
 interface ProviderStats {
   provider_id: string;

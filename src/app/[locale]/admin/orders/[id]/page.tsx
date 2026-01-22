@@ -36,7 +36,6 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // Cancellation reasons mapping for translation
 const CANCELLATION_REASONS: Record<string, { ar: string; en: string }> = {

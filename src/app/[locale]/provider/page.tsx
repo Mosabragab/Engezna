@@ -30,7 +30,6 @@ import { getCommissionInfo, type CommissionInfo, COMMISSION_CONFIG } from '@/lib
 import { Gift } from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 // Provider type
 interface Provider {

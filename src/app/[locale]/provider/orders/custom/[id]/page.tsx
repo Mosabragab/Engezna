@@ -15,7 +15,6 @@ import type {
   PriceHistoryItem,
 } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic';
 
 export default function CustomOrderPricingPage() {
   const locale = useLocale();

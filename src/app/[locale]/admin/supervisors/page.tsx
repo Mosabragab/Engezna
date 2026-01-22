@@ -39,7 +39,6 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // Dynamic Role from database
 interface Role {

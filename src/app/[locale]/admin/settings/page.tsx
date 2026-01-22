@@ -30,7 +30,6 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface PlatformSettings {
   id?: string;

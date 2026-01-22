@@ -43,7 +43,6 @@ type Category = {
 };
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 export default function AddProductPage() {
   const locale = useLocale();

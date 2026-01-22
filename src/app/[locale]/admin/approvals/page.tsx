@@ -37,7 +37,6 @@ import {
   Paperclip,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 type ApprovalStatus = 'pending' | 'approved' | 'approved_with_changes' | 'rejected' | 'cancelled';
 type ApprovalPriority = 'urgent' | 'high' | 'medium' | 'low';

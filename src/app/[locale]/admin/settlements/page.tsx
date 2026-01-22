@@ -36,7 +36,6 @@ import {
   Truck,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SAFE NUMBER HELPER - حماية من NaN
