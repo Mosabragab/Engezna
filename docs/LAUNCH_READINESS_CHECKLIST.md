@@ -121,12 +121,20 @@
 
 ### 1.6 الإضافات المقترحة - Kill Switch
 
-**الحالة:** ☐ لم يُنفذ
+**الحالة:** ✅ تم التنفيذ (2026-01-22)
 
-| البند                                        | الحالة | ملاحظات                                 |
-| -------------------------------------------- | ------ | --------------------------------------- |
-| نظام "الفرامل الطارئة" (Kill Switch)         | ☐      | Feature flag لتعطيل الطلبات عند الطوارئ |
-| إمكانية إغلاق التطبيق للصيانة من لوحة الأدمن | ☐      | صفحة صيانة مع رسالة مخصصة               |
+| البند                                        | الحالة   | ملاحظات                                      |
+| -------------------------------------------- | -------- | -------------------------------------------- |
+| نظام "الفرامل الطارئة" (Kill Switch)         | ✅ مكتمل | maintenance_mode في platform_settings        |
+| إمكانية إغلاق التطبيق للصيانة من لوحة الأدمن | ✅ مكتمل | Toggle في Admin Settings + صفحة /maintenance |
+
+**تفاصيل Kill Switch:**
+
+- Toggle في: Admin → Settings → General → وضع الصيانة
+- صفحة الصيانة: `/[locale]/maintenance`
+- Middleware يتحقق من `platform_settings.maintenance_mode`
+- Cache: 30 ثانية لتقليل queries
+- Admin routes مستثناة (للتمكن من إيقاف الصيانة)
 
 ---
 
@@ -246,6 +254,9 @@
 - ✅ إزالة animations تسبب CLS (CLS 0.322 → < 0.1 متوقع)
 - ✅ إضافة `aria-label` للأزرار (Accessibility +5 نقطة متوقعة)
 - ✅ زيادة touch targets إلى 44px (Accessibility requirement)
+- ✅ تحسين الخطوط باستخدام `next/font/google` (FCP -200-500ms متوقع)
+- ✅ إزالة render-blocking Google Fonts `<link>`
+- ✅ إضافة preconnect لـ Supabase
 
 **مشاكل متبقية:**
 
