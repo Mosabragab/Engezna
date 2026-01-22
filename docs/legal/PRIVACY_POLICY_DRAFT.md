@@ -128,12 +128,12 @@ Cookies are small text files stored on your device when you use our Service. We 
 
 #### 9.2 Types of Cookies We Use
 
-| Cookie Type | Provider | Purpose | Duration |
-| ----------- | -------- | ------- | -------- |
-| **Essential Cookies** | Supabase | Authentication, session management, security | Session / 7 days |
-| **Analytics Cookies** | Vercel | Anonymous usage statistics, performance monitoring | 24 hours |
-| **Security Cookies** | Sentry | Error tracking and crash reporting | Session |
-| **Notification Cookies** | Firebase | Push notification preferences and tokens | Until logout |
+| Cookie Type              | Provider | Purpose                                            | Duration         |
+| ------------------------ | -------- | -------------------------------------------------- | ---------------- |
+| **Essential Cookies**    | Supabase | Authentication, session management, security       | Session / 7 days |
+| **Analytics Cookies**    | Vercel   | Anonymous usage statistics, performance monitoring | 24 hours         |
+| **Security Cookies**     | Sentry   | Error tracking and crash reporting                 | Session          |
+| **Notification Cookies** | Firebase | Push notification preferences and tokens           | Until logout     |
 
 #### 9.3 Managing Cookies
 
@@ -175,9 +175,9 @@ IP addresses are anonymized after 30 days and are never used for tracking indivi
 
 Engezna supports the following payment methods:
 
-| Method | Provider | Data Collected |
-| ------ | -------- | -------------- |
-| **Online Payment** | Kashier | Card last 4 digits, transaction ID |
+| Method               | Provider | Data Collected                      |
+| -------------------- | -------- | ----------------------------------- |
+| **Online Payment**   | Kashier  | Card last 4 digits, transaction ID  |
 | **Cash on Delivery** | Internal | Order amount, delivery confirmation |
 
 #### 11.2 Payment Security
@@ -399,12 +399,12 @@ If you have questions about this Privacy Policy, please contact us:
 
 #### ٩.٢ أنواع الكوكيز التي نستخدمها
 
-| نوع الكوكيز | المزود | الغرض | المدة |
-| ----------- | ------ | ----- | ----- |
-| **الكوكيز الأساسية** | Supabase | المصادقة، إدارة الجلسة، الأمان | الجلسة / ٧ أيام |
-| **كوكيز التحليلات** | Vercel | إحصائيات استخدام مجهولة، مراقبة الأداء | ٢٤ ساعة |
-| **كوكيز الأمان** | Sentry | تتبع الأخطاء وتقارير الأعطال | الجلسة |
-| **كوكيز الإشعارات** | Firebase | تفضيلات الإشعارات ورموز الدفع | حتى تسجيل الخروج |
+| نوع الكوكيز          | المزود   | الغرض                                  | المدة            |
+| -------------------- | -------- | -------------------------------------- | ---------------- |
+| **الكوكيز الأساسية** | Supabase | المصادقة، إدارة الجلسة، الأمان         | الجلسة / ٧ أيام  |
+| **كوكيز التحليلات**  | Vercel   | إحصائيات استخدام مجهولة، مراقبة الأداء | ٢٤ ساعة          |
+| **كوكيز الأمان**     | Sentry   | تتبع الأخطاء وتقارير الأعطال           | الجلسة           |
+| **كوكيز الإشعارات**  | Firebase | تفضيلات الإشعارات ورموز الدفع          | حتى تسجيل الخروج |
 
 #### ٩.٣ إدارة الكوكيز
 
@@ -446,10 +446,10 @@ If you have questions about this Privacy Policy, please contact us:
 
 تدعم إنجزنا طرق الدفع التالية:
 
-| الطريقة | المزود | البيانات المجمعة |
-| ------- | ------ | ---------------- |
-| **الدفع الإلكتروني** | Kashier | آخر ٤ أرقام من البطاقة، رقم المعاملة |
-| **الدفع عند الاستلام** | داخلي | مبلغ الطلب، تأكيد التوصيل |
+| الطريقة                | المزود  | البيانات المجمعة                     |
+| ---------------------- | ------- | ------------------------------------ |
+| **الدفع الإلكتروني**   | Kashier | آخر ٤ أرقام من البطاقة، رقم المعاملة |
+| **الدفع عند الاستلام** | داخلي   | مبلغ الطلب، تأكيد التوصيل            |
 
 #### ١١.٢ أمان الدفع
 
