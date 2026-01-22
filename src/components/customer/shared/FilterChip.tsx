@@ -21,7 +21,9 @@ export function FilterChip({
   return (
     <button
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+      aria-pressed={isActive}
+      aria-label={label}
+      className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap min-h-[44px] ${
         isActive
           ? 'bg-primary/10 text-primary border border-primary'
           : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'
