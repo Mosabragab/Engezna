@@ -32,7 +32,6 @@ interface Governorate {
 export function Footer() {
   const locale = useLocale();
   const t = useTranslations('footer');
-  const isRTL = locale === 'ar';
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -276,6 +275,18 @@ export function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
             <p className="text-slate-400">{t('copyright')}</p>
             <div className="flex items-center gap-6">
+              <Link
+                href={`/${locale}/about`}
+                className="text-slate-400 hover:text-white transition-colors font-medium"
+              >
+                {locale === 'ar' ? 'من نحن' : 'About'}
+              </Link>
+              <Link
+                href={`/${locale}/contact`}
+                className="text-slate-400 hover:text-white transition-colors font-medium"
+              >
+                {locale === 'ar' ? 'اتصل بنا' : 'Contact'}
+              </Link>
               <Link
                 href={`/${locale}/privacy`}
                 className="text-slate-400 hover:text-white transition-colors font-medium"
