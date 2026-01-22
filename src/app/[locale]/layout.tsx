@@ -3,7 +3,7 @@ import type { Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { notoSans, notoSansArabic } from '@/lib/fonts';
+import { notoSans, notoSansArabic, arefRuqaa } from '@/lib/fonts';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { LocationProvider } from '@/lib/contexts';
 import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider';
@@ -79,11 +79,9 @@ export default async function LocaleLayout({ children, params }: Props) {
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
-        {/* Google Fonts */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@700&display=swap"
-          rel="stylesheet"
-        />
+        {/* Preconnect to external resources for faster loading */}
+        <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
+        <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         {/* Apple Touch Icons - Required for iOS Home Screen */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
@@ -98,7 +96,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         <meta name="msapplication-TileColor" content="#0F172A" />
         <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
       </head>
-      <body className={`${notoSans.variable} ${notoSansArabic.variable} font-sans antialiased`}>
+      <body
+        className={`${notoSans.variable} ${notoSansArabic.variable} ${arefRuqaa.variable} font-sans antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

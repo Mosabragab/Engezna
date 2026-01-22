@@ -11,8 +11,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-noto-sans)'],
-        arabic: ['var(--font-noto-sans-arabic)'],
+        sans: ['var(--font-noto-sans)', 'var(--font-noto-sans-arabic)', 'sans-serif'],
+        arabic: ['var(--font-noto-sans-arabic)', 'sans-serif'],
+        ruqaa: ['var(--font-aref-ruqaa)', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',

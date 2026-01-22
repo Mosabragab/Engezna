@@ -1,12 +1,37 @@
-// Using system fonts as fallback (Google Fonts require network access)
-// In production, these will be replaced with proper Noto Sans fonts
+import { Noto_Sans, Noto_Sans_Arabic, Aref_Ruqaa } from 'next/font/google';
 
-export const notoSans = {
+/**
+ * Noto Sans - Primary Latin font
+ * Optimized with next/font for automatic self-hosting and font-display: swap
+ */
+export const notoSans = Noto_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-noto-sans',
-  className: 'font-sans',
-};
+  display: 'swap',
+  preload: true,
+});
 
-export const notoSansArabic = {
+/**
+ * Noto Sans Arabic - Primary Arabic font
+ * Optimized with next/font for automatic self-hosting and font-display: swap
+ */
+export const notoSansArabic = Noto_Sans_Arabic({
+  subsets: ['arabic'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-noto-sans-arabic',
-  className: 'font-sans',
-};
+  display: 'swap',
+  preload: true,
+});
+
+/**
+ * Aref Ruqaa - Decorative Arabic font for branding
+ * Used for logo and special headings
+ */
+export const arefRuqaa = Aref_Ruqaa({
+  subsets: ['arabic', 'latin'],
+  weight: ['700'],
+  variable: '--font-aref-ruqaa',
+  display: 'swap',
+  preload: false, // Not critical for FCP, can load later
+});
