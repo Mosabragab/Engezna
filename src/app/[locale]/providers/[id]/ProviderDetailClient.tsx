@@ -3,20 +3,28 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useFavorites } from '@/hooks/customer';
 import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
 import { Button } from '@/components/ui/button';
-import {
-  ProductCard,
-  RatingStars,
-  StatusBadge,
-  EmptyState,
-  ProductDetailModal,
-} from '@/components/customer/shared';
-import { ChatFAB, SmartAssistant } from '@/components/customer/chat';
+import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared';
+
+// Lazy load heavy components to reduce initial bundle size
+const ProductDetailModal = dynamic(
+  () => import('@/components/customer/shared').then((mod) => mod.ProductDetailModal),
+  { ssr: false }
+);
+const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
+  ssr: false,
+});
+const SmartAssistant = dynamic(
+  () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
+  { ssr: false }
+);
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout';
 import { CustomOrderWelcomeBanner } from '@/components/custom-order';
 import {
@@ -517,10 +525,13 @@ export default function ProviderDetailClient({
         <div className="aspect-[3/1] bg-slate-100 relative">
           {provider.cover_image_url ? (
             <>
-              <img
+              <Image
                 src={provider.cover_image_url}
                 alt={getName(provider)}
-                className="w-full h-full object-cover"
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             </>
@@ -528,11 +539,13 @@ export default function ProviderDetailClient({
             <div className="w-full h-full flex items-center justify-center bg-sky-50/70">
               {/* Clean minimalist: logo on subtle pastel background */}
               {provider.logo_url ? (
-                <div className="w-28 h-28 rounded-2xl overflow-hidden shadow-sm bg-white border border-white">
-                  <img
+                <div className="relative w-28 h-28 rounded-2xl overflow-hidden shadow-sm bg-white border border-white">
+                  <Image
                     src={provider.logo_url}
                     alt={getName(provider)}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="112px"
+                    className="object-cover"
                   />
                 </div>
               ) : (
@@ -566,10 +579,12 @@ export default function ProviderDetailClient({
           {/* Logo overlay */}
           {provider.logo_url && (
             <div className="absolute bottom-0 start-4 translate-y-1/2 w-20 h-20 rounded-2xl overflow-hidden border-4 border-white shadow-lg bg-white z-10">
-              <img
+              <Image
                 src={provider.logo_url}
                 alt={getName(provider)}
-                className="w-full h-full object-cover"
+                fill
+                sizes="80px"
+                className="object-cover"
               />
             </div>
           )}
@@ -760,10 +775,13 @@ export default function ProviderDetailClient({
                     <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100 hover:border-primary/30 hover:shadow-sm transition-all">
                       <div className="aspect-square relative">
                         {item.image_url ? (
-                          <img
+                          <Image
                             src={item.image_url}
                             alt={locale === 'ar' ? item.name_ar : item.name_en}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="144px"
+                            className="object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -811,10 +829,13 @@ export default function ProviderDetailClient({
                     <div className="bg-slate-50 rounded-xl overflow-hidden border border-slate-100 hover:border-primary/30 hover:shadow-sm transition-all">
                       <div className="aspect-square relative">
                         {item.image_url ? (
-                          <img
+                          <Image
                             src={item.image_url}
                             alt={locale === 'ar' ? item.name_ar : item.name_en}
-                            className="w-full h-full object-cover"
+                            fill
+                            sizes="144px"
+                            className="object-cover"
+                            loading="lazy"
                           />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">

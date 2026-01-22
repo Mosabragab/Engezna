@@ -12,7 +12,16 @@ import {
   TopRatedSection,
   NearbySection,
 } from '@/components/customer/home';
-import { ChatFAB, SmartAssistant } from '@/components/customer/chat';
+import dynamic from 'next/dynamic';
+
+// Lazy load chat components to reduce initial bundle size (~40KB saved)
+const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
+  ssr: false,
+});
+const SmartAssistant = dynamic(
+  () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
+  { ssr: false }
+);
 import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useLocation } from '@/lib/contexts/LocationContext';
@@ -270,29 +279,32 @@ export default function HomePage() {
     }
   }
 
-  const handleChatClick = () => {
+  const handleChatClick = useCallback(() => {
     setIsChatOpen(true);
-  };
+  }, []);
 
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
     router.push(`/${locale}/providers`);
-  };
+  }, [router, locale]);
 
-  const handleCategoryClick = (categoryId: string) => {
-    router.push(`/${locale}/providers?category=${categoryId}`);
-  };
+  const handleCategoryClick = useCallback(
+    (categoryId: string) => {
+      router.push(`/${locale}/providers?category=${categoryId}`);
+    },
+    [router, locale]
+  );
 
-  const handleViewAllOffers = () => {
+  const handleViewAllOffers = useCallback(() => {
     router.push(`/${locale}/offers`);
-  };
+  }, [router, locale]);
 
-  const handleViewAllTopRated = () => {
+  const handleViewAllTopRated = useCallback(() => {
     router.push(`/${locale}/providers?sort=rating`);
-  };
+  }, [router, locale]);
 
-  const handleViewAllNearby = () => {
+  const handleViewAllNearby = useCallback(() => {
     router.push(`/${locale}/providers?sort=distance`);
-  };
+  }, [router, locale]);
 
   const handleReorder = async (orderId: string) => {
     if (isReordering || !lastOrder) return;
@@ -369,9 +381,12 @@ export default function HomePage() {
     }
   };
 
-  const handleViewOrderDetails = (orderId: string) => {
-    router.push(`/${locale}/orders/${orderId}`);
-  };
+  const handleViewOrderDetails = useCallback(
+    (orderId: string) => {
+      router.push(`/${locale}/orders/${orderId}`);
+    },
+    [router, locale]
+  );
 
   // Show loading while initializing or loading location data
   const isLoading = isInitializing || !isDataLoaded || isUserLocationLoading;

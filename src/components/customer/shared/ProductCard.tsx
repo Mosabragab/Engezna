@@ -2,6 +2,7 @@
 
 import { memo } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
+import Image from 'next/image';
 import { Plus, Minus, Flame, Leaf, ChevronDown, Tag, Gift } from 'lucide-react';
 import type { PricingType } from '@/types/menu-import';
 
@@ -148,9 +149,16 @@ export const ProductCard = memo(function ProductCard({
       >
         <div className="flex gap-3">
           {/* Image */}
-          <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
             {product.image_url ? (
-              <img src={product.image_url} alt={name} className="w-full h-full object-cover" />
+              <Image
+                src={product.image_url}
+                alt={name}
+                fill
+                sizes="64px"
+                className="object-cover"
+                loading="lazy"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
             )}
@@ -194,7 +202,14 @@ export const ProductCard = memo(function ProductCard({
           {/* Image */}
           <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
             {product.image_url ? (
-              <img src={product.image_url} alt={name} className="w-full h-full object-cover" />
+              <Image
+                src={product.image_url}
+                alt={name}
+                fill
+                sizes="96px"
+                className="object-cover"
+                loading="lazy"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-3xl">🍽️</div>
             )}
@@ -321,7 +336,14 @@ export const ProductCard = memo(function ProductCard({
       {/* Image */}
       <div className="relative aspect-square bg-slate-100">
         {product.image_url ? (
-          <img src={product.image_url} alt={name} className="w-full h-full object-cover" />
+          <Image
+            src={product.image_url}
+            alt={name}
+            fill
+            sizes="(max-width: 768px) 50vw, 33vw"
+            className="object-cover"
+            loading="lazy"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-5xl">🍽️</div>
         )}
