@@ -24,7 +24,7 @@ export default function PrivacyPage() {
   const content = {
     ar: {
       title: 'سياسة الخصوصية',
-      lastUpdated: 'آخر تحديث: ديسمبر 2025',
+      lastUpdated: 'آخر تحديث: يناير 2026',
       sections: [
         {
           icon: Shield,
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
     },
     en: {
       title: 'Privacy Policy',
-      lastUpdated: 'Last Updated: December 2025',
+      lastUpdated: 'Last Updated: January 2026',
       sections: [
         {
           icon: Shield,
