@@ -41,7 +41,6 @@ import {
   Activity,
 } from 'lucide-react';
 
-
 interface Governorate {
   id: string;
   name_ar: string;

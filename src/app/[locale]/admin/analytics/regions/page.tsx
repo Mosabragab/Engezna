@@ -30,7 +30,6 @@ import {
   Truck,
 } from 'lucide-react';
 
-
 interface Governorate {
   id: string;
   name_ar: string;

@@ -30,7 +30,6 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 
-
 interface PlatformSettings {
   id?: string;
   platform_name_ar: string;

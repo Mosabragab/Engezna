@@ -24,7 +24,6 @@ import {
   BarChart2,
 } from 'lucide-react';
 
-
 interface DailyStats {
   date: string;
   orders: number;

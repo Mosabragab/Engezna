@@ -21,7 +21,6 @@ import {
   Timer,
 } from 'lucide-react';
 
-
 export default function AdminLoginPage() {
   const locale = useLocale();
   const router = useRouter();

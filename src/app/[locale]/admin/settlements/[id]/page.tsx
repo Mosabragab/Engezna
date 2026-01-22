@@ -41,7 +41,6 @@ import {
   Gift,
 } from 'lucide-react';
 
-
 interface Settlement {
   id: string;
   provider_id: string;

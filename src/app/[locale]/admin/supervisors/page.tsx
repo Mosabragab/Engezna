@@ -39,7 +39,6 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-
 // Dynamic Role from database
 interface Role {
   id: string;

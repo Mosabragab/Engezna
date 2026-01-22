@@ -31,7 +31,6 @@ import {
   Bell,
 } from 'lucide-react';
 
-
 type AnnouncementType = 'urgent' | 'important' | 'info';
 
 interface Announcement {

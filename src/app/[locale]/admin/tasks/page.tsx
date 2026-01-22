@@ -37,7 +37,6 @@ import {
   Send,
 } from 'lucide-react';
 
-
 type TaskStatus = 'new' | 'accepted' | 'in_progress' | 'pending' | 'completed' | 'cancelled';
 type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';
 type TaskType =

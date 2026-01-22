@@ -32,7 +32,6 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-
 export default function ProviderLoginPage() {
   const locale = useLocale();
   const t = useTranslations('partner.login');

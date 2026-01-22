@@ -32,7 +32,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-
 interface ProviderStats {
   provider_id: string;
   provider_name: string;

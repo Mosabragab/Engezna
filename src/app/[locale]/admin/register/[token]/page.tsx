@@ -34,7 +34,6 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
-
 // Database role type
 interface DbRole {
   id: string;
