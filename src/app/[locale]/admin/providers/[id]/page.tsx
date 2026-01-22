@@ -36,7 +36,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-
 interface Provider {
   id: string;
   name_ar: string;

@@ -36,7 +36,6 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
-
 // Cancellation reasons mapping for translation
 const CANCELLATION_REASONS: Record<string, { ar: string; en: string }> = {
   changed_mind: { ar: 'غيرت رأيي', en: 'Changed my mind' },

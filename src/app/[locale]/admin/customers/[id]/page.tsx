@@ -35,7 +35,6 @@ import {
   Star,
 } from 'lucide-react';
 
-
 interface CustomerOrder {
   id: string;
   order_number: string;

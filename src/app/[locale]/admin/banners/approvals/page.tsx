@@ -31,7 +31,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-
 type DurationType = '1_day' | '3_days' | '1_week' | '1_month';
 
 interface PendingBanner {

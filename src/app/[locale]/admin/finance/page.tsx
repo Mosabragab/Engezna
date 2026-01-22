@@ -35,7 +35,6 @@ import {
   Users,
 } from 'lucide-react';
 
-
 type FilterSettlementStatus =
   | 'all'
   | 'pending'

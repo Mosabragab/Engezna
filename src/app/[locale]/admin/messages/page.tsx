@@ -29,7 +29,6 @@ import {
   Users,
 } from 'lucide-react';
 
-
 interface Message {
   id: string;
   conversation_id: string;

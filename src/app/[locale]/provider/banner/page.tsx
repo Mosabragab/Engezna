@@ -38,7 +38,6 @@ import {
   Edit2,
 } from 'lucide-react';
 
-
 type DurationType = '1_day' | '3_days' | '1_week' | '1_month';
 type ImagePosition = 'start' | 'end' | 'center';
 type ImageSize = 'small' | 'medium' | 'large';

@@ -24,7 +24,6 @@ import {
   MapPin,
 } from 'lucide-react';
 
-
 interface DashboardStats {
   ordersToday: number;
   ordersWeek: number;

@@ -27,7 +27,6 @@ import {
   Gift,
 } from 'lucide-react';
 
-
 interface PromoCode {
   id: string;
   code: string;

@@ -15,7 +15,6 @@ import type {
   PriceHistoryItem,
 } from '@/types/custom-order';
 
-
 export default function CustomOrderPricingPage() {
   const locale = useLocale();
   const router = useRouter();

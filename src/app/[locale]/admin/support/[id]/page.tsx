@@ -28,7 +28,6 @@ import {
   Info,
 } from 'lucide-react';
 
-
 interface TicketMessage {
   id: string;
   ticket_id: string;

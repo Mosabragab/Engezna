@@ -25,7 +25,6 @@ import {
   MapPin,
 } from 'lucide-react';
 
-
 interface SupportTicket {
   id: string;
   ticket_number: string;

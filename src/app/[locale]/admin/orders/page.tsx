@@ -23,7 +23,6 @@ import {
   Package,
 } from 'lucide-react';
 
-
 interface Order {
   id: string;
   order_number: string;

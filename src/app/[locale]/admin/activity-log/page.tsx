@@ -32,7 +32,6 @@ import {
   Calendar,
 } from 'lucide-react';
 
-
 interface ActivityLog {
   id: string;
   admin_id: string;

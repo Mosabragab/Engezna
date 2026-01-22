@@ -31,7 +31,6 @@ import {
   ToggleRight,
 } from 'lucide-react';
 
-
 interface EmailTemplate {
   id: string;
   slug: string;

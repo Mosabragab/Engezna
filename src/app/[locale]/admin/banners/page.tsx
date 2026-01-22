@@ -79,7 +79,6 @@ const PASTEL_PRESETS = [
 
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 
-
 interface HomepageBanner {
   id: string;
   title_ar: string;

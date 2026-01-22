@@ -26,7 +26,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
-
 interface Customer {
   id: string;
   full_name: string | null;

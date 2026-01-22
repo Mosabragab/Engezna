@@ -34,7 +34,6 @@ import {
   UserCog,
 } from 'lucide-react';
 
-
 interface EscalationRule {
   id: string;
   name_ar: string;

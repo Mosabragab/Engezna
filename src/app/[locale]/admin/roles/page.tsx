@@ -52,7 +52,6 @@ import {
   Store,
 } from 'lucide-react';
 
-
 // Database permission with joined relations
 interface DbPermission {
   id: string;

@@ -53,7 +53,6 @@ import {
   Store,
 } from 'lucide-react';
 
-
 interface PageProps {
   params: Promise<{ id: string }>;
 }
