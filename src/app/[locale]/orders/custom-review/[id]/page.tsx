@@ -21,7 +21,6 @@ import {
 import { motion } from 'framer-motion';
 import type { BroadcastWithRequests, BroadcastStatus } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic';
 
 export default function CustomOrderReviewPage() {
   const locale = useLocale();

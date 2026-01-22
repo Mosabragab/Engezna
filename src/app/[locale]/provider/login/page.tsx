@@ -32,7 +32,6 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-export const dynamic = 'force-dynamic';
 
 export default function ProviderLoginPage() {
   const locale = useLocale();

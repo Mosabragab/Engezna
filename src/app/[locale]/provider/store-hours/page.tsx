@@ -11,7 +11,6 @@ import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import { Clock, Save, RefreshCw, Calendar, Sun, Moon, Copy, Check } from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 type DayHours = {
   open: string;

@@ -9,7 +9,6 @@ import { ProviderLayout } from '@/components/provider';
 import { Star, MessageSquare, User, Send, X, TrendingUp, Filter } from 'lucide-react';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 type Review = {
   id: string;

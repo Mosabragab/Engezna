@@ -11,10 +11,18 @@ declare global {
 
 declare const self: ServiceWorkerGlobalScope;
 
+// Listen for SKIP_WAITING message from the client to trigger update
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.log('[SW] Received SKIP_WAITING message, activating new service worker...');
+    self.skipWaiting();
+  }
+});
+
 // Initialize Serwist with custom caching strategies for Engezna delivery marketplace
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
-  skipWaiting: true,
+  skipWaiting: false, // Changed to false to allow user-controlled updates
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [

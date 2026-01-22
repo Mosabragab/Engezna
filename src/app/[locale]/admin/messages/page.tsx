@@ -29,7 +29,6 @@ import {
   Users,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface Message {
   id: string;

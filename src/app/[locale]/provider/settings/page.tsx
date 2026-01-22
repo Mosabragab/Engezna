@@ -51,7 +51,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
 // Force dynamic rendering
-export const dynamic = 'force-dynamic';
 
 type CustomOrderSettings = {
   accepts_text: boolean;

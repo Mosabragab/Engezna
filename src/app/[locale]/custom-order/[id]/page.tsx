@@ -37,7 +37,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import type { CustomOrderRequest, CustomOrderItem, BroadcastStatus } from '@/types/custom-order';
 
-export const dynamic = 'force-dynamic';
 
 // Types
 interface BroadcastWithRequests {

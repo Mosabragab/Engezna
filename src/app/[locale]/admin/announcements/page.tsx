@@ -31,7 +31,6 @@ import {
   Bell,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 type AnnouncementType = 'urgent' | 'important' | 'info';
 

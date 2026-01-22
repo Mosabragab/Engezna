@@ -34,7 +34,6 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // Database role type
 interface DbRole {

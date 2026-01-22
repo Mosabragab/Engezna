@@ -46,7 +46,6 @@ import {
   Filter,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types - Based on financial_settlement_engine SQL View

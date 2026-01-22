@@ -35,7 +35,6 @@ import {
   Star,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface CustomerOrder {
   id: string;

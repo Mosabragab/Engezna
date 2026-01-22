@@ -29,7 +29,6 @@ import {
   ChefHat,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 type CustomOrderRequest = {
   id: string;

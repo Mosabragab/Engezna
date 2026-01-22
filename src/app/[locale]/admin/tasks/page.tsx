@@ -37,7 +37,6 @@ import {
   Send,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 type TaskStatus = 'new' | 'accepted' | 'in_progress' | 'pending' | 'completed' | 'cancelled';
 type TaskPriority = 'urgent' | 'high' | 'medium' | 'low';

@@ -24,7 +24,6 @@ import {
   MapPin,
 } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
 
 interface DashboardStats {
   ordersToday: number;
