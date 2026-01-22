@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { LocationProvider } from '@/lib/contexts';
 import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider';
 import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider';
+import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 import { locales } from '@/i18n/config';
 import '../globals.css';
 
@@ -111,6 +112,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <LocationProvider>
               <PushNotificationProvider>
                 <GoogleOAuthProvider>{children}</GoogleOAuthProvider>
+                <CookieConsentBanner />
               </PushNotificationProvider>
             </LocationProvider>
           </NextIntlClientProvider>
