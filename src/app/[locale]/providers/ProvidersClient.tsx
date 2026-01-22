@@ -238,7 +238,12 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
             {userCityName && (
               <a
                 href={`/${locale}/profile/governorate`}
-                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                aria-label={
+                  locale === 'ar'
+                    ? `تغيير الموقع: ${userCityName}`
+                    : `Change location: ${userCityName}`
+                }
+                className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors min-h-[44px] min-w-[44px] justify-center"
               >
                 <MapPin className="w-4 h-4" />
                 <span>{userCityName}</span>
@@ -267,12 +272,20 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
         </div>
 
         {/* Category Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4">
+        <div
+          className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4"
+          role="tablist"
+        >
           {categories.map((category) => (
             <button
               key={category.id}
+              role="tab"
+              aria-selected={selectedCategory === category.id}
+              aria-label={
+                locale === 'ar' ? `فلتر حسب: ${category.name_ar}` : `Filter by: ${category.name_en}`
+              }
               onClick={() => setSelectedCategory(category.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] ${
                 selectedCategory === category.id
                   ? 'bg-primary text-white shadow-sm'
                   : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
