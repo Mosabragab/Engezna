@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { CustomerLayout } from '@/components/customer/layout';
@@ -20,12 +21,61 @@ import {
   Download,
   Baby,
   FileText,
+  Loader2,
 } from 'lucide-react';
 
 export default function PrivacyPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState(false);
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportError(null);
+    setExportSuccess(false);
+
+    try {
+      const response = await fetch('/api/auth/export-data');
+
+      if (response.status === 401) {
+        setExportError(isRTL ? 'يجب تسجيل الدخول أولاً' : 'Please login first');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Get filename from Content-Disposition header or use default
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = `engezna-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setExportSuccess(true);
+      setTimeout(() => setExportSuccess(false), 5000);
+    } catch {
+      setExportError(isRTL ? 'حدث خطأ أثناء التصدير' : 'Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const content = {
     ar: {
@@ -146,17 +196,13 @@ export default function PrivacyPage() {
         },
         {
           icon: Download,
+          id: 'data-export',
           title: '١١. تصدير البيانات',
           content: `لديك الحق في الحصول على نسخة من بياناتك بتنسيق منظم.
 
-📧 كيفية الطلب:
-١. أرسل إيميل إلى: privacy@engezna.com
-٢. عنوان الرسالة: "طلب تصدير البيانات"
-٣. تحقق من هويتك
-
 📦 يتضمن التصدير: الملف الشخصي، الطلبات، العناوين، المفضلة، التقييمات
 
-⏱️ المعالجة خلال ٣٠ يوماً.`,
+⬇️ اضغط الزر أدناه لتحميل بياناتك فوراً (يتطلب تسجيل الدخول)`,
         },
         {
           icon: Clock,
@@ -300,17 +346,13 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         },
         {
           icon: Download,
+          id: 'data-export',
           title: '11. Data Export',
           content: `You have the right to receive a copy of your data in a structured format.
 
-📧 How to request:
-1. Email: privacy@engezna.com
-2. Subject: "Data Export Request"
-3. Verify your identity
-
 📦 Export includes: Profile, orders, addresses, favorites, reviews
 
-⏱️ Processing within 30 days.`,
+⬇️ Click the button below to download your data instantly (requires login)`,
         },
         {
           icon: Clock,
@@ -386,6 +428,36 @@ We only receive: Transaction confirmation and last 4 card digits.`,
                       <div className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
                         {section.content}
                       </div>
+                      {/* Data Export Button */}
+                      {sectionId === 'data-export' && (
+                        <div className="mt-4 space-y-3">
+                          <button
+                            onClick={handleExportData}
+                            disabled={isExporting}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isExporting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                {isRTL ? 'جارٍ التصدير...' : 'Exporting...'}
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-4 h-4" />
+                                {isRTL ? 'تحميل بياناتي' : 'Download My Data'}
+                              </>
+                            )}
+                          </button>
+                          {exportError && <p className="text-red-500 text-sm">{exportError}</p>}
+                          {exportSuccess && (
+                            <p className="text-green-600 text-sm">
+                              {isRTL
+                                ? '✅ تم تحميل بياناتك بنجاح!'
+                                : '✅ Your data has been downloaded successfully!'}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
