@@ -101,9 +101,7 @@ export function CategoriesSection({
           const isSelected = selectedCategory === category.key;
 
           const cardContent = (
-            <div
-              className="flex flex-col items-center"
-            >
+            <div className="flex flex-col items-center">
               {/* Card - Elegant floating design */}
               <div
                 className={cn(
@@ -149,7 +147,9 @@ export function CategoriesSection({
               <button
                 key={category.id}
                 onClick={() => onCategoryClick(category.key)}
-                aria-label={locale === 'ar' ? `اختيار قسم ${categoryName}` : `Select ${categoryName} category`}
+                aria-label={
+                  locale === 'ar' ? `اختيار قسم ${categoryName}` : `Select ${categoryName} category`
+                }
                 aria-pressed={isSelected}
                 className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl min-h-[44px]"
               >

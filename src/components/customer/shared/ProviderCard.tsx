@@ -142,9 +142,14 @@ export function ProviderCard({
           {onFavoriteToggle && (
             <button
               onClick={handleFavoriteClick}
-              aria-label={favorite
-                ? (locale === 'ar' ? 'إزالة من المفضلة' : 'Remove from favorites')
-                : (locale === 'ar' ? 'إضافة للمفضلة' : 'Add to favorites')
+              aria-label={
+                favorite
+                  ? locale === 'ar'
+                    ? 'إزالة من المفضلة'
+                    : 'Remove from favorites'
+                  : locale === 'ar'
+                    ? 'إضافة للمفضلة'
+                    : 'Add to favorites'
               }
               aria-pressed={favorite}
               className="absolute top-2 end-2 w-11 h-11 bg-white/95 backdrop-blur-md rounded-xl flex items-center justify-center shadow-elegant hover:bg-white hover:shadow-elegant-lg transition-all duration-200 active:scale-95"
