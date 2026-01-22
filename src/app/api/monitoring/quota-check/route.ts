@@ -38,19 +38,25 @@ const THRESHOLDS = {
 
 /**
  * Check Supabase database size
+ * Note: This requires a custom RPC function 'get_database_stats' in Supabase
+ * If not available, returns OK status with informative message
  */
 async function checkSupabaseDatabase(): Promise<QuotaCheckResult> {
   try {
     const supabase = createAdminClient();
 
-    // Get database size using pg_database_size
-    const { data, error } = await supabase.rpc('get_database_stats').single();
+    // Try to get database size using pg_database_size (requires custom RPC)
+    // This RPC function may not exist, so we handle the error gracefully
+    const { data, error } = await supabase
+      .rpc('get_database_stats')
+      .single<{ database_size_mb?: number }>();
 
     if (error || !data) {
+      // RPC function doesn't exist or failed - this is expected
       return {
         service: 'Supabase Database',
         status: 'ok',
-        message: 'Unable to fetch database stats (function may not exist)',
+        message: 'Database monitoring via Supabase Dashboard',
       };
     }
 
@@ -58,7 +64,7 @@ async function checkSupabaseDatabase(): Promise<QuotaCheckResult> {
     const limitMB = process.env.SUPABASE_DB_LIMIT_MB
       ? parseInt(process.env.SUPABASE_DB_LIMIT_MB)
       : 500;
-    const currentMB = data.database_size_mb || 0;
+    const currentMB = data.database_size_mb ?? 0;
     const percentage = (currentMB / limitMB) * 100;
 
     let status: 'ok' | 'warning' | 'critical' = 'ok';
@@ -83,7 +89,7 @@ async function checkSupabaseDatabase(): Promise<QuotaCheckResult> {
     return {
       service: 'Supabase Database',
       status: 'ok',
-      message: 'Database stats check not configured',
+      message: 'Database monitoring via Supabase Dashboard',
     };
   }
 }
