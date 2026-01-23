@@ -150,9 +150,11 @@ export default function SearchPage() {
         const { data: productsData } = await productsQuery;
 
         // Filter products client-side for better Arabic matching and location
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filteredProducts: Product[] = (productsData || [])
-          .filter((p) => {
-            const provider = p.provider as ProductProvider;
+          .filter((p: any) => {
+            const provider = p.provider;
+            if (!provider) return false;
 
             // Location filter
             if (cityId && provider.city_id !== cityId) return false;
@@ -173,8 +175,17 @@ export default function SearchPage() {
               descEn.includes(normalizedQuery)
             );
           })
-          .map((p) => ({
-            ...p,
+          .map((p: any) => ({
+            id: p.id,
+            name_ar: p.name_ar,
+            name_en: p.name_en,
+            description_ar: p.description_ar,
+            description_en: p.description_en,
+            price: p.price,
+            original_price: p.original_price,
+            image_url: p.image_url,
+            is_available: p.is_available,
+            provider_id: p.provider_id,
             provider: p.provider as ProductProvider,
           }));
 
