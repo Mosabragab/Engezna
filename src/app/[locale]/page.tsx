@@ -427,7 +427,7 @@ export default function HomePage() {
       <div className="pb-4">
         {/* Hero Section - AI Chat disabled for initial launch */}
         {/* To re-enable AI button, pass onChatClick={handleChatClick} */}
-        <HeroSection onSearchClick={handleSearchClick} />
+        <HeroSection onSearch={handleSearch} onSearchClick={handleSearchClick} />
 
         {/* Categories */}
         <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-4" />
