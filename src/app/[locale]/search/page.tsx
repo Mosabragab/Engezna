@@ -14,7 +14,7 @@ import Link from 'next/link';
 interface Provider {
   id: string;
   name_ar: string;
-  name_en: string | null;
+  name_en: string;
   description_ar: string | null;
   description_en: string | null;
   category: string;
@@ -25,7 +25,7 @@ interface Provider {
   delivery_fee: number;
   min_order_amount: number;
   estimated_delivery_time_min: number;
-  status: string;
+  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
   is_featured?: boolean;
   city_id?: string;
   governorate_id?: string;
@@ -122,19 +122,39 @@ export default function SearchPage() {
         const { data: providersData } = await providersQuery;
 
         // Filter providers client-side for better Arabic matching
-        const filteredProviders = (providersData || []).filter((p) => {
-          const nameAr = normalizeArabicText(p.name_ar || '');
-          const nameEn = (p.name_en || '').toLowerCase();
-          const descAr = normalizeArabicText(p.description_ar || '');
-          const descEn = (p.description_en || '').toLowerCase();
+        const filteredProviders: Provider[] = (providersData || [])
+          .filter((p: any) => {
+            const nameAr = normalizeArabicText(p.name_ar || '');
+            const nameEn = (p.name_en || '').toLowerCase();
+            const descAr = normalizeArabicText(p.description_ar || '');
+            const descEn = (p.description_en || '').toLowerCase();
 
-          return (
-            nameAr.includes(normalizedQuery) ||
-            nameEn.includes(normalizedQuery) ||
-            descAr.includes(normalizedQuery) ||
-            descEn.includes(normalizedQuery)
-          );
-        });
+            return (
+              nameAr.includes(normalizedQuery) ||
+              nameEn.includes(normalizedQuery) ||
+              descAr.includes(normalizedQuery) ||
+              descEn.includes(normalizedQuery)
+            );
+          })
+          .map((p: any) => ({
+            id: p.id,
+            name_ar: p.name_ar,
+            name_en: p.name_en || p.name_ar, // Fallback to Arabic name if English is null
+            description_ar: p.description_ar,
+            description_en: p.description_en,
+            category: p.category,
+            logo_url: p.logo_url,
+            cover_image_url: p.cover_image_url,
+            rating: p.rating || 0,
+            total_reviews: p.total_reviews || 0,
+            delivery_fee: p.delivery_fee || 0,
+            min_order_amount: p.min_order_amount || 0,
+            estimated_delivery_time_min: p.estimated_delivery_time_min || 30,
+            status: p.status as Provider['status'],
+            is_featured: p.is_featured,
+            city_id: p.city_id,
+            governorate_id: p.governorate_id,
+          }));
 
         // Search products
         let productsQuery = supabase
