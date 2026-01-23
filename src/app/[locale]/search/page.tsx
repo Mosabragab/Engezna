@@ -88,74 +88,41 @@ export default function SearchPage() {
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   // Perform search
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setProviders([]);
-      setProducts([]);
-      setHasSearched(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setHasSearched(true);
-
-    try {
-      const supabase = createClient();
-      const normalizedQuery = normalizeArabicText(query);
-
-      // Search providers
-      let providersQuery = supabase
-        .from('providers')
-        .select('id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id')
-        .in('status', ['open', 'closed']);
-
-      // Location filter
-      if (cityId) {
-        providersQuery = providersQuery.eq('city_id', cityId);
-      } else if (governorateId) {
-        providersQuery = providersQuery.eq('governorate_id', governorateId);
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setProviders([]);
+        setProducts([]);
+        setHasSearched(false);
+        return;
       }
 
-      const { data: providersData } = await providersQuery;
+      setIsLoading(true);
+      setHasSearched(true);
 
-      // Filter providers client-side for better Arabic matching
-      const filteredProviders = (providersData || []).filter((p) => {
-        const nameAr = normalizeArabicText(p.name_ar || '');
-        const nameEn = (p.name_en || '').toLowerCase();
-        const descAr = normalizeArabicText(p.description_ar || '');
-        const descEn = (p.description_en || '').toLowerCase();
+      try {
+        const supabase = createClient();
+        const normalizedQuery = normalizeArabicText(query);
 
-        return (
-          nameAr.includes(normalizedQuery) ||
-          nameEn.includes(normalizedQuery) ||
-          descAr.includes(normalizedQuery) ||
-          descEn.includes(normalizedQuery)
-        );
-      });
+        // Search providers
+        let providersQuery = supabase
+          .from('providers')
+          .select(
+            'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id'
+          )
+          .in('status', ['open', 'closed']);
 
-      // Search products
-      let productsQuery = supabase
-        .from('menu_items')
-        .select(`
-          id, name_ar, name_en, description_ar, description_en, price, original_price, image_url, is_available, provider_id,
-          provider:providers!inner (id, name_ar, name_en, logo_url, status, city_id, governorate_id)
-        `)
-        .eq('is_available', true);
+        // Location filter
+        if (cityId) {
+          providersQuery = providersQuery.eq('city_id', cityId);
+        } else if (governorateId) {
+          providersQuery = providersQuery.eq('governorate_id', governorateId);
+        }
 
-      const { data: productsData } = await productsQuery;
+        const { data: providersData } = await providersQuery;
 
-      // Filter products client-side for better Arabic matching and location
-      const filteredProducts: Product[] = (productsData || [])
-        .filter((p) => {
-          const provider = p.provider as ProductProvider;
-
-          // Location filter
-          if (cityId && provider.city_id !== cityId) return false;
-          if (!cityId && governorateId && provider.governorate_id !== governorateId) return false;
-
-          // Provider must be active
-          if (!['open', 'closed'].includes(provider.status)) return false;
-
+        // Filter providers client-side for better Arabic matching
+        const filteredProviders = (providersData || []).filter((p) => {
           const nameAr = normalizeArabicText(p.name_ar || '');
           const nameEn = (p.name_en || '').toLowerCase();
           const descAr = normalizeArabicText(p.description_ar || '');
@@ -167,20 +134,60 @@ export default function SearchPage() {
             descAr.includes(normalizedQuery) ||
             descEn.includes(normalizedQuery)
           );
-        })
-        .map((p) => ({
-          ...p,
-          provider: p.provider as ProductProvider,
-        }));
+        });
 
-      setProviders(filteredProviders);
-      setProducts(filteredProducts.slice(0, 20)); // Limit to 20 products
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [cityId, governorateId]);
+        // Search products
+        let productsQuery = supabase
+          .from('menu_items')
+          .select(
+            `
+          id, name_ar, name_en, description_ar, description_en, price, original_price, image_url, is_available, provider_id,
+          provider:providers!inner (id, name_ar, name_en, logo_url, status, city_id, governorate_id)
+        `
+          )
+          .eq('is_available', true);
+
+        const { data: productsData } = await productsQuery;
+
+        // Filter products client-side for better Arabic matching and location
+        const filteredProducts: Product[] = (productsData || [])
+          .filter((p) => {
+            const provider = p.provider as ProductProvider;
+
+            // Location filter
+            if (cityId && provider.city_id !== cityId) return false;
+            if (!cityId && governorateId && provider.governorate_id !== governorateId) return false;
+
+            // Provider must be active
+            if (!['open', 'closed'].includes(provider.status)) return false;
+
+            const nameAr = normalizeArabicText(p.name_ar || '');
+            const nameEn = (p.name_en || '').toLowerCase();
+            const descAr = normalizeArabicText(p.description_ar || '');
+            const descEn = (p.description_en || '').toLowerCase();
+
+            return (
+              nameAr.includes(normalizedQuery) ||
+              nameEn.includes(normalizedQuery) ||
+              descAr.includes(normalizedQuery) ||
+              descEn.includes(normalizedQuery)
+            );
+          })
+          .map((p) => ({
+            ...p,
+            provider: p.provider as ProductProvider,
+          }));
+
+        setProviders(filteredProviders);
+        setProducts(filteredProducts.slice(0, 20)); // Limit to 20 products
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [cityId, governorateId]
+  );
 
   // Search on initial load if query exists
   useEffect(() => {
@@ -249,7 +256,9 @@ export default function SearchPage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'}
+                placeholder={
+                  locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'
+                }
                 autoFocus
                 className={`flex-1 h-11 bg-transparent outline-none px-3 ${isRTL ? 'text-right' : 'text-left'}`}
               />
@@ -381,7 +390,9 @@ export default function SearchPage() {
                       provider={provider}
                       variant="default"
                       isFavorite={isFavorite(provider.id)}
-                      onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
+                      onFavoriteToggle={
+                        isAuthenticated ? () => toggleFavorite(provider.id) : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -420,7 +431,9 @@ export default function SearchPage() {
                         {product.image_url ? (
                           <img
                             src={product.image_url}
-                            alt={locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
+                            alt={
+                              locale === 'ar' ? product.name_ar : product.name_en || product.name_ar
+                            }
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -437,7 +450,9 @@ export default function SearchPage() {
                         </h3>
                         {product.description_ar && (
                           <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
-                            {locale === 'ar' ? product.description_ar : product.description_en || product.description_ar}
+                            {locale === 'ar'
+                              ? product.description_ar
+                              : product.description_en || product.description_ar}
                           </p>
                         )}
                         <div className="flex items-center justify-between mt-2">
@@ -464,7 +479,9 @@ export default function SearchPage() {
                             <Store className="w-4 h-4 text-slate-400" />
                           )}
                           <span className="text-xs text-slate-500">
-                            {locale === 'ar' ? product.provider.name_ar : product.provider.name_en || product.provider.name_ar}
+                            {locale === 'ar'
+                              ? product.provider.name_ar
+                              : product.provider.name_en || product.provider.name_ar}
                           </span>
                         </div>
                       </div>
