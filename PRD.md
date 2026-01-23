@@ -51,7 +51,7 @@ local businesses and creating economic opportunities through fair, transparent p
 | Provider Dashboard  | ✅ 100%  | Orders, Menu, Analytics, Settlements, Store Hours      |
 | Admin Panel         | ✅ 100%  | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging    |
 | Custom Orders       | ✅ 100%  | Triple Broadcast, Voice/Image/Text, Pricing UI         |
-| AI Assistant (أحمد) | ✅ 100%  | Natural language ordering, Menu search                 |
+| AI Assistant (أحمد) | ⏸️ معطل  | معطل مؤقتاً - قيد التطوير (env: `NEXT_PUBLIC_AI_ASSISTANT_ENABLED`) |
 | Settlement System   | ✅ 100%  | COD/Online breakdown, Commission calculation           |
 | Legal Compliance    | ✅ 100%  | Privacy Policy, Terms & Conditions                     |
 | Payment Gateway     | ✅ Ready | Kashier integrated (pending activation)                |

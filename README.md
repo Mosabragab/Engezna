@@ -82,7 +82,7 @@ npm run dev
 - ✅ Customer: Browsing, Cart, Checkout, Order Tracking, Reviews, Favorites, Promo Codes
 - ✅ Provider: Dashboard, Orders, Menu Management, Analytics, Settlements
 - ✅ Admin: RBAC/ABAC Permissions, Supervisors, Tasks, Approvals, Messaging
-- ✅ AI Chat Assistant (أحمد) - Natural language ordering
+- ⏸️ AI Chat Assistant (أحمد) - Natural language ordering **(معطل مؤقتاً - قيد التطوير)**
 - ✅ Custom Order System (Triple Broadcast) - Voice/Image/Text orders
 - ✅ **Security:** Rate Limiting, XSS Protection, Zod Validation
 - ✅ **Monitoring:** Sentry Error Tracking, Vercel Analytics
@@ -190,7 +190,7 @@ npm run dev
 - ✅ العميل: التصفح، العربة، الدفع، تتبع الطلبات، التقييمات، المفضلة، أكواد الخصم
 - ✅ المتجر: لوحة التحكم، الطلبات، إدارة القائمة، التحليلات، التسويات
 - ✅ الإدارة: نظام الصلاحيات، المشرفين، المهام، الموافقات، الرسائل
-- ✅ المساعد الذكي (أحمد) - الطلب بالدردشة
+- ⏸️ المساعد الذكي (أحمد) - الطلب بالدردشة **(معطل مؤقتاً - قيد التطوير)**
 - ✅ نظام الطلبات الخاصة (Triple Broadcast) - صوت/صور/نص
 - ✅ **الأمان:** Rate Limiting، حماية XSS، Zod Validation
 - ✅ **المراقبة:** Sentry لتتبع الأخطاء، Vercel Analytics
