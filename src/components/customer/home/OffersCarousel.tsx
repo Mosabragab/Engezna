@@ -743,7 +743,6 @@ export function OffersCarousel({
               className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
             >
               {locale === 'ar' ? 'عرض الكل' : 'View All'}
-              <span className={`${locale === 'ar' ? 'rotate-180' : ''}`}>→</span>
             </button>
           )}
 
