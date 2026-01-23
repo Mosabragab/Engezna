@@ -287,12 +287,12 @@ export default function HomePage() {
   }, []);
 
   const handleSearchClick = useCallback(() => {
-    router.push(`/${locale}/providers`);
+    router.push(`/${locale}/search`);
   }, [router, locale]);
 
   const handleSearch = useCallback(
     (query: string) => {
-      router.push(`/${locale}/providers?search=${encodeURIComponent(query)}`);
+      router.push(`/${locale}/search?q=${encodeURIComponent(query)}`);
     },
     [router, locale]
   );

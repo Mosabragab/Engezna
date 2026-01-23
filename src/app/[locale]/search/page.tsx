@@ -1,0 +1,472 @@
+'use client';
+
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useLocale } from 'next-intl';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { CustomerLayout } from '@/components/customer/layout';
+import { ProviderCard, ProductCard, EmptyState } from '@/components/customer/shared';
+import { useUserLocation } from '@/lib/contexts';
+import { useFavorites } from '@/hooks/customer';
+import { Search, X, Store, ShoppingBag, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+
+interface Provider {
+  id: string;
+  name_ar: string;
+  name_en: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string;
+  logo_url: string | null;
+  cover_image_url: string | null;
+  rating: number;
+  total_reviews: number;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
+  status: string;
+  is_featured?: boolean;
+  city_id?: string;
+  governorate_id?: string;
+}
+
+interface Product {
+  id: string;
+  name_ar: string;
+  name_en: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  price: number;
+  original_price: number | null;
+  image_url: string | null;
+  is_available: boolean;
+  provider_id: string;
+  provider: {
+    id: string;
+    name_ar: string;
+    name_en: string | null;
+    logo_url: string | null;
+    status: string;
+  };
+}
+
+// Arabic text normalization for better search
+function normalizeArabicText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[ةه]/g, 'ه')
+    .replace(/[أإآا]/g, 'ا')
+    .replace(/[يى]/g, 'ي')
+    .replace(/[\u064B-\u065F]/g, '') // Remove tashkeel
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export default function SearchPage() {
+  const locale = useLocale();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') || '';
+
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [inputValue, setInputValue] = useState(initialQuery);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'stores' | 'products'>('all');
+
+  const { cityId, governorateId } = useUserLocation();
+  const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
+
+  const isRTL = locale === 'ar';
+  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+
+  // Perform search
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setProviders([]);
+      setProducts([]);
+      setHasSearched(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setHasSearched(true);
+
+    try {
+      const supabase = createClient();
+      const normalizedQuery = normalizeArabicText(query);
+
+      // Search providers
+      let providersQuery = supabase
+        .from('providers')
+        .select('id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id')
+        .in('status', ['open', 'closed']);
+
+      // Location filter
+      if (cityId) {
+        providersQuery = providersQuery.eq('city_id', cityId);
+      } else if (governorateId) {
+        providersQuery = providersQuery.eq('governorate_id', governorateId);
+      }
+
+      const { data: providersData } = await providersQuery;
+
+      // Filter providers client-side for better Arabic matching
+      const filteredProviders = (providersData || []).filter((p) => {
+        const nameAr = normalizeArabicText(p.name_ar || '');
+        const nameEn = (p.name_en || '').toLowerCase();
+        const descAr = normalizeArabicText(p.description_ar || '');
+        const descEn = (p.description_en || '').toLowerCase();
+
+        return (
+          nameAr.includes(normalizedQuery) ||
+          nameEn.includes(normalizedQuery) ||
+          descAr.includes(normalizedQuery) ||
+          descEn.includes(normalizedQuery)
+        );
+      });
+
+      // Search products
+      let productsQuery = supabase
+        .from('menu_items')
+        .select(`
+          id, name_ar, name_en, description_ar, description_en, price, original_price, image_url, is_available, provider_id,
+          provider:providers!inner (id, name_ar, name_en, logo_url, status, city_id, governorate_id)
+        `)
+        .eq('is_available', true);
+
+      const { data: productsData } = await productsQuery;
+
+      // Filter products client-side for better Arabic matching and location
+      const filteredProducts = (productsData || []).filter((p) => {
+        const provider = p.provider as any;
+
+        // Location filter
+        if (cityId && provider.city_id !== cityId) return false;
+        if (!cityId && governorateId && provider.governorate_id !== governorateId) return false;
+
+        // Provider must be active
+        if (!['open', 'closed'].includes(provider.status)) return false;
+
+        const nameAr = normalizeArabicText(p.name_ar || '');
+        const nameEn = (p.name_en || '').toLowerCase();
+        const descAr = normalizeArabicText(p.description_ar || '');
+        const descEn = (p.description_en || '').toLowerCase();
+
+        return (
+          nameAr.includes(normalizedQuery) ||
+          nameEn.includes(normalizedQuery) ||
+          descAr.includes(normalizedQuery) ||
+          descEn.includes(normalizedQuery)
+        );
+      });
+
+      setProviders(filteredProviders);
+      setProducts(filteredProducts.slice(0, 20)); // Limit to 20 products
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cityId, governorateId]);
+
+  // Search on initial load if query exists
+  useEffect(() => {
+    if (initialQuery) {
+      performSearch(initialQuery);
+    }
+  }, [initialQuery, performSearch]);
+
+  // Handle search submit
+  const handleSearch = useCallback(() => {
+    const query = inputValue.trim();
+    if (query) {
+      router.replace(`/${locale}/search?q=${encodeURIComponent(query)}`);
+      setSearchQuery(query);
+      performSearch(query);
+    }
+  }, [inputValue, locale, router, performSearch]);
+
+  // Handle key press
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // Clear search
+  const handleClear = () => {
+    setInputValue('');
+    setSearchQuery('');
+    setProviders([]);
+    setProducts([]);
+    setHasSearched(false);
+    router.replace(`/${locale}/search`);
+  };
+
+  // Navigate to product's provider
+  const handleProductClick = (product: Product) => {
+    router.push(`/${locale}/providers/${product.provider_id}?highlight=${product.id}`);
+  };
+
+  // Calculate counts
+  const storesCount = providers.length;
+  const productsCount = products.length;
+  const totalCount = storesCount + productsCount;
+
+  return (
+    <CustomerLayout showHeader={false} showBottomNav={true}>
+      {/* Custom Header with Search */}
+      <div className="sticky top-0 z-20 bg-white border-b border-slate-100 safe-area-top">
+        <div className="flex items-center gap-3 px-4 py-3">
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
+            aria-label={locale === 'ar' ? 'رجوع' : 'Back'}
+          >
+            <BackArrow className="w-5 h-5 text-slate-600" />
+          </button>
+
+          {/* Search Input */}
+          <div className="flex-1 relative">
+            <div className="flex items-center bg-slate-100 rounded-full border border-slate-200 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white focus-within:border-primary transition-all">
+              <Search className={`w-5 h-5 text-slate-400 ${isRTL ? 'mr-4' : 'ml-4'}`} />
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'}
+                autoFocus
+                className={`flex-1 h-11 bg-transparent outline-none px-3 ${isRTL ? 'text-right' : 'text-left'}`}
+              />
+              {inputValue && (
+                <button
+                  onClick={handleClear}
+                  className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 ${isRTL ? 'ml-2' : 'mr-2'}`}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search Button */}
+          <button
+            onClick={handleSearch}
+            className="px-4 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            {locale === 'ar' ? 'بحث' : 'Search'}
+          </button>
+        </div>
+
+        {/* Tabs */}
+        {hasSearched && !isLoading && totalCount > 0 && (
+          <div className="flex border-b border-slate-100">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'all'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {locale === 'ar' ? 'الكل' : 'All'} ({totalCount})
+            </button>
+            <button
+              onClick={() => setActiveTab('stores')}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                activeTab === 'stores'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Store className="w-4 h-4" />
+              {locale === 'ar' ? 'متاجر' : 'Stores'} ({storesCount})
+            </button>
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex-1 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
+                activeTab === 'products'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {locale === 'ar' ? 'منتجات' : 'Products'} ({productsCount})
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="px-4 py-4">
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Initial State - No Search Yet */}
+        {!hasSearched && !isLoading && (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+              <Search className="w-10 h-10 text-slate-400" />
+            </div>
+            <h2 className="text-lg font-semibold text-slate-700 mb-2">
+              {locale === 'ar' ? 'ابحث عن أي شيء' : 'Search for anything'}
+            </h2>
+            <p className="text-slate-500 text-sm max-w-xs">
+              {locale === 'ar'
+                ? 'ابحث في المتاجر والمنتجات المتاحة في منطقتك'
+                : 'Search stores and products available in your area'}
+            </p>
+          </div>
+        )}
+
+        {/* No Results */}
+        {hasSearched && !isLoading && totalCount === 0 && (
+          <EmptyState
+            icon="search"
+            title={locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
+            description={
+              locale === 'ar'
+                ? `لم نجد نتائج لـ "${searchQuery}". جرب كلمات أخرى`
+                : `No results for "${searchQuery}". Try different keywords`
+            }
+          />
+        )}
+
+        {/* Results */}
+        {hasSearched && !isLoading && totalCount > 0 && (
+          <div className="space-y-6">
+            {/* Stores Section */}
+            {(activeTab === 'all' || activeTab === 'stores') && storesCount > 0 && (
+              <section>
+                {activeTab === 'all' && (
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <Store className="w-5 h-5 text-primary" />
+                      {locale === 'ar' ? 'المتاجر' : 'Stores'}
+                      <span className="text-sm font-normal text-slate-500">({storesCount})</span>
+                    </h2>
+                    {storesCount > 3 && (
+                      <button
+                        onClick={() => setActiveTab('stores')}
+                        className="text-sm text-primary font-medium"
+                      >
+                        {locale === 'ar' ? 'عرض الكل' : 'View all'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(activeTab === 'all' ? providers.slice(0, 3) : providers).map((provider) => (
+                    <ProviderCard
+                      key={provider.id}
+                      provider={provider}
+                      variant="default"
+                      isFavorite={isFavorite(provider.id)}
+                      onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Products Section */}
+            {(activeTab === 'all' || activeTab === 'products') && productsCount > 0 && (
+              <section>
+                {activeTab === 'all' && (
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                      <ShoppingBag className="w-5 h-5 text-primary" />
+                      {locale === 'ar' ? 'المنتجات' : 'Products'}
+                      <span className="text-sm font-normal text-slate-500">({productsCount})</span>
+                    </h2>
+                    {productsCount > 4 && (
+                      <button
+                        onClick={() => setActiveTab('products')}
+                        className="text-sm text-primary font-medium"
+                      >
+                        {locale === 'ar' ? 'عرض الكل' : 'View all'}
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="space-y-3">
+                  {(activeTab === 'all' ? products.slice(0, 4) : products).map((product) => (
+                    <div
+                      key={product.id}
+                      onClick={() => handleProductClick(product)}
+                      className="bg-white rounded-xl border border-slate-100 p-3 flex gap-3 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
+                    >
+                      {/* Product Image */}
+                      <div className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ShoppingBag className="w-8 h-8 text-slate-300" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-900 truncate">
+                          {locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
+                        </h3>
+                        {product.description_ar && (
+                          <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
+                            {locale === 'ar' ? product.description_ar : product.description_en || product.description_ar}
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="flex items-center gap-2">
+                            {product.original_price && product.original_price > product.price && (
+                              <span className="text-xs text-slate-400 line-through">
+                                {product.original_price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </span>
+                            )}
+                            <span className="font-bold text-primary">
+                              {product.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            </span>
+                          </div>
+                        </div>
+                        {/* Provider Info */}
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          {product.provider.logo_url ? (
+                            <img
+                              src={product.provider.logo_url}
+                              alt=""
+                              className="w-4 h-4 rounded-full object-cover"
+                            />
+                          ) : (
+                            <Store className="w-4 h-4 text-slate-400" />
+                          )}
+                          <span className="text-xs text-slate-500">
+                            {locale === 'ar' ? product.provider.name_ar : product.provider.name_en || product.provider.name_ar}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+      </div>
+    </CustomerLayout>
+  );
+}
