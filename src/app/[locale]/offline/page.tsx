@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { WifiOff, RefreshCw, Phone, MessageCircle, Store } from 'lucide-react';
+import { WifiOff, RefreshCw, Phone, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Customer support contact info
 const SUPPORT_PHONE = '+201234567890'; // Replace with actual number
-const SUPPORT_WHATSAPP = '+201234567890'; // Replace with actual number
 
 interface CachedRestaurant {
   id: string;
@@ -78,11 +77,6 @@ export default function OfflinePage() {
     window.location.href = `tel:${SUPPORT_PHONE}`;
   };
 
-  const handleWhatsAppSupport = () => {
-    const message = encodeURIComponent('مرحباً، أحتاج مساعدة بخصوص طلبي');
-    window.open(`https://wa.me/${SUPPORT_WHATSAPP}?text=${message}`, '_blank');
-  };
-
   // If we're back online, redirect
   if (isOnline) {
     return (
@@ -140,16 +134,6 @@ export default function OfflinePage() {
         >
           <Phone className="w-5 h-5" />
           {t('callSupport') || 'اتصل بخدمة العملاء'}
-        </Button>
-
-        {/* WhatsApp Support Button */}
-        <Button
-          onClick={handleWhatsAppSupport}
-          variant="outline"
-          className="w-full border-green-600 text-green-400 hover:bg-green-900/20 py-4 text-lg rounded-xl flex items-center justify-center gap-3"
-        >
-          <MessageCircle className="w-5 h-5" />
-          {t('whatsappSupport') || 'تواصل عبر واتساب'}
         </Button>
       </div>
 
