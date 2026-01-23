@@ -249,8 +249,7 @@ export default function AdminSupportPage() {
         if (selectedGovernorate !== 'all') {
           // Include contact form tickets (no provider) OR tickets matching the selected governorate
           filtered = filtered.filter(
-            (t) =>
-              t.source === 'contact_form' || t.provider?.governorate_id === selectedGovernorate
+            (t) => t.source === 'contact_form' || t.provider?.governorate_id === selectedGovernorate
           );
         }
       } else if (assignedGovernorateIds.length > 0) {
@@ -258,7 +257,8 @@ export default function AdminSupportPage() {
         filtered = filtered.filter(
           (t) =>
             t.source === 'contact_form' ||
-            (t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id))
+            (t.provider?.governorate_id &&
+              assignedGovernorateIds.includes(t.provider.governorate_id))
         );
       }
     }

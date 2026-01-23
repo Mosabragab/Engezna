@@ -22,6 +22,7 @@ function generateTicketNumber(): string {
 const contactFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   email: z.string().email('Invalid email address'),
+  phone: z.string().max(20).optional(),
   inquiryType: z.enum(['general', 'complaint', 'suggestion', 'partnership']),
   message: z.string().min(10, 'Message must be at least 10 characters').max(2000),
 });
@@ -74,9 +75,10 @@ export async function POST(request: Request) {
         status: 'open',
         subject: subject,
         description: validatedData.message,
-        // New contact form fields
+        // Contact form fields
         contact_name: validatedData.name,
         contact_email: validatedData.email,
+        contact_phone: validatedData.phone || null,
       })
       .select('id, ticket_number')
       .single();
