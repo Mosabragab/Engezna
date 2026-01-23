@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -51,6 +51,10 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [showOffersOnly, setShowOffersOnly] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [productMatchedProviderIds, setProductMatchedProviderIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [isSearchingProducts, setIsSearchingProducts] = useState(false);
 
   // Update category when URL changes
   useEffect(() => {
@@ -90,7 +94,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   }, [selectedCategory, userCityId, userGovernorateId, isLocationLoading]);
 
   // Smart Arabic text normalization for search
-  const normalizeArabicText = (text: string): string => {
+  const normalizeArabicText = useCallback((text: string): string => {
     return text
       .toLowerCase()
       .replace(/[ةه]/g, 'ه')
@@ -99,7 +103,79 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       .replace(/[\u064B-\u065F]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
-  };
+  }, []);
+
+  // Search products to find providers that sell matching items
+  const searchProducts = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setProductMatchedProviderIds(new Set());
+        return;
+      }
+
+      setIsSearchingProducts(true);
+      try {
+        const supabase = createClient();
+        const normalizedQuery = normalizeArabicText(query);
+
+        // Fetch all products with their providers
+        let productsQuery = supabase
+          .from('menu_items')
+          .select(
+            'id, name_ar, name_en, description_ar, description_en, provider_id, provider:providers!inner (id, city_id, governorate_id, status)'
+          )
+          .eq('is_available', true);
+
+        const { data: productsData } = await productsQuery;
+
+        // Filter products client-side for better Arabic matching
+        const matchingProviderIds = new Set<string>();
+
+        (productsData || []).forEach((p: any) => {
+          const provider = p.provider;
+          if (!provider) return;
+
+          // Location filter
+          if (userCityId && provider.city_id !== userCityId) return;
+          if (!userCityId && userGovernorateId && provider.governorate_id !== userGovernorateId)
+            return;
+
+          // Provider must be active
+          if (!['open', 'closed'].includes(provider.status)) return;
+
+          const nameAr = normalizeArabicText(p.name_ar || '');
+          const nameEn = (p.name_en || '').toLowerCase();
+          const descAr = normalizeArabicText(p.description_ar || '');
+          const descEn = (p.description_en || '').toLowerCase();
+
+          if (
+            nameAr.includes(normalizedQuery) ||
+            nameEn.includes(normalizedQuery) ||
+            descAr.includes(normalizedQuery) ||
+            descEn.includes(normalizedQuery)
+          ) {
+            matchingProviderIds.add(p.provider_id);
+          }
+        });
+
+        setProductMatchedProviderIds(matchingProviderIds);
+      } catch (error) {
+        console.error('Product search error:', error);
+      } finally {
+        setIsSearchingProducts(false);
+      }
+    },
+    [userCityId, userGovernorateId, normalizeArabicText]
+  );
+
+  // Search products when search query changes
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      searchProducts(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, searchProducts]);
 
   // Filter and sort providers client-side
   const filteredProviders = useMemo(() => {
@@ -117,21 +193,26 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       result = result.filter((p) => p.category === selectedCategory);
     }
 
-    // Search filter
+    // Search filter - includes stores matching by name OR stores that sell matching products
     if (searchQuery) {
       const normalizedQuery = normalizeArabicText(searchQuery);
       result = result.filter((p) => {
+        // Check if provider matches by name/description
         const nameAr = normalizeArabicText(p.name_ar || '');
         const nameEn = (p.name_en || '').toLowerCase();
         const descAr = normalizeArabicText(p.description_ar || '');
         const descEn = (p.description_en || '').toLowerCase();
 
-        return (
+        const matchesByName =
           nameAr.includes(normalizedQuery) ||
           nameEn.includes(normalizedQuery) ||
           descAr.includes(normalizedQuery) ||
-          descEn.includes(normalizedQuery)
-        );
+          descEn.includes(normalizedQuery);
+
+        // Check if provider has matching products
+        const hasMatchingProducts = productMatchedProviderIds.has(p.id);
+
+        return matchesByName || hasMatchingProducts;
       });
     }
 
@@ -171,6 +252,8 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     selectedCategory,
     userCityId,
     userGovernorateId,
+    productMatchedProviderIds,
+    normalizeArabicText,
   ]);
 
   async function fetchProviders() {
@@ -298,8 +381,24 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
             value={searchQuery}
             onChange={setSearchQuery}
             onSearch={setSearchQuery}
-            placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search for a store...'}
+            placeholder={
+              locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for a store or product...'
+            }
           />
+          {/* Link to full search page */}
+          {searchQuery && (
+            <Link
+              href={`/${locale}/search?q=${encodeURIComponent(searchQuery)}`}
+              className="flex items-center justify-center gap-2 mt-2 text-sm text-primary hover:text-primary/80 transition-colors py-2"
+            >
+              <span>
+                {locale === 'ar'
+                  ? `عرض جميع نتائج البحث عن "${searchQuery}"`
+                  : `View all search results for "${searchQuery}"`}
+              </span>
+              <span className="text-xs">→</span>
+            </Link>
+          )}
         </div>
 
         {/* Category Filter */}
@@ -361,11 +460,23 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
         </div>
 
         {/* Results count */}
-        {!loading && (
+        {!loading && !isSearchingProducts && (
           <div className="text-sm text-slate-500 mb-4">
-            {locale === 'ar'
-              ? `${filteredProviders.length} متجر`
-              : `${filteredProviders.length} stores found`}
+            {searchQuery && productMatchedProviderIds.size > 0
+              ? locale === 'ar'
+                ? `${filteredProviders.length} متجر (بما في ذلك متاجر تبيع "${searchQuery}")`
+                : `${filteredProviders.length} stores (including stores selling "${searchQuery}")`
+              : locale === 'ar'
+                ? `${filteredProviders.length} متجر`
+                : `${filteredProviders.length} stores found`}
+          </div>
+        )}
+
+        {/* Searching products indicator */}
+        {isSearchingProducts && searchQuery && (
+          <div className="text-sm text-slate-500 mb-4 flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            {locale === 'ar' ? 'جاري البحث في المنتجات...' : 'Searching products...'}
           </div>
         )}
 
