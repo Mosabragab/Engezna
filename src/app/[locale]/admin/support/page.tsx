@@ -197,6 +197,7 @@ export default function AdminSupportPage() {
     // Geographic filtering
     // Super admin: filter by selected governorate (if not 'all')
     // Regional admin: filter by their assigned regions only
+    // Note: Contact form tickets (source='contact_form') have no provider, so they should always be visible
     if (adminUser) {
       const assignedGovernorateIds = (adminUser.assigned_regions || [])
         .map((r) => r.governorate_id)
@@ -205,13 +206,18 @@ export default function AdminSupportPage() {
       if (adminUser.role === 'super_admin') {
         // Super admin can filter by any governorate
         if (selectedGovernorate !== 'all') {
-          filtered = filtered.filter((t) => t.provider?.governorate_id === selectedGovernorate);
+          // Include contact form tickets (no provider) OR tickets matching the selected governorate
+          filtered = filtered.filter(
+            (t) =>
+              t.source === 'contact_form' || t.provider?.governorate_id === selectedGovernorate
+          );
         }
       } else if (assignedGovernorateIds.length > 0) {
-        // Regional admin: only show tickets from their assigned governorates
+        // Regional admin: show contact form tickets + tickets from their assigned governorates
         filtered = filtered.filter(
           (t) =>
-            t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id)
+            t.source === 'contact_form' ||
+            (t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id))
         );
       }
     }

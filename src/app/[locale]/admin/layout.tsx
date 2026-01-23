@@ -53,6 +53,8 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       }
 
       // Get open tickets count (filtered by provider's region)
+      // Note: This counts only provider-related tickets (with provider_id)
+      // Contact form tickets are counted separately in contactFormMessages
       // If regional admin has no providers in their region, show 0
       if (hasRegionFilter && regionProviderIds.length === 0) {
         setOpenTickets(0);
@@ -60,7 +62,8 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         let ticketsQuery = supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'open');
+          .eq('status', 'open')
+          .not('provider_id', 'is', null); // Only count provider-related tickets
 
         if (hasRegionFilter && regionProviderIds.length > 0) {
           ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds);
