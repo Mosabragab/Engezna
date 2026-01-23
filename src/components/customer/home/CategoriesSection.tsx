@@ -90,7 +90,6 @@ export function CategoriesSection({
             className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
           >
             {locale === 'ar' ? 'عرض الكل' : 'View All'}
-            <span className={`${locale === 'ar' ? 'rotate-180' : ''}`}>→</span>
           </button>
         )}
       </div>

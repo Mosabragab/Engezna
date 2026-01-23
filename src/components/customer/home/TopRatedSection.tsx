@@ -61,7 +61,6 @@ export function TopRatedSection({
             className="flex items-center gap-1 text-primary text-sm font-medium hover:underline min-h-[44px] min-w-[44px] justify-center"
           >
             {isRTL ? 'عرض الكل' : 'View All'}
-            {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
         )}
       </div>
