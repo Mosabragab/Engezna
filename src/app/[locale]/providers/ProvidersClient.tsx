@@ -8,8 +8,9 @@ import { CustomerLayout } from '@/components/customer/layout';
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared';
 import { ChatFAB } from '@/components/customer/voice';
 import { useFavorites } from '@/hooks/customer';
-import { Star, Clock, Percent, ArrowUpDown, MapPin } from 'lucide-react';
+import { Star, Clock, Percent, ArrowUpDown, MapPin, Navigation } from 'lucide-react';
 import { useUserLocation } from '@/lib/contexts';
+import Link from 'next/link';
 
 export type Provider = {
   id: string;
@@ -224,6 +225,36 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   const handleSortToggle = (option: SortOption) => {
     setSortBy(sortBy === option ? null : option);
   };
+
+  // Check if location is not set after loading completes
+  const noLocationSet = !isLocationLoading && !userGovernorateId && !userCityId;
+
+  // Show location required message if no location is set
+  if (noLocationSet) {
+    return (
+      <CustomerLayout showHeader={true} showBottomNav={true}>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <Navigation className="w-10 h-10 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-3">
+            {locale === 'ar' ? 'حدد موقعك أولاً' : 'Select Your Location First'}
+          </h1>
+          <p className="text-slate-500 mb-6 max-w-sm">
+            {locale === 'ar'
+              ? 'لعرض المتاجر القريبة منك، يرجى اختيار موقعك أولاً'
+              : 'To show stores near you, please select your location first'}
+          </p>
+          <Link
+            href={`/${locale}/welcome`}
+            className="bg-primary text-white px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
+          >
+            {locale === 'ar' ? 'اختيار الموقع' : 'Select Location'}
+          </Link>
+        </div>
+      </CustomerLayout>
+    );
+  }
 
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
