@@ -401,23 +401,22 @@ export function PartnerBannersCarousel({
     return () => clearInterval(timer);
   }, [autoPlay, autoPlayInterval, banners.length, isPaused, isDesktop, isHovered, isRTL]);
 
-  // Scroll to current index
+  // Scroll to current index - using scrollTo instead of scrollIntoView to avoid page jumping
   useEffect(() => {
     if (isDesktop || !scrollContainerRef.current || banners.length === 0) return;
 
     const container = scrollContainerRef.current;
-    const cards = container.querySelectorAll('[data-partner-banner-card]');
-    if (cards.length === 0) return;
-
-    const card = cards[currentIndex] as HTMLElement;
-    if (!card) return;
+    const containerWidth = container.offsetWidth;
+    const cardWidth = containerWidth * 0.85 + 16; // 85% width + 16px gap
 
     setIsAutoScrolling(true);
 
-    card.scrollIntoView({
+    // Calculate target scroll position
+    const targetScroll = currentIndex * cardWidth;
+
+    container.scrollTo({
+      left: targetScroll,
       behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
     });
 
     setScrollProgress(currentIndex);

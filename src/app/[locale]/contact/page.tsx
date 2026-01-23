@@ -35,6 +35,7 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     inquiryType: 'general' as InquiryType,
     message: '',
   });
@@ -54,6 +55,9 @@ export default function ContactPage() {
         namePlaceholder: 'اسمك الكريم',
         email: 'البريد الإلكتروني',
         emailPlaceholder: 'example@email.com',
+        phone: 'رقم الواتساب',
+        phonePlaceholder: '01xxxxxxxxx',
+        phoneHint: 'للتواصل معك بشكل أسرع (اختياري)',
         inquiryType: 'نوع الاستفسار',
         inquiryTypes: {
           general: 'استفسار عام',
@@ -127,6 +131,9 @@ export default function ContactPage() {
         namePlaceholder: 'Your name',
         email: 'Email',
         emailPlaceholder: 'example@email.com',
+        phone: 'WhatsApp Number',
+        phonePlaceholder: '01xxxxxxxxx',
+        phoneHint: 'For faster communication (optional)',
         inquiryType: 'Inquiry Type',
         inquiryTypes: {
           general: 'General Inquiry',
@@ -205,6 +212,7 @@ export default function ContactPage() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
+          phone: formData.phone,
           inquiryType: formData.inquiryType,
           message: formData.message,
         }),
@@ -215,7 +223,7 @@ export default function ContactPage() {
       }
 
       setSubmitted(true);
-      setFormData({ name: '', email: '', inquiryType: 'general', message: '' });
+      setFormData({ name: '', email: '', phone: '', inquiryType: 'general', message: '' });
     } catch {
       setError(t.form.error);
     } finally {
@@ -313,6 +321,22 @@ export default function ContactPage() {
                     dir="ltr"
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
                   />
+                </div>
+
+                {/* WhatsApp Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    {t.form.phone}
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder={t.form.phonePlaceholder}
+                    dir="ltr"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">{t.form.phoneHint}</p>
                 </div>
 
                 {/* Inquiry Type */}

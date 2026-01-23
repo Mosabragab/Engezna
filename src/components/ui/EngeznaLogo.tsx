@@ -63,7 +63,7 @@ export function EngeznaLogo({
     <>
       <div
         key={animationKey}
-        className={`relative inline-block overflow-visible ${className}`}
+        className={`relative inline-block overflow-hidden md:overflow-visible ${className}`}
         style={{ padding: showPen ? '0.5rem 1rem' : '0' }}
       >
         <span
@@ -108,6 +108,13 @@ export function EngeznaLogo({
           border-radius: 2px;
           animation: penMove-${uniqueId} 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
           z-index: 10;
+          display: none;
+        }
+
+        @media (min-width: 768px) {
+          .pen-cursor-${uniqueId} {
+            display: block;
+          }
         }
 
         @keyframes penMove-${uniqueId} {
