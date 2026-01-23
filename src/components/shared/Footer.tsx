@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { createClient } from '@/lib/supabase/client';
-import { Phone, MessageCircle, Facebook, MapPin, Mail } from 'lucide-react';
+import { Phone, Facebook, MapPin, Mail } from 'lucide-react';
 
 interface Governorate {
   id: string;
@@ -51,15 +51,6 @@ export function Footer() {
             </p>
             {/* Social - Inline */}
             <div className="flex items-center gap-2">
-              <a
-                href="https://wa.me/201XXXXXXXXX"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#25D366] hover:border-[#25D366] transition-colors"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </a>
               <a
                 href="https://facebook.com/engezna"
                 target="_blank"
@@ -172,6 +163,9 @@ export function Footer() {
             <div className="flex items-center gap-4 flex-wrap justify-center">
               <Link href={`/${locale}/about`} className="hover:text-primary transition-colors">
                 {locale === 'ar' ? 'من نحن' : 'About'}
+              </Link>
+              <Link href={`/${locale}/contact`} className="hover:text-primary transition-colors">
+                {locale === 'ar' ? 'تواصل معنا' : 'Contact'}
               </Link>
               <Link href={`/${locale}/privacy`} className="hover:text-primary transition-colors">
                 {t('privacy')}

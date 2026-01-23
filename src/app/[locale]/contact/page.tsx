@@ -9,13 +9,11 @@ import {
   ArrowRight,
   Phone,
   Mail,
-  MessageCircle,
   MapPin,
   Clock,
   HelpCircle,
   FileText,
   Home,
-  ExternalLink,
 } from 'lucide-react';
 
 export default function ContactPage() {
@@ -29,16 +27,6 @@ export default function ContactPage() {
       heroSubtitle: 'تواصل معنا بالطريقة اللي تناسبك',
       contactMethodsTitle: 'طرق التواصل',
       contactMethods: [
-        {
-          icon: MessageCircle,
-          title: 'واتساب',
-          description: 'أسرع طريقة للتواصل معنا',
-          action: 'ابدأ محادثة',
-          href: 'https://wa.me/201XXXXXXXXX',
-          color: 'text-[#25D366]',
-          bgColor: 'bg-[#25D366]/10',
-          hoverBg: 'hover:bg-[#25D366]',
-        },
         {
           icon: Mail,
           title: 'البريد الإلكتروني',
@@ -97,16 +85,6 @@ export default function ContactPage() {
       heroSubtitle: 'Reach out to us in the way that suits you best',
       contactMethodsTitle: 'Contact Methods',
       contactMethods: [
-        {
-          icon: MessageCircle,
-          title: 'WhatsApp',
-          description: 'Fastest way to reach us',
-          action: 'Start Chat',
-          href: 'https://wa.me/201XXXXXXXXX',
-          color: 'text-[#25D366]',
-          bgColor: 'bg-[#25D366]/10',
-          hoverBg: 'hover:bg-[#25D366]',
-        },
         {
           icon: Mail,
           title: 'Email',
@@ -242,9 +220,6 @@ export default function ContactPage() {
                 </p>
                 <span className="inline-flex items-center gap-2 font-semibold text-primary group-hover:text-white transition-colors">
                   {method.action}
-                  {method.href.startsWith('http') && (
-                    <ExternalLink className="w-4 h-4" strokeWidth={1.8} />
-                  )}
                 </span>
               </a>
             ))}

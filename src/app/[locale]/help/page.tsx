@@ -210,9 +210,9 @@ const FAQ_ITEMS: FAQItem[] = [
     question_ar: 'كيف أتواصل مع الدعم الفني؟',
     question_en: 'How do I contact support?',
     answer_ar:
-      'يمكنك التواصل عبر واتساب على الرقم الموجود في التطبيق، أو إرسال بريد إلكتروني إلى support@engezna.com، أو تقديم شكوى من صفحة الدعم.',
+      'يمكنك التواصل عبر صفحة تواصل معنا، أو إرسال بريد إلكتروني إلى support@engezna.com، أو تقديم شكوى من صفحة الدعم.',
     answer_en:
-      'You can contact via WhatsApp using the number in the app, email support@engezna.com, or submit a complaint from the support page.',
+      'You can contact us via the Contact page, email support@engezna.com, or submit a complaint from the support page.',
     category: 'general',
   },
 ];
@@ -298,10 +298,8 @@ export default function HelpPage() {
               </p>
             </div>
           </Link>
-          <a
-            href="https://wa.me/201XXXXXXXXX"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href={`/${locale}/contact`}
             className="flex items-center gap-3 p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors"
           >
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
@@ -309,13 +307,13 @@ export default function HelpPage() {
             </div>
             <div>
               <p className="font-semibold text-slate-900 text-sm">
-                {isArabic ? 'واتساب' : 'WhatsApp'}
+                {isArabic ? 'تواصل معنا' : 'Contact Us'}
               </p>
               <p className="text-xs text-slate-500">
-                {isArabic ? 'تواصل مباشر' : 'Direct contact'}
+                {isArabic ? 'طرق التواصل' : 'Contact methods'}
               </p>
             </div>
-          </a>
+          </Link>
         </div>
 
         {/* Categories */}
@@ -427,15 +425,13 @@ export default function HelpPage() {
             {isArabic ? 'تواصل معنا مباشرة وسنساعدك' : 'Contact us directly and we will help you'}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="https://wa.me/201XXXXXXXXX"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/${locale}/contact`}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors"
             >
               <Phone className="w-5 h-5" />
-              {isArabic ? 'واتساب' : 'WhatsApp'}
-            </a>
+              {isArabic ? 'تواصل معنا' : 'Contact Us'}
+            </Link>
             <a
               href="mailto:support@engezna.com"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"

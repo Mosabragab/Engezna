@@ -23,6 +23,8 @@ import {
   HeadphonesIcon,
   FileText,
   Shield,
+  Info,
+  MessageSquare,
 } from 'lucide-react';
 
 interface UserProfile {
@@ -126,6 +128,16 @@ export default function SettingsPage() {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
+    },
+    {
+      icon: Info,
+      label: isRTL ? 'من نحن' : 'About Us',
+      href: `/${locale}/about`,
+    },
+    {
+      icon: MessageSquare,
+      label: isRTL ? 'تواصل معنا' : 'Contact Us',
+      href: `/${locale}/contact`,
     },
     {
       icon: FileText,
