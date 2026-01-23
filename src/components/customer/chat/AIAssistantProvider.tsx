@@ -24,13 +24,11 @@ export function AIAssistantProvider({ children }: AIAssistantProviderProps) {
   const governorateId = guestLocation.governorateId;
   const cityId = guestLocation.cityId;
 
-  // If AI Assistant is disabled, just render children without chat components
-  if (!AI_ASSISTANT_ENABLED) {
-    return <>{children}</>;
-  }
-
-  // Get current user
+  // Get current user - hook must be called before any conditional returns
   useEffect(() => {
+    // Skip if AI Assistant is disabled
+    if (!AI_ASSISTANT_ENABLED) return;
+
     const supabase = createClient();
 
     const getUser = async () => {
@@ -53,6 +51,11 @@ export function AIAssistantProvider({ children }: AIAssistantProviderProps) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // If AI Assistant is disabled, just render children without chat components
+  if (!AI_ASSISTANT_ENABLED) {
+    return <>{children}</>;
+  }
 
   return (
     <>
