@@ -11,6 +11,13 @@ import { z } from 'zod';
  * This endpoint is public and doesn't require authentication.
  */
 
+// Generate unique ticket number
+function generateTicketNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `TKT-${timestamp}-${random}`;
+}
+
 // Validation schema
 const contactFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -55,9 +62,11 @@ export async function POST(request: Request) {
     const subject = `${subjectPrefixes[validatedData.inquiryType]} ${validatedData.name}`;
 
     // Create the support ticket
+    const ticketNumber = generateTicketNumber();
     const { data: ticket, error } = await supabase
       .from('support_tickets')
       .insert({
+        ticket_number: ticketNumber,
         // No user_id since this is anonymous contact form
         type: inquiryTypeMap[validatedData.inquiryType],
         source: 'contact_form',
