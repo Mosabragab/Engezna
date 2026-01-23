@@ -27,6 +27,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const [openTickets, setOpenTickets] = useState(0);
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0);
   const [pendingRefunds, setPendingRefunds] = useState(0);
+  const [contactFormMessages, setContactFormMessages] = useState(0);
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login');
@@ -114,6 +115,17 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           setPendingRefunds(refundsCount || 0);
         }
       }
+
+      // Get contact form messages count (new/open from contact form)
+      const { count: contactFormCount, error: contactFormError } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'contact_form')
+        .eq('status', 'open');
+
+      if (!contactFormError) {
+        setContactFormMessages(contactFormCount || 0);
+      }
     } catch {
       // Silently fail for badge counts - not critical
     }
@@ -151,6 +163,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           openTickets={openTickets}
           pendingBannerApprovals={pendingBannerApprovals}
           pendingRefunds={pendingRefunds}
+          contactFormMessages={contactFormMessages}
           hasMounted={hasMounted}
         />
       </div>

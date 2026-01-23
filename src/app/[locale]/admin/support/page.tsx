@@ -33,12 +33,15 @@ interface SupportTicket {
   status: string;
   priority: string;
   category: string;
+  source: string;
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
-  user_id: string;
+  user_id: string | null;
   provider_id: string | null;
   assigned_to: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
   user: { full_name: string; email: string; phone: string } | null;
   provider: { name_ar: string; name_en: string; governorate_id?: string } | null;
   assignee: { full_name: string } | null;
@@ -59,6 +62,7 @@ interface AdminUser {
 
 type FilterStatus = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
 type FilterPriority = 'all' | 'low' | 'medium' | 'high' | 'urgent';
+type FilterSource = 'all' | 'contact_form' | 'customer_app' | 'provider_app';
 
 export default function AdminSupportPage() {
   const locale = useLocale();
@@ -75,6 +79,7 @@ export default function AdminSupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
+  const [sourceFilter, setSourceFilter] = useState<FilterSource>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Geographic filtering state
@@ -89,6 +94,7 @@ export default function AdminSupportPage() {
     inProgress: 0,
     resolved: 0,
     urgent: 0,
+    contactForm: 0,
   });
 
   // Helper function - defined before useCallback that uses it
@@ -126,6 +132,7 @@ export default function AdminSupportPage() {
       const inProgress = ticketsWithCounts.filter((t) => t.status === 'in_progress').length;
       const resolved = ticketsWithCounts.filter((t) => t.status === 'resolved').length;
       const urgent = ticketsWithCounts.filter((t) => t.priority === 'urgent').length;
+      const contactForm = ticketsWithCounts.filter((t) => t.source === 'contact_form').length;
 
       setStats({
         total: ticketsWithCounts.length,
@@ -133,6 +140,7 @@ export default function AdminSupportPage() {
         inProgress,
         resolved,
         urgent,
+        contactForm,
       });
     }
   }
@@ -227,8 +235,20 @@ export default function AdminSupportPage() {
       filtered = filtered.filter((t) => t.priority === priorityFilter);
     }
 
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter((t) => t.source === sourceFilter);
+    }
+
     setFilteredTickets(filtered);
-  }, [tickets, searchQuery, statusFilter, priorityFilter, selectedGovernorate, adminUser]);
+  }, [
+    tickets,
+    searchQuery,
+    statusFilter,
+    priorityFilter,
+    sourceFilter,
+    selectedGovernorate,
+    adminUser,
+  ]);
 
   useEffect(() => {
     checkAuth();
@@ -466,6 +486,23 @@ export default function AdminSupportPage() {
               <option value="low">{locale === 'ar' ? 'منخفض' : 'Low'}</option>
             </select>
 
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as FilterSource)}
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+            >
+              <option value="all">{locale === 'ar' ? 'كل المصادر' : 'All Sources'}</option>
+              <option value="contact_form">
+                {locale === 'ar' ? 'صفحة التواصل' : 'Contact Form'}
+              </option>
+              <option value="customer_app">
+                {locale === 'ar' ? 'تطبيق العميل' : 'Customer App'}
+              </option>
+              <option value="provider_app">
+                {locale === 'ar' ? 'تطبيق المزود' : 'Provider App'}
+              </option>
+            </select>
+
             {/* Governorate Filter - Only for Super Admin */}
             {isSuperAdmin && governorates.length > 0 && (
               <div className="relative">
@@ -565,14 +602,29 @@ export default function AdminSupportPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                            <UserIcon className="w-4 h-4 text-slate-500" />
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${ticket.source === 'contact_form' ? 'bg-purple-100' : 'bg-slate-100'}`}
+                          >
+                            <UserIcon
+                              className={`w-4 h-4 ${ticket.source === 'contact_form' ? 'text-purple-500' : 'text-slate-500'}`}
+                            />
                           </div>
                           <div>
                             <p className="font-medium text-slate-900 text-sm">
-                              {ticket.user?.full_name || '-'}
+                              {ticket.source === 'contact_form'
+                                ? ticket.contact_name || '-'
+                                : ticket.user?.full_name || '-'}
                             </p>
-                            <p className="text-xs text-slate-500">{ticket.user?.email}</p>
+                            <p className="text-xs text-slate-500">
+                              {ticket.source === 'contact_form'
+                                ? ticket.contact_email
+                                : ticket.user?.email}
+                            </p>
+                            {ticket.source === 'contact_form' && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">
+                                {locale === 'ar' ? 'صفحة التواصل' : 'Contact Form'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

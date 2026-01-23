@@ -25,6 +25,7 @@ import {
   Store,
   Star,
   AlertCircle,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 
@@ -250,6 +251,9 @@ export function AdminHeader({
         return { icon: Store, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' };
       case 'review':
         return { icon: Star, bgColor: 'bg-yellow-100', iconColor: 'text-yellow-600' };
+      case 'support_ticket':
+      case 'contact_form':
+        return { icon: HeadphonesIcon, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' };
       case 'refund':
       case 'new_refund_request':
       case 'refund_escalated':
@@ -285,6 +289,8 @@ export function AdminHeader({
       notification.type === 'escalation'
     ) {
       router.push(`/${locale}/admin/refunds`);
+    } else if (notification.type === 'support_ticket' || notification.type === 'contact_form') {
+      router.push(`/${locale}/admin/support`);
     }
     // For other types, just close the dropdown without navigation
     setNotificationsOpen(false);
