@@ -99,50 +99,91 @@ export default function AdminSupportPage() {
 
   // Helper function - defined before useCallback that uses it
   async function loadTickets(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
+    // First, load all tickets without joins to ensure we get all data
+    const { data: rawTickets, error: ticketsError } = await supabase
       .from('support_tickets')
-      .select(
-        `
-        *,
-        user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
-        provider:providers(name_ar, name_en, governorate_id),
-        assignee:profiles!support_tickets_assigned_to_fkey(full_name)
-      `
-      )
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (data) {
-      const ticketsWithCounts = await Promise.all(
-        data.map(async (ticket) => {
-          const { count } = await supabase
-            .from('ticket_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('ticket_id', ticket.id);
-
-          return {
-            ...ticket,
-            messages_count: count || 0,
-          };
-        })
-      );
-
-      setTickets(ticketsWithCounts as SupportTicket[]);
-
-      const open = ticketsWithCounts.filter((t) => t.status === 'open').length;
-      const inProgress = ticketsWithCounts.filter((t) => t.status === 'in_progress').length;
-      const resolved = ticketsWithCounts.filter((t) => t.status === 'resolved').length;
-      const urgent = ticketsWithCounts.filter((t) => t.priority === 'urgent').length;
-      const contactForm = ticketsWithCounts.filter((t) => t.source === 'contact_form').length;
-
-      setStats({
-        total: ticketsWithCounts.length,
-        open,
-        inProgress,
-        resolved,
-        urgent,
-        contactForm,
-      });
+    if (ticketsError) {
+      console.error('Error loading tickets:', ticketsError);
+      return;
     }
+
+    if (!rawTickets || rawTickets.length === 0) {
+      setTickets([]);
+      setStats({ total: 0, open: 0, inProgress: 0, resolved: 0, urgent: 0, contactForm: 0 });
+      return;
+    }
+
+    // Now enrich tickets with related data
+    const ticketsWithRelations = await Promise.all(
+      rawTickets.map(async (ticket) => {
+        // Get user info if user_id exists
+        let userData = null;
+        if (ticket.user_id) {
+          const { data: user } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', ticket.user_id)
+            .single();
+          userData = user;
+        }
+
+        // Get provider info if provider_id exists
+        let providerData = null;
+        if (ticket.provider_id) {
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('name_ar, name_en, governorate_id')
+            .eq('id', ticket.provider_id)
+            .single();
+          providerData = provider;
+        }
+
+        // Get assignee info if assigned_to exists
+        let assigneeData = null;
+        if (ticket.assigned_to) {
+          const { data: assignee } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', ticket.assigned_to)
+            .single();
+          assigneeData = assignee;
+        }
+
+        // Get messages count
+        const { count: messagesCount } = await supabase
+          .from('ticket_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('ticket_id', ticket.id);
+
+        return {
+          ...ticket,
+          user: userData,
+          provider: providerData,
+          assignee: assigneeData,
+          messages_count: messagesCount || 0,
+        };
+      })
+    );
+
+    setTickets(ticketsWithRelations as SupportTicket[]);
+
+    const open = ticketsWithRelations.filter((t) => t.status === 'open').length;
+    const inProgress = ticketsWithRelations.filter((t) => t.status === 'in_progress').length;
+    const resolved = ticketsWithRelations.filter((t) => t.status === 'resolved').length;
+    const urgent = ticketsWithRelations.filter((t) => t.priority === 'urgent').length;
+    const contactForm = ticketsWithRelations.filter((t) => t.source === 'contact_form').length;
+
+    setStats({
+      total: ticketsWithRelations.length,
+      open,
+      inProgress,
+      resolved,
+      urgent,
+      contactForm,
+    });
   }
 
   const checkAuth = useCallback(async () => {
