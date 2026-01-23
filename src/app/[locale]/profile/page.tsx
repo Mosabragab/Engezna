@@ -15,7 +15,6 @@ import {
   Lock,
   Globe,
   MapPinned,
-  LogOut,
   Loader2,
   ChevronLeft,
   Phone,
@@ -220,9 +219,8 @@ export default function SettingsPage() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          className="w-full mt-4 bg-red-50 text-red-500 py-3 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+          className="w-full mt-4 bg-red-50 text-red-500 py-3 rounded-xl font-medium hover:bg-red-100 transition-colors flex items-center justify-center"
         >
-          <LogOut className="w-5 h-5" />
           {t('menu.logout')}
         </button>
       </div>
