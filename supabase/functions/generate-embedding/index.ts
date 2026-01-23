@@ -131,7 +131,7 @@ serve(async (req) => {
 
       if (error) throw error;
       itemsToProcess = (data as unknown as MenuItem[]) || [];
-      console.log(`Catchup mode: Found ${itemsToProcess.length} items without embeddings`);
+      console.warn(`Catchup mode: Found ${itemsToProcess.length} items without embeddings`);
     } else if (item_ids && item_ids.length > 0) {
       // Batch mode
       const { data, error } = await supabase
@@ -147,7 +147,7 @@ serve(async (req) => {
 
       if (error) throw error;
       itemsToProcess = (data as unknown as MenuItem[]) || [];
-      console.log(`Batch mode: Processing ${itemsToProcess.length} items`);
+      console.warn(`Batch mode: Processing ${itemsToProcess.length} items`);
     } else if (item_id) {
       // Single item mode
       const { data, error } = await supabase
@@ -166,7 +166,7 @@ serve(async (req) => {
       if (data) {
         itemsToProcess = [data as unknown as MenuItem];
       }
-      console.log(`Single mode: Processing item ${item_id}`);
+      console.warn(`Single mode: Processing item ${item_id}`);
     } else {
       throw new Error('No items specified. Provide item_id, item_ids, or mode=catchup');
     }
@@ -212,7 +212,7 @@ serve(async (req) => {
         }
 
         results.processed++;
-        console.log(`Generated embedding for item ${item.id}: ${item.name_ar}`);
+        console.warn(`Generated embedding for item ${item.id}: ${item.name_ar}`);
       } catch (itemError) {
         results.failed++;
         const errorMsg = `Item ${item.id}: ${(itemError as Error).message}`;

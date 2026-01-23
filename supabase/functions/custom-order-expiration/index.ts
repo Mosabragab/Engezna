@@ -1,5 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -275,7 +275,7 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in custom-order-expiration:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -284,7 +284,7 @@ serve(async (req) => {
 
 // Helper function to send notifications
 async function sendNotification(
-  supabase: any,
+  _supabase: SupabaseClient,
   supabaseUrl: string,
   supabaseServiceKey: string,
   payload: {
