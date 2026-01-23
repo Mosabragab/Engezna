@@ -33,12 +33,15 @@ interface SupportTicket {
   status: string;
   priority: string;
   category: string;
+  source: string;
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
-  user_id: string;
+  user_id: string | null;
   provider_id: string | null;
   assigned_to: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
   user: { full_name: string; email: string; phone: string } | null;
   provider: { name_ar: string; name_en: string; governorate_id?: string } | null;
   assignee: { full_name: string } | null;
@@ -59,6 +62,7 @@ interface AdminUser {
 
 type FilterStatus = 'all' | 'open' | 'in_progress' | 'resolved' | 'closed';
 type FilterPriority = 'all' | 'low' | 'medium' | 'high' | 'urgent';
+type FilterSource = 'all' | 'contact_form' | 'customer_app' | 'provider_app';
 
 export default function AdminSupportPage() {
   const locale = useLocale();
@@ -75,6 +79,7 @@ export default function AdminSupportPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
+  const [sourceFilter, setSourceFilter] = useState<FilterSource>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Geographic filtering state
@@ -89,52 +94,96 @@ export default function AdminSupportPage() {
     inProgress: 0,
     resolved: 0,
     urgent: 0,
+    contactForm: 0,
   });
 
   // Helper function - defined before useCallback that uses it
   async function loadTickets(supabase: ReturnType<typeof createClient>) {
-    const { data } = await supabase
+    // First, load all tickets without joins to ensure we get all data
+    const { data: rawTickets, error: ticketsError } = await supabase
       .from('support_tickets')
-      .select(
-        `
-        *,
-        user:profiles!support_tickets_user_id_fkey(full_name, email, phone),
-        provider:providers(name_ar, name_en, governorate_id),
-        assignee:profiles!support_tickets_assigned_to_fkey(full_name)
-      `
-      )
+      .select('*')
       .order('created_at', { ascending: false });
 
-    if (data) {
-      const ticketsWithCounts = await Promise.all(
-        data.map(async (ticket) => {
-          const { count } = await supabase
-            .from('ticket_messages')
-            .select('*', { count: 'exact', head: true })
-            .eq('ticket_id', ticket.id);
-
-          return {
-            ...ticket,
-            messages_count: count || 0,
-          };
-        })
-      );
-
-      setTickets(ticketsWithCounts as SupportTicket[]);
-
-      const open = ticketsWithCounts.filter((t) => t.status === 'open').length;
-      const inProgress = ticketsWithCounts.filter((t) => t.status === 'in_progress').length;
-      const resolved = ticketsWithCounts.filter((t) => t.status === 'resolved').length;
-      const urgent = ticketsWithCounts.filter((t) => t.priority === 'urgent').length;
-
-      setStats({
-        total: ticketsWithCounts.length,
-        open,
-        inProgress,
-        resolved,
-        urgent,
-      });
+    if (ticketsError) {
+      console.error('Error loading tickets:', ticketsError);
+      return;
     }
+
+    if (!rawTickets || rawTickets.length === 0) {
+      setTickets([]);
+      setStats({ total: 0, open: 0, inProgress: 0, resolved: 0, urgent: 0, contactForm: 0 });
+      return;
+    }
+
+    // Now enrich tickets with related data
+    const ticketsWithRelations = await Promise.all(
+      rawTickets.map(async (ticket) => {
+        // Get user info if user_id exists
+        let userData = null;
+        if (ticket.user_id) {
+          const { data: user } = await supabase
+            .from('profiles')
+            .select('full_name, email, phone')
+            .eq('id', ticket.user_id)
+            .single();
+          userData = user;
+        }
+
+        // Get provider info if provider_id exists
+        let providerData = null;
+        if (ticket.provider_id) {
+          const { data: provider } = await supabase
+            .from('providers')
+            .select('name_ar, name_en, governorate_id')
+            .eq('id', ticket.provider_id)
+            .single();
+          providerData = provider;
+        }
+
+        // Get assignee info if assigned_to exists
+        let assigneeData = null;
+        if (ticket.assigned_to) {
+          const { data: assignee } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', ticket.assigned_to)
+            .single();
+          assigneeData = assignee;
+        }
+
+        // Get messages count
+        const { count: messagesCount } = await supabase
+          .from('ticket_messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('ticket_id', ticket.id);
+
+        return {
+          ...ticket,
+          user: userData,
+          provider: providerData,
+          assignee: assigneeData,
+          messages_count: messagesCount || 0,
+        };
+      })
+    );
+
+    setTickets(ticketsWithRelations as SupportTicket[]);
+
+    const open = ticketsWithRelations.filter((t) => t.status === 'open').length;
+    const inProgress = ticketsWithRelations.filter((t) => t.status === 'in_progress').length;
+    const resolved = ticketsWithRelations.filter((t) => t.status === 'resolved').length;
+    const urgent = ticketsWithRelations.filter((t) => t.priority === 'urgent').length;
+    const contactForm = ticketsWithRelations.filter((t) => t.source === 'contact_form').length;
+
+    setStats({
+      total: ticketsWithRelations.length,
+      open,
+      inProgress,
+      resolved,
+      urgent,
+      contactForm,
+    });
   }
 
   const checkAuth = useCallback(async () => {
@@ -189,6 +238,7 @@ export default function AdminSupportPage() {
     // Geographic filtering
     // Super admin: filter by selected governorate (if not 'all')
     // Regional admin: filter by their assigned regions only
+    // Note: Contact form tickets (source='contact_form') have no provider, so they should always be visible
     if (adminUser) {
       const assignedGovernorateIds = (adminUser.assigned_regions || [])
         .map((r) => r.governorate_id)
@@ -197,13 +247,18 @@ export default function AdminSupportPage() {
       if (adminUser.role === 'super_admin') {
         // Super admin can filter by any governorate
         if (selectedGovernorate !== 'all') {
-          filtered = filtered.filter((t) => t.provider?.governorate_id === selectedGovernorate);
+          // Include contact form tickets (no provider) OR tickets matching the selected governorate
+          filtered = filtered.filter(
+            (t) =>
+              t.source === 'contact_form' || t.provider?.governorate_id === selectedGovernorate
+          );
         }
       } else if (assignedGovernorateIds.length > 0) {
-        // Regional admin: only show tickets from their assigned governorates
+        // Regional admin: show contact form tickets + tickets from their assigned governorates
         filtered = filtered.filter(
           (t) =>
-            t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id)
+            t.source === 'contact_form' ||
+            (t.provider?.governorate_id && assignedGovernorateIds.includes(t.provider.governorate_id))
         );
       }
     }
@@ -227,8 +282,20 @@ export default function AdminSupportPage() {
       filtered = filtered.filter((t) => t.priority === priorityFilter);
     }
 
+    if (sourceFilter !== 'all') {
+      filtered = filtered.filter((t) => t.source === sourceFilter);
+    }
+
     setFilteredTickets(filtered);
-  }, [tickets, searchQuery, statusFilter, priorityFilter, selectedGovernorate, adminUser]);
+  }, [
+    tickets,
+    searchQuery,
+    statusFilter,
+    priorityFilter,
+    sourceFilter,
+    selectedGovernorate,
+    adminUser,
+  ]);
 
   useEffect(() => {
     checkAuth();
@@ -466,6 +533,23 @@ export default function AdminSupportPage() {
               <option value="low">{locale === 'ar' ? 'منخفض' : 'Low'}</option>
             </select>
 
+            <select
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as FilterSource)}
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+            >
+              <option value="all">{locale === 'ar' ? 'كل المصادر' : 'All Sources'}</option>
+              <option value="contact_form">
+                {locale === 'ar' ? 'صفحة التواصل' : 'Contact Form'}
+              </option>
+              <option value="customer_app">
+                {locale === 'ar' ? 'تطبيق العميل' : 'Customer App'}
+              </option>
+              <option value="provider_app">
+                {locale === 'ar' ? 'تطبيق المزود' : 'Provider App'}
+              </option>
+            </select>
+
             {/* Governorate Filter - Only for Super Admin */}
             {isSuperAdmin && governorates.length > 0 && (
               <div className="relative">
@@ -565,14 +649,29 @@ export default function AdminSupportPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                            <UserIcon className="w-4 h-4 text-slate-500" />
+                          <div
+                            className={`w-8 h-8 rounded-full flex items-center justify-center ${ticket.source === 'contact_form' ? 'bg-purple-100' : 'bg-slate-100'}`}
+                          >
+                            <UserIcon
+                              className={`w-4 h-4 ${ticket.source === 'contact_form' ? 'text-purple-500' : 'text-slate-500'}`}
+                            />
                           </div>
                           <div>
                             <p className="font-medium text-slate-900 text-sm">
-                              {ticket.user?.full_name || '-'}
+                              {ticket.source === 'contact_form'
+                                ? ticket.contact_name || '-'
+                                : ticket.user?.full_name || '-'}
                             </p>
-                            <p className="text-xs text-slate-500">{ticket.user?.email}</p>
+                            <p className="text-xs text-slate-500">
+                              {ticket.source === 'contact_form'
+                                ? ticket.contact_email
+                                : ticket.user?.email}
+                            </p>
+                            {ticket.source === 'contact_form' && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-purple-100 text-purple-600 rounded-full">
+                                {locale === 'ar' ? 'صفحة التواصل' : 'Contact Form'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

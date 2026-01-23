@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { Footer } from '@/components/shared/Footer';
+import { BottomNavigation } from '@/components/customer/layout/BottomNavigation';
+import { useUserLocation } from '@/lib/contexts';
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +24,10 @@ import {
 export default function AboutPage() {
   const locale = useLocale();
   const isArabic = locale === 'ar';
+
+  // Check if user has selected location
+  const { governorateId, isLoading: isLocationLoading } = useUserLocation();
+  const hasLocation = !isLocationLoading && !!governorateId;
 
   const content = {
     ar: {
@@ -159,7 +165,7 @@ export default function AboutPage() {
   const t = isArabic ? content.ar : content.en;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen bg-white ${hasLocation ? 'pb-20 md:pb-0' : ''}`}>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100">
         <div className="container mx-auto px-4">
@@ -334,8 +340,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <Footer />
+      {/* Footer - Hidden on mobile */}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
+
+      {/* Bottom Navigation for Mobile - Only show if user has selected location */}
+      {hasLocation && <BottomNavigation />}
     </div>
   );
 }

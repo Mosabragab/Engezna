@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { createClient } from '@/lib/supabase/client';
-import { Phone, Facebook, MapPin, Mail } from 'lucide-react';
+import { Facebook, Instagram, MapPin, Mail } from 'lucide-react';
 
 interface Governorate {
   id: string;
@@ -59,6 +59,15 @@ export function Footer() {
                 aria-label="Facebook"
               >
                 <Facebook className="w-4 h-4" />
+              </a>
+              <a
+                href="https://instagram.com/engezna"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#E4405F] hover:border-[#E4405F] transition-colors"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-4 h-4" />
               </a>
               <a
                 href="mailto:support@engezna.com"
@@ -122,18 +131,17 @@ export function Footer() {
                 {t('contactUs')}
               </span>
               <a
-                href="tel:+201XXXXXXXXX"
-                className="text-slate-500 hover:text-primary transition-colors flex items-center gap-1.5"
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span dir="ltr">+20 1XX XXX XXXX</span>
-              </a>
-              <a
                 href="mailto:support@engezna.com"
                 className="text-slate-500 hover:text-primary transition-colors"
               >
                 support@engezna.com
               </a>
+              <Link
+                href={`/${locale}/contact`}
+                className="text-slate-500 hover:text-primary transition-colors"
+              >
+                {locale === 'ar' ? 'راسلنا' : 'Contact Form'}
+              </Link>
             </div>
           </div>
         </div>

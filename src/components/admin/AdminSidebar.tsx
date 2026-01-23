@@ -28,6 +28,7 @@ import {
   Image,
   Scale,
   Mail,
+  HeadphonesIcon,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -51,6 +52,7 @@ interface AdminSidebarProps {
   unreadMessages?: number;
   pendingBannerApprovals?: number;
   pendingRefunds?: number;
+  contactFormMessages?: number;
 }
 
 export function AdminSidebar({
@@ -63,6 +65,7 @@ export function AdminSidebar({
   unreadMessages = 0,
   pendingBannerApprovals = 0,
   pendingRefunds = 0,
+  contactFormMessages = 0,
   hasMounted = false,
 }: AdminSidebarProps & { hasMounted?: boolean }) {
   const locale = useLocale();
@@ -114,6 +117,16 @@ export function AdminSidebar({
       label: { ar: 'العملاء', en: 'Customers' },
       path: `/${locale}/admin/customers`,
       resource: 'customers',
+    },
+    {
+      icon: HeadphonesIcon,
+      label: { ar: 'تذاكر الدعم', en: 'Support Tickets' },
+      path: `/${locale}/admin/support`,
+      badge:
+        openTickets + contactFormMessages > 0
+          ? (openTickets + contactFormMessages).toString()
+          : undefined,
+      resource: 'support',
     },
   ];
 

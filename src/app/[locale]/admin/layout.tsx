@@ -27,6 +27,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const [openTickets, setOpenTickets] = useState(0);
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0);
   const [pendingRefunds, setPendingRefunds] = useState(0);
+  const [contactFormMessages, setContactFormMessages] = useState(0);
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login');
@@ -52,6 +53,8 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       }
 
       // Get open tickets count (filtered by provider's region)
+      // Note: This counts only provider-related tickets (with provider_id)
+      // Contact form tickets are counted separately in contactFormMessages
       // If regional admin has no providers in their region, show 0
       if (hasRegionFilter && regionProviderIds.length === 0) {
         setOpenTickets(0);
@@ -59,7 +62,8 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
         let ticketsQuery = supabase
           .from('support_tickets')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'open');
+          .eq('status', 'open')
+          .not('provider_id', 'is', null); // Only count provider-related tickets
 
         if (hasRegionFilter && regionProviderIds.length > 0) {
           ticketsQuery = ticketsQuery.in('provider_id', regionProviderIds);
@@ -114,6 +118,17 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           setPendingRefunds(refundsCount || 0);
         }
       }
+
+      // Get contact form messages count (new/open from contact form)
+      const { count: contactFormCount, error: contactFormError } = await supabase
+        .from('support_tickets')
+        .select('*', { count: 'exact', head: true })
+        .eq('source', 'contact_form')
+        .eq('status', 'open');
+
+      if (!contactFormError) {
+        setContactFormMessages(contactFormCount || 0);
+      }
     } catch {
       // Silently fail for badge counts - not critical
     }
@@ -151,6 +166,7 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           openTickets={openTickets}
           pendingBannerApprovals={pendingBannerApprovals}
           pendingRefunds={pendingRefunds}
+          contactFormMessages={contactFormMessages}
           hasMounted={hasMounted}
         />
       </div>
