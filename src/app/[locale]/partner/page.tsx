@@ -137,9 +137,9 @@ export default function PartnerLandingPage() {
                 {isRTL ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               </Link>
 
-              {/* Center - Logo with Animation */}
+              {/* Center - Logo */}
               <Link href={`/${locale}/partner`} className="absolute left-1/2 -translate-x-1/2">
-                <EngeznaLogo size="lg" showPen loop loopDelay={4000} />
+                <EngeznaLogo size="lg" static showPen={false} />
               </Link>
 
               {/* Right - Home Link */}
