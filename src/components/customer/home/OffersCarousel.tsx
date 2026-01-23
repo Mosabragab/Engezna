@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { useUserLocation } from '@/lib/contexts/LocationContext';
@@ -280,12 +281,14 @@ function BannerCard({
       {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
-          <img
+          <Image
             src={banner.image_url}
             alt=""
-            className="w-full h-full object-cover opacity-30"
-            loading="eager"
-            decoding="async"
+            fill
+            className="object-cover opacity-30"
+            sizes="(max-width: 768px) 85vw, 33vw"
+            priority={false}
+            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
@@ -369,29 +372,32 @@ function BannerCard({
 
         {/* Product Image (Unified sizing system) */}
         {!imageOnBackground && banner.image_url && (
-          <div
+          <motion.div
             className="relative flex-shrink-0 flex items-center justify-center"
             style={{
               height: sizeConfig.maxHeight,
               maxWidth: imageOnCenter ? '40%' : '35%',
               minWidth: imageOnCenter ? '30%' : '25%',
             }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
           >
-            <motion.img
+            <Image
               src={banner.image_url}
               alt={title}
+              width={200}
+              height={150}
               className="w-auto h-full max-w-full object-contain"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1, duration: 0.3 }}
-              loading="eager"
-              decoding="async"
+              sizes="(max-width: 768px) 25vw, 15vw"
+              priority={false}
+              unoptimized
               style={{
                 filter:
                   'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',
               }}
             />
-          </div>
+          </motion.div>
         )}
       </div>
     </motion.div>
@@ -708,8 +714,9 @@ export function OffersCarousel({
   }
 
   if (banners.length === 0) {
-    // Return empty placeholder to prevent CLS
-    return <div className="h-0" aria-hidden="true" />;
+    // Return null when no banners - the section simply won't render
+    // Using h-0 was causing CLS issues
+    return null;
   }
 
   // Desktop: Show 3 cards

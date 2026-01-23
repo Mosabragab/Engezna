@@ -256,7 +256,11 @@ export function ProviderHeader({
       <div className="flex items-center justify-between">
         {/* Right Side (RTL): Menu & Logo */}
         <div className="flex items-center gap-4">
-          <button onClick={onMenuClick} className="lg:hidden text-slate-500 hover:text-slate-700">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden text-slate-500 hover:text-slate-700"
+            aria-label={locale === 'ar' ? 'فتح القائمة الجانبية' : 'Open sidebar menu'}
+          >
             <Menu className="w-6 h-6" />
           </button>
 
@@ -290,7 +294,16 @@ export function ProviderHeader({
             onMouseEnter={() => setNotificationsOpen(true)}
             onMouseLeave={() => setNotificationsOpen(false)}
           >
-            <button className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95">
+            <button
+              className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-xl transition-all duration-200 active:scale-95"
+              aria-label={
+                locale === 'ar'
+                  ? `الإشعارات${unreadNotifications.length > 0 ? ` (${unreadNotifications.length} غير مقروءة)` : ''}`
+                  : `Notifications${unreadNotifications.length > 0 ? ` (${unreadNotifications.length} unread)` : ''}`
+              }
+              aria-haspopup="true"
+              aria-expanded={notificationsOpen}
+            >
               <Bell className="w-5 h-5" />
               {(totalNotifications ?? pendingOrders) > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -413,7 +426,7 @@ export function ProviderHeader({
                                     markAsRead(notification.id);
                                   }}
                                   className="p-1.5 text-slate-400 hover:text-primary rounded-full hover:bg-slate-100"
-                                  title={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
+                                  aria-label={locale === 'ar' ? 'تحديد كمقروء' : 'Mark as read'}
                                 >
                                   <Check className="w-4 h-4" />
                                 </button>
@@ -421,7 +434,7 @@ export function ProviderHeader({
                               <button
                                 onClick={(e) => deleteNotification(notification.id, e)}
                                 className="p-1.5 text-slate-400 hover:text-red-500 rounded-full hover:bg-red-50"
-                                title={locale === 'ar' ? 'حذف' : 'Delete'}
+                                aria-label={locale === 'ar' ? 'حذف الإشعار' : 'Delete notification'}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>

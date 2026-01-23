@@ -314,7 +314,11 @@ export function AdminSidebar({
                 {locale === 'ar' ? 'لوحة المشرفين' : 'Admin Panel'}
               </p>
             </Link>
-            <button onClick={onClose} className="lg:hidden text-slate-500 hover:text-slate-700">
+            <button
+              onClick={onClose}
+              className="lg:hidden text-slate-500 hover:text-slate-700"
+              aria-label={locale === 'ar' ? 'إغلاق القائمة الجانبية' : 'Close sidebar'}
+            >
               <X className="w-5 h-5" />
             </button>
           </div>

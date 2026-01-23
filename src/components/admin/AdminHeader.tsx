@@ -328,6 +328,7 @@ export function AdminHeader({
           <button
             onClick={onMenuClick}
             className="lg:hidden text-slate-500 hover:text-slate-700 transition-colors"
+            aria-label={locale === 'ar' ? 'فتح القائمة الجانبية' : 'Open sidebar menu'}
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -367,7 +368,16 @@ export function AdminHeader({
             onMouseEnter={() => setNotificationsOpen(true)}
             onMouseLeave={() => setNotificationsOpen(false)}
           >
-            <button className="relative p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors">
+            <button
+              className="relative p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors"
+              aria-label={
+                locale === 'ar'
+                  ? `الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروءة)` : ''}`
+                  : `Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`
+              }
+              aria-haspopup="true"
+              aria-expanded={notificationsOpen}
+            >
               <Bell className="w-5 h-5" />
               {(unreadCount > 0 || notificationCount > 0) && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">

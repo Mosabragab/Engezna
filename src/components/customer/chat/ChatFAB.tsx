@@ -20,6 +20,8 @@ export function ChatFAB({ onClick, isOpen, hasUnread = false, className }: ChatF
   return (
     <motion.button
       onClick={onClick}
+      aria-label={isOpen ? 'إغلاق المحادثة' : 'فتح مساعد إنجزنا الذكي'}
+      aria-expanded={isOpen}
       className={cn(
         'fixed flex items-center justify-center',
         'w-14 h-14 rounded-full shadow-lg',

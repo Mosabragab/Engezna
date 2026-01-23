@@ -3,7 +3,7 @@
 ## قائمة مراجعة جاهزية إنجزنا للإطلاق
 
 **تاريخ الإنشاء:** 2026-01-22
-**آخر تحديث:** 2026-01-22 (PWA Force Update + ISR Caching)
+**آخر تحديث:** 2026-01-23 (Lighthouse Fixes + Accessibility Improvements)
 **الحالة:** قيد المراجعة - تم إكمال: الأمان، قاعدة البيانات، الأداء، صفحات ما قبل الإطلاق، PWA (مع Force Update)، البنية التحتية، القانوني، الخصوصية، Data Export، ISR Caching
 
 > ⚠️ **ملاحظة هامة:** يجب تحديث هذا الملف مع كل مرحلة منتهية حتى الانتهاء من تنفيذ كل المراحل.
@@ -233,36 +233,46 @@
 
 ### 3.1 Frontend Performance
 
-**الحالة:** 🟡 تم القياس - يحتاج تحسين (2026-01-22)
+**الحالة:** 🟡 تم القياس - يحتاج متابعة (2026-01-23)
 
-| البند                          | الحالة   | القيمة الحالية      | الهدف   |
-| ------------------------------ | -------- | ------------------- | ------- |
-| Lighthouse Performance Score   | ⚠️ يحتاج | 52-58               | 90+     |
-| Lighthouse Accessibility Score | ⚠️ يحتاج | 77 → متوقع 85+      | 90+     |
-| Lighthouse Best Practices      | ⚠️ يحتاج | 77                  | 90+     |
-| Lighthouse SEO                 | ✅ ممتاز | 100                 | 90+     |
-| First Contentful Paint         | ⚠️ يحتاج | 2.0s                | < 1.5s  |
-| Largest Contentful Paint       | ❌ سيء   | 4.9s                | < 2.5s  |
-| Total Blocking Time            | ✅ ممتاز | 40ms                | < 200ms |
-| Cumulative Layout Shift        | ❌ سيء   | 0.322 → متوقع < 0.1 | < 0.1   |
-| Speed Index                    | ⚠️ يحتاج | 6.8s                | < 3s    |
+| البند                          | الحالة   | القيمة الحالية | الهدف   |
+| ------------------------------ | -------- | -------------- | ------- |
+| Lighthouse Performance Score   | ⚠️ يحتاج | 44             | 90+     |
+| Lighthouse Accessibility Score | 🟡 جيد   | 87             | 90+     |
+| Lighthouse Best Practices      | ⚠️ يحتاج | 77             | 90+     |
+| Lighthouse SEO                 | ✅ ممتاز | 100            | 90+     |
+| First Contentful Paint         | ⚠️ يحتاج | 3.1s           | < 1.5s  |
+| Largest Contentful Paint       | ❌ سيء   | 7.9s           | < 2.5s  |
+| Total Blocking Time            | ✅ ممتاز | 140ms          | < 200ms |
+| Cumulative Layout Shift        | ❌ سيء   | 0.33           | < 0.1   |
+| Speed Index                    | ⚠️ يحتاج | 15.8s          | < 3s    |
 
-**التحسينات المنفذة (2026-01-22):**
+**التحسينات المنفذة (2026-01-23):**
 
-- ✅ إصلاح `userScalable: false` → `true` (Accessibility +10 نقطة متوقعة)
-- ✅ استبدال `<img>` بـ `next/image` (LCP improvement متوقع)
-- ✅ إزالة animations تسبب CLS (CLS 0.322 → < 0.1 متوقع)
-- ✅ إضافة `aria-label` للأزرار (Accessibility +5 نقطة متوقعة)
-- ✅ زيادة touch targets إلى 44px (Accessibility requirement)
-- ✅ تحسين الخطوط باستخدام `next/font/google` (FCP -200-500ms متوقع)
-- ✅ إزالة render-blocking Google Fonts `<link>`
-- ✅ إضافة preconnect لـ Supabase
+- ✅ إضافة `aria-label` لـ 14 زر icon-only (Accessibility)
+  - CustomerNavbar, MerchantNavbar - Mobile menu buttons
+  - AdminHeader, ProviderHeader - Menu, notifications
+  - AdminSidebar, ProviderSidebar - Close buttons
+  - ChatFAB - AI assistant FAB
+  - SearchBar - Clear button
+- ✅ تحويل صور البانر إلى `next/image` (OffersCarousel)
+- ✅ إضافة `<main>` landmark لصفحات Auth
+- ✅ إصلاح CLS في OffersCarousel empty state
 
-**مشاكل متبقية:**
+**التحسينات السابقة (2026-01-22):**
 
-- Third-party cookies (18 cookies) - Best Practices
-- CSP/COOP headers - Best Practices
-- إعادة تفعيل ISR - Performance
+- ✅ إصلاح `userScalable: false` → `true` (Accessibility)
+- ✅ استبدال `<img>` بـ `next/image` في المكونات الأساسية
+- ✅ إضافة preconnect لـ Supabase و Google Fonts
+- ✅ تفعيل ISR للصفحات العامة
+- ✅ Force Update للـ PWA مع إشعار المستخدم
+
+**مشاكل متبقية للتحسين:**
+
+- Third-party cookies (18 cookies) - من خدمات خارجية
+- CSP/COOP headers - يمكن إضافتها لاحقاً
+- صورة البانر كبيرة (938 KiB) - تحتاج ضغط في Supabase
+- تباين الألوان في بعض العناصر - مراجعة CSS
 
 ### 3.2 Images & Assets
 
@@ -895,15 +905,15 @@
 
 **الحالة:** ✅ ممتاز (تم التحديث - 2026-01-22)
 
-| البند                           | الحالة      | ملاحظات                              |
-| ------------------------------- | ----------- | ------------------------------------ |
-| Sentry للأخطاء                  | ✅ ممتاز    | Client + Server + Edge configs       |
-| Vercel Analytics                | ✅ مكتمل    | مفعل في layout.tsx                   |
-| Vercel SpeedInsights            | ✅ مكتمل    | مفعل في layout.tsx                   |
-| Supabase Dashboard monitoring   | ✅ Supabase | Built-in                             |
-| Uptime monitoring (UptimeRobot) | ✅ جاهز     | /api/health endpoint شامل            |
-| تنبيهات للأخطاء الحرجة          | ✅ مكتمل    | Sentry alerts مع filtering           |
-| Health Check API                | ✅ مكتمل    | basic, detailed, quotas modes        |
+| البند                           | الحالة      | ملاحظات                        |
+| ------------------------------- | ----------- | ------------------------------ |
+| Sentry للأخطاء                  | ✅ ممتاز    | Client + Server + Edge configs |
+| Vercel Analytics                | ✅ مكتمل    | مفعل في layout.tsx             |
+| Vercel SpeedInsights            | ✅ مكتمل    | مفعل في layout.tsx             |
+| Supabase Dashboard monitoring   | ✅ Supabase | Built-in                       |
+| Uptime monitoring (UptimeRobot) | ✅ جاهز     | /api/health endpoint شامل      |
+| تنبيهات للأخطاء الحرجة          | ✅ مكتمل    | Sentry alerts مع filtering     |
+| Health Check API                | ✅ مكتمل    | basic, detailed, quotas modes  |
 
 **Health Check Endpoint (تم التحديث 2026-01-22):**
 
@@ -925,12 +935,12 @@
 
 **الحالة:** ✅ تم التنفيذ (2026-01-22)
 
-| البند                              | الحالة   | ملاحظات                                     |
-| ---------------------------------- | -------- | ------------------------------------------- |
-| تنبيهات Supabase عند 80% من الكوتا | ✅ مكتمل | /api/monitoring/quota-check                 |
-| تنبيهات Upstash Redis              | ✅ مكتمل | /api/monitoring/quota-check                 |
-| تنبيهات HERE Maps API              | ⚠️ يدوي  | يحتاج مراقبة من Dashboard                   |
-| تنبيهات OpenAI API                 | ⚠️ يدوي  | يحتاج مراقبة من Dashboard                   |
+| البند                              | الحالة   | ملاحظات                     |
+| ---------------------------------- | -------- | --------------------------- |
+| تنبيهات Supabase عند 80% من الكوتا | ✅ مكتمل | /api/monitoring/quota-check |
+| تنبيهات Upstash Redis              | ✅ مكتمل | /api/monitoring/quota-check |
+| تنبيهات HERE Maps API              | ⚠️ يدوي  | يحتاج مراقبة من Dashboard   |
+| تنبيهات OpenAI API                 | ⚠️ يدوي  | يحتاج مراقبة من Dashboard   |
 
 **تفاصيل التنفيذ:**
 
@@ -1007,14 +1017,14 @@
 
 ### 🟠 مهم جداً (الأسبوع الأول)
 
-| #   | المهمة                               | الحالة | الملاحظات                            |
-| --- | ------------------------------------ | ------ | ------------------------------------ |
-| 1   | Kill Switch (Feature Flag للطوارئ)   | ✅ تم  | maintenance_mode + Admin toggle      |
-| 2   | Uptime Monitoring (UptimeRobot)      | ✅ تم  | /api/health + docs/MONITORING_SETUP  |
-| 3   | Quota Alerts (Supabase, OpenAI, etc) | ✅ تم  | /api/monitoring/quota-check          |
-| 4   | اختبار Timezone/التوقيت الصيفي       | ✅ تم  | UTC storage + JSONB business_hours   |
-| 5   | Lighthouse Performance audit         | ☐      | قياس الأداء الفعلي                   |
-| 6   | ISR Caching للأداء                   | ✅ تم  | providers (5 min), detail (1 min)    |
+| #   | المهمة                               | الحالة | الملاحظات                           |
+| --- | ------------------------------------ | ------ | ----------------------------------- |
+| 1   | Kill Switch (Feature Flag للطوارئ)   | ✅ تم  | maintenance_mode + Admin toggle     |
+| 2   | Uptime Monitoring (UptimeRobot)      | ✅ تم  | /api/health + docs/MONITORING_SETUP |
+| 3   | Quota Alerts (Supabase, OpenAI, etc) | ✅ تم  | /api/monitoring/quota-check         |
+| 4   | اختبار Timezone/التوقيت الصيفي       | ✅ تم  | UTC storage + JSONB business_hours  |
+| 5   | Lighthouse Performance audit         | ☐      | قياس الأداء الفعلي                  |
+| 6   | ISR Caching للأداء                   | ✅ تم  | providers (5 min), detail (1 min)   |
 
 ### 🟡 مهم (الأسبوع الثاني)
 
