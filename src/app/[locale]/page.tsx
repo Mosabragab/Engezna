@@ -290,6 +290,13 @@ export default function HomePage() {
     router.push(`/${locale}/providers`);
   }, [router, locale]);
 
+  const handleSearch = useCallback(
+    (query: string) => {
+      router.push(`/${locale}/providers?search=${encodeURIComponent(query)}`);
+    },
+    [router, locale]
+  );
+
   const handleCategoryClick = useCallback(
     (categoryId: string) => {
       router.push(`/${locale}/providers?category=${categoryId}`);
