@@ -8,18 +8,7 @@ import { CustomerLayout } from '@/components/customer/layout';
 import { ProviderCard, ProductCard, EmptyState } from '@/components/customer/shared';
 import { useUserLocation } from '@/lib/contexts';
 import { useFavorites } from '@/hooks/customer';
-import {
-  Search,
-  X,
-  Store,
-  ShoppingBag,
-  Loader2,
-  ArrowLeft,
-  ArrowRight,
-  Plus,
-  Minus,
-  ShoppingCart,
-} from 'lucide-react';
+import { Search, X, Store, ShoppingBag, Loader2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/store/cart';
 
@@ -104,7 +93,6 @@ export default function SearchPage() {
   const { addItem, getItemQuantity, updateQuantity, provider: cartProvider } = useCart();
 
   const isRTL = locale === 'ar';
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   // Handle add to cart
   const handleAddToCart = (product: Product) => {
@@ -390,52 +378,50 @@ export default function SearchPage() {
   const totalCount = storesCount + productsCount;
 
   return (
-    <CustomerLayout showHeader={false} showBottomNav={true}>
-      {/* Custom Header with Search */}
-      <div className="sticky top-0 z-20 bg-white border-b border-slate-100 safe-area-top">
-        <div className="flex items-center gap-3 px-4 py-3">
-          {/* Back Button */}
-          <button
-            onClick={() => router.back()}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
-            aria-label={locale === 'ar' ? 'رجوع' : 'Back'}
-          >
-            <BackArrow className="w-5 h-5 text-slate-600" />
-          </button>
+    <CustomerLayout showHeader={true} showBottomNav={true}>
+      {/* Search Section */}
+      <div className="sticky top-0 z-20 bg-white border-b border-slate-100">
+        <div className="px-4 py-4">
+          {/* Page Title */}
+          <h1 className="text-xl font-bold text-slate-900 mb-3">
+            {locale === 'ar' ? 'البحث' : 'Search'}
+          </h1>
 
           {/* Search Input */}
-          <div className="flex-1 relative">
-            <div className="flex items-center bg-slate-100 rounded-full border border-slate-200 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white focus-within:border-primary transition-all">
-              <Search className={`w-5 h-5 text-slate-400 ${isRTL ? 'mr-4' : 'ml-4'}`} />
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={
-                  locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'
-                }
-                autoFocus
-                className={`flex-1 h-11 bg-transparent outline-none px-3 ${isRTL ? 'text-right' : 'text-left'}`}
-              />
-              {inputValue && (
-                <button
-                  onClick={handleClear}
-                  className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 ${isRTL ? 'ml-2' : 'mr-2'}`}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <div className="flex items-center bg-slate-100 rounded-full border border-slate-200 focus-within:ring-2 focus-within:ring-primary focus-within:bg-white focus-within:border-primary transition-all">
+                <Search className={`w-5 h-5 text-slate-400 ${isRTL ? 'mr-4' : 'ml-4'}`} />
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'
+                  }
+                  autoFocus
+                  className={`flex-1 h-11 bg-transparent outline-none px-3 ${isRTL ? 'text-right' : 'text-left'}`}
+                />
+                {inputValue && (
+                  <button
+                    onClick={handleClear}
+                    className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 ${isRTL ? 'ml-2' : 'mr-2'}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Search Button */}
-          <button
-            onClick={handleSearch}
-            className="px-4 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            {locale === 'ar' ? 'بحث' : 'Search'}
-          </button>
+            {/* Search Button */}
+            <button
+              onClick={handleSearch}
+              className="px-4 py-2.5 bg-primary text-white rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              {locale === 'ar' ? 'بحث' : 'Search'}
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
