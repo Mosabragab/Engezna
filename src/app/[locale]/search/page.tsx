@@ -31,6 +31,16 @@ interface Provider {
   governorate_id?: string;
 }
 
+interface ProductProvider {
+  id: string;
+  name_ar: string;
+  name_en: string | null;
+  logo_url: string | null;
+  status: string;
+  city_id: string | null;
+  governorate_id: string | null;
+}
+
 interface Product {
   id: string;
   name_ar: string;
@@ -42,13 +52,7 @@ interface Product {
   image_url: string | null;
   is_available: boolean;
   provider_id: string;
-  provider: {
-    id: string;
-    name_ar: string;
-    name_en: string | null;
-    logo_url: string | null;
-    status: string;
-  };
+  provider: ProductProvider;
 }
 
 // Arabic text normalization for better search
@@ -141,28 +145,33 @@ export default function SearchPage() {
       const { data: productsData } = await productsQuery;
 
       // Filter products client-side for better Arabic matching and location
-      const filteredProducts = (productsData || []).filter((p) => {
-        const provider = p.provider as any;
+      const filteredProducts: Product[] = (productsData || [])
+        .filter((p) => {
+          const provider = p.provider as ProductProvider;
 
-        // Location filter
-        if (cityId && provider.city_id !== cityId) return false;
-        if (!cityId && governorateId && provider.governorate_id !== governorateId) return false;
+          // Location filter
+          if (cityId && provider.city_id !== cityId) return false;
+          if (!cityId && governorateId && provider.governorate_id !== governorateId) return false;
 
-        // Provider must be active
-        if (!['open', 'closed'].includes(provider.status)) return false;
+          // Provider must be active
+          if (!['open', 'closed'].includes(provider.status)) return false;
 
-        const nameAr = normalizeArabicText(p.name_ar || '');
-        const nameEn = (p.name_en || '').toLowerCase();
-        const descAr = normalizeArabicText(p.description_ar || '');
-        const descEn = (p.description_en || '').toLowerCase();
+          const nameAr = normalizeArabicText(p.name_ar || '');
+          const nameEn = (p.name_en || '').toLowerCase();
+          const descAr = normalizeArabicText(p.description_ar || '');
+          const descEn = (p.description_en || '').toLowerCase();
 
-        return (
-          nameAr.includes(normalizedQuery) ||
-          nameEn.includes(normalizedQuery) ||
-          descAr.includes(normalizedQuery) ||
-          descEn.includes(normalizedQuery)
-        );
-      });
+          return (
+            nameAr.includes(normalizedQuery) ||
+            nameEn.includes(normalizedQuery) ||
+            descAr.includes(normalizedQuery) ||
+            descEn.includes(normalizedQuery)
+          );
+        })
+        .map((p) => ({
+          ...p,
+          provider: p.provider as ProductProvider,
+        }));
 
       setProviders(filteredProviders);
       setProducts(filteredProducts.slice(0, 20)); // Limit to 20 products
