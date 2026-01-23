@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { BottomNavigation } from '@/components/customer/layout/BottomNavigation';
+import { useUserLocation } from '@/lib/contexts';
 import {
   ArrowLeft,
   ArrowRight,
@@ -25,6 +26,10 @@ type InquiryType = 'general' | 'complaint' | 'suggestion' | 'partnership';
 export default function ContactPage() {
   const locale = useLocale();
   const isArabic = locale === 'ar';
+
+  // Check if user has selected location
+  const { governorateId, isLoading: isLocationLoading } = useUserLocation();
+  const hasLocation = !isLocationLoading && !!governorateId;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -219,7 +224,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white pb-20 md:pb-0">
+    <div className={`min-h-screen bg-white ${hasLocation ? 'pb-20 md:pb-0' : ''}`}>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100">
         <div className="container mx-auto px-4">
@@ -484,8 +489,8 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Bottom Navigation for Mobile */}
-      <BottomNavigation />
+      {/* Bottom Navigation for Mobile - Only show if user has selected location */}
+      {hasLocation && <BottomNavigation />}
     </div>
   );
 }
