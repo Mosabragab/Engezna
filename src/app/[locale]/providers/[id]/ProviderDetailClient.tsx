@@ -18,13 +18,15 @@ const ProductDetailModal = dynamic(
   () => import('@/components/customer/shared').then((mod) => mod.ProductDetailModal),
   { ssr: false }
 );
-const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
-  ssr: false,
-});
-const SmartAssistant = dynamic(
-  () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
-  { ssr: false }
-);
+// AI Chat components disabled for initial launch - see docs/features/AI_SMART_ASSISTANT.md
+// To re-enable, uncomment and set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true
+// const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
+//   ssr: false,
+// });
+// const SmartAssistant = dynamic(
+//   () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
+//   { ssr: false }
+// );
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout';
 import { CustomOrderWelcomeBanner } from '@/components/custom-order';
 import {
@@ -193,7 +195,8 @@ export default function ProviderDetailClient({
     currentProvider: string;
     newProvider: string;
   } | null>(null);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // AI Chat disabled - see docs/features/AI_SMART_ASSISTANT.md
+  // const [isChatOpen, setIsChatOpen] = useState(false);
   const [orderAgainItems, setOrderAgainItems] = useState<MenuItem[]>([]);
   const [showCopiedToast, setShowCopiedToast] = useState(false);
   // Popular items are initialized from server-side data (bypasses RLS)
@@ -1005,15 +1008,17 @@ export default function ProviderDetailClient({
         </div>
       )}
 
-      {/* AI Smart Assistant */}
-      <ChatFAB onClick={() => setIsChatOpen(!isChatOpen)} isOpen={isChatOpen} />
+      {/* AI Smart Assistant - Disabled for initial launch */}
+      {/* To re-enable, set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true and uncomment below */}
+      {/* See docs/features/AI_SMART_ASSISTANT.md for details */}
+      {/* <ChatFAB onClick={() => setIsChatOpen(!isChatOpen)} isOpen={isChatOpen} />
       <SmartAssistant
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         userId={userId}
         cityId={userCityId || guestCityId || provider?.city_id || undefined}
         providerContext={provider ? { id: provider.id, name: provider.name_ar } : undefined}
-      />
+      /> */}
 
       {/* Product Detail Modal */}
       {selectedProductForDetail && (

@@ -14,14 +14,15 @@ import {
 } from '@/components/customer/home';
 import dynamic from 'next/dynamic';
 
-// Lazy load chat components to reduce initial bundle size (~40KB saved)
-const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
-  ssr: false,
-});
-const SmartAssistant = dynamic(
-  () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
-  { ssr: false }
-);
+// AI Chat components disabled for initial launch - see docs/features/AI_SMART_ASSISTANT.md
+// To re-enable, uncomment the following and set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true
+// const ChatFAB = dynamic(() => import('@/components/customer/chat').then((mod) => mod.ChatFAB), {
+//   ssr: false,
+// });
+// const SmartAssistant = dynamic(
+//   () => import('@/components/customer/chat').then((mod) => mod.SmartAssistant),
+//   { ssr: false }
+// );
 import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useLocation } from '@/lib/contexts/LocationContext';
@@ -49,7 +50,8 @@ export default function HomePage() {
   // Use LocationContext for cached location data (single source of truth)
   const { userLocation, isDataLoaded, isUserLocationLoading } = useLocation();
 
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // AI Chat disabled - see docs/features/AI_SMART_ASSISTANT.md
+  // const [isChatOpen, setIsChatOpen] = useState(false);
   const [lastOrder, setLastOrder] = useState<LastOrderDisplay | null>(null);
   const [nearbyProviders, setNearbyProviders] = useState<any[]>([]);
   const [topRatedProviders, setTopRatedProviders] = useState<any[]>([]);
@@ -279,8 +281,9 @@ export default function HomePage() {
     }
   }
 
+  // AI Chat disabled - see docs/features/AI_SMART_ASSISTANT.md
   const handleChatClick = useCallback(() => {
-    setIsChatOpen(true);
+    // setIsChatOpen(true);
   }, []);
 
   const handleSearchClick = useCallback(() => {
@@ -415,8 +418,9 @@ export default function HomePage() {
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
       <div className="pb-4">
-        {/* Hero Section with Chat CTA */}
-        <HeroSection onChatClick={handleChatClick} onSearchClick={handleSearchClick} />
+        {/* Hero Section - AI Chat disabled for initial launch */}
+        {/* To re-enable AI button, pass onChatClick={handleChatClick} */}
+        <HeroSection onSearchClick={handleSearchClick} />
 
         {/* Categories */}
         <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-4" />
@@ -447,15 +451,17 @@ export default function HomePage() {
         />
       </div>
 
-      {/* AI Smart Assistant */}
-      <ChatFAB onClick={() => setIsChatOpen(!isChatOpen)} isOpen={isChatOpen} />
+      {/* AI Smart Assistant - Disabled for initial launch */}
+      {/* To re-enable, set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true and uncomment below */}
+      {/* See docs/features/AI_SMART_ASSISTANT.md for details */}
+      {/* <ChatFAB onClick={() => setIsChatOpen(!isChatOpen)} isOpen={isChatOpen} />
       <SmartAssistant
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         userId={userId}
         cityId={userLocation.cityId || undefined}
         governorateId={userLocation.governorateId || undefined}
-      />
+      /> */}
     </CustomerLayout>
   );
 }
