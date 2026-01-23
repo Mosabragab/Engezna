@@ -8,8 +8,20 @@ import { CustomerLayout } from '@/components/customer/layout';
 import { ProviderCard, ProductCard, EmptyState } from '@/components/customer/shared';
 import { useUserLocation } from '@/lib/contexts';
 import { useFavorites } from '@/hooks/customer';
-import { Search, X, Store, ShoppingBag, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import {
+  Search,
+  X,
+  Store,
+  ShoppingBag,
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
+  Plus,
+  Minus,
+  ShoppingCart,
+} from 'lucide-react';
 import Link from 'next/link';
+import { useCart } from '@/lib/store/cart';
 
 interface Provider {
   id: string;
@@ -39,6 +51,9 @@ interface ProductProvider {
   status: string;
   city_id: string | null;
   governorate_id: string | null;
+  delivery_fee: number;
+  min_order_amount: number;
+  estimated_delivery_time_min: number;
 }
 
 interface Product {
@@ -51,6 +66,9 @@ interface Product {
   original_price: number | null;
   image_url: string | null;
   is_available: boolean;
+  is_vegetarian: boolean;
+  is_spicy: boolean;
+  preparation_time_min: number;
   provider_id: string;
   provider: ProductProvider;
 }
@@ -83,9 +101,63 @@ export default function SearchPage() {
 
   const { cityId, governorateId } = useUserLocation();
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
+  const { addItem, getItemQuantity, updateQuantity, provider: cartProvider } = useCart();
 
   const isRTL = locale === 'ar';
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
+
+  // Handle add to cart
+  const handleAddToCart = (product: Product) => {
+    const menuItem = {
+      id: product.id,
+      provider_id: product.provider_id,
+      name_ar: product.name_ar,
+      name_en: product.name_en || product.name_ar,
+      description_ar: product.description_ar,
+      description_en: product.description_en,
+      price: product.price,
+      original_price: product.original_price,
+      image_url: product.image_url,
+      is_available: product.is_available,
+      is_vegetarian: product.is_vegetarian,
+      is_spicy: product.is_spicy,
+      preparation_time_min: product.preparation_time_min,
+    };
+
+    const provider = {
+      id: product.provider.id,
+      name_ar: product.provider.name_ar,
+      name_en: product.provider.name_en || product.provider.name_ar,
+      delivery_fee: product.provider.delivery_fee,
+      min_order_amount: product.provider.min_order_amount,
+      estimated_delivery_time_min: product.provider.estimated_delivery_time_min,
+    };
+
+    const result = addItem(menuItem, provider);
+
+    if (result.requiresConfirmation) {
+      // Show confirmation dialog for provider switch
+      const confirmSwitch = window.confirm(
+        locale === 'ar'
+          ? `سلتك تحتوي على منتجات من ${result.currentProviderName}. هل تريد مسح السلة وإضافة منتج من ${result.newProviderName}؟`
+          : `Your cart contains items from ${result.currentProviderName}. Do you want to clear the cart and add item from ${result.newProviderName}?`
+      );
+      if (confirmSwitch) {
+        useCart.getState().confirmProviderSwitch();
+      }
+    }
+  };
+
+  // Handle quantity change
+  const handleQuantityChange = (product: Product, newQuantity: number) => {
+    if (newQuantity === 0) {
+      updateQuantity(product.id, 0);
+    } else if (newQuantity > getItemQuantity(product.id)) {
+      handleAddToCart(product);
+    } else {
+      updateQuantity(product.id, newQuantity);
+    }
+  };
 
   // Perform search
   const performSearch = useCallback(
@@ -161,8 +233,8 @@ export default function SearchPage() {
           .from('menu_items')
           .select(
             `
-          id, name_ar, name_en, description_ar, description_en, price, original_price, image_url, is_available, provider_id,
-          provider:providers!inner (id, name_ar, name_en, logo_url, status, city_id, governorate_id)
+          id, name_ar, name_en, description_ar, description_en, price, original_price, image_url, is_available, is_vegetarian, is_spicy, preparation_time_min, provider_id,
+          provider:providers!inner (id, name_ar, name_en, logo_url, status, city_id, governorate_id, delivery_fee, min_order_amount, estimated_delivery_time_min)
         `
           )
           .eq('is_available', true);
@@ -205,8 +277,16 @@ export default function SearchPage() {
             original_price: p.original_price,
             image_url: p.image_url,
             is_available: p.is_available,
+            is_vegetarian: p.is_vegetarian || false,
+            is_spicy: p.is_spicy || false,
+            preparation_time_min: p.preparation_time_min || 15,
             provider_id: p.provider_id,
-            provider: p.provider as ProductProvider,
+            provider: {
+              ...p.provider,
+              delivery_fee: p.provider.delivery_fee || 0,
+              min_order_amount: p.provider.min_order_amount || 0,
+              estimated_delivery_time_min: p.provider.estimated_delivery_time_min || 30,
+            } as ProductProvider,
           }));
 
         // Get unique provider IDs from matching products
@@ -496,73 +576,123 @@ export default function SearchPage() {
                   </div>
                 )}
                 <div className="space-y-3">
-                  {(activeTab === 'all' ? products.slice(0, 4) : products).map((product) => (
-                    <div
-                      key={product.id}
-                      onClick={() => handleProductClick(product)}
-                      className="bg-white rounded-xl border border-slate-100 p-3 flex gap-3 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
-                    >
-                      {/* Product Image */}
-                      <div className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt={
-                              locale === 'ar' ? product.name_ar : product.name_en || product.name_ar
-                            }
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <ShoppingBag className="w-8 h-8 text-slate-300" />
-                          </div>
-                        )}
-                      </div>
+                  {(activeTab === 'all' ? products.slice(0, 4) : products).map((product) => {
+                    const quantity = getItemQuantity(product.id);
+                    return (
+                      <div
+                        key={product.id}
+                        className="bg-white rounded-xl border border-slate-100 p-3 flex gap-3 hover:border-primary/30 hover:shadow-sm transition-all"
+                      >
+                        {/* Product Image - Clickable to navigate */}
+                        <div
+                          onClick={() => handleProductClick(product)}
+                          className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 cursor-pointer"
+                        >
+                          {product.image_url ? (
+                            <img
+                              src={product.image_url}
+                              alt={
+                                locale === 'ar'
+                                  ? product.name_ar
+                                  : product.name_en || product.name_ar
+                              }
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ShoppingBag className="w-8 h-8 text-slate-300" />
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-slate-900 truncate">
-                          {locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
-                        </h3>
-                        {product.description_ar && (
-                          <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
-                            {locale === 'ar'
-                              ? product.description_ar
-                              : product.description_en || product.description_ar}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <div className="flex items-center gap-2">
-                            {product.original_price && product.original_price > product.price && (
-                              <span className="text-xs text-slate-400 line-through">
-                                {product.original_price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            onClick={() => handleProductClick(product)}
+                            className="font-semibold text-slate-900 truncate cursor-pointer hover:text-primary"
+                          >
+                            {locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
+                          </h3>
+                          {product.description_ar && (
+                            <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
+                              {locale === 'ar'
+                                ? product.description_ar
+                                : product.description_en || product.description_ar}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-2">
+                              {product.original_price && product.original_price > product.price && (
+                                <span className="text-xs text-slate-400 line-through">
+                                  {product.original_price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                </span>
+                              )}
+                              <span className="font-bold text-primary">
+                                {product.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
                               </span>
+                            </div>
+                          </div>
+                          {/* Provider Info */}
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            {product.provider.logo_url ? (
+                              <img
+                                src={product.provider.logo_url}
+                                alt=""
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              <Store className="w-4 h-4 text-slate-400" />
                             )}
-                            <span className="font-bold text-primary">
-                              {product.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                            <span className="text-xs text-slate-500">
+                              {locale === 'ar'
+                                ? product.provider.name_ar
+                                : product.provider.name_en || product.provider.name_ar}
                             </span>
                           </div>
                         </div>
-                        {/* Provider Info */}
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          {product.provider.logo_url ? (
-                            <img
-                              src={product.provider.logo_url}
-                              alt=""
-                              className="w-4 h-4 rounded-full object-cover"
-                            />
+
+                        {/* Add to Cart Button */}
+                        <div className="flex items-center flex-shrink-0">
+                          {quantity > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product, quantity - 1);
+                                }}
+                                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="w-6 text-center font-semibold text-sm">
+                                {quantity}
+                              </span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleQuantityChange(product, quantity + 1);
+                                }}
+                                className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
                           ) : (
-                            <Store className="w-4 h-4 text-slate-400" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(product);
+                              }}
+                              className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm"
+                              aria-label={locale === 'ar' ? 'أضف للسلة' : 'Add to cart'}
+                            >
+                              <ShoppingCart className="w-5 h-5" />
+                            </button>
                           )}
-                          <span className="text-xs text-slate-500">
-                            {locale === 'ar'
-                              ? product.provider.name_ar
-                              : product.provider.name_en || product.provider.name_ar}
-                          </span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
