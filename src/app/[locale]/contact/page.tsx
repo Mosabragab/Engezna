@@ -19,6 +19,7 @@ import {
   Loader2,
   CheckCircle2,
   Facebook,
+  Instagram,
 } from 'lucide-react';
 
 type InquiryType = 'general' | 'complaint' | 'suggestion' | 'partnership';
@@ -85,8 +86,15 @@ export default function ContactPage() {
           icon: Facebook,
           title: 'فيسبوك',
           description: 'تابعنا وتواصل معنا',
-          action: 'engezna',
-          href: 'https://facebook.com/engezna',
+          action: 'Engezna',
+          href: 'https://www.facebook.com/share/1FmXRBNiWp/',
+        },
+        {
+          icon: Instagram,
+          title: 'انستجرام',
+          description: 'شوف آخر الأخبار والعروض',
+          action: '@engezna.eg',
+          href: 'https://www.instagram.com/engezna.eg',
         },
       ],
       supportTitle: 'الدعم الفني',
@@ -161,8 +169,15 @@ export default function ContactPage() {
           icon: Facebook,
           title: 'Facebook',
           description: 'Follow us and get in touch',
-          action: 'engezna',
-          href: 'https://facebook.com/engezna',
+          action: 'Engezna',
+          href: 'https://www.facebook.com/share/1FmXRBNiWp/',
+        },
+        {
+          icon: Instagram,
+          title: 'Instagram',
+          description: 'See latest news and offers',
+          action: '@engezna.eg',
+          href: 'https://www.instagram.com/engezna.eg',
         },
       ],
       supportTitle: 'Technical Support',
@@ -411,7 +426,7 @@ export default function ContactPage() {
             <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{t.otherWaysTitle}</h2>
           </div>
 
-          <div className="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
             {t.contactMethods.map((method, index) => (
               <a
                 key={index}

@@ -52,7 +52,7 @@ export function Footer() {
             {/* Social - Inline */}
             <div className="flex items-center gap-2">
               <a
-                href="https://facebook.com/engezna"
+                href="https://www.facebook.com/share/1FmXRBNiWp/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#1877F2] hover:border-[#1877F2] transition-colors"
@@ -61,7 +61,7 @@ export function Footer() {
                 <Facebook className="w-4 h-4" />
               </a>
               <a
-                href="https://instagram.com/engezna"
+                href="https://www.instagram.com/engezna.eg"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-[#E4405F] hover:border-[#E4405F] transition-colors"
