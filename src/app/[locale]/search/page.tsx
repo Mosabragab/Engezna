@@ -209,7 +209,52 @@ export default function SearchPage() {
             provider: p.provider as ProductProvider,
           }));
 
-        setProviders(filteredProviders);
+        // Get unique provider IDs from matching products
+        const productProviderIds = [...new Set(filteredProducts.map((p) => p.provider_id))];
+
+        // Fetch full provider details for stores that have matching products
+        let allProviders = [...filteredProviders];
+
+        if (productProviderIds.length > 0) {
+          // Get providers that are not already in filteredProviders
+          const existingProviderIds = new Set(filteredProviders.map((p) => p.id));
+          const newProviderIds = productProviderIds.filter((id) => !existingProviderIds.has(id));
+
+          if (newProviderIds.length > 0) {
+            const { data: productProvidersData } = await supabase
+              .from('providers')
+              .select(
+                'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id'
+              )
+              .in('id', newProviderIds);
+
+            if (productProvidersData) {
+              const additionalProviders: Provider[] = productProvidersData.map((p: any) => ({
+                id: p.id,
+                name_ar: p.name_ar,
+                name_en: p.name_en || p.name_ar,
+                description_ar: p.description_ar,
+                description_en: p.description_en,
+                category: p.category,
+                logo_url: p.logo_url,
+                cover_image_url: p.cover_image_url,
+                rating: p.rating || 0,
+                total_reviews: p.total_reviews || 0,
+                delivery_fee: p.delivery_fee || 0,
+                min_order_amount: p.min_order_amount || 0,
+                estimated_delivery_time_min: p.estimated_delivery_time_min || 30,
+                status: p.status as Provider['status'],
+                is_featured: p.is_featured,
+                city_id: p.city_id,
+                governorate_id: p.governorate_id,
+              }));
+
+              allProviders = [...filteredProviders, ...additionalProviders];
+            }
+          }
+        }
+
+        setProviders(allProviders);
         setProducts(filteredProducts.slice(0, 20)); // Limit to 20 products
       } catch (error) {
         console.error('Search error:', error);
