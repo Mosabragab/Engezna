@@ -15,11 +15,7 @@ interface HeroSectionProps {
  * Hero Section for the homepage with search functionality
  * Design: Elegant gradient with floating search bar - "Elegant Simplicity"
  */
-export function HeroSection({
-  onSearch,
-  onSearchClick,
-  className = '',
-}: HeroSectionProps) {
+export function HeroSection({ onSearch, onSearchClick, className = '' }: HeroSectionProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,11 +67,7 @@ export function HeroSection({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={
-                  isRTL
-                    ? 'ابحث عن متجر أو منتج...'
-                    : 'Search for a store or product...'
-                }
+                placeholder={isRTL ? 'ابحث عن متجر أو منتج...' : 'Search for a store or product...'}
                 className={`flex-1 mx-4 bg-transparent text-slate-900 placeholder:text-slate-400 text-base outline-none ${
                   isRTL ? 'text-right' : 'text-left'
                 }`}
