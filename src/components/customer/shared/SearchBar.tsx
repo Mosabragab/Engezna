@@ -72,6 +72,7 @@ export function SearchBar({
             className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-600 ${
               isRTL ? 'ml-2' : 'mr-2'
             }`}
+            aria-label={locale === 'ar' ? 'مسح البحث' : 'Clear search'}
           >
             <X className="w-4 h-4" />
           </button>
