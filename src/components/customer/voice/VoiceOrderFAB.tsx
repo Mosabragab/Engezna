@@ -4,9 +4,13 @@ import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SmartAssistant } from '@/components/customer/chat/SmartAssistant';
+// AI Chat disabled for initial launch - see docs/features/AI_SMART_ASSISTANT.md
+// import { SmartAssistant } from '@/components/customer/chat/SmartAssistant';
 import { createClient } from '@/lib/supabase/client';
 import { useUserLocation } from '@/lib/contexts';
+
+// Feature Flag - AI Assistant disabled for initial launch
+const AI_ASSISTANT_ENABLED = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED === 'true';
 
 interface ChatFABProps {
   className?: string;
@@ -86,6 +90,11 @@ export function ChatFAB({
     setIsOpen(true);
   };
 
+  // If AI Assistant is disabled, don't render anything
+  if (!AI_ASSISTANT_ENABLED) {
+    return null;
+  }
+
   return (
     <>
       {/* Floating Action Button - only show if showFAB is true */}
@@ -115,15 +124,16 @@ export function ChatFAB({
         </>
       )}
 
-      {/* Smart Assistant Modal - NEW SYSTEM */}
-      <SmartAssistant
+      {/* Smart Assistant Modal - Disabled for initial launch */}
+      {/* To re-enable, set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true */}
+      {/* <SmartAssistant
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         userId={userId}
         cityId={cityId || undefined}
         governorateId={governorateId || undefined}
         customerName={customerName}
-      />
+      /> */}
     </>
   );
 }

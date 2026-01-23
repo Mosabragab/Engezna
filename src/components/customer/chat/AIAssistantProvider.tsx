@@ -14,12 +14,20 @@ interface AIAssistantProviderProps {
   children: React.ReactNode;
 }
 
+// Feature Flag - Set to true to enable AI Assistant
+const AI_ASSISTANT_ENABLED = process.env.NEXT_PUBLIC_AI_ASSISTANT_ENABLED === 'true';
+
 export function AIAssistantProvider({ children }: AIAssistantProviderProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [userId, setUserId] = useState<string | undefined>();
   const { location: guestLocation } = useGuestLocation();
   const governorateId = guestLocation.governorateId;
   const cityId = guestLocation.cityId;
+
+  // If AI Assistant is disabled, just render children without chat components
+  if (!AI_ASSISTANT_ENABLED) {
+    return <>{children}</>;
+  }
 
   // Get current user
   useEffect(() => {
