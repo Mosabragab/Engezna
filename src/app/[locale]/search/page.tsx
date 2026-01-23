@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CustomerLayout } from '@/components/customer/layout';
-import { ProviderCard, ProductCard, EmptyState } from '@/components/customer/shared';
+import { ProviderCard, EmptyState } from '@/components/customer/shared';
 import { useUserLocation } from '@/lib/contexts';
 import { useFavorites } from '@/hooks/customer';
 import { Search, X, Store, ShoppingBag, Loader2, Plus, Minus, ShoppingCart } from 'lucide-react';
-import Link from 'next/link';
 import { useCart } from '@/lib/store/cart';
 
 interface Provider {
@@ -90,7 +89,7 @@ export default function SearchPage() {
 
   const { cityId, governorateId } = useUserLocation();
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
-  const { addItem, getItemQuantity, updateQuantity, provider: cartProvider } = useCart();
+  const { addItem, getItemQuantity, updateQuantity } = useCart();
 
   const isRTL = locale === 'ar';
 
@@ -217,7 +216,7 @@ export default function SearchPage() {
           }));
 
         // Search products
-        let productsQuery = supabase
+        const productsQuery = supabase
           .from('menu_items')
           .select(
             `
@@ -230,7 +229,7 @@ export default function SearchPage() {
         const { data: productsData } = await productsQuery;
 
         // Filter products client-side for better Arabic matching and location
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const filteredProducts: Product[] = (productsData || [])
           .filter((p: any) => {
             const provider = p.provider;
