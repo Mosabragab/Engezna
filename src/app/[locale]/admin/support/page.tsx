@@ -80,7 +80,6 @@ export default function AdminSupportPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [priorityFilter, setPriorityFilter] = useState<FilterPriority>('all');
   const [sourceFilter, setSourceFilter] = useState<FilterSource>('all');
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Geographic filtering state
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -304,38 +303,6 @@ export default function AdminSupportPage() {
   useEffect(() => {
     filterTickets();
   }, [filterTickets]);
-
-  async function handleStatusChange(ticketId: string, newStatus: string) {
-    setActionLoading(ticketId);
-    const supabase = createClient();
-
-    try {
-      const updateData: Record<string, unknown> = { status: newStatus };
-      if (newStatus === 'resolved') {
-        updateData.resolved_at = new Date().toISOString();
-      }
-      if (newStatus === 'in_progress' && user) {
-        updateData.assigned_to = user.id;
-      }
-
-      const { error } = await supabase
-        .from('support_tickets')
-        .update(updateData)
-        .eq('id', ticketId);
-
-      if (error) {
-        console.error('Error updating ticket status:', error);
-        alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث الحالة' : 'Error updating status');
-      } else {
-        await loadTickets(supabase);
-      }
-    } catch (err) {
-      console.error('Error in handleStatusChange:', err);
-      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'Unexpected error occurred');
-    } finally {
-      setActionLoading(null);
-    }
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -715,44 +682,12 @@ export default function AdminSupportPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex items-center justify-center">
                           <Link href={`/${locale}/admin/support/${ticket.id}`}>
                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                               <Eye className="w-4 h-4 text-slate-500" />
                             </Button>
                           </Link>
-                          {ticket.status === 'open' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              onClick={() => handleStatusChange(ticket.id, 'in_progress')}
-                              disabled={actionLoading === ticket.id}
-                            >
-                              {actionLoading === ticket.id ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <span className="text-xs">{locale === 'ar' ? 'بدء' : 'Start'}</span>
-                              )}
-                            </Button>
-                          )}
-                          {ticket.status === 'in_progress' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
-                              onClick={() => handleStatusChange(ticket.id, 'resolved')}
-                              disabled={actionLoading === ticket.id}
-                            >
-                              {actionLoading === ticket.id ? (
-                                <RefreshCw className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <span className="text-xs">
-                                  {locale === 'ar' ? 'حل' : 'Resolve'}
-                                </span>
-                              )}
-                            </Button>
-                          )}
                         </div>
                       </td>
                     </tr>
