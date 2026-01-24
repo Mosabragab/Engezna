@@ -309,21 +309,32 @@ export default function AdminSupportPage() {
     setActionLoading(ticketId);
     const supabase = createClient();
 
-    const updateData: Record<string, unknown> = { status: newStatus };
-    if (newStatus === 'resolved') {
-      updateData.resolved_at = new Date().toISOString();
-    }
-    if (newStatus === 'in_progress' && user) {
-      updateData.assigned_to = user.id;
-    }
+    try {
+      const updateData: Record<string, unknown> = { status: newStatus };
+      if (newStatus === 'resolved') {
+        updateData.resolved_at = new Date().toISOString();
+      }
+      if (newStatus === 'in_progress' && user) {
+        updateData.assigned_to = user.id;
+      }
 
-    const { error } = await supabase.from('support_tickets').update(updateData).eq('id', ticketId);
+      const { error } = await supabase
+        .from('support_tickets')
+        .update(updateData)
+        .eq('id', ticketId);
 
-    if (!error) {
-      await loadTickets(supabase);
+      if (error) {
+        console.error('Error updating ticket status:', error);
+        alert(locale === 'ar' ? 'حدث خطأ أثناء تحديث الحالة' : 'Error updating status');
+      } else {
+        await loadTickets(supabase);
+      }
+    } catch (err) {
+      console.error('Error in handleStatusChange:', err);
+      alert(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'Unexpected error occurred');
+    } finally {
+      setActionLoading(null);
     }
-
-    setActionLoading(null);
   }
 
   const getStatusColor = (status: string) => {

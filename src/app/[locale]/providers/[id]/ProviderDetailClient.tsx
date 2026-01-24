@@ -519,7 +519,7 @@ export default function ProviderDetailClient({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24 md:pb-0">
       {/* Main Header */}
       <CustomerHeader />
 
