@@ -4,7 +4,7 @@ import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/shared/Footer';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
-import { WelcomeClientWrapper, LanguageToggle } from '@/components/welcome/WelcomeClientWrapper';
+import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
 import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
 import {
   MessageCircle,
@@ -152,13 +152,7 @@ export default async function WelcomePage({ params }: PageProps) {
             <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
           </div>
 
-          <div className="relative container mx-auto px-4 pt-4 pb-12">
-            {/* Header with Language Toggle */}
-            <div className="flex justify-between items-center mb-6">
-              <div /> {/* Spacer */}
-              <LanguageToggle />
-            </div>
-
+          <div className="relative container mx-auto px-4 pt-8 pb-12">
             {/* Logo */}
             <div className="flex justify-center mb-8">
               <EngeznaLogo size="lg" static showPen={false} />

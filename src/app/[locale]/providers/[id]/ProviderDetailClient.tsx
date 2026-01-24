@@ -28,6 +28,7 @@ const ProductDetailModal = dynamic(
 //   { ssr: false }
 // );
 import { BottomNavigation, CustomerHeader } from '@/components/customer/layout';
+import { Footer } from '@/components/shared/Footer';
 import { CustomOrderWelcomeBanner } from '@/components/custom-order';
 import {
   Clock,
@@ -518,7 +519,7 @@ export default function ProviderDetailClient({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24 md:pb-0">
       {/* Main Header */}
       <CustomerHeader />
 
@@ -1083,7 +1084,12 @@ export default function ProviderDetailClient({
         </div>
       )}
 
-      {/* Bottom Navigation */}
+      {/* Footer - Hidden on mobile when bottom nav is shown */}
+      <div className="hidden md:block">
+        <Footer />
+      </div>
+
+      {/* Bottom Navigation - Mobile only */}
       <BottomNavigation />
 
       {/* Copied Toast */}

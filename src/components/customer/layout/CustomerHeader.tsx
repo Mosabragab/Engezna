@@ -477,7 +477,7 @@ export const CustomerHeader = memo(function CustomerHeader({
                               {isSupportNotification(notification) && (
                                 <div className="mt-2">
                                   <Link
-                                    href={`/${locale}/profile/support`}
+                                    href={`/${locale}/profile/support${notification.data?.ticket_id ? `/${notification.data.ticket_id}` : ''}`}
                                     onClick={(e) => e.stopPropagation()}
                                     className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
                                   >
