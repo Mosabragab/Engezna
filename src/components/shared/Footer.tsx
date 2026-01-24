@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { createClient } from '@/lib/supabase/client';
-import { Facebook, Instagram, MapPin, Mail } from 'lucide-react';
+import { Facebook, Instagram, MapPin, Mail, Globe } from 'lucide-react';
 
 interface Governorate {
   id: string;
@@ -17,6 +18,8 @@ interface Governorate {
 export function Footer() {
   const locale = useLocale();
   const t = useTranslations('footer');
+  const router = useRouter();
+  const pathname = usePathname();
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
 
   useEffect(() => {
@@ -35,6 +38,24 @@ export function Footer() {
     }
     fetchGovernorates();
   }, []);
+
+  const switchLanguage = useCallback(() => {
+    const newLocale = locale === 'ar' ? 'en' : 'ar';
+    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`);
+
+    // Prevent flash during transition
+    document.documentElement.classList.add('no-transition');
+    document.documentElement.lang = newLocale;
+    document.documentElement.dir = newLocale === 'ar' ? 'rtl' : 'ltr';
+
+    router.push(newPathname);
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('no-transition');
+      });
+    });
+  }, [locale, pathname, router]);
 
   return (
     <footer className="bg-slate-50 border-t border-slate-200">
@@ -167,7 +188,7 @@ export function Footer() {
               )}
             </div>
 
-            {/* Links + Copyright */}
+            {/* Links + Language + Copyright */}
             <div className="flex items-center gap-4 flex-wrap justify-center">
               <Link href={`/${locale}/about`} className="hover:text-primary transition-colors">
                 {locale === 'ar' ? 'من نحن' : 'About'}
@@ -181,6 +202,15 @@ export function Footer() {
               <Link href={`/${locale}/terms`} className="hover:text-primary transition-colors">
                 {t('terms')}
               </Link>
+              {/* Language Switcher */}
+              <button
+                onClick={switchLanguage}
+                className="flex items-center gap-1.5 hover:text-primary transition-colors"
+                aria-label={locale === 'ar' ? 'Switch to English' : 'التبديل للعربية'}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>{locale === 'ar' ? 'English' : 'العربية'}</span>
+              </button>
               <span className="text-slate-400">
                 © 2026 {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
               </span>
