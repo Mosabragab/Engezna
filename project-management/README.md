@@ -20,9 +20,12 @@ Contains all marketing-related materials:
 - **Target Audience (ICP)** - Merchant and customer profiles
 - **Growth Strategy** - Comprehensive marketing plans
 - **Launch Plans** - City-by-city launch strategies
+- **Growth Prompts** - AI prompts for strategic planning
 - **Branding** - Visual identity and brand guidelines
+  - Brand identity guides
+  - Color palettes (banners, social media, categories)
+  - Logo kit and social media assets
 
 ## Future Additions
 - `operations/` - Operational procedures and guidelines
 - `analytics/` - Reports and dashboards
-- `legal/` - Contracts and legal documents
