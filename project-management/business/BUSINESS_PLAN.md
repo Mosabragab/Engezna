@@ -313,10 +313,10 @@
 
 - [تحليل السوق التفصيلي](../marketing/1_1_Target_Audience_Merchants_ICP.md)
 - [التحليل التنافسي](../marketing/1_4_Competitive_Analysis_Framework.md)
-- [استراتيجية التسعير](PRICING_STRATEGY.md)
+- [استراتيجية التسعير](../financial/PRICING_STRATEGY.md)
 - [المؤشرات والـ KPIs](../performance/METRICS_KPIs.md)
 - [سجل المخاطر](../performance/RISK_REGISTER.md)
-- [PRD التقني](PRODUCT_SUMMARY.md)
+- [PRD التقني](./PRODUCT_SUMMARY.md)
 
 ---
 
