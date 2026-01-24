@@ -1,0 +1,277 @@
+{
+  "name": "Engezna Knowledge Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// تعريف المستخدمين والصلاحيات\nconst USERS = {\n  // المؤسس - له صلاحية كاملة\n  \"FOUNDER_USER_ID\": {\n    name: \"Mosab\",\n    role: \"founder\",\n    files: [\"*\"]\n  },\n  // قائد الفريق\n  \"TEAM_LEADER_USER_ID\": {\n    name: \"Team Leader\",\n    role: \"team_leader\",\n    files: [\n      \"SALES_SCRIPT.md\",\n      \"TRAINING_GUIDE.md\",\n      \"ONBOARDING_CHECKLIST.md\",\n      \"PRICING_STRATEGY.md\",\n      \"SUPPORT_PLAYBOOK.md\",\n      \"QUALITY_STANDARDS.md\",\n      \"METRICS_KPIs.md\",\n      \"INCIDENT_RESPONSE.md\",\n      \"hr/README.md\"\n    ]\n  },\n  // مندوب مبيعات 1\n  \"SALES_REP_1_USER_ID\": {\n    name: \"Sales Rep 1\",\n    role: \"sales_rep\",\n    files: [\n      \"SALES_SCRIPT.md\",\n      \"TRAINING_GUIDE.md\",\n      \"ONBOARDING_CHECKLIST.md\",\n      \"PRICING_STRATEGY.md\"\n    ]\n  },\n  // مندوب مبيعات 2\n  \"SALES_REP_2_USER_ID\": {\n    name: \"Sales Rep 2\",\n    role: \"sales_rep\",\n    files: [\n      \"SALES_SCRIPT.md\",\n      \"TRAINING_GUIDE.md\",\n      \"ONBOARDING_CHECKLIST.md\",\n      \"PRICING_STRATEGY.md\"\n    ]\n  }\n};\n\n// استخراج بيانات الرسالة\nconst message = $input.first().json.message;\nconst userId = String(message.from.id);\nconst userName = message.from.first_name || 'Unknown';\nconst chatId = message.chat.id;\nconst text = message.text || '';\nconst botUsername = '@engezna_assistant_bot';\n\n// التحقق من أن الرسالة موجهة للبوت\nconst isMentioned = text.includes(botUsername);\nconst isPrivateChat = message.chat.type === 'private';\n\nif (!isMentioned && !isPrivateChat) {\n  return [{ json: { skip: true, reason: 'Not mentioned' } }];\n}\n\n// استخراج السؤال\nconst question = text.replace(botUsername, '').trim();\n\nif (!question) {\n  return [{ json: { skip: true, reason: 'Empty question' } }];\n}\n\n// التحقق من الصلاحيات\nconst user = USERS[userId];\n\nif (!user) {\n  return [{\n    json: {\n      skip: false,\n      authorized: false,\n      chatId: chatId,\n      response: `عذراً ${userName}، ليس لديك صلاحية لاستخدام هذا البوت.\\n\\nتواصل مع المسؤول لإضافتك.`\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    skip: false,\n    authorized: true,\n    userId: userId,\n    userName: user.name,\n    userRole: user.role,\n    allowedFiles: user.files,\n    chatId: chatId,\n    question: question,\n    messageId: message.message_id\n  }\n}];"
+      },
+      "id": "check-permissions",
+      "name": "Check Permissions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "skip-condition",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-skip",
+      "name": "Should Skip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "auth-condition",
+              "leftValue": "={{ $json.authorized }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-authorized",
+      "name": "Is Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [910, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// قراءة الملفات المسموحة\nconst fs = require('fs');\nconst path = require('path');\n\nconst allowedFiles = $input.first().json.allowedFiles;\nconst knowledgeBasePath = '/knowledge_base';\n\nlet context = '';\n\n// دالة لقراءة الملفات بشكل متكرر\nfunction readFilesRecursively(dir, allowed) {\n  let content = '';\n  try {\n    const items = fs.readdirSync(dir);\n    for (const item of items) {\n      const fullPath = path.join(dir, item);\n      const stat = fs.statSync(fullPath);\n      \n      if (stat.isDirectory()) {\n        content += readFilesRecursively(fullPath, allowed);\n      } else if (item.endsWith('.md')) {\n        // التحقق من الصلاحية\n        const isAllowed = allowed.includes('*') || \n                          allowed.some(f => fullPath.includes(f));\n        \n        if (isAllowed) {\n          const fileContent = fs.readFileSync(fullPath, 'utf8');\n          content += `\\n\\n--- ${item} ---\\n${fileContent}`;\n        }\n      }\n    }\n  } catch (e) {\n    console.error('Error reading directory:', e);\n  }\n  return content;\n}\n\ncontext = readFilesRecursively(knowledgeBasePath, allowedFiles);\n\n// اقتطاع السياق لو طويل جداً (Ollama limit)\nconst maxLength = 8000;\nif (context.length > maxLength) {\n  context = context.substring(0, maxLength) + '\\n... (تم اقتطاع بعض المحتوى)';\n}\n\nreturn [{\n  json: {\n    ...$input.first().json,\n    context: context\n  }\n}];"
+      },
+      "id": "load-knowledge",
+      "name": "Load Knowledge Base",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1130, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen2.5:7b\",\n  \"prompt\": \"أنت مساعد ذكي لفريق إنجزنا (منصة توصيل في مصر). أجب على الأسئلة بناءً على المعلومات المتاحة فقط.\\n\\nقواعد مهمة:\\n1. أجب بالعربية دائماً\\n2. كن مختصراً ومباشراً\\n3. إذا لم تجد المعلومة في السياق، قل \\\"لا تتوفر لدي هذه المعلومة\\\"\\n4. استخدم تنسيق واضح (نقاط، أرقام)\\n\\nالمعلومات المتاحة:\\n{{ $json.context }}\\n\\nالسؤال: {{ $json.question }}\\n\\nالجواب:\",\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 0.3,\n    \"num_predict\": 500\n  }\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "ollama-request",
+      "name": "Ask Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1350, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json.response;\nconst originalData = $('Load Knowledge Base').first().json;\n\n// تنظيف الرد\nlet cleanResponse = response\n  .trim()\n  .replace(/^(الجواب:|الإجابة:)/i, '')\n  .trim();\n\n// إضافة توقيع\ncleanResponse += '\\n\\n---\\n_إنجزنا بوت المعرفة_';\n\nreturn [{\n  json: {\n    chatId: originalData.chatId,\n    response: cleanResponse,\n    replyToMessageId: originalData.messageId\n  }\n}];"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1570, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
+        "additionalFields": {
+          "replyToMessageId": "={{ $json.replyToMessageId }}",
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send-response",
+      "name": "Send Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1790, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.response }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "send-unauthorized",
+      "name": "Send Unauthorized",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.1,
+      "position": [1130, 500],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No Operation",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [910, 200]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Permissions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Permissions": {
+      "main": [
+        [
+          {
+            "node": "Should Skip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Skip?": {
+      "main": [
+        [
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Authorized?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Authorized?": {
+      "main": [
+        [
+          {
+            "node": "Send Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Load Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Ask Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Ollama": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Send Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2026-01-24T00:00:00.000Z",
+  "versionId": "1"
+}
