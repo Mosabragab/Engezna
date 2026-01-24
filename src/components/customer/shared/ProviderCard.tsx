@@ -65,24 +65,22 @@ export function ProviderCard({
     return (
       <Link href={`/${locale}/providers/${provider.id}`} className="block group">
         <div className="card-elegant overflow-hidden">
-          {/* 16:9 aspect ratio */}
-          <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
-            {provider.cover_image_url ? (
+          {/* Square aspect ratio for logo display */}
+          <div className="relative aspect-square bg-slate-50 img-zoom-container flex items-center justify-center p-4">
+            {provider.logo_url ? (
               <Image
-                src={provider.cover_image_url}
+                src={provider.logo_url}
                 alt={name}
                 fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover img-zoom"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                className="object-contain img-zoom p-3"
                 loading="lazy"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl">
                 <span className="text-4xl">🏪</span>
               </div>
             )}
-            {/* Gradient overlay for text clarity */}
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
             {/* Closed Overlay */}
             {isClosed && (
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
@@ -111,15 +109,15 @@ export function ProviderCard({
   return (
     <Link href={`/${locale}/providers/${provider.id}`} className="block group">
       <div className="card-product">
-        {/* Cover Image - 16:9 aspect ratio */}
-        <div className="relative aspect-[16/9] bg-slate-100 img-zoom-container">
-          {provider.cover_image_url ? (
+        {/* Logo Image - Square aspect ratio */}
+        <div className="relative aspect-square bg-slate-50 img-zoom-container flex items-center justify-center">
+          {provider.logo_url ? (
             <Image
-              src={provider.cover_image_url}
+              src={provider.logo_url}
               alt={name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              className="object-cover img-zoom"
+              className="object-contain img-zoom p-4"
               loading="lazy"
             />
           ) : (
@@ -127,9 +125,6 @@ export function ProviderCard({
               <span className="text-5xl">🏪</span>
             </div>
           )}
-
-          {/* Gradient overlay for text clarity on images */}
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
           {/* Discount Badge */}
           {hasDiscount && (
@@ -170,20 +165,6 @@ export function ProviderCard({
           >
             {isOpen ? t('open') : t('closed')}
           </div>
-
-          {/* Logo - Elegant floating */}
-          {provider.logo_url && (
-            <div className="absolute bottom-3 end-3 w-14 h-14 bg-white rounded-2xl border-2 border-white shadow-elegant overflow-hidden">
-              <Image
-                src={provider.logo_url}
-                alt={`${name} logo`}
-                width={56}
-                height={56}
-                className="object-cover"
-                loading="lazy"
-              />
-            </div>
-          )}
         </div>
 
         {/* Content */}
