@@ -258,37 +258,37 @@ http://YOUR_PUBLIC_IP:5678
 // في n8n Function Node
 const USERS = {
   // المؤسس
-  "123456789": {
-    name: "Mosab",
-    role: "founder",
-    files: ["*"] // كل الملفات
+  123456789: {
+    name: 'Mosab',
+    role: 'founder',
+    files: ['*'], // كل الملفات
   },
   // قائد الفريق
-  "987654321": {
-    name: "Team Leader",
-    role: "team_leader",
+  987654321: {
+    name: 'Team Leader',
+    role: 'team_leader',
     files: [
-      "SALES_SCRIPT.md",
-      "TRAINING_GUIDE.md",
-      "ONBOARDING_CHECKLIST.md",
-      "PRICING_STRATEGY.md",
-      "SUPPORT_PLAYBOOK.md",
-      "QUALITY_STANDARDS.md",
-      "METRICS_KPIs.md",
-      "INCIDENT_RESPONSE.md"
-    ]
+      'SALES_SCRIPT.md',
+      'TRAINING_GUIDE.md',
+      'ONBOARDING_CHECKLIST.md',
+      'PRICING_STRATEGY.md',
+      'SUPPORT_PLAYBOOK.md',
+      'QUALITY_STANDARDS.md',
+      'METRICS_KPIs.md',
+      'INCIDENT_RESPONSE.md',
+    ],
   },
   // مندوب مبيعات
-  "456789123": {
-    name: "Sales Rep",
-    role: "sales_rep",
+  456789123: {
+    name: 'Sales Rep',
+    role: 'sales_rep',
     files: [
-      "SALES_SCRIPT.md",
-      "TRAINING_GUIDE.md",
-      "ONBOARDING_CHECKLIST.md",
-      "PRICING_STRATEGY.md"
-    ]
-  }
+      'SALES_SCRIPT.md',
+      'TRAINING_GUIDE.md',
+      'ONBOARDING_CHECKLIST.md',
+      'PRICING_STRATEGY.md',
+    ],
+  },
 };
 ```
 
@@ -405,13 +405,13 @@ docker compose up -d --build
 
 ## 9. التكاليف
 
-| البند | التكلفة |
-|-------|---------|
+| البند           | التكلفة                 |
+| --------------- | ----------------------- |
 | Oracle Cloud VM | **مجاني** (Always Free) |
-| Ollama | **مجاني** (Open Source) |
-| n8n | **مجاني** (Self-hosted) |
-| Telegram Bot | **مجاني** |
-| **الإجمالي** | **$0/شهر** |
+| Ollama          | **مجاني** (Open Source) |
+| n8n             | **مجاني** (Self-hosted) |
+| Telegram Bot    | **مجاني**               |
+| **الإجمالي**    | **$0/شهر**              |
 
 ---
 
