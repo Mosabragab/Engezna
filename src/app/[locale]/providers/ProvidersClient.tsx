@@ -119,7 +119,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
         const normalizedQuery = normalizeArabicText(query);
 
         // Fetch all products with their providers
-        let productsQuery = supabase
+        const productsQuery = supabase
           .from('menu_items')
           .select(
             'id, name_ar, name_en, description_ar, description_en, provider_id, provider:providers!inner (id, city_id, governorate_id, status)'

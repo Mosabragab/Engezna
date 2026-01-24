@@ -217,7 +217,7 @@ export default function SearchPage() {
           }));
 
         // Search products
-        let productsQuery = supabase
+        const productsQuery = supabase
           .from('menu_items')
           .select(
             `
@@ -230,7 +230,7 @@ export default function SearchPage() {
         const { data: productsData } = await productsQuery;
 
         // Filter products client-side for better Arabic matching and location
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         const filteredProducts: Product[] = (productsData || [])
           .filter((p: any) => {
             const provider = p.provider;

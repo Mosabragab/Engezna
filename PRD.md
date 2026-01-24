@@ -45,16 +45,16 @@ local businesses and creating economic opportunities through fair, transparent p
 
 ### System Completion Status
 
-| System              | Status   | Details                                                |
-| ------------------- | -------- | ------------------------------------------------------ |
-| Customer Journey    | ✅ 100%  | Browsing, Cart, Checkout, Tracking, Reviews, Favorites |
-| Provider Dashboard  | ✅ 100%  | Orders, Menu, Analytics, Settlements, Store Hours      |
-| Admin Panel         | ✅ 100%  | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging    |
-| Custom Orders       | ✅ 100%  | Triple Broadcast, Voice/Image/Text, Pricing UI         |
+| System              | Status   | Details                                                             |
+| ------------------- | -------- | ------------------------------------------------------------------- |
+| Customer Journey    | ✅ 100%  | Browsing, Cart, Checkout, Tracking, Reviews, Favorites              |
+| Provider Dashboard  | ✅ 100%  | Orders, Menu, Analytics, Settlements, Store Hours                   |
+| Admin Panel         | ✅ 100%  | RBAC/ABAC, Supervisors, Tasks, Approvals, Messaging                 |
+| Custom Orders       | ✅ 100%  | Triple Broadcast, Voice/Image/Text, Pricing UI                      |
 | AI Assistant (أحمد) | ⏸️ معطل  | معطل مؤقتاً - قيد التطوير (env: `NEXT_PUBLIC_AI_ASSISTANT_ENABLED`) |
-| Settlement System   | ✅ 100%  | COD/Online breakdown, Commission calculation           |
-| Legal Compliance    | ✅ 100%  | Privacy Policy, Terms & Conditions                     |
-| Payment Gateway     | ✅ Ready | Kashier integrated (pending activation)                |
+| Settlement System   | ✅ 100%  | COD/Online breakdown, Commission calculation                        |
+| Legal Compliance    | ✅ 100%  | Privacy Policy, Terms & Conditions                                  |
+| Payment Gateway     | ✅ Ready | Kashier integrated (pending activation)                             |
 
 ### Pending Items
 
