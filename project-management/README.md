@@ -1,31 +1,99 @@
 # Project Management
 
-This folder contains all project management, operations, and business-related documentation.
+> إدارة مشروع إنجزنا - الوثائق الإدارية والتشغيلية
 
-## Structure
+**آخر تحديث:** يناير 2026
+
+---
+
+## الهيكل
 
 ```
 project-management/
-├── marketing/           # Marketing strategies, brand assets, and growth plans
-│   ├── branding/       # Brand identity, logos, and visual assets
-│   └── *.md            # Marketing documents and strategies
-└── README.md           # This file
+├── README.md                # هذا الملف
+│
+├── marketing/               # التسويق والنمو
+│   ├── branding/           # الهوية البصرية
+│   ├── 0_0_Financial_Parameters.md
+│   ├── 1_*_Target_Audience_*.md
+│   ├── 2_*_Launch_*.md
+│   ├── 3_*_Growth_*.md
+│   └── 4_*_Customer_*.md
+│
+├── operations/              # العمليات والتشغيل
+│   ├── merchant-onboarding/ # ضم التجار
+│   ├── support/            # الدعم الفني
+│   ├── quality/            # ضبط الجودة
+│   └── city-expansion/     # التوسع الجغرافي
+│
+├── finance/                 # الشؤون المالية
+│   └── README.md           # الميزانية والتسويات
+│
+└── hr/                      # الموارد البشرية
+    └── README.md           # الهيكل والأدوار و KPIs
 ```
 
-## Contents
+---
 
-### marketing/
-Contains all marketing-related materials:
-- **Financial Parameters** - Budget, CAC, unit economics
-- **Target Audience (ICP)** - Merchant and customer profiles
-- **Growth Strategy** - Comprehensive marketing plans
-- **Launch Plans** - City-by-city launch strategies
-- **Growth Prompts** - AI prompts for strategic planning
-- **Branding** - Visual identity and brand guidelines
-  - Brand identity guides
-  - Color palettes (banners, social media, categories)
-  - Logo kit and social media assets
+## الأقسام
 
-## Future Additions
-- `operations/` - Operational procedures and guidelines
-- `analytics/` - Reports and dashboards
+### marketing/ - التسويق والنمو
+استراتيجيات التسويق والنمو:
+- **Financial Parameters** - الميزانية والأرقام المالية
+- **Target Audience (ICP)** - ملفات العملاء المستهدفين
+- **Growth Strategy** - خطط النمو الشاملة
+- **Launch Plans** - استراتيجيات إطلاق المدن
+- **Branding** - الهوية البصرية والألوان
+
+### operations/ - العمليات والتشغيل
+إجراءات التشغيل اليومية:
+- **Merchant Onboarding** - خطوات ضم التجار وتدريبهم
+- **Support** - دليل فريق الدعم وسيناريوهات الحل
+- **Quality** - معايير الجودة ونظام الإنذارات
+- **City Expansion** - دليل إطلاق مدينة جديدة
+
+### finance/ - الشؤون المالية
+الإدارة المالية:
+- **Budget** - الميزانية الشهرية (39,000 ج.م)
+- **Revenue Model** - نموذج الإيرادات ونظام الموجات
+- **Settlements** - آلية التسويات مع التجار
+- **Unit Economics** - اقتصاديات الوحدة
+
+### hr/ - الموارد البشرية
+إدارة الفريق:
+- **Org Structure** - الهيكل التنظيمي
+- **Roles & KPIs** - الأدوار ومؤشرات الأداء
+- **Hiring Criteria** - معايير التوظيف
+
+---
+
+## المؤشرات الرئيسية (KPIs)
+
+### أهداف بني سويف (Pilot)
+
+| المرحلة | التجار | العملاء | الطلبات/شهر |
+|---------|--------|---------|-------------|
+| رمضان (مارس) | 50-60 | - | - |
+| شهر 1 (أبريل) | 60-80 | 200-300 | 50-100 |
+| شهر 3 (يونيو) | 100-150 | 800-1,200 | 500-800 |
+
+### الميزانية الشهرية
+
+| البند | المبلغ |
+|-------|--------|
+| تكاليف تقنية | 10,000 ج.م |
+| الفريق (3 أشخاص) | 19,000 ج.م |
+| تنقلات | 2,000 ج.م |
+| تسويق | 8,000 ج.م |
+| **الإجمالي** | **39,000 ج.م** |
+
+---
+
+## الوثائق المرتبطة
+
+| الوثيقة | الموقع |
+|---------|--------|
+| PRD | `/PRD.md` |
+| Launch Checklist | `/docs/LAUNCH_READINESS_CHECKLIST.md` |
+| API Documentation | `/API.md` |
+| Technical Docs | `/docs/` |
