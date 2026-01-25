@@ -653,9 +653,9 @@ export function PricingNotepad({
   };
 
   return (
-    <div className={cn('flex flex-col lg:flex-row gap-4 h-full min-h-[700px]', className)}>
+    <div className={cn('flex flex-col lg:flex-row gap-4 min-h-[700px] pb-28 sm:pb-4', className)}>
       {/* Left Panel - Customer Order */}
-      <div className="lg:w-2/5 xl:w-1/3 h-[300px] lg:h-full">
+      <div className="lg:w-2/5 xl:w-1/3 h-[300px] lg:h-auto lg:min-h-[600px]">
         <CustomerOrderPanel
           request={request}
           onCopyText={handleCopyCustomerText}
@@ -664,7 +664,7 @@ export function PricingNotepad({
       </div>
 
       {/* Right Panel - Pricing Form (Clean Invoice Style) */}
-      <div className="lg:w-3/5 xl:w-2/3 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden min-h-[600px] lg:min-h-0 lg:h-full">
+      <div className="lg:w-3/5 xl:w-2/3 flex flex-col bg-white border border-gray-200 rounded-2xl shadow-sm overflow-visible min-h-[600px] lg:min-h-0">
         {/* Invoice Header - Paper Style */}
         <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-100 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
@@ -728,8 +728,8 @@ export function PricingNotepad({
           )}
         </div>
 
-        {/* Items List - Scrollable with improved scroll experience */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 space-y-3 bg-white min-h-[200px] max-h-[calc(100vh-500px)] sm:max-h-[calc(100vh-400px)] lg:max-h-none scroll-smooth">
+        {/* Items List */}
+        <div className="px-3 sm:px-6 py-3 sm:py-4 space-y-3 bg-white">
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
               <PricingItemRow
@@ -798,8 +798,8 @@ export function PricingNotepad({
           </div>
         </div>
 
-        {/* Sticky Footer - Net Profit + Action Buttons - Added pb-20 for bottom nav */}
-        <div className="border-t border-gray-200 bg-white px-4 sm:px-6 py-4 pb-24 sm:pb-4 shadow-[0_-8px_16px_-4px_rgba(0,0,0,0.08)]">
+        {/* Footer - Net Profit + Action Buttons */}
+        <div className="border-t border-gray-200 bg-white px-4 sm:px-6 py-4">
           {/* Net Profit Display - Transparent Financials */}
           <div className="flex items-center justify-between mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
             <div className="flex items-center gap-2">
