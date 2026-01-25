@@ -86,5 +86,22 @@
     }
   ],
   "prefer_related_applications": false,
-  "handle_links": "preferred"
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+engezna",
+      "url": "/ar/handle?type=%s"
+    },
+    {
+      "protocol": "web+engeznaorder",
+      "url": "/ar/orders?id=%s"
+    },
+    {
+      "protocol": "web+engeznaprovider",
+      "url": "/ar/providers/%s"
+    }
+  ]
 }

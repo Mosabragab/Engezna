@@ -1007,5 +1007,13 @@
     "recentlyVisited": "Recently Visited Stores",
     "footer": "You'll be redirected automatically when you're back online",
     "redirecting": "Redirecting..."
+  },
+  "protocolHandler": {
+    "processing": "Processing link...",
+    "errorTitle": "Invalid Link",
+    "noProtocol": "No link type specified",
+    "invalidProtocol": "This link is unknown or not supported",
+    "browseStores": "Browse Stores",
+    "goHome": "Go to Home"
   }
 }
