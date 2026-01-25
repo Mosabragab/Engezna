@@ -7,7 +7,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
 import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
 import {
-  Search,
+  ListChecks,
   Star,
   ShieldCheck,
   Truck,
@@ -67,11 +67,11 @@ export default async function WelcomePage({ params }: PageProps) {
 
   const features = [
     {
-      icon: Search,
-      title_ar: 'بحث سريع',
-      title_en: 'Quick Search',
-      description_ar: 'ابحث عن أي منتج أو متجر بسهولة وسرعة من شريط البحث',
-      description_en: 'Easily and quickly search for any product or store from the search bar',
+      icon: ListChecks,
+      title_ar: 'اطلب وقارن الأسعار',
+      title_en: 'Order & Compare Prices',
+      description_ar: 'أرسل قائمة طلبك لـ 3 متاجر واختر أفضل سعر يناسبك',
+      description_en: 'Send your order list to 3 stores and choose the best price for you',
       color: 'bg-primary/10 text-primary',
     },
     {
