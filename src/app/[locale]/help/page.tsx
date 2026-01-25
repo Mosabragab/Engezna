@@ -62,6 +62,16 @@ const FAQ_ITEMS: FAQItem[] = [
     category: 'orders',
   },
   {
+    id: '1b',
+    question_ar: 'كيف أستخدم ميزة مقارنة الأسعار؟',
+    question_en: 'How do I use the price comparison feature?',
+    answer_ar:
+      'عند الطلب من متجر يدعم الطلب المفتوح، يمكنك إرسال قائمة طلبك لـ 3 متاجر مختلفة. كل متجر يسعّر طلبك، ثم تقارن الأسعار وتختار العرض الأنسب لك.',
+    answer_en:
+      'When ordering from a store that supports custom orders, you can send your order list to 3 different stores. Each store prices your order, then you compare prices and choose the best offer.',
+    category: 'orders',
+  },
+  {
     id: '2',
     question_ar: 'كيف أتابع حالة طلبي؟',
     question_en: 'How do I track my order?',
