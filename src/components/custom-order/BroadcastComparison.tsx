@@ -102,6 +102,9 @@ function ComparisonCard({
   const isPending = request.status === 'pending';
   const isApproved = request.status === 'customer_approved';
 
+  // Get items from request
+  const items = request.items || [];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -173,14 +176,65 @@ function ComparisonCard({
         {/* Pricing */}
         {isPriced || isApproved ? (
           <div className="bg-slate-50 rounded-xl p-3 mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-600">
-                {isRTL ? 'المنتجات' : 'Products'} ({request.items_count})
+            {/* Items Details - Expandable */}
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="w-full flex items-center justify-between mb-2 group"
+            >
+              <span className="text-sm text-slate-600 flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {isRTL ? 'المنتجات' : 'Products'} ({items.length || request.items_count})
               </span>
-              <span className="font-semibold text-slate-800">
-                {formatCurrency(request.subtotal)}
-              </span>
-            </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-800">
+                  {formatCurrency(request.subtotal)}
+                </span>
+                {items.length > 0 && (
+                  <motion.div
+                    animate={{ rotate: expanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                  </motion.div>
+                )}
+              </div>
+            </button>
+
+            {/* Expanded Items List */}
+            <AnimatePresence>
+              {expanded && items.length > 0 && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="border-t border-slate-200 pt-2 mt-1 space-y-2">
+                    {items.map((item, index) => (
+                      <div
+                        key={item.id || index}
+                        className="flex items-center justify-between text-sm py-1.5 px-2 bg-white rounded-lg"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className="text-slate-700 font-medium truncate block">
+                            {isRTL ? item.item_name_ar : item.item_name_en || item.item_name_ar}
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {item.quantity} × {formatCurrency(item.unit_price || 0)}
+                          </span>
+                        </div>
+                        <span className="font-semibold text-slate-800 ms-2">
+                          {formatCurrency(item.total_price || 0)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-slate-600 flex items-center gap-1">
                 <Truck className="w-3.5 h-3.5" />

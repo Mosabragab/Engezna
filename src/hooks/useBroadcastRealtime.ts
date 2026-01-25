@@ -20,6 +20,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import type {
   CustomOrderBroadcast,
   CustomOrderRequest,
+  CustomOrderItem,
   BroadcastStatus,
   CustomRequestStatus,
 } from '@/types/custom-order';
@@ -38,6 +39,7 @@ export interface RequestWithProvider extends CustomOrderRequest {
     rating: number;
     delivery_fee: number;
   };
+  items?: CustomOrderItem[];
 }
 
 export interface BroadcastRealtimeState {
@@ -116,7 +118,7 @@ export function useBroadcastRealtime(
         throw new Error(`Failed to fetch broadcast: ${broadcastError.message}`);
       }
 
-      // Fetch requests with provider info
+      // Fetch requests with provider info and items
       const { data: requests, error: requestsError } = await supabase
         .from('custom_order_requests')
         .select(
@@ -129,6 +131,16 @@ export function useBroadcastRealtime(
             logo_url,
             rating,
             delivery_fee
+          ),
+          items:custom_order_items(
+            id,
+            item_name_ar,
+            item_name_en,
+            quantity,
+            unit_price,
+            total_price,
+            unit_type,
+            availability_status
           )
         `
         )
@@ -211,7 +223,7 @@ export function useBroadcastRealtime(
         const newRequest = payload.new as CustomOrderRequest;
         const oldRequest = payload.old as CustomOrderRequest | undefined;
 
-        // Fetch full request with provider info
+        // Fetch full request with provider info and items
         const { data: fullRequest } = await supabase
           .from('custom_order_requests')
           .select(
@@ -224,6 +236,16 @@ export function useBroadcastRealtime(
               logo_url,
               rating,
               delivery_fee
+            ),
+            items:custom_order_items(
+              id,
+              item_name_ar,
+              item_name_en,
+              quantity,
+              unit_price,
+              total_price,
+              unit_type,
+              availability_status
             )
           `
           )
