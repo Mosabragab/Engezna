@@ -429,11 +429,11 @@ export default function HomePage() {
         {/* To re-enable AI button, pass onChatClick={handleChatClick} */}
         <HeroSection onSearch={handleSearch} onSearchClick={handleSearchClick} />
 
-        {/* Categories */}
-        <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-4" />
-
         {/* Offers Carousel - Fetches from database automatically */}
-        <OffersCarousel onViewAll={handleViewAllOffers} className="mt-6" />
+        <OffersCarousel onViewAll={handleViewAllOffers} className="mt-4" />
+
+        {/* Categories */}
+        <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-6" />
 
         {/* Reorder Section */}
         <ReorderSection
