@@ -284,6 +284,19 @@ export const CustomerHeader = memo(function CustomerHeader({
     );
   }
 
+  // Check if notification is a custom order pricing notification
+  function isCustomOrderPricingNotification(notification: {
+    type: string;
+    data: { broadcast_id?: string; is_custom_order?: boolean } | null;
+  }) {
+    return (
+      notification.type === 'CUSTOM_ORDER_PRICED' ||
+      (notification.type?.toLowerCase().includes('custom') &&
+        notification.type?.toLowerCase().includes('price')) ||
+      notification.data?.is_custom_order === true
+    );
+  }
+
   // Display text for location button
   const locationDisplayText = locationLoading
     ? '...'
@@ -488,6 +501,29 @@ export const CustomerHeader = memo(function CustomerHeader({
                                   </Link>
                                 </div>
                               )}
+
+                              {/* Custom Order Pricing Buttons */}
+                              {isCustomOrderPricingNotification(notification) &&
+                                notification.data?.broadcast_id && (
+                                  <div className="mt-2 flex gap-2">
+                                    <Link
+                                      href={`/${locale}/orders/custom-review/${notification.data.broadcast_id}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-medium rounded-lg transition-colors"
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                      {locale === 'ar' ? 'اختر المتجر' : 'Choose Store'}
+                                    </Link>
+                                    <Link
+                                      href={`/${locale}/orders/custom-review/${notification.data.broadcast_id}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center justify-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition-colors"
+                                    >
+                                      <DollarSign className="h-3.5 w-3.5" />
+                                      {locale === 'ar' ? 'عرض التسعير' : 'View Pricing'}
+                                    </Link>
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </div>
