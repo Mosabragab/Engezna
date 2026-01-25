@@ -7,7 +7,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
 import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
 import {
-  MessageCircle,
+  Search,
   Star,
   ShieldCheck,
   Truck,
@@ -67,12 +67,11 @@ export default async function WelcomePage({ params }: PageProps) {
 
   const features = [
     {
-      icon: MessageCircle,
-      title_ar: 'اطلب بالشات',
-      title_en: 'Chat to Order',
-      description_ar: 'اطلب بالكلام! مساعدنا الذكي يفهم طلبك ويضيفه للسلة',
-      description_en:
-        'Order by chatting! Our smart assistant understands your request and adds it to your cart',
+      icon: Search,
+      title_ar: 'بحث سريع',
+      title_en: 'Quick Search',
+      description_ar: 'ابحث عن أي منتج أو متجر بسهولة وسرعة من شريط البحث',
+      description_en: 'Easily and quickly search for any product or store from the search bar',
       color: 'bg-primary/10 text-primary',
     },
     {
