@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  MapPin,
   Bell,
   User,
   ShoppingCart,
@@ -23,7 +24,7 @@ import { createClient } from '@/lib/supabase/client';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { useNotifications } from '@/hooks/customer';
 import { useCart } from '@/lib/store/cart';
-import { AddressSelector } from './AddressSelector';
+import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -56,11 +57,16 @@ export const CustomerHeader = memo(function CustomerHeader({
   const t = useTranslations('header');
 
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<string | null>(null);
+  const [locationLoading, setLocationLoading] = useState(true);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [confirmingRefundId, setConfirmingRefundId] = useState<string | null>(null);
   const [confirmedRefundIds, setConfirmedRefundIds] = useState<Set<string>>(new Set());
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Guest location hook
+  const { location: guestLocation, isLoaded: guestLocationLoaded } = useGuestLocation();
 
   // Use real-time notifications hook
   const { notifications, unreadCount, markAsRead, refresh } = useNotifications();
@@ -69,17 +75,95 @@ export const CustomerHeader = memo(function CustomerHeader({
   const { getItemCount } = useCart();
   const cartItemCount = getItemCount();
 
-  // Simple auth check just for user state
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient();
+  const checkAuth = useCallback(async () => {
+    const supabase = createClient();
+
+    try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       setUser(user);
+
+      if (user) {
+        // Logged-in user - get location from profile
+        try {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select(
+              `
+              governorate_id,
+              city_id,
+              governorates:governorate_id (name_ar, name_en),
+              cities:city_id (name_ar, name_en)
+            `
+            )
+            .eq('id', user.id)
+            .single();
+
+          if (!error && profile) {
+            // Supabase returns joined data as the object directly
+            const govData = profile.governorates as unknown as {
+              name_ar: string;
+              name_en: string;
+            } | null;
+            const cityData = profile.cities as unknown as {
+              name_ar: string;
+              name_en: string;
+            } | null;
+
+            if (cityData && cityData.name_ar) {
+              setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en);
+            } else if (govData && govData.name_ar) {
+              setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en);
+            }
+          }
+        } catch {
+          // Error handled silently
+        }
+      } else {
+        // Guest user - get location from localStorage
+        if (guestLocation.cityName) {
+          setCurrentLocation(
+            locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en
+          );
+        } else if (guestLocation.governorateName) {
+          setCurrentLocation(
+            locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en
+          );
+        }
+      }
+    } catch {
+      // Error handled silently
+    }
+
+    setLocationLoading(false);
+  }, [locale, guestLocation]);
+
+  useEffect(() => {
+    if (guestLocationLoaded) {
+      checkAuth();
+    }
+  }, [guestLocationLoaded, checkAuth]);
+
+  // Listen for guest location changes
+  useEffect(() => {
+    const handleLocationChange = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const newLocation = customEvent.detail;
+      // Update location display immediately with the new data
+      if (newLocation?.cityName) {
+        setCurrentLocation(locale === 'ar' ? newLocation.cityName.ar : newLocation.cityName.en);
+      } else if (newLocation?.governorateName) {
+        setCurrentLocation(
+          locale === 'ar' ? newLocation.governorateName.ar : newLocation.governorateName.en
+        );
+      }
     };
-    checkAuth();
-  }, []);
+    window.addEventListener('guestLocationChanged', handleLocationChange);
+    return () => {
+      window.removeEventListener('guestLocationChanged', handleLocationChange);
+    };
+  }, [locale]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -211,6 +295,11 @@ export const CustomerHeader = memo(function CustomerHeader({
     );
   }
 
+  // Display text for location button
+  const locationDisplayText = locationLoading
+    ? '...'
+    : currentLocation || (locale === 'ar' ? 'اختر موقعك' : 'Select location');
+
   // Get recent notifications (last 5)
   const recentNotifications = notifications.slice(0, 5);
 
@@ -220,10 +309,18 @@ export const CustomerHeader = memo(function CustomerHeader({
     >
       <div className="container mx-auto px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
         <div className="flex items-center justify-between h-16">
-          {/* Left Section - Address Selector (only on home page without title) */}
+          {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">
             {!title ? (
-              <AddressSelector />
+              <button
+                onClick={() => router.push(`/${locale}/profile/governorate`)}
+                className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]"
+              >
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium max-w-[100px] truncate text-sm text-slate-700">
+                  {locationDisplayText}
+                </span>
+              </button>
             ) : (
               // Empty placeholder to maintain layout balance
               <div className="w-9 h-9" />

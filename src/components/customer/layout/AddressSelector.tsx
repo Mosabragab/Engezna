@@ -205,36 +205,10 @@ export function AddressSelector({ className }: AddressSelectorProps) {
     return address.area ? `${address.area}، ${cityName}` : cityName;
   };
 
-  // For guests or users without addresses - show governorate/city
+  // For guests or users without addresses - don't show anything
+  // (they use the governorate/city selector in the header instead)
   if (!user || addresses.length === 0) {
-    const locationText = isLoading
-      ? '...'
-      : guestLocation.cityName
-        ? isRTL
-          ? guestLocation.cityName.ar
-          : guestLocation.cityName.en
-        : guestLocation.governorateName
-          ? isRTL
-            ? guestLocation.governorateName.ar
-            : guestLocation.governorateName.en
-          : isRTL
-            ? 'اختر موقعك'
-            : 'Select location';
-
-    return (
-      <button
-        onClick={() => router.push(`/${locale}/profile/governorate`)}
-        className={cn(
-          'group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]',
-          className
-        )}
-      >
-        <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-        <span className="font-medium max-w-[120px] truncate text-sm text-slate-700">
-          {locationText}
-        </span>
-      </button>
-    );
+    return null;
   }
 
   // For logged-in users with addresses
@@ -243,32 +217,42 @@ export function AddressSelector({ className }: AddressSelectorProps) {
 
   return (
     <div ref={dropdownRef} className={cn('relative', className)}>
-      {/* Trigger Button */}
+      {/* Trigger Button - Styled as a card for homepage placement */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isUpdating}
-        className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98] disabled:opacity-50"
+        className="w-full flex items-center gap-3 bg-white border border-slate-200 rounded-xl px-4 py-3 transition-all duration-200 hover:border-primary/50 hover:shadow-sm active:scale-[0.99] disabled:opacity-50"
       >
-        {isUpdating ? (
-          <Loader2 className="h-5 w-5 text-primary animate-spin flex-shrink-0" />
-        ) : iconType === 'home' ? (
-          <Home className="h-5 w-5 text-primary flex-shrink-0" />
-        ) : iconType === 'work' ? (
-          <Briefcase className="h-5 w-5 text-primary flex-shrink-0" />
-        ) : (
-          <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
-        )}
-        <div className="flex flex-col items-start max-w-[120px]">
-          <span className="text-[10px] text-slate-400 leading-tight">
+        {/* Icon */}
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          {isUpdating ? (
+            <Loader2 className="h-5 w-5 text-primary animate-spin" />
+          ) : iconType === 'home' ? (
+            <Home className="h-5 w-5 text-primary" />
+          ) : iconType === 'work' ? (
+            <Briefcase className="h-5 w-5 text-primary" />
+          ) : (
+            <MapPin className="h-5 w-5 text-primary" />
+          )}
+        </div>
+
+        {/* Address Info */}
+        <div className="flex-1 min-w-0 text-start">
+          <span className="text-xs text-slate-500 block">
             {isRTL ? 'التوصيل إلى' : 'Deliver to'}
           </span>
-          <span className="font-medium text-sm text-slate-700 truncate w-full text-start">
-            {selectedAddress ? getDisplayAddress(selectedAddress) : isRTL ? 'اختر عنوان' : 'Select'}
+          <span className="font-semibold text-slate-800 truncate block">
+            {selectedAddress?.label || (isRTL ? 'اختر عنوان' : 'Select')}
+          </span>
+          <span className="text-xs text-slate-500 truncate block">
+            {selectedAddress ? getDisplayAddress(selectedAddress) : ''}
           </span>
         </div>
+
+        {/* Arrow */}
         <ChevronDown
           className={cn(
-            'h-4 w-4 text-slate-400 transition-transform duration-200',
+            'h-5 w-5 text-slate-400 transition-transform duration-200 flex-shrink-0',
             isOpen && 'rotate-180'
           )}
         />
