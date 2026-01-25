@@ -8,7 +8,6 @@ import {
   MapPin,
   Bell,
   User,
-  ChevronDown,
   ShoppingCart,
   Check,
   X,
@@ -22,7 +21,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { useNotifications } from '@/hooks/customer';
 import { useCart } from '@/lib/store/cart';
@@ -119,7 +117,7 @@ export const CustomerHeader = memo(function CustomerHeader({
               setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en);
             }
           }
-        } catch (error) {
+        } catch {
           // Error handled silently
         }
       } else {
@@ -134,7 +132,7 @@ export const CustomerHeader = memo(function CustomerHeader({
           );
         }
       }
-    } catch (error) {
+    } catch {
       // Error handled silently
     }
 

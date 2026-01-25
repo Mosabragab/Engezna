@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { CustomerLayout } from '@/components/customer/layout';
+import { AddressSelector } from '@/components/customer/layout/AddressSelector';
 import {
   HeroSection,
   CategoriesSection,
@@ -429,11 +430,16 @@ export default function HomePage() {
         {/* To re-enable AI button, pass onChatClick={handleChatClick} */}
         <HeroSection onSearch={handleSearch} onSearchClick={handleSearchClick} />
 
-        {/* Categories */}
-        <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-4" />
+        {/* Address Selector - For logged-in users to switch delivery address */}
+        <div className="px-4 mt-3">
+          <AddressSelector className="w-full" />
+        </div>
 
         {/* Offers Carousel - Fetches from database automatically */}
-        <OffersCarousel onViewAll={handleViewAllOffers} className="mt-6" />
+        <OffersCarousel onViewAll={handleViewAllOffers} className="mt-4" />
+
+        {/* Categories */}
+        <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-6" />
 
         {/* Reorder Section */}
         <ReorderSection
