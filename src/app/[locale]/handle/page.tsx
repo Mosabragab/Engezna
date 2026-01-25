@@ -43,6 +43,23 @@ function parseProtocolUrl(url: string): ParsedProtocol {
   }
 }
 
+function getRedirectUrl(parsed: ParsedProtocol, currentLocale: string): string | null {
+  switch (parsed.type) {
+    case 'order':
+      if (parsed.id) {
+        return `/${currentLocale}/orders/${parsed.id}`;
+      }
+      return `/${currentLocale}/orders`;
+    case 'provider':
+      if (parsed.id) {
+        return `/${currentLocale}/providers/${parsed.id}`;
+      }
+      return `/${currentLocale}/providers`;
+    default:
+      return null;
+  }
+}
+
 export default function HandlePage() {
   const t = useTranslations('protocolHandler');
   const locale = useLocale();
@@ -73,23 +90,6 @@ export default function HandlePage() {
       setIsProcessing(false);
     }
   }, [searchParams, router, locale, t]);
-
-  function getRedirectUrl(parsed: ParsedProtocol, locale: string): string | null {
-    switch (parsed.type) {
-      case 'order':
-        if (parsed.id) {
-          return `/${locale}/orders/${parsed.id}`;
-        }
-        return `/${locale}/orders`;
-      case 'provider':
-        if (parsed.id) {
-          return `/${locale}/providers/${parsed.id}`;
-        }
-        return `/${locale}/providers`;
-      default:
-        return null;
-    }
-  }
 
   const handleGoHome = () => {
     router.push(`/${locale}`);
