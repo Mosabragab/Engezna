@@ -7,7 +7,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
 import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
 import {
-  MessageCircle,
+  ListChecks,
   Star,
   ShieldCheck,
   Truck,
@@ -67,12 +67,11 @@ export default async function WelcomePage({ params }: PageProps) {
 
   const features = [
     {
-      icon: MessageCircle,
-      title_ar: 'اطلب بالشات',
-      title_en: 'Chat to Order',
-      description_ar: 'اطلب بالكلام! مساعدنا الذكي يفهم طلبك ويضيفه للسلة',
-      description_en:
-        'Order by chatting! Our smart assistant understands your request and adds it to your cart',
+      icon: ListChecks,
+      title_ar: 'اطلب وقارن الأسعار',
+      title_en: 'Order & Compare Prices',
+      description_ar: 'أرسل قائمة طلبك لـ 3 متاجر واختر أفضل سعر يناسبك',
+      description_en: 'Send your order list to 3 stores and choose the best price for you',
       color: 'bg-primary/10 text-primary',
     },
     {

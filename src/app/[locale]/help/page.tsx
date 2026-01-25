@@ -56,9 +56,19 @@ const FAQ_ITEMS: FAQItem[] = [
     question_ar: 'كيف أقدم طلب جديد؟',
     question_en: 'How do I place a new order?',
     answer_ar:
-      'يمكنك تصفح المتاجر المتاحة من الصفحة الرئيسية، اختر المتجر المناسب، ثم أضف المنتجات إلى السلة وأكمل الطلب. يمكنك أيضاً استخدام المساعد الذكي للطلب بالدردشة.',
+      'يمكنك تصفح المتاجر المتاحة من الصفحة الرئيسية أو استخدام البحث للعثور على ما تريد. اختر المتجر المناسب، ثم أضف المنتجات إلى السلة وأكمل الطلب.',
     answer_en:
-      'Browse available stores from the homepage, select a store, add products to cart and complete your order. You can also use the smart assistant to order via chat.',
+      'Browse available stores from the homepage or use search to find what you want. Select a store, add products to cart and complete your order.',
+    category: 'orders',
+  },
+  {
+    id: '1b',
+    question_ar: 'كيف أستخدم ميزة مقارنة الأسعار؟',
+    question_en: 'How do I use the price comparison feature?',
+    answer_ar:
+      'عند الطلب من متجر يدعم الطلب المفتوح، يمكنك إرسال قائمة طلبك لـ 3 متاجر مختلفة. كل متجر يسعّر طلبك، ثم تقارن الأسعار وتختار العرض الأنسب لك.',
+    answer_en:
+      'When ordering from a store that supports custom orders, you can send your order list to 3 different stores. Each store prices your order, then you compare prices and choose the best offer.',
     category: 'orders',
   },
   {
@@ -169,9 +179,9 @@ const FAQ_ITEMS: FAQItem[] = [
     question_ar: 'كيف أقدم شكوى؟',
     question_en: 'How do I submit a complaint?',
     answer_ar:
-      'من صفحة تفاصيل الطلب، اضغط على "طلب مساعدة" واختر نوع المشكلة. يمكنك أيضاً الوصول لصفحة الدعم من الحساب الشخصي أو من زر المساعدة في المساعد الذكي.',
+      'من صفحة تفاصيل الطلب، اضغط على "طلب مساعدة" واختر نوع المشكلة. يمكنك أيضاً الوصول لصفحة الدعم من الحساب الشخصي أو من صفحة المساعدة.',
     answer_en:
-      'From order details page, click "Get Help" and select the issue type. You can also access support page from profile or via the help button in smart assistant.',
+      'From order details page, click "Get Help" and select the issue type. You can also access support page from profile or from the help page.',
     category: 'complaints',
   },
   {
@@ -197,12 +207,12 @@ const FAQ_ITEMS: FAQItem[] = [
   },
   {
     id: '15',
-    question_ar: 'كيف أستخدم المساعد الذكي؟',
-    question_en: 'How do I use the smart assistant?',
+    question_ar: 'كيف أبحث عن منتج أو متجر؟',
+    question_en: 'How do I search for a product or store?',
     answer_ar:
-      'اضغط على زر المساعد الذكي (الأيقونة اللامعة) في أسفل الشاشة. يمكنك الكتابة بالعامية المصرية مثل "عايز 2 برجر" وسيساعدك في الطلب.',
+      'اضغط على شريط البحث في أعلى الصفحة الرئيسية أو اذهب لصفحة البحث. يمكنك البحث باسم المنتج أو المتجر أو التصنيف وستظهر لك النتائج فوراً.',
     answer_en:
-      'Click the smart assistant button (sparkle icon) at the bottom of the screen. You can type in Egyptian Arabic like "عايز 2 برجر" and it will help you order.',
+      'Click the search bar at the top of the homepage or go to the search page. You can search by product name, store name, or category and results will appear instantly.',
     category: 'general',
   },
   {
