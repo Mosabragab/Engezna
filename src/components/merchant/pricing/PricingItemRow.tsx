@@ -238,11 +238,11 @@ export function PricingItemRow({
               )}
             </div>
 
-            {/* Pricing Row */}
-            <div className="grid grid-cols-12 gap-2">
+            {/* Pricing Row - Mobile Optimized */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {/* Quantity */}
-              <div className="col-span-3">
-                <label className="text-xs text-slate-500 mb-1 block">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1.5 block">
                   {isRTL ? 'الكمية' : 'Qty'}
                 </label>
                 <Input
@@ -253,13 +253,13 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="h-12 text-center text-lg font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
               {/* Unit */}
-              <div className="col-span-3">
-                <label className="text-xs text-slate-500 mb-1 block">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1.5 block">
                   {isRTL ? 'الوحدة' : 'Unit'}
                 </label>
                 <Select
@@ -267,7 +267,7 @@ export function PricingItemRow({
                   onValueChange={(value) => onUpdate({ unit_type: value as UnitType })}
                   disabled={disabled || item.availability_status === 'unavailable'}
                 >
-                  <SelectTrigger className="focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                  <SelectTrigger className="h-12 focus:ring-2 focus:ring-primary/20 focus:border-primary">
                     <SelectValue placeholder={isRTL ? 'اختر' : 'Select'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -281,8 +281,8 @@ export function PricingItemRow({
               </div>
 
               {/* Unit Price */}
-              <div className="col-span-3">
-                <label className="text-xs text-slate-500 mb-1 block">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1.5 block">
                   {isRTL ? 'السعر' : 'Price'}
                 </label>
                 <Input
@@ -293,16 +293,16 @@ export function PricingItemRow({
                   min="0"
                   step="0.5"
                   disabled={disabled || item.availability_status === 'unavailable'}
-                  className="text-center font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="h-12 text-center text-lg font-semibold tabular-nums focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
               {/* Total */}
-              <div className="col-span-3">
-                <label className="text-xs text-slate-500 mb-1 block">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1.5 block">
                   {isRTL ? 'الإجمالي' : 'Total'}
                 </label>
-                <div className="h-10 bg-slate-100 rounded-md flex items-center justify-center font-semibold text-primary">
+                <div className="h-12 bg-primary/10 border-2 border-primary/20 rounded-md flex items-center justify-center text-lg font-bold text-primary">
                   {(item.total_price || 0).toFixed(2)}
                 </div>
               </div>
