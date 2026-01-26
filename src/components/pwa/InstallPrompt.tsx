@@ -99,9 +99,9 @@ export function InstallPrompt() {
 
         {/* Content */}
         <div className="flex items-start gap-4">
-          {/* App Icon - Using actual icon image */}
+          {/* App Icon - Blue background version */}
           <img
-            src="/icons/icon-192x192.png"
+            src="/icons/icon-blue-512.png"
             alt="إنجزنا"
             className="w-14 h-14 rounded-xl flex-shrink-0"
           />
