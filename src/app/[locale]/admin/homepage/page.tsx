@@ -3,6 +3,8 @@
 import { useLocale } from 'next-intl';
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { useSDUIAdmin, type HomepageSection } from '@/hooks/sdui';
 import {
@@ -62,6 +64,23 @@ export default function AdminHomepagePage() {
   const isRTL = locale === 'ar';
 
   const { toggle: toggleSidebar } = useAdminSidebar();
+
+  // User state
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Fetch user on mount
+  useEffect(() => {
+    async function getUser() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+      setAuthLoading(false);
+    }
+    getUser();
+  }, []);
 
   const {
     sections: fetchedSections,
@@ -211,22 +230,26 @@ export default function AdminHomepagePage() {
     setHasChanges(true);
   };
 
-  if (isLoading) {
+  // Show loading while auth or sections are loading
+  if (authLoading || isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AdminHeader onMenuClick={toggleSidebar} />
-        <main className="p-4 md:p-6">
+        <div className="p-4 md:p-6">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader onMenuClick={toggleSidebar} />
+      <AdminHeader
+        user={user}
+        title={isRTL ? 'تخطيط الصفحة الرئيسية' : 'Homepage Layout'}
+        onMenuClick={toggleSidebar}
+      />
 
       <main className="p-4 md:p-6 max-w-7xl mx-auto">
         {/* Page Header */}
@@ -251,12 +274,7 @@ export default function AdminHomepagePage() {
                 {isRTL ? 'تحديث' : 'Refresh'}
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCreatePreview}
-                disabled={isSaving}
-              >
+              <Button variant="outline" size="sm" onClick={handleCreatePreview} disabled={isSaving}>
                 <Eye className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {isRTL ? 'معاينة' : 'Preview'}
               </Button>
@@ -433,9 +451,7 @@ export default function AdminHomepagePage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden sticky top-4">
               <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900">
-                  {isRTL ? 'المعاينة' : 'Preview'}
-                </h2>
+                <h2 className="font-semibold text-gray-900">{isRTL ? 'المعاينة' : 'Preview'}</h2>
                 <div className="flex gap-1">
                   <button
                     onClick={() => setPreviewDevice('mobile')}
@@ -495,9 +511,7 @@ export default function AdminHomepagePage() {
                       {isRTL ? 'فتح المعاينة الكاملة' : 'Open Full Preview'}
                     </Button>
                     <p className="text-xs text-gray-500 mt-2 text-center">
-                      {isRTL
-                        ? 'الرابط صالح لمدة 24 ساعة'
-                        : 'Link valid for 24 hours'}
+                      {isRTL ? 'الرابط صالح لمدة 24 ساعة' : 'Link valid for 24 hours'}
                     </p>
                   </div>
                 )}
@@ -506,26 +520,14 @@ export default function AdminHomepagePage() {
 
             {/* Help Card */}
             <div className="mt-4 bg-blue-50 rounded-xl p-4 border border-blue-100">
-              <h3 className="font-medium text-blue-900 mb-2">
-                {isRTL ? '💡 نصائح' : '💡 Tips'}
-              </h3>
+              <h3 className="font-medium text-blue-900 mb-2">{isRTL ? '💡 نصائح' : '💡 Tips'}</h3>
               <ul className="text-sm text-blue-800 space-y-1">
                 <li>{isRTL ? '• اسحب الأقسام لتغيير ترتيبها' : '• Drag sections to reorder'}</li>
                 <li>
-                  {isRTL
-                    ? '• اضغط على العين لإظهار/إخفاء القسم'
-                    : '• Click eye icon to show/hide'}
+                  {isRTL ? '• اضغط على العين لإظهار/إخفاء القسم' : '• Click eye icon to show/hide'}
                 </li>
-                <li>
-                  {isRTL
-                    ? '• استخدم المعاينة قبل الحفظ'
-                    : '• Use preview before saving'}
-                </li>
-                <li>
-                  {isRTL
-                    ? '• احفظ نسخة للرجوع إليها لاحقاً'
-                    : '• Save version for rollback'}
-                </li>
+                <li>{isRTL ? '• استخدم المعاينة قبل الحفظ' : '• Use preview before saving'}</li>
+                <li>{isRTL ? '• احفظ نسخة للرجوع إليها لاحقاً' : '• Save version for rollback'}</li>
               </ul>
             </div>
           </div>

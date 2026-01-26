@@ -423,7 +423,9 @@ export function useSDUIAdmin() {
 
       if (error) throw error;
 
-      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, is_visible: isVisible } : s)));
+      setSections((prev) =>
+        prev.map((s) => (s.id === sectionId ? { ...s, is_visible: isVisible } : s))
+      );
     } catch (err: any) {
       setError(err.message);
       throw err;
@@ -461,30 +463,42 @@ export function useSDUIAdmin() {
   }, []);
 
   // Update section config
-  const updateSectionConfig = useCallback(async (sectionId: string, config: Record<string, any>) => {
-    setIsSaving(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.from('homepage_sections').update({ config }).eq('id', sectionId);
-
-      if (error) throw error;
-
-      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, config } : s)));
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setIsSaving(false);
-    }
-  }, []);
-
-  // Update section content
-  const updateSectionContent = useCallback(
-    async (sectionId: string, content: { ar?: Record<string, string>; en?: Record<string, string> }) => {
+  const updateSectionConfig = useCallback(
+    async (sectionId: string, config: Record<string, any>) => {
       setIsSaving(true);
       try {
         const supabase = createClient();
-        const { error } = await supabase.from('homepage_sections').update({ content }).eq('id', sectionId);
+        const { error } = await supabase
+          .from('homepage_sections')
+          .update({ config })
+          .eq('id', sectionId);
+
+        if (error) throw error;
+
+        setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, config } : s)));
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    []
+  );
+
+  // Update section content
+  const updateSectionContent = useCallback(
+    async (
+      sectionId: string,
+      content: { ar?: Record<string, string>; en?: Record<string, string> }
+    ) => {
+      setIsSaving(true);
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('homepage_sections')
+          .update({ content })
+          .eq('id', sectionId);
 
         if (error) throw error;
 
@@ -500,27 +514,30 @@ export function useSDUIAdmin() {
   );
 
   // Create preview draft
-  const createPreviewDraft = useCallback(async (sectionsData: HomepageSection[]): Promise<string> => {
-    const supabase = createClient();
+  const createPreviewDraft = useCallback(
+    async (sectionsData: HomepageSection[]): Promise<string> => {
+      const supabase = createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw new Error('Not authenticated');
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-    const { data, error } = await supabase
-      .from('homepage_section_drafts')
-      .insert({
-        draft_data: sectionsData,
-        created_by: user.id,
-      })
-      .select('preview_token')
-      .single();
+      const { data, error } = await supabase
+        .from('homepage_section_drafts')
+        .insert({
+          draft_data: sectionsData,
+          created_by: user.id,
+        })
+        .select('preview_token')
+        .single();
 
-    if (error) throw error;
+      if (error) throw error;
 
-    return data.preview_token;
-  }, []);
+      return data.preview_token;
+    },
+    []
+  );
 
   // Save layout version
   const saveLayoutVersion = useCallback(async (versionName?: string) => {
