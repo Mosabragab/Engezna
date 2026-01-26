@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CustomerLayout } from '@/components/customer/layout';
 import { AddressSelector } from '@/components/customer/layout/AddressSelector';
 import {
@@ -13,7 +13,7 @@ import {
   TopRatedSection,
   NearbySection,
 } from '@/components/customer/home';
-import dynamic from 'next/dynamic';
+import { useSDUI } from '@/hooks/sdui';
 
 // AI Chat components disabled for initial launch - see docs/features/AI_SMART_ASSISTANT.md
 // To re-enable, uncomment the following and set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true
@@ -46,10 +46,20 @@ interface LastOrderDisplay {
 export default function HomePage() {
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { addItem, clearCart } = useCart();
 
   // Use LocationContext for cached location data (single source of truth)
   const { userLocation, isDataLoaded, isUserLocationLoading } = useLocation();
+
+  // SDUI: Get sections configuration from database
+  const previewToken = searchParams.get('preview');
+  const { sections, isSectionVisible } = useSDUI({
+    userRole: 'customer',
+    governorateId: userLocation.governorateId,
+    cityId: userLocation.cityId,
+    previewToken,
+  });
 
   // AI Chat disabled - see docs/features/AI_SMART_ASSISTANT.md
   // const [isChatOpen, setIsChatOpen] = useState(false);
@@ -423,45 +433,77 @@ export default function HomePage() {
     );
   }
 
+  // Build sections based on SDUI configuration
+  const renderSection = (sectionKey: string) => {
+    if (!isSectionVisible(sectionKey)) return null;
+
+    switch (sectionKey) {
+      case 'hero_search':
+        return (
+          <HeroSection
+            key="hero_search"
+            onSearch={handleSearch}
+            onSearchClick={handleSearchClick}
+          />
+        );
+      case 'address_selector':
+        return (
+          <div key="address_selector" className="px-4 mt-3">
+            <AddressSelector className="w-full" />
+          </div>
+        );
+      case 'offers_carousel':
+        return (
+          <OffersCarousel key="offers_carousel" onViewAll={handleViewAllOffers} className="mt-4" />
+        );
+      case 'categories':
+        return (
+          <CategoriesSection
+            key="categories"
+            onCategoryClick={handleCategoryClick}
+            className="mt-6"
+          />
+        );
+      case 'reorder':
+        return (
+          <ReorderSection
+            key="reorder"
+            lastOrder={lastOrder}
+            onReorder={handleReorder}
+            onViewDetails={handleViewOrderDetails}
+            className="mt-2"
+          />
+        );
+      case 'top_rated':
+        return (
+          <TopRatedSection
+            key="top_rated"
+            providers={topRatedProviders}
+            onViewAll={handleViewAllTopRated}
+            className="mt-2"
+          />
+        );
+      case 'nearby':
+        return (
+          <NearbySection
+            key="nearby"
+            providers={nearbyProviders}
+            onViewAll={handleViewAllNearby}
+            className="mt-2"
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
       <div className="pb-4">
-        {/* Hero Section - AI Chat disabled for initial launch */}
-        {/* To re-enable AI button, pass onChatClick={handleChatClick} */}
-        <HeroSection onSearch={handleSearch} onSearchClick={handleSearchClick} />
-
-        {/* Address Selector - For logged-in users to switch delivery address */}
-        <div className="px-4 mt-3">
-          <AddressSelector className="w-full" />
-        </div>
-
-        {/* Offers Carousel - Fetches from database automatically */}
-        <OffersCarousel onViewAll={handleViewAllOffers} className="mt-4" />
-
-        {/* Categories */}
-        <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-6" />
-
-        {/* Reorder Section */}
-        <ReorderSection
-          lastOrder={lastOrder}
-          onReorder={handleReorder}
-          onViewDetails={handleViewOrderDetails}
-          className="mt-2"
-        />
-
-        {/* Top Rated */}
-        <TopRatedSection
-          providers={topRatedProviders}
-          onViewAll={handleViewAllTopRated}
-          className="mt-2"
-        />
-
-        {/* Nearby */}
-        <NearbySection
-          providers={nearbyProviders}
-          onViewAll={handleViewAllNearby}
-          className="mt-2"
-        />
+        {/* SDUI: Render sections based on database configuration */}
+        {sections
+          .sort((a, b) => a.display_order - b.display_order)
+          .map((section) => renderSection(section.section_key))}
       </div>
 
       {/* AI Smart Assistant - Disabled for initial launch */}
