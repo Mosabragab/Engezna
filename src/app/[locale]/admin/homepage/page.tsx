@@ -187,13 +187,14 @@ export default function AdminHomepagePage() {
     }
   };
 
-  // Create preview
+  // Create preview - opens in new window
   const handleCreatePreview = async () => {
     try {
       const token = await createPreviewDraft(localSections);
       const url = `${window.location.origin}/${locale}?preview=${token}`;
       setPreviewUrl(url);
-      setShowPreview(true);
+      // Open directly in new window (iframe blocked by security policies)
+      window.open(url, '_blank', 'width=430,height=800,scrollbars=yes');
     } catch (err) {
       console.error('Failed to create preview:', err);
     }
