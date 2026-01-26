@@ -29,6 +29,7 @@ import {
   Scale,
   Mail,
   HeadphonesIcon,
+  Layout,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -179,6 +180,12 @@ export function AdminSidebar({
       label: { ar: 'بانرات الرئيسية', en: 'Homepage Banners' },
       path: `/${locale}/admin/banners`,
       badge: pendingBannerApprovals > 0 ? pendingBannerApprovals.toString() : undefined,
+      resource: 'promotions',
+    },
+    {
+      icon: Layout,
+      label: { ar: 'تخطيط الصفحة الرئيسية', en: 'Homepage Layout' },
+      path: `/${locale}/admin/homepage`,
       resource: 'promotions',
     },
     {
