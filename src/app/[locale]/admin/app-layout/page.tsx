@@ -27,6 +27,7 @@ import {
   Home,
   Gift,
   UserPlus,
+  Store,
 } from 'lucide-react';
 
 // Page configurations
@@ -53,6 +54,12 @@ const PAGE_CONFIGS: {
     icon: UserPlus,
     label: { ar: 'صفحة الترحيب', en: 'Welcome Page' },
     previewPath: '/welcome',
+  },
+  {
+    id: 'providers',
+    icon: Store,
+    label: { ar: 'صفحة مقدمي الخدمات', en: 'Providers Page' },
+    previewPath: '/providers',
   },
 ];
 
@@ -83,6 +90,12 @@ const sectionIcons: Record<string, string> = {
   welcome_governorates: '🗺️',
   welcome_cta: '🚀',
   welcome_partners: '🤝',
+  // Providers
+  providers_header: '🏪',
+  providers_search: '🔍',
+  providers_categories: '📂',
+  providers_filters: '⚙️',
+  providers_grid: '📦',
 };
 
 interface ExtendedSection extends HomepageSection {

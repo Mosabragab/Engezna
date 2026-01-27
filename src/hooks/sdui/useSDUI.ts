@@ -33,7 +33,13 @@ export type HomepageSectionType =
   | 'welcome_steps'
   | 'welcome_governorates'
   | 'welcome_cta'
-  | 'welcome_partners';
+  | 'welcome_partners'
+  // Providers page sections
+  | 'providers_header'
+  | 'providers_search'
+  | 'providers_categories'
+  | 'providers_filters'
+  | 'providers_grid';
 
 export interface HomepageSection {
   id: string;
@@ -289,12 +295,92 @@ const DEFAULT_WELCOME_SECTIONS: HomepageSection[] = [
   },
 ];
 
+const DEFAULT_PROVIDERS_SECTIONS: HomepageSection[] = [
+  {
+    id: 'default-providers-header',
+    section_type: 'providers_header',
+    section_key: 'providers_header',
+    title_ar: 'رأس صفحة مقدمي الخدمات',
+    title_en: 'Providers Page Header',
+    config: { showLocation: true, showBackButton: true },
+    content: {
+      ar: { title: 'مقدمو الخدمات' },
+      en: { title: 'Service Providers' },
+    },
+    display_order: 1,
+  },
+  {
+    id: 'default-providers-search',
+    section_type: 'providers_search',
+    section_key: 'providers_search',
+    title_ar: 'شريط البحث',
+    title_en: 'Search Bar',
+    config: { showFilters: true, showVoiceSearch: false },
+    content: {
+      ar: { placeholder: 'ابحث عن مطعم أو محل...' },
+      en: { placeholder: 'Search for restaurant or store...' },
+    },
+    display_order: 2,
+  },
+  {
+    id: 'default-providers-categories',
+    section_type: 'providers_categories',
+    section_key: 'providers_categories',
+    title_ar: 'فلترة بالفئات',
+    title_en: 'Category Filter',
+    config: { scrollable: true, showAll: true },
+    content: {
+      ar: { allLabel: 'الكل' },
+      en: { allLabel: 'All' },
+    },
+    display_order: 3,
+  },
+  {
+    id: 'default-providers-filters',
+    section_type: 'providers_filters',
+    section_key: 'providers_filters',
+    title_ar: 'فلاتر سريعة',
+    title_en: 'Quick Filters',
+    config: { showOpenNow: true, showOffers: true, showFreeDelivery: true, showRating: true },
+    content: {
+      ar: {
+        openNow: 'مفتوح الآن',
+        offers: 'عروض',
+        freeDelivery: 'توصيل مجاني',
+        topRated: 'الأعلى تقييماً',
+      },
+      en: {
+        openNow: 'Open Now',
+        offers: 'Offers',
+        freeDelivery: 'Free Delivery',
+        topRated: 'Top Rated',
+      },
+    },
+    display_order: 4,
+  },
+  {
+    id: 'default-providers-grid',
+    section_type: 'providers_grid',
+    section_key: 'providers_grid',
+    title_ar: 'قائمة مقدمي الخدمات',
+    title_en: 'Providers Grid',
+    config: { columns: 2, showRating: true, showDeliveryFee: true, showDeliveryTime: true },
+    content: {
+      ar: { noResults: 'لا توجد نتائج', loading: 'جاري التحميل...' },
+      en: { noResults: 'No results found', loading: 'Loading...' },
+    },
+    display_order: 5,
+  },
+];
+
 function getDefaultSections(page: SDUIPageType): HomepageSection[] {
   switch (page) {
     case 'offers':
       return DEFAULT_OFFERS_SECTIONS;
     case 'welcome':
       return DEFAULT_WELCOME_SECTIONS;
+    case 'providers':
+      return DEFAULT_PROVIDERS_SECTIONS;
     case 'homepage':
     default:
       return DEFAULT_HOMEPAGE_SECTIONS;

@@ -8,6 +8,7 @@ import { CustomerLayout } from '@/components/customer/layout';
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared';
 import { ChatFAB } from '@/components/customer/voice';
 import { useFavorites } from '@/hooks/customer';
+import { useSDUI } from '@/hooks/sdui';
 import { Star, Clock, Percent, ArrowUpDown, MapPin, Navigation } from 'lucide-react';
 import { useUserLocation } from '@/lib/contexts';
 import Link from 'next/link';
@@ -42,6 +43,14 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   const locale = useLocale();
   const searchParams = useSearchParams();
   const categoryFromUrl = searchParams.get('category');
+  const previewToken = searchParams.get('preview');
+
+  // SDUI integration
+  const { isSectionVisible, getSectionContent } = useSDUI({
+    page: 'providers',
+    userRole: 'customer',
+    previewToken,
+  });
 
   const [providers, setProviders] = useState<Provider[]>(initialProviders);
   const [loading, setLoading] = useState(false);
@@ -343,121 +352,142 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     <CustomerLayout showHeader={true} showBottomNav={true}>
       {/* Page Content */}
       <div className="px-4 py-4">
-        {/* Page Title with Location */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-slate-900">
-              {locale === 'ar' ? 'المتاجر' : 'Stores'}
-            </h1>
-            {userCityName && (
-              <a
-                href={`/${locale}/profile/governorate`}
-                aria-label={
-                  locale === 'ar'
-                    ? `تغيير الموقع: ${userCityName}`
-                    : `Change location: ${userCityName}`
-                }
-                className="flex items-center gap-1.5 text-sm text-slate-700 hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] justify-center"
+        {/* Page Title with Location - SDUI: providers_header */}
+        {isSectionVisible('providers_header') && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-slate-900">
+                {getSectionContent('providers_header', locale as 'ar' | 'en').title ||
+                  (locale === 'ar' ? 'المتاجر' : 'Stores')}
+              </h1>
+              {userCityName && (
+                <a
+                  href={`/${locale}/profile/governorate`}
+                  aria-label={
+                    locale === 'ar'
+                      ? `تغيير الموقع: ${userCityName}`
+                      : `Change location: ${userCityName}`
+                  }
+                  className="flex items-center gap-1.5 text-sm text-slate-700 hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] justify-center"
+                >
+                  <MapPin className="w-4 h-4" />
+                  <span>{userCityName}</span>
+                </a>
+              )}
+            </div>
+            <p className="text-slate-500 text-sm">
+              {userCityName
+                ? locale === 'ar'
+                  ? `متاجر متاحة في ${userCityName}`
+                  : `Stores available in ${userCityName}`
+                : locale === 'ar'
+                  ? 'اطلب من أفضل المطاعم والمتاجر'
+                  : 'Order from the best restaurants and stores'}
+            </p>
+          </div>
+        )}
+
+        {/* Search Bar - SDUI: providers_search */}
+        {isSectionVisible('providers_search') && (
+          <div className="mb-4">
+            <SearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onSearch={setSearchQuery}
+              placeholder={
+                getSectionContent('providers_search', locale as 'ar' | 'en').placeholder ||
+                (locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for a store or product...')
+              }
+            />
+            {/* Link to full search page */}
+            {searchQuery && (
+              <Link
+                href={`/${locale}/search?q=${encodeURIComponent(searchQuery)}`}
+                className="flex items-center justify-center gap-2 mt-2 text-sm text-primary hover:text-primary/80 transition-colors py-2"
               >
-                <MapPin className="w-4 h-4" />
-                <span>{userCityName}</span>
-              </a>
+                <span>
+                  {locale === 'ar'
+                    ? `عرض جميع نتائج البحث عن "${searchQuery}"`
+                    : `View all search results for "${searchQuery}"`}
+                </span>
+                <span className="text-xs">→</span>
+              </Link>
             )}
           </div>
-          <p className="text-slate-500 text-sm">
-            {userCityName
-              ? locale === 'ar'
-                ? `متاجر متاحة في ${userCityName}`
-                : `Stores available in ${userCityName}`
-              : locale === 'ar'
-                ? 'اطلب من أفضل المطاعم والمتاجر'
-                : 'Order from the best restaurants and stores'}
-          </p>
-        </div>
+        )}
 
-        {/* Search Bar */}
-        <div className="mb-4">
-          <SearchBar
-            value={searchQuery}
-            onChange={setSearchQuery}
-            onSearch={setSearchQuery}
-            placeholder={
-              locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for a store or product...'
-            }
-          />
-          {/* Link to full search page */}
-          {searchQuery && (
-            <Link
-              href={`/${locale}/search?q=${encodeURIComponent(searchQuery)}`}
-              className="flex items-center justify-center gap-2 mt-2 text-sm text-primary hover:text-primary/80 transition-colors py-2"
-            >
-              <span>
-                {locale === 'ar'
-                  ? `عرض جميع نتائج البحث عن "${searchQuery}"`
-                  : `View all search results for "${searchQuery}"`}
-              </span>
-              <span className="text-xs">→</span>
-            </Link>
-          )}
-        </div>
+        {/* Category Filter - SDUI: providers_categories */}
+        {isSectionVisible('providers_categories') && (
+          <div
+            className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4"
+            role="tablist"
+          >
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                role="tab"
+                aria-selected={selectedCategory === category.id}
+                aria-label={
+                  locale === 'ar'
+                    ? `فلتر حسب: ${category.name_ar}`
+                    : `Filter by: ${category.name_en}`
+                }
+                onClick={() => setSelectedCategory(category.id)}
+                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] ${
+                  selectedCategory === category.id
+                    ? 'bg-sky-700 text-white shadow-sm'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
+                }`}
+              >
+                {locale === 'ar' ? category.name_ar : category.name_en}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Category Filter */}
-        <div
-          className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide -mx-4 px-4"
-          role="tablist"
-        >
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              role="tab"
-              aria-selected={selectedCategory === category.id}
-              aria-label={
-                locale === 'ar' ? `فلتر حسب: ${category.name_ar}` : `Filter by: ${category.name_en}`
+        {/* Filter Chips - SDUI: providers_filters */}
+        {isSectionVisible('providers_filters') && (
+          <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide -mx-4 px-4">
+            <FilterChip
+              label={
+                getSectionContent('providers_filters', locale as 'ar' | 'en').openNow ||
+                (locale === 'ar' ? 'مفتوح الآن' : 'Open Now')
               }
-              onClick={() => setSelectedCategory(category.id)}
-              className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all min-h-[44px] ${
-                selectedCategory === category.id
-                  ? 'bg-sky-700 text-white shadow-sm'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:border-primary/30'
-              }`}
-            >
-              {locale === 'ar' ? category.name_ar : category.name_en}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide -mx-4 px-4">
-          <FilterChip
-            label={locale === 'ar' ? 'مفتوح الآن' : 'Open Now'}
-            isActive={showOpenOnly}
-            onClick={() => setShowOpenOnly(!showOpenOnly)}
-          />
-          <FilterChip
-            label={locale === 'ar' ? 'عروض' : 'Offers'}
-            icon={<Percent className="w-3.5 h-3.5" />}
-            isActive={showOffersOnly}
-            onClick={() => setShowOffersOnly(!showOffersOnly)}
-          />
-          <FilterChip
-            label={locale === 'ar' ? 'الأعلى تقييماً' : 'Top Rated'}
-            icon={<Star className="w-3.5 h-3.5" />}
-            isActive={sortBy === 'rating'}
-            onClick={() => handleSortToggle('rating')}
-          />
-          <FilterChip
-            label={locale === 'ar' ? 'الأسرع توصيلاً' : 'Fastest'}
-            icon={<Clock className="w-3.5 h-3.5" />}
-            isActive={sortBy === 'delivery_time'}
-            onClick={() => handleSortToggle('delivery_time')}
-          />
-          <FilterChip
-            label={locale === 'ar' ? 'أقل رسوم توصيل' : 'Lowest Fee'}
-            icon={<ArrowUpDown className="w-3.5 h-3.5" />}
-            isActive={sortBy === 'delivery_fee'}
-            onClick={() => handleSortToggle('delivery_fee')}
-          />
-        </div>
+              isActive={showOpenOnly}
+              onClick={() => setShowOpenOnly(!showOpenOnly)}
+            />
+            <FilterChip
+              label={
+                getSectionContent('providers_filters', locale as 'ar' | 'en').offers ||
+                (locale === 'ar' ? 'عروض' : 'Offers')
+              }
+              icon={<Percent className="w-3.5 h-3.5" />}
+              isActive={showOffersOnly}
+              onClick={() => setShowOffersOnly(!showOffersOnly)}
+            />
+            <FilterChip
+              label={
+                getSectionContent('providers_filters', locale as 'ar' | 'en').topRated ||
+                (locale === 'ar' ? 'الأعلى تقييماً' : 'Top Rated')
+              }
+              icon={<Star className="w-3.5 h-3.5" />}
+              isActive={sortBy === 'rating'}
+              onClick={() => handleSortToggle('rating')}
+            />
+            <FilterChip
+              label={locale === 'ar' ? 'الأسرع توصيلاً' : 'Fastest'}
+              icon={<Clock className="w-3.5 h-3.5" />}
+              isActive={sortBy === 'delivery_time'}
+              onClick={() => handleSortToggle('delivery_time')}
+            />
+            <FilterChip
+              label={locale === 'ar' ? 'أقل رسوم توصيل' : 'Lowest Fee'}
+              icon={<ArrowUpDown className="w-3.5 h-3.5" />}
+              isActive={sortBy === 'delivery_fee'}
+              onClick={() => handleSortToggle('delivery_fee')}
+            />
+          </div>
+        )}
 
         {/* Results count */}
         {!loading && !isSearchingProducts && (
@@ -496,38 +526,50 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && filteredProviders.length === 0 && (
-          <EmptyState
-            icon="store"
-            title={locale === 'ar' ? 'لا توجد متاجر' : 'No stores found'}
-            description={
-              searchQuery
-                ? locale === 'ar'
-                  ? 'جرب البحث بكلمات أخرى'
-                  : 'Try searching with different keywords'
-                : locale === 'ar'
-                  ? 'لا توجد متاجر متاحة في هذا القسم'
-                  : 'No stores available in this category'
-            }
-            actionLabel={searchQuery ? (locale === 'ar' ? 'مسح البحث' : 'Clear search') : undefined}
-            onAction={searchQuery ? () => setSearchQuery('') : undefined}
-          />
-        )}
-
-        {/* Providers Grid */}
-        {!loading && filteredProviders.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredProviders.map((provider) => (
-              <ProviderCard
-                key={provider.id}
-                provider={provider}
-                variant="default"
-                isFavorite={isFavorite(provider.id)}
-                onFavoriteToggle={isAuthenticated ? () => toggleFavorite(provider.id) : undefined}
+        {/* Providers Grid - SDUI: providers_grid */}
+        {isSectionVisible('providers_grid') && (
+          <>
+            {/* Empty State */}
+            {!loading && filteredProviders.length === 0 && (
+              <EmptyState
+                icon="store"
+                title={
+                  getSectionContent('providers_grid', locale as 'ar' | 'en').noResults ||
+                  (locale === 'ar' ? 'لا توجد متاجر' : 'No stores found')
+                }
+                description={
+                  searchQuery
+                    ? locale === 'ar'
+                      ? 'جرب البحث بكلمات أخرى'
+                      : 'Try searching with different keywords'
+                    : locale === 'ar'
+                      ? 'لا توجد متاجر متاحة في هذا القسم'
+                      : 'No stores available in this category'
+                }
+                actionLabel={
+                  searchQuery ? (locale === 'ar' ? 'مسح البحث' : 'Clear search') : undefined
+                }
+                onAction={searchQuery ? () => setSearchQuery('') : undefined}
               />
-            ))}
-          </div>
+            )}
+
+            {/* Providers Grid */}
+            {!loading && filteredProviders.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filteredProviders.map((provider) => (
+                  <ProviderCard
+                    key={provider.id}
+                    provider={provider}
+                    variant="default"
+                    isFavorite={isFavorite(provider.id)}
+                    onFavoriteToggle={
+                      isAuthenticated ? () => toggleFavorite(provider.id) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
 
