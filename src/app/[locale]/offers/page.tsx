@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Tag, Percent, Truck, Gift, ChevronRight, ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { CustomerLayout } from '@/components/customer/layout';
 import { ProviderCard, EmptyState } from '@/components/customer/shared';
 import { Button } from '@/components/ui/button';
+import { useSDUI } from '@/hooks/sdui';
 
 interface PromoCode {
   id: string;
@@ -41,8 +42,17 @@ interface Provider {
 export default function OffersPage() {
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('offers');
   const isRTL = locale === 'ar';
+
+  // SDUI: Get sections configuration from database
+  const previewToken = searchParams.get('preview');
+  const { sections, isSectionVisible, getSectionContent } = useSDUI({
+    page: 'offers',
+    userRole: 'customer',
+    previewToken,
+  });
 
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [freeDeliveryProviders, setFreeDeliveryProviders] = useState<Provider[]>([]);
@@ -98,14 +108,22 @@ export default function OffersPage() {
 
   const Arrow = isRTL ? ChevronLeft : ChevronRight;
 
-  // Featured offer banner
+  // Get SDUI content for featured offer
+  const heroContent = getSectionContent('offers_hero', isRTL ? 'ar' : 'en');
+  const promoContent = getSectionContent('promo_codes', isRTL ? 'ar' : 'en');
+  const freeDeliveryContent = getSectionContent('free_delivery', isRTL ? 'ar' : 'en');
+
+  // Featured offer banner - now controlled by SDUI
   const featuredOffer = {
-    title: locale === 'ar' ? 'خصم 50% على أول طلب!' : '50% OFF First Order!',
+    badge: heroContent.badge || (locale === 'ar' ? 'عرض اليوم' : "Today's Deal"),
+    title: heroContent.title || (locale === 'ar' ? 'خصم 50% على أول طلب!' : '50% OFF First Order!'),
     description:
-      locale === 'ar'
+      heroContent.description ||
+      (locale === 'ar'
         ? 'استخدم الكود WELCOME50 واحصل على خصم 50% على طلبك الأول'
-        : 'Use code WELCOME50 and get 50% off your first order',
-    code: 'WELCOME50',
+        : 'Use code WELCOME50 and get 50% off your first order'),
+    code: heroContent.code || 'WELCOME50',
+    buttonText: heroContent.buttonText || (locale === 'ar' ? 'اطلب الآن' : 'Order Now'),
     bgColor: 'bg-gradient-to-br from-primary via-primary to-cyan-500',
   };
 
@@ -129,43 +147,47 @@ export default function OffersPage() {
   return (
     <CustomerLayout headerTitle={t('title')} showBackButton>
       <div className="container mx-auto px-4 py-6 space-y-8">
-        {/* Featured Offer Banner */}
-        <div
-          className={`${featuredOffer.bgColor} rounded-2xl p-6 text-white relative overflow-hidden`}
-        >
-          <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 start-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+        {/* Featured Offer Banner - SDUI Controlled */}
+        {isSectionVisible('offers_hero') && (
+          <div
+            className={`${featuredOffer.bgColor} rounded-2xl p-6 text-white relative overflow-hidden`}
+          >
+            <div className="absolute top-0 end-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 start-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
 
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <Gift className="w-5 h-5" />
-              <span className="text-sm font-medium opacity-90">{t('todayDeal')}</span>
-            </div>
-            <h2 className="text-2xl font-bold mb-2">{featuredOffer.title}</h2>
-            <p className="text-sm opacity-90 mb-4">{featuredOffer.description}</p>
-
-            <div className="flex items-center justify-between">
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
-                <span className="text-xs opacity-75">{t('code')}:</span>
-                <span className="font-bold ms-2">{featuredOffer.code}</span>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <Gift className="w-5 h-5" />
+                <span className="text-sm font-medium opacity-90">{featuredOffer.badge}</span>
               </div>
-              <Button
-                onClick={() => router.push(`/${locale}/providers`)}
-                className="bg-white text-primary hover:bg-white/90"
-              >
-                {t('orderNow')}
-                <Arrow className="w-4 h-4 ms-1" />
-              </Button>
+              <h2 className="text-2xl font-bold mb-2">{featuredOffer.title}</h2>
+              <p className="text-sm opacity-90 mb-4">{featuredOffer.description}</p>
+
+              <div className="flex items-center justify-between">
+                <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+                  <span className="text-xs opacity-75">{t('code')}:</span>
+                  <span className="font-bold ms-2">{featuredOffer.code}</span>
+                </div>
+                <Button
+                  onClick={() => router.push(`/${locale}/providers`)}
+                  className="bg-white text-primary hover:bg-white/90"
+                >
+                  {featuredOffer.buttonText}
+                  <Arrow className="w-4 h-4 ms-1" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Active Promo Codes */}
-        {promoCodes.length > 0 && (
+        {/* Active Promo Codes - SDUI Controlled */}
+        {isSectionVisible('promo_codes') && promoCodes.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Percent className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-slate-900">{t('discounts')}</h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {promoContent.title || t('discounts')}
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -219,12 +241,14 @@ export default function OffersPage() {
           </section>
         )}
 
-        {/* Free Delivery Section */}
-        {freeDeliveryProviders.length > 0 && (
+        {/* Free Delivery Section - SDUI Controlled */}
+        {isSectionVisible('free_delivery') && freeDeliveryProviders.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
               <Truck className="w-5 h-5 text-green-500" />
-              <h2 className="text-lg font-bold text-slate-900">{t('freeDelivery')}</h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {freeDeliveryContent.title || t('freeDelivery')}
+              </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

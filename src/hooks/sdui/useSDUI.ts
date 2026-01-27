@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client';
 // Types
 // =============================================================================
 
+export type SDUIPageType = 'homepage' | 'offers' | 'welcome' | 'providers' | 'search';
+
 export type HomepageSectionType =
   | 'hero_search'
   | 'address_selector'
@@ -17,7 +19,21 @@ export type HomepageSectionType =
   | 'nearby'
   | 'featured_products'
   | 'custom_html'
-  | 'announcement';
+  | 'announcement'
+  // Offers page sections
+  | 'offers_hero'
+  | 'promo_codes'
+  | 'free_delivery'
+  | 'flash_deals'
+  | 'category_offers'
+  // Welcome page sections
+  | 'welcome_hero'
+  | 'welcome_categories'
+  | 'welcome_features'
+  | 'welcome_steps'
+  | 'welcome_governorates'
+  | 'welcome_cta'
+  | 'welcome_partners';
 
 export interface HomepageSection {
   id: string;
@@ -45,7 +61,7 @@ export interface SDUIState {
 // Default Sections (Layer 1: Fallback - always available)
 // =============================================================================
 
-const DEFAULT_SECTIONS: HomepageSection[] = [
+const DEFAULT_HOMEPAGE_SECTIONS: HomepageSection[] = [
   {
     id: 'default-hero',
     section_type: 'hero_search',
@@ -133,11 +149,163 @@ const DEFAULT_SECTIONS: HomepageSection[] = [
   },
 ];
 
+const DEFAULT_OFFERS_SECTIONS: HomepageSection[] = [
+  {
+    id: 'default-offers-hero',
+    section_type: 'offers_hero',
+    section_key: 'offers_hero',
+    title_ar: 'العرض المميز',
+    title_en: 'Featured Offer',
+    config: { showCode: true },
+    content: {
+      ar: {
+        badge: 'عرض اليوم',
+        title: 'خصم 50% على أول طلب!',
+        description: 'استخدم الكود WELCOME50 واحصل على خصم 50% على طلبك الأول',
+        code: 'WELCOME50',
+        buttonText: 'اطلب الآن',
+      },
+      en: {
+        badge: "Today's Deal",
+        title: '50% OFF First Order!',
+        description: 'Use code WELCOME50 and get 50% off your first order',
+        code: 'WELCOME50',
+        buttonText: 'Order Now',
+      },
+    },
+    display_order: 1,
+  },
+  {
+    id: 'default-promo-codes',
+    section_type: 'promo_codes',
+    section_key: 'promo_codes',
+    title_ar: 'أكواد الخصم',
+    title_en: 'Promo Codes',
+    config: { maxItems: 5, showExpiry: true },
+    content: {
+      ar: { title: 'أكواد الخصم' },
+      en: { title: 'Discount Codes' },
+    },
+    display_order: 2,
+  },
+  {
+    id: 'default-free-delivery',
+    section_type: 'free_delivery',
+    section_key: 'free_delivery',
+    title_ar: 'توصيل مجاني',
+    title_en: 'Free Delivery',
+    config: { maxItems: 6, showRating: true },
+    content: {
+      ar: { title: 'توصيل مجاني' },
+      en: { title: 'Free Delivery' },
+    },
+    display_order: 3,
+  },
+];
+
+const DEFAULT_WELCOME_SECTIONS: HomepageSection[] = [
+  {
+    id: 'default-welcome-hero',
+    section_type: 'welcome_hero',
+    section_key: 'welcome_hero',
+    title_ar: 'الصفحة الرئيسية',
+    title_en: 'Hero Section',
+    config: { showLogo: true, showLoginLink: true },
+    content: {
+      ar: {
+        title: 'عايز تطلب؟ إنجزنا!',
+        subtitle: 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة',
+        ctaText: 'اختر موقعك للبدء',
+      },
+      en: {
+        title: 'Want to order? Engezna!',
+        subtitle: 'For your daily home essentials from the nearest merchant - no service fees',
+        ctaText: 'Select Your Location to Start',
+      },
+    },
+    display_order: 1,
+  },
+  {
+    id: 'default-welcome-categories',
+    section_type: 'welcome_categories',
+    section_key: 'welcome_categories',
+    title_ar: 'ماذا نقدم',
+    title_en: 'What We Offer',
+    config: { columns: 5 },
+    content: {},
+    display_order: 2,
+  },
+  {
+    id: 'default-welcome-features',
+    section_type: 'welcome_features',
+    section_key: 'welcome_features',
+    title_ar: 'مميزات إنجزنا',
+    title_en: 'Why Engezna',
+    config: { columns: 3 },
+    content: {
+      ar: { title: 'ليه إنجزنا؟' },
+      en: { title: 'Why Engezna?' },
+    },
+    display_order: 3,
+  },
+  {
+    id: 'default-welcome-steps',
+    section_type: 'welcome_steps',
+    section_key: 'welcome_steps',
+    title_ar: 'كيف يعمل',
+    title_en: 'How It Works',
+    config: { showNumbers: true },
+    content: {
+      ar: { title: 'كيف يعمل؟' },
+      en: { title: 'How It Works' },
+    },
+    display_order: 4,
+  },
+  {
+    id: 'default-welcome-governorates',
+    section_type: 'welcome_governorates',
+    section_key: 'welcome_governorates',
+    title_ar: 'المحافظات المتاحة',
+    title_en: 'Available Governorates',
+    config: {},
+    content: {
+      ar: { title: 'متاحين في' },
+      en: { title: 'Available In' },
+    },
+    display_order: 5,
+  },
+  {
+    id: 'default-welcome-cta',
+    section_type: 'welcome_cta',
+    section_key: 'welcome_cta',
+    title_ar: 'ابدأ الآن',
+    title_en: 'Start Now',
+    config: { showButton: true },
+    content: {
+      ar: { title: 'جاهز تبدأ؟', buttonText: 'اختر موقعك الآن' },
+      en: { title: 'Ready to Start?', buttonText: 'Select Your Location Now' },
+    },
+    display_order: 6,
+  },
+];
+
+function getDefaultSections(page: SDUIPageType): HomepageSection[] {
+  switch (page) {
+    case 'offers':
+      return DEFAULT_OFFERS_SECTIONS;
+    case 'welcome':
+      return DEFAULT_WELCOME_SECTIONS;
+    case 'homepage':
+    default:
+      return DEFAULT_HOMEPAGE_SECTIONS;
+  }
+}
+
 // =============================================================================
 // Cache Utilities (Layer 2: LocalStorage)
 // =============================================================================
 
-const CACHE_KEY = 'engezna_sdui_sections';
+const CACHE_KEY_PREFIX = 'engezna_sdui_';
 const CACHE_EXPIRY_MS = 1000 * 60 * 30; // 30 minutes
 
 interface CachedData {
@@ -146,18 +314,22 @@ interface CachedData {
   version: string;
 }
 
-function getCachedSections(): HomepageSection[] | null {
+function getCacheKey(page: SDUIPageType): string {
+  return `${CACHE_KEY_PREFIX}${page}`;
+}
+
+function getCachedSections(page: SDUIPageType = 'homepage'): HomepageSection[] | null {
   if (typeof window === 'undefined') return null;
 
   try {
-    const cached = localStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(getCacheKey(page));
     if (!cached) return null;
 
     const data: CachedData = JSON.parse(cached);
 
     // Check if cache is expired
     if (Date.now() - data.timestamp > CACHE_EXPIRY_MS) {
-      localStorage.removeItem(CACHE_KEY);
+      localStorage.removeItem(getCacheKey(page));
       return null;
     }
 
@@ -167,7 +339,7 @@ function getCachedSections(): HomepageSection[] | null {
   }
 }
 
-function setCachedSections(sections: HomepageSection[]): void {
+function setCachedSections(sections: HomepageSection[], page: SDUIPageType = 'homepage'): void {
   if (typeof window === 'undefined') return;
 
   try {
@@ -176,16 +348,22 @@ function setCachedSections(sections: HomepageSection[]): void {
       timestamp: Date.now(),
       version: '1.0',
     };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(getCacheKey(page), JSON.stringify(data));
   } catch {
     // Ignore storage errors
   }
 }
 
-function clearCache(): void {
+function clearCache(page?: SDUIPageType): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.removeItem(CACHE_KEY);
+    if (page) {
+      localStorage.removeItem(getCacheKey(page));
+    } else {
+      // Clear all SDUI caches
+      const keys = Object.keys(localStorage).filter((k) => k.startsWith(CACHE_KEY_PREFIX));
+      keys.forEach((k) => localStorage.removeItem(k));
+    }
   } catch {
     // Ignore
   }
@@ -196,6 +374,7 @@ function clearCache(): void {
 // =============================================================================
 
 interface UseSDUIOptions {
+  page?: SDUIPageType;
   userRole?: string;
   governorateId?: string | null;
   cityId?: string | null;
@@ -203,10 +382,16 @@ interface UseSDUIOptions {
 }
 
 export function useSDUI(options: UseSDUIOptions = {}) {
-  const { userRole = 'guest', governorateId = null, cityId = null, previewToken = null } = options;
+  const {
+    page = 'homepage',
+    userRole = 'guest',
+    governorateId = null,
+    cityId = null,
+    previewToken = null,
+  } = options;
 
   const [state, setState] = useState<SDUIState>({
-    sections: DEFAULT_SECTIONS, // Start with defaults (Layer 1)
+    sections: getDefaultSections(page), // Start with defaults (Layer 1)
     isLoading: true,
     isFromCache: false,
     error: null,
@@ -249,7 +434,8 @@ export function useSDUI(options: UseSDUIOptions = {}) {
       }
 
       // Fetch from database using the function
-      const { data, error } = await supabase.rpc('get_homepage_sections', {
+      const { data, error } = await supabase.rpc('get_page_sections', {
+        p_page: page,
         p_user_role: userRole,
         p_governorate_id: governorateId,
         p_city_id: cityId,
@@ -263,7 +449,7 @@ export function useSDUI(options: UseSDUIOptions = {}) {
         const sections = data as HomepageSection[];
 
         // Update cache
-        setCachedSections(sections);
+        setCachedSections(sections, page);
 
         if (mounted.current) {
           setState({
@@ -296,19 +482,28 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     } finally {
       fetchInProgress.current = false;
     }
-  }, [userRole, governorateId, cityId, previewToken]);
+  }, [page, userRole, governorateId, cityId, previewToken]);
 
   // Initial load: Try cache first (Layer 2), then fetch from server (Layer 3)
   useEffect(() => {
     mounted.current = true;
 
     // Try cache first
-    const cached = getCachedSections();
+    const cached = getCachedSections(page);
     if (cached && cached.length > 0) {
       setState({
         sections: cached.sort((a, b) => a.display_order - b.display_order),
         isLoading: true, // Still loading to get fresh data
         isFromCache: true,
+        error: null,
+        lastUpdated: null,
+      });
+    } else {
+      // Reset to defaults when page changes
+      setState({
+        sections: getDefaultSections(page),
+        isLoading: true,
+        isFromCache: false,
         error: null,
         lastUpdated: null,
       });
@@ -320,14 +515,14 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     return () => {
       mounted.current = false;
     };
-  }, [fetchSections]);
+  }, [page, fetchSections]);
 
   // Refetch function for manual refresh
   const refetch = useCallback(() => {
-    clearCache();
+    clearCache(page);
     setState((prev) => ({ ...prev, isLoading: true }));
     fetchSections();
-  }, [fetchSections]);
+  }, [page, fetchSections]);
 
   // Get section by key
   const getSection = useCallback(
@@ -364,14 +559,18 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     [getSection]
   );
 
+  // Memoized clearCache for current page
+  const clearCurrentCache = useCallback(() => clearCache(page), [page]);
+
   return {
     ...state,
+    page,
     refetch,
     getSection,
     isSectionVisible,
     getSectionConfig,
     getSectionContent,
-    clearCache,
+    clearCache: clearCurrentCache,
   };
 }
 
@@ -379,13 +578,19 @@ export function useSDUI(options: UseSDUIOptions = {}) {
 // Admin Hook for Managing Sections
 // =============================================================================
 
-export function useSDUIAdmin() {
+interface UseSDUIAdminOptions {
+  page?: SDUIPageType;
+}
+
+export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
+  const { page = 'homepage' } = options;
+
   const [sections, setSections] = useState<HomepageSection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all sections (including hidden)
+  // Fetch all sections (including hidden) for the specified page
   const fetchAllSections = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -395,6 +600,7 @@ export function useSDUIAdmin() {
       const { data, error } = await supabase
         .from('homepage_sections')
         .select('*')
+        .eq('page', page)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
@@ -405,7 +611,7 @@ export function useSDUIAdmin() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     fetchAllSections();
@@ -435,32 +641,36 @@ export function useSDUIAdmin() {
   }, []);
 
   // Reorder sections
-  const reorderSections = useCallback(async (newOrder: { id: string; order: number }[]) => {
-    setIsSaving(true);
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.rpc('reorder_homepage_sections', {
-        p_section_orders: newOrder,
-      });
-
-      if (error) throw error;
-
-      // Update local state
-      setSections((prev) => {
-        const updated = [...prev];
-        newOrder.forEach(({ id, order }) => {
-          const section = updated.find((s) => s.id === id);
-          if (section) section.display_order = order;
+  const reorderSections = useCallback(
+    async (newOrder: { id: string; order: number }[]) => {
+      setIsSaving(true);
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.rpc('reorder_page_sections', {
+          p_page: page,
+          p_section_orders: newOrder,
         });
-        return updated.sort((a, b) => a.display_order - b.display_order);
-      });
-    } catch (err: any) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setIsSaving(false);
-    }
-  }, []);
+
+        if (error) throw error;
+
+        // Update local state
+        setSections((prev) => {
+          const updated = [...prev];
+          newOrder.forEach(({ id, order }) => {
+            const section = updated.find((s) => s.id === id);
+            if (section) section.display_order = order;
+          });
+          return updated.sort((a, b) => a.display_order - b.display_order);
+        });
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [page]
+  );
 
   // Update section config
   const updateSectionConfig = useCallback(
@@ -554,6 +764,7 @@ export function useSDUIAdmin() {
 
   return {
     sections,
+    page,
     isLoading,
     isSaving,
     error,

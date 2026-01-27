@@ -189,6 +189,12 @@ export function AdminSidebar({
       resource: 'promotions',
     },
     {
+      icon: Tag,
+      label: { ar: 'تخطيط صفحة العروض', en: 'Offers Page Layout' },
+      path: `/${locale}/admin/offers`,
+      resource: 'promotions',
+    },
+    {
       icon: Mail,
       label: { ar: 'قوالب الإيميل', en: 'Email Templates' },
       path: `/${locale}/admin/email-templates`,
