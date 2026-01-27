@@ -184,14 +184,8 @@ export function AdminSidebar({
     },
     {
       icon: Layout,
-      label: { ar: 'تخطيط الصفحة الرئيسية', en: 'Homepage Layout' },
-      path: `/${locale}/admin/homepage`,
-      resource: 'promotions',
-    },
-    {
-      icon: Tag,
-      label: { ar: 'تخطيط صفحة العروض', en: 'Offers Page Layout' },
-      path: `/${locale}/admin/offers`,
+      label: { ar: 'تخطيط التطبيق', en: 'App Layout' },
+      path: `/${locale}/admin/app-layout`,
       resource: 'promotions',
     },
     {
