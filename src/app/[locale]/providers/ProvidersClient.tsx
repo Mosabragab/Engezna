@@ -355,26 +355,10 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
         {/* Page Title with Location - SDUI: providers_header */}
         {isSectionVisible('providers_header') && (
           <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-slate-900">
-                {getSectionContent('providers_header', locale as 'ar' | 'en').title ||
-                  (locale === 'ar' ? 'المتاجر' : 'Stores')}
-              </h1>
-              {userCityName && (
-                <a
-                  href={`/${locale}/profile/governorate`}
-                  aria-label={
-                    locale === 'ar'
-                      ? `تغيير الموقع: ${userCityName}`
-                      : `Change location: ${userCityName}`
-                  }
-                  className="flex items-center gap-1.5 text-sm text-slate-700 hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] justify-center"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span>{userCityName}</span>
-                </a>
-              )}
-            </div>
+            <h1 className="text-xl font-bold text-slate-900">
+              {getSectionContent('providers_header', locale as 'ar' | 'en').title ||
+                (locale === 'ar' ? 'مقدمو الخدمات' : 'Providers')}
+            </h1>
             <p className="text-slate-500 text-sm">
               {userCityName
                 ? locale === 'ar'
