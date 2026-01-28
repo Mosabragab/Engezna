@@ -58,25 +58,24 @@ interface City {
   is_active: boolean;
 }
 
-// Business category options with icons
-// Updated January 2026 - Added pharmacy category
-const businessCategories = [
-  { value: 'restaurant_cafe', icon: UtensilsCrossed, labelAr: 'مطاعم', labelEn: 'Restaurants' },
-  {
-    value: 'coffee_patisserie',
-    icon: Coffee,
-    labelAr: 'البن والحلويات',
-    labelEn: 'Coffee & Patisserie',
-  },
-  { value: 'grocery', icon: ShoppingCart, labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
-  {
-    value: 'vegetables_fruits',
-    icon: Apple,
-    labelAr: 'خضروات وفواكه',
-    labelEn: 'Fruits & Vegetables',
-  },
-  { value: 'pharmacy', icon: Pill, labelAr: 'صيدليات', labelEn: 'Pharmacies' },
-];
+interface BusinessCategory {
+  id: string;
+  code: string;
+  name_ar: string;
+  name_en: string;
+  icon: string | null;
+  color: string | null;
+  display_order: number;
+}
+
+// Icon mapping for business categories
+const categoryIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  restaurant_cafe: UtensilsCrossed,
+  coffee_patisserie: Coffee,
+  grocery: ShoppingCart,
+  vegetables_fruits: Apple,
+  pharmacy: Pill,
+};
 
 // Partner role options
 const partnerRoles = [
@@ -118,6 +117,8 @@ export default function PartnerRegisterPage() {
   const [loadingGovernorates, setLoadingGovernorates] = useState(true);
   const [cities, setCities] = useState<City[]>([]);
   const [loadingCities, setLoadingCities] = useState(false);
+  const [businessCategories, setBusinessCategories] = useState<BusinessCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
 
   const {
     register,
@@ -144,22 +145,36 @@ export default function PartnerRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Fetch governorates on mount
+  // Fetch governorates and business categories on mount
   useEffect(() => {
-    async function fetchGovernorates() {
+    async function fetchInitialData() {
       const supabase = createClient();
-      const { data, error } = await supabase
+
+      // Fetch governorates
+      const { data: govData, error: govError } = await supabase
         .from('governorates')
         .select('id, name_ar, name_en, is_active')
         .eq('is_active', true)
         .order('name_ar');
 
-      if (!error && data) {
-        setGovernorates(data);
+      if (!govError && govData) {
+        setGovernorates(govData);
       }
       setLoadingGovernorates(false);
+
+      // Fetch business categories from database
+      const { data: catData, error: catError } = await supabase
+        .from('business_categories')
+        .select('id, code, name_ar, name_en, icon, color, display_order')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (!catError && catData) {
+        setBusinessCategories(catData);
+      }
+      setLoadingCategories(false);
     }
-    fetchGovernorates();
+    fetchInitialData();
   }, []);
 
   // Fetch cities when governorate changes
@@ -663,19 +678,31 @@ export default function PartnerRegisterPage() {
                   <Select
                     value={businessCategory}
                     onValueChange={(value) => setValue('businessCategory', value)}
-                    disabled={isLoading}
+                    disabled={isLoading || loadingCategories}
                   >
                     <SelectTrigger className={errors.businessCategory ? 'border-destructive' : ''}>
-                      <SelectValue placeholder={t('businessCategoryPlaceholder')} />
+                      <SelectValue
+                        placeholder={
+                          loadingCategories
+                            ? locale === 'ar'
+                              ? 'جاري التحميل...'
+                              : 'Loading...'
+                            : t('businessCategoryPlaceholder')
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {businessCategories.map((category) => {
-                        const Icon = category.icon;
+                        const Icon = categoryIconMap[category.code] || Store;
                         return (
-                          <SelectItem key={category.value} value={category.value}>
+                          <SelectItem key={category.code} value={category.code}>
                             <div className="flex items-center gap-2">
-                              <Icon className="w-4 h-4" />
-                              <span>{locale === 'ar' ? category.labelAr : category.labelEn}</span>
+                              {category.icon ? (
+                                <span className="text-base">{category.icon}</span>
+                              ) : (
+                                <Icon className="w-4 h-4" />
+                              )}
+                              <span>{locale === 'ar' ? category.name_ar : category.name_en}</span>
                             </div>
                           </SelectItem>
                         );
