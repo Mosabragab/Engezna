@@ -65,12 +65,18 @@ export default function ABTestsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // New test form
-  const [newTest, setNewTest] = useState({
+  const [newTest, setNewTest] = useState<{
+    name: string;
+    description: string;
+    section_key: string;
+    traffic_percentage: number;
+    goal_type: ABTest['goal_type'];
+  }>({
     name: '',
     description: '',
     section_key: '',
     traffic_percentage: 100,
-    goal_type: 'click' as const,
+    goal_type: 'click',
   });
 
   const {
@@ -121,8 +127,8 @@ export default function ABTestsPage() {
         fetchABTestVariants(testId),
         getABTestResults(testId),
       ]);
-      setTestVariants((prev) => ({ ...prev, [testId]: variants }));
-      setTestResults((prev) => ({ ...prev, [testId]: results }));
+      setTestVariants((prev: Record<string, ABTestVariant[]>) => ({ ...prev, [testId]: variants }));
+      setTestResults((prev: Record<string, ABTestResult[]>) => ({ ...prev, [testId]: results }));
     } catch (err) {
       console.error('Failed to load test details:', err);
     }
@@ -204,7 +210,9 @@ export default function ABTestsPage() {
   // Delete test
   const handleDeleteTest = async (testId: string) => {
     if (
-      !confirm(isRTL ? 'هل أنت متأكد من حذف هذا الاختبار؟' : 'Are you sure you want to delete this test?')
+      !confirm(
+        isRTL ? 'هل أنت متأكد من حذف هذا الاختبار؟' : 'Are you sure you want to delete this test?'
+      )
     ) {
       return;
     }
@@ -398,11 +406,7 @@ export default function ABTestsPage() {
                           <Play className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => toggleExpanded(test.id)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => toggleExpanded(test.id)}>
                         {expandedTest === test.id ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
@@ -620,7 +624,9 @@ export default function ABTestsPage() {
                 {isRTL ? 'إلغاء' : 'Cancel'}
               </Button>
               <Button onClick={handleCreateTest} disabled={saving || !newTest.name}>
-                {saving && <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />}
+                {saving && (
+                  <Loader2 className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                )}
                 {isRTL ? 'إنشاء' : 'Create'}
               </Button>
             </div>
