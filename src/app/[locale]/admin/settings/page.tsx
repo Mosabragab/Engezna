@@ -96,6 +96,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [settings, setSettings] = useState<PlatformSettings>(defaultSettings);
   const [activeTab, setActiveTab] = useState<
@@ -151,16 +152,42 @@ export default function AdminSettingsPage() {
   async function handleSaveSettings() {
     setSaving(true);
     setSaveSuccess(false);
+    setSaveError(null);
 
     const supabase = createClient();
 
-    const { error } = await supabase.from('platform_settings').upsert({
-      id: settings.id || undefined,
-      ...settings,
-      updated_at: new Date().toISOString(),
-    });
+    // If settings.id exists, use update. Otherwise, insert a new row.
+    let error;
+    if (settings.id) {
+      const result = await supabase
+        .from('platform_settings')
+        .update({
+          ...settings,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', settings.id);
+      error = result.error;
+    } else {
+      // No id exists, create a new settings row
+      const result = await supabase.from('platform_settings').insert({
+        ...settings,
+        updated_at: new Date().toISOString(),
+      });
+      error = result.error;
 
-    if (!error) {
+      // Reload settings to get the new id
+      if (!error) {
+        await loadSettings(supabase);
+      }
+    }
+
+    if (error) {
+      console.error('Failed to save settings:', error);
+      setSaveError(
+        locale === 'ar' ? `فشل الحفظ: ${error.message}` : `Save failed: ${error.message}`
+      );
+      setTimeout(() => setSaveError(null), 5000);
+    } else {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     }
@@ -1058,7 +1085,13 @@ export default function AdminSettingsPage() {
                   <span>{locale === 'ar' ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
                 </div>
               )}
-              <div className={saveSuccess ? '' : 'ml-auto'}>
+              {saveError && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                  <AlertCircle className="w-5 h-5" />
+                  <span className="text-sm">{saveError}</span>
+                </div>
+              )}
+              <div className={saveSuccess || saveError ? '' : 'ml-auto'}>
                 <Button
                   onClick={handleSaveSettings}
                   disabled={saving}
