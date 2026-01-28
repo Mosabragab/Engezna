@@ -4,3 +4,4 @@ export { OffersCarousel } from './OffersCarousel';
 export { ReorderSection } from './ReorderSection';
 export { TopRatedSection } from './TopRatedSection';
 export { NearbySection } from './NearbySection';
+export { DeliveryModeSelector } from './DeliveryModeSelector';

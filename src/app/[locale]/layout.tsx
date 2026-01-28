@@ -6,7 +6,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { notoSans, notoSansArabic } from '@/lib/fonts';
 import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { UpdateNotification } from '@/components/shared/UpdateNotification';
-import { LocationProvider } from '@/lib/contexts';
+import { LocationProvider, OrderModeProvider } from '@/lib/contexts';
 import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider';
 import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider';
 import { locales } from '@/i18n/config';
@@ -115,12 +115,14 @@ export default async function LocaleLayout({ children, params }: Props) {
         >
           <NextIntlClientProvider locale={locale} messages={messages}>
             <LocationProvider>
-              <PushNotificationProvider>
-                <GoogleOAuthProvider>
-                  {children}
-                  <UpdateNotification />
-                </GoogleOAuthProvider>
-              </PushNotificationProvider>
+              <OrderModeProvider>
+                <PushNotificationProvider>
+                  <GoogleOAuthProvider>
+                    {children}
+                    <UpdateNotification />
+                  </GoogleOAuthProvider>
+                </PushNotificationProvider>
+              </OrderModeProvider>
             </LocationProvider>
           </NextIntlClientProvider>
         </ThemeProvider>
