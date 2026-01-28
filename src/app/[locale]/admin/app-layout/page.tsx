@@ -324,7 +324,13 @@ export default function AppLayoutPage() {
 
   // Rollback to version
   const handleRollback = async (versionId: string) => {
-    if (!confirm(isRTL ? 'هل أنت متأكد من استعادة هذه النسخة؟' : 'Are you sure you want to rollback to this version?')) {
+    if (
+      !confirm(
+        isRTL
+          ? 'هل أنت متأكد من استعادة هذه النسخة؟'
+          : 'Are you sure you want to rollback to this version?'
+      )
+    ) {
       return;
     }
     setIsRollingBack(true);
@@ -342,7 +348,11 @@ export default function AppLayoutPage() {
 
   // Delete version
   const handleDeleteVersion = async (versionId: string) => {
-    if (!confirm(isRTL ? 'هل أنت متأكد من حذف هذه النسخة؟' : 'Are you sure you want to delete this version?')) {
+    if (
+      !confirm(
+        isRTL ? 'هل أنت متأكد من حذف هذه النسخة؟' : 'Are you sure you want to delete this version?'
+      )
+    ) {
       return;
     }
     try {
@@ -441,20 +451,12 @@ export default function AppLayoutPage() {
                 {isRTL ? 'حفظ نسخة' : 'Save Version'}
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLoadVersionHistory}
-              >
+              <Button variant="outline" size="sm" onClick={handleLoadVersionHistory}>
                 <History className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {isRTL ? 'سجل الإصدارات' : 'Version History'}
               </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLoadAnalytics}
-              >
+              <Button variant="outline" size="sm" onClick={handleLoadAnalytics}>
                 <BarChart3 className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                 {isRTL ? 'التحليلات' : 'Analytics'}
               </Button>
@@ -772,7 +774,8 @@ export default function AppLayoutPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <h3 className="font-medium text-gray-900 truncate">
-                                {version.version_name || `${isRTL ? 'نسخة' : 'Version'} #${version.version_number}`}
+                                {version.version_name ||
+                                  `${isRTL ? 'نسخة' : 'Version'} #${version.version_number}`}
                               </h3>
                               {index === 0 && (
                                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
@@ -850,7 +853,9 @@ export default function AppLayoutPage() {
                             </div>
                             {sectionsForPage.length === 0 && (
                               <p className="text-sm text-gray-500 italic">
-                                {isRTL ? 'لا توجد أقسام لهذه الصفحة في هذه النسخة' : 'No sections for this page in this version'}
+                                {isRTL
+                                  ? 'لا توجد أقسام لهذه الصفحة في هذه النسخة'
+                                  : 'No sections for this page in this version'}
                               </p>
                             )}
                           </div>
