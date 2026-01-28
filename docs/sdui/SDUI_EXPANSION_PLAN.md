@@ -18,9 +18,9 @@ This document outlines the comprehensive plan for expanding the Server-Driven UI
 | 2     | Providers Listing   | ✅ Done    | 5 sections integrated              |
 | 2     | Content Editor      | 🔲 Pending | -                                  |
 | 2     | Search Results      | 🔲 Pending | -                                  |
-| 3     | Analytics Dashboard | 🔲 Pending | -                                  |
-| 3     | Advanced Targeting  | 🔲 Pending | -                                  |
-| 3     | Version History UI  | 🔲 Pending | -                                  |
+| 3     | Analytics Dashboard | ✅ Done    | Track views, clicks, CTR           |
+| 3     | Advanced Targeting  | ✅ Done    | Device type, user behavior         |
+| 3     | Version History UI  | ✅ Done    | Rollback, visual comparison        |
 | 4     | A/B Testing         | 🔲 Pending | -                                  |
 | 4     | Provider Dashboard  | 🔲 Pending | -                                  |
 
@@ -115,7 +115,9 @@ src/
 supabase/migrations/
 ├── 20260126000001_homepage_sections_sdui.sql
 ├── 20260127000001_sdui_multipage_and_scheduling.sql (split into 3 parts)
-└── 20260127000002_sdui_providers_page.sql (split into 2 parts)
+├── 20260127000002_sdui_providers_page.sql (split into 2 parts)
+├── 20260128000001_sdui_analytics.sql
+└── 20260128000002_sdui_advanced_targeting.sql
 ```
 
 ---
@@ -151,25 +153,54 @@ supabase/migrations/
 
 ---
 
-## Phase 3: Advanced Features
+## Phase 3: Advanced Features ✅
 
-### 3.1 Analytics Dashboard
+### 3.1 Analytics Dashboard ✅
 
-- Section click-through rates
-- Visibility duration tracking
-- Heatmap data collection
+**Status**: Done
 
-### 3.2 Advanced Targeting
+**Features Implemented**:
+- Section view tracking with daily aggregation
+- Click-through rate (CTR) calculation
+- Device type analytics (mobile/desktop/tablet)
+- Trend direction (up/down/stable/new)
+- Summary cards with totals
+- Section-level analytics table
 
-- User behavior (new vs returning)
-- Device type (mobile, desktop)
-- A/B test assignment
+**Database**:
+- `sdui_section_analytics` table
+- `track_section_event()` function
+- `get_section_analytics()` function
+- `get_section_daily_analytics()` function
 
-### 3.3 Version History UI
+### 3.2 Advanced Targeting ✅
 
-- Visual diff between versions
-- One-click rollback
-- Change log with author info
+**Status**: Done
+
+**Features Implemented**:
+- Device type targeting (mobile, desktop, tablet)
+- User behavior targeting (new vs returning)
+- Priority-based section ordering
+- Visibility percentage for gradual rollouts
+- A/B test group support
+
+**New Columns**:
+- `target_devices TEXT[]`
+- `target_user_behavior TEXT[]`
+- `priority INTEGER`
+- `ab_test_group TEXT`
+- `visibility_percentage INTEGER`
+
+### 3.3 Version History UI ✅
+
+**Status**: Done
+
+**Features Implemented**:
+- Version history list with metadata
+- One-click rollback to previous version
+- Visual section comparison
+- Delete old versions
+- Version filtering by page
 
 ---
 
@@ -247,5 +278,9 @@ const { sections, toggleVisibility, reorderSections, createPreviewDraft, saveLay
 3. ~~Integrate welcome page~~ ✅
 4. ~~Create unified admin panel~~ ✅
 5. ~~Integrate providers listing page~~ ✅
-6. Add content editor for custom HTML sections
-7. Integrate search results page with SDUI
+6. ~~Add analytics dashboard~~ ✅
+7. ~~Add advanced targeting (device/user)~~ ✅
+8. ~~Add version history UI~~ ✅
+9. Add content editor for custom HTML sections
+10. Integrate search results page with SDUI
+11. Implement A/B testing framework

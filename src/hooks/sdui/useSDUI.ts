@@ -9,6 +9,16 @@ import { createClient } from '@/lib/supabase/client';
 
 export type SDUIPageType = 'homepage' | 'offers' | 'welcome' | 'providers' | 'search';
 
+export interface LayoutVersion {
+  id: string;
+  version_number: number;
+  version_name: string | null;
+  sections_snapshot: HomepageSection[];
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+
 export type HomepageSectionType =
   | 'hero_search'
   | 'address_selector'
@@ -61,6 +71,24 @@ export interface SDUIState {
   isFromCache: boolean;
   error: string | null;
   lastUpdated: Date | null;
+}
+
+export interface SectionAnalytics {
+  section_key: string;
+  page: string;
+  total_views: number;
+  total_clicks: number;
+  click_rate: number;
+  unique_devices: number;
+  top_device: string | null;
+  trend_direction: 'up' | 'down' | 'stable' | 'new';
+}
+
+export interface DailyAnalytics {
+  event_date: string;
+  views: number;
+  clicks: number;
+  interactions: number;
 }
 
 // =============================================================================
@@ -465,6 +493,28 @@ interface UseSDUIOptions {
   governorateId?: string | null;
   cityId?: string | null;
   previewToken?: string | null; // For preview mode
+  deviceType?: 'mobile' | 'desktop' | 'tablet' | null; // For device targeting
+  isNewUser?: boolean | null; // For user behavior targeting
+}
+
+// Detect device type
+function detectDeviceType(): 'mobile' | 'desktop' | 'tablet' {
+  if (typeof window === 'undefined') return 'desktop';
+  const width = window.innerWidth;
+  if (width < 768) return 'mobile';
+  if (width < 1024) return 'tablet';
+  return 'desktop';
+}
+
+// Check if user is new (first visit)
+function checkIsNewUser(): boolean {
+  if (typeof window === 'undefined') return true;
+  const visited = localStorage.getItem('engezna_visited');
+  if (!visited) {
+    localStorage.setItem('engezna_visited', Date.now().toString());
+    return true;
+  }
+  return false;
 }
 
 export function useSDUI(options: UseSDUIOptions = {}) {
@@ -474,7 +524,26 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     governorateId = null,
     cityId = null,
     previewToken = null,
+    deviceType: providedDeviceType = null,
+    isNewUser: providedIsNewUser = null,
   } = options;
+
+  // Auto-detect device type and user status if not provided
+  const [autoDeviceType, setAutoDeviceType] = useState<'mobile' | 'desktop' | 'tablet'>('desktop');
+  const [autoIsNewUser, setAutoIsNewUser] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setAutoDeviceType(detectDeviceType());
+    setAutoIsNewUser(checkIsNewUser());
+
+    // Update device type on resize
+    const handleResize = () => setAutoDeviceType(detectDeviceType());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const deviceType = providedDeviceType || autoDeviceType;
+  const isNewUser = providedIsNewUser ?? autoIsNewUser;
 
   const [state, setState] = useState<SDUIState>({
     sections: getDefaultSections(page), // Start with defaults (Layer 1)
@@ -525,6 +594,8 @@ export function useSDUI(options: UseSDUIOptions = {}) {
         p_user_role: userRole,
         p_governorate_id: governorateId,
         p_city_id: cityId,
+        p_device_type: deviceType,
+        p_is_new_user: isNewUser,
       });
 
       if (error) {
@@ -568,7 +639,7 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     } finally {
       fetchInProgress.current = false;
     }
-  }, [page, userRole, governorateId, cityId, previewToken]);
+  }, [page, userRole, governorateId, cityId, previewToken, deviceType, isNewUser]);
 
   // Initial load: Try cache first (Layer 2), then fetch from server (Layer 3)
   useEffect(() => {
@@ -648,6 +719,44 @@ export function useSDUI(options: UseSDUIOptions = {}) {
   // Memoized clearCache for current page
   const clearCurrentCache = useCallback(() => clearCache(page), [page]);
 
+  // Track section event (view, click, interaction)
+  const trackSectionEvent = useCallback(
+    async (
+      sectionKey: string,
+      eventType: 'view' | 'click' | 'interaction',
+      options?: {
+        deviceType?: 'mobile' | 'desktop' | 'tablet';
+        governorateId?: string;
+        cityId?: string;
+      }
+    ) => {
+      try {
+        const supabase = createClient();
+
+        // Detect device type if not provided
+        let deviceType = options?.deviceType;
+        if (!deviceType && typeof window !== 'undefined') {
+          const width = window.innerWidth;
+          deviceType = width < 768 ? 'mobile' : width < 1024 ? 'tablet' : 'desktop';
+        }
+
+        await supabase.rpc('track_section_event', {
+          p_section_key: sectionKey,
+          p_page: page,
+          p_event_type: eventType,
+          p_device_type: deviceType,
+          p_user_type: userRole,
+          p_governorate_id: options?.governorateId || governorateId,
+          p_city_id: options?.cityId || cityId,
+        });
+      } catch (error) {
+        // Silently fail - analytics shouldn't break the app
+        console.debug('Analytics tracking error:', error);
+      }
+    },
+    [page, userRole, governorateId, cityId]
+  );
+
   return {
     ...state,
     page,
@@ -657,6 +766,7 @@ export function useSDUI(options: UseSDUIOptions = {}) {
     getSectionConfig,
     getSectionContent,
     clearCache: clearCurrentCache,
+    trackSectionEvent,
   };
 }
 
@@ -848,6 +958,165 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     return data;
   }, []);
 
+  // Fetch version history
+  const fetchVersionHistory = useCallback(async (): Promise<LayoutVersion[]> => {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('homepage_layout_versions')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+
+    return data || [];
+  }, []);
+
+  // Rollback to a specific version
+  const rollbackToVersion = useCallback(
+    async (versionId: string) => {
+      setIsSaving(true);
+      try {
+        const supabase = createClient();
+
+        // Get the version snapshot
+        const { data: version, error: versionError } = await supabase
+          .from('homepage_layout_versions')
+          .select('sections_snapshot')
+          .eq('id', versionId)
+          .single();
+
+        if (versionError) throw versionError;
+
+        const snapshot = version.sections_snapshot as HomepageSection[];
+
+        // Delete current sections for this page
+        const { error: deleteError } = await supabase
+          .from('homepage_sections')
+          .delete()
+          .eq('page', page);
+
+        if (deleteError) throw deleteError;
+
+        // Insert sections from snapshot
+        const sectionsToInsert = snapshot
+          .filter((s: any) => s.page === page)
+          .map((s: any) => ({
+            ...s,
+            id: undefined, // Let DB generate new IDs
+          }));
+
+        if (sectionsToInsert.length > 0) {
+          const { error: insertError } = await supabase
+            .from('homepage_sections')
+            .insert(sectionsToInsert);
+
+          if (insertError) throw insertError;
+        }
+
+        // Clear cache and refetch
+        clearCache(page);
+        await fetchAllSections();
+
+        return true;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [page, fetchAllSections]
+  );
+
+  // Delete a version
+  const deleteVersion = useCallback(async (versionId: string) => {
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('homepage_layout_versions')
+      .delete()
+      .eq('id', versionId);
+
+    if (error) throw error;
+  }, []);
+
+  // Compare two versions and return differences
+  const compareVersions = useCallback(
+    (
+      version1: HomepageSection[],
+      version2: HomepageSection[]
+    ): {
+      added: HomepageSection[];
+      removed: HomepageSection[];
+      modified: { before: HomepageSection; after: HomepageSection }[];
+    } => {
+      const v1Map = new Map(version1.map((s) => [s.section_key, s]));
+      const v2Map = new Map(version2.map((s) => [s.section_key, s]));
+
+      const added: HomepageSection[] = [];
+      const removed: HomepageSection[] = [];
+      const modified: { before: HomepageSection; after: HomepageSection }[] = [];
+
+      // Find added and modified
+      version2.forEach((s) => {
+        const oldSection = v1Map.get(s.section_key);
+        if (!oldSection) {
+          added.push(s);
+        } else if (JSON.stringify(oldSection) !== JSON.stringify(s)) {
+          modified.push({ before: oldSection, after: s });
+        }
+      });
+
+      // Find removed
+      version1.forEach((s) => {
+        if (!v2Map.has(s.section_key)) {
+          removed.push(s);
+        }
+      });
+
+      return { added, removed, modified };
+    },
+    []
+  );
+
+  // Fetch section analytics
+  const fetchAnalytics = useCallback(
+    async (startDate?: Date, endDate?: Date): Promise<SectionAnalytics[]> => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase.rpc('get_section_analytics', {
+        p_page: page,
+        p_start_date: startDate?.toISOString().split('T')[0] || null,
+        p_end_date: endDate?.toISOString().split('T')[0] || null,
+      });
+
+      if (error) throw error;
+
+      return data || [];
+    },
+    [page]
+  );
+
+  // Fetch daily analytics for a specific section
+  const fetchDailyAnalytics = useCallback(
+    async (sectionKey: string, days: number = 30): Promise<DailyAnalytics[]> => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase.rpc('get_section_daily_analytics', {
+        p_section_key: sectionKey,
+        p_page: page,
+        p_days: days,
+      });
+
+      if (error) throw error;
+
+      return data || [];
+    },
+    [page]
+  );
+
   return {
     sections,
     page,
@@ -861,5 +1130,11 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     updateSectionContent,
     createPreviewDraft,
     saveLayoutVersion,
+    fetchVersionHistory,
+    rollbackToVersion,
+    deleteVersion,
+    compareVersions,
+    fetchAnalytics,
+    fetchDailyAnalytics,
   };
 }
