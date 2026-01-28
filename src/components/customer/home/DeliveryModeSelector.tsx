@@ -122,7 +122,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
 
   return (
     <div className={cn('px-4', className)}>
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
         {/* Order Type Toggle */}
         <div className="p-2">
           <div className="flex bg-slate-100 rounded-xl p-1">
