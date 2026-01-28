@@ -40,6 +40,7 @@ interface Order {
     id: string;
     name_ar: string;
     name_en: string;
+    category: string;
     governorate_id: string | null;
     city_id: string | null;
     district_id: string | null;
@@ -71,6 +72,7 @@ export default function AdminOrdersPage() {
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('');
   const { geoFilter, setGeoFilter, isRegionalAdmin } = useAdminGeoFilter();
   const [stats, setStats] = useState({
@@ -88,7 +90,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     filterOrders();
-  }, [orders, searchQuery, statusFilter, dateFilter, geoFilter]);
+  }, [orders, searchQuery, statusFilter, categoryFilter, dateFilter, geoFilter]);
 
   async function checkAuth() {
     const supabase = createClient();
@@ -183,6 +185,10 @@ export default function AdminOrdersPage() {
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter((o) => o.status === statusFilter);
+    }
+
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter((o) => o.provider?.category === categoryFilter);
     }
 
     if (dateFilter) {
@@ -444,6 +450,23 @@ export default function AdminOrdersPage() {
                 </option>
                 <option value="delivered">{locale === 'ar' ? 'تم التسليم' : 'Delivered'}</option>
                 <option value="cancelled">{locale === 'ar' ? 'ملغي' : 'Cancelled'}</option>
+              </select>
+
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              >
+                <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All Categories'}</option>
+                <option value="restaurant_cafe">{locale === 'ar' ? 'مطاعم' : 'Restaurants'}</option>
+                <option value="coffee_patisserie">
+                  {locale === 'ar' ? 'البن والحلويات' : 'Coffee & Patisserie'}
+                </option>
+                <option value="grocery">{locale === 'ar' ? 'سوبر ماركت' : 'Supermarket'}</option>
+                <option value="vegetables_fruits">
+                  {locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}
+                </option>
+                <option value="pharmacy">{locale === 'ar' ? 'صيدليات' : 'Pharmacies'}</option>
               </select>
 
               <input

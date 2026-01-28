@@ -30,6 +30,8 @@ import {
   Mail,
   HeadphonesIcon,
   Layout,
+  FlaskConical,
+  FileText,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -184,8 +186,20 @@ export function AdminSidebar({
     },
     {
       icon: Layout,
-      label: { ar: 'تخطيط الصفحة الرئيسية', en: 'Homepage Layout' },
-      path: `/${locale}/admin/homepage`,
+      label: { ar: 'تخطيط التطبيق', en: 'App Layout' },
+      path: `/${locale}/admin/app-layout`,
+      resource: 'promotions',
+    },
+    {
+      icon: FlaskConical,
+      label: { ar: 'اختبارات A/B', en: 'A/B Tests' },
+      path: `/${locale}/admin/ab-tests`,
+      resource: 'promotions',
+    },
+    {
+      icon: FileText,
+      label: { ar: 'محرر المحتوى', en: 'Content Editor' },
+      path: `/${locale}/admin/content-editor`,
       resource: 'promotions',
     },
     {

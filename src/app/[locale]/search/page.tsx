@@ -11,6 +11,7 @@ import { useFavorites } from '@/hooks/customer';
 import { Search, X, Store, ShoppingBag, Loader2, Plus, Minus, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/store/cart';
+import { useSDUI } from '@/hooks/sdui';
 
 interface Provider {
   id: string;
@@ -92,7 +93,31 @@ export default function SearchPage() {
   const { isFavorite, toggleFavorite, isAuthenticated } = useFavorites();
   const { addItem, getItemQuantity, updateQuantity, provider: cartProvider } = useCart();
 
+  // SDUI Integration
+  const { sections, isSectionVisible, getSectionConfig, getSectionContent } = useSDUI({
+    page: 'search_results',
+    userRole: 'customer',
+  });
+
   const isRTL = locale === 'ar';
+
+  // Get SDUI content with fallbacks
+  const localeKey = locale as 'ar' | 'en';
+  const searchInputContent = getSectionContent('search_input', localeKey) || {};
+  const searchSuggestionsContent = getSectionContent('search_suggestions', localeKey) || {};
+  const searchEmptyContent = getSectionContent('search_empty', localeKey) || {};
+  const searchStoresContent = getSectionContent('search_stores', localeKey) || {};
+  const searchProductsContent = getSectionContent('search_products', localeKey) || {};
+
+  // Get SDUI config with type assertions
+  const searchStoresConfig = (getSectionConfig('search_stores', {
+    maxItems: 3,
+    showViewAll: true,
+  }) || { maxItems: 3, showViewAll: true }) as { maxItems: number; showViewAll: boolean };
+  const searchProductsConfig = (getSectionConfig('search_products', {
+    maxItems: 4,
+    showViewAll: true,
+  }) || { maxItems: 4, showViewAll: true }) as { maxItems: number; showViewAll: boolean };
 
   // Handle add to cart
   const handleAddToCart = (product: Product) => {
@@ -398,7 +423,8 @@ export default function SearchPage() {
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder={
-                    locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...'
+                    (searchInputContent as any)?.[`placeholder_${locale}`] ||
+                    (locale === 'ar' ? 'ابحث عن متجر أو منتج...' : 'Search for store or product...')
                   }
                   autoFocus
                   className={`flex-1 h-11 bg-transparent outline-none px-3 ${isRTL ? 'text-right' : 'text-left'}`}
@@ -473,31 +499,36 @@ export default function SearchPage() {
         )}
 
         {/* Initial State - No Search Yet */}
-        {!hasSearched && !isLoading && (
+        {!hasSearched && !isLoading && isSectionVisible('search_suggestions') && (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
               <Search className="w-10 h-10 text-slate-400" />
             </div>
             <h2 className="text-lg font-semibold text-slate-700 mb-2">
-              {locale === 'ar' ? 'ابحث عن أي شيء' : 'Search for anything'}
+              {(searchSuggestionsContent as any)?.[`title_${locale}`] ||
+                (locale === 'ar' ? 'ابحث عن أي شيء' : 'Search for anything')}
             </h2>
             <p className="text-slate-500 text-sm max-w-xs">
-              {locale === 'ar'
-                ? 'ابحث في المتاجر والمنتجات المتاحة في منطقتك'
-                : 'Search stores and products available in your area'}
+              {(searchSuggestionsContent as any)?.[`description_${locale}`] ||
+                (locale === 'ar'
+                  ? 'ابحث في المتاجر والمنتجات المتاحة في منطقتك'
+                  : 'Search stores and products available in your area')}
             </p>
           </div>
         )}
 
         {/* No Results */}
-        {hasSearched && !isLoading && totalCount === 0 && (
+        {hasSearched && !isLoading && totalCount === 0 && isSectionVisible('search_empty') && (
           <EmptyState
             icon="search"
-            title={locale === 'ar' ? 'لا توجد نتائج' : 'No results found'}
+            title={
+              (searchEmptyContent as any)?.[`title_${locale}`] ||
+              (locale === 'ar' ? 'لا توجد نتائج' : 'No results found')
+            }
             description={
               locale === 'ar'
-                ? `لم نجد نتائج لـ "${searchQuery}". جرب كلمات أخرى`
-                : `No results for "${searchQuery}". Try different keywords`
+                ? `لم نجد نتائج لـ "${searchQuery}". ${(searchEmptyContent as any)?.description_ar || 'جرب كلمات أخرى'}`
+                : `No results for "${searchQuery}". ${(searchEmptyContent as any)?.description_en || 'Try different keywords'}`
             }
           />
         )}
@@ -506,182 +537,203 @@ export default function SearchPage() {
         {hasSearched && !isLoading && totalCount > 0 && (
           <div className="space-y-6">
             {/* Stores Section */}
-            {(activeTab === 'all' || activeTab === 'stores') && storesCount > 0 && (
-              <section>
-                {activeTab === 'all' && (
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                      <Store className="w-5 h-5 text-primary" />
-                      {locale === 'ar' ? 'المتاجر' : 'Stores'}
-                      <span className="text-sm font-normal text-slate-500">({storesCount})</span>
-                    </h2>
-                    {storesCount > 3 && (
-                      <button
-                        onClick={() => setActiveTab('stores')}
-                        className="text-sm text-primary font-medium"
-                      >
-                        {locale === 'ar' ? 'عرض الكل' : 'View all'}
-                      </button>
-                    )}
+            {(activeTab === 'all' || activeTab === 'stores') &&
+              storesCount > 0 &&
+              isSectionVisible('search_stores') && (
+                <section>
+                  {activeTab === 'all' && (
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <Store className="w-5 h-5 text-primary" />
+                        {(searchStoresContent as any)?.[`title_${locale}`] ||
+                          (locale === 'ar' ? 'المتاجر' : 'Stores')}
+                        <span className="text-sm font-normal text-slate-500">({storesCount})</span>
+                      </h2>
+                      {storesCount > (searchStoresConfig.maxItems || 3) &&
+                        searchStoresConfig.showViewAll && (
+                          <button
+                            onClick={() => setActiveTab('stores')}
+                            className="text-sm text-primary font-medium"
+                          >
+                            {(searchStoresContent as any)?.[`viewAllText_${locale}`] ||
+                              (locale === 'ar' ? 'عرض الكل' : 'View all')}
+                          </button>
+                        )}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {(activeTab === 'all'
+                      ? providers.slice(0, searchStoresConfig.maxItems || 3)
+                      : providers
+                    ).map((provider) => (
+                      <ProviderCard
+                        key={provider.id}
+                        provider={provider}
+                        variant="default"
+                        isFavorite={isFavorite(provider.id)}
+                        onFavoriteToggle={
+                          isAuthenticated ? () => toggleFavorite(provider.id) : undefined
+                        }
+                      />
+                    ))}
                   </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(activeTab === 'all' ? providers.slice(0, 3) : providers).map((provider) => (
-                    <ProviderCard
-                      key={provider.id}
-                      provider={provider}
-                      variant="default"
-                      isFavorite={isFavorite(provider.id)}
-                      onFavoriteToggle={
-                        isAuthenticated ? () => toggleFavorite(provider.id) : undefined
-                      }
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
+                </section>
+              )}
 
             {/* Products Section */}
-            {(activeTab === 'all' || activeTab === 'products') && productsCount > 0 && (
-              <section>
-                {activeTab === 'all' && (
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                      <ShoppingBag className="w-5 h-5 text-primary" />
-                      {locale === 'ar' ? 'المنتجات' : 'Products'}
-                      <span className="text-sm font-normal text-slate-500">({productsCount})</span>
-                    </h2>
-                    {productsCount > 4 && (
-                      <button
-                        onClick={() => setActiveTab('products')}
-                        className="text-sm text-primary font-medium"
-                      >
-                        {locale === 'ar' ? 'عرض الكل' : 'View all'}
-                      </button>
-                    )}
-                  </div>
-                )}
-                <div className="space-y-3">
-                  {(activeTab === 'all' ? products.slice(0, 4) : products).map((product) => {
-                    const quantity = getItemQuantity(product.id);
-                    return (
-                      <div
-                        key={product.id}
-                        className="bg-white rounded-xl border border-slate-100 p-3 flex gap-3 hover:border-primary/30 hover:shadow-sm transition-all"
-                      >
-                        {/* Product Image - Clickable to navigate */}
-                        <div
-                          onClick={() => handleProductClick(product)}
-                          className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 cursor-pointer"
-                        >
-                          {product.image_url ? (
-                            <img
-                              src={product.image_url}
-                              alt={
-                                locale === 'ar'
-                                  ? product.name_ar
-                                  : product.name_en || product.name_ar
-                              }
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ShoppingBag className="w-8 h-8 text-slate-300" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Product Info */}
-                        <div className="flex-1 min-w-0">
-                          <h3
-                            onClick={() => handleProductClick(product)}
-                            className="font-semibold text-slate-900 truncate cursor-pointer hover:text-primary"
+            {(activeTab === 'all' || activeTab === 'products') &&
+              productsCount > 0 &&
+              isSectionVisible('search_products') && (
+                <section>
+                  {activeTab === 'all' && (
+                    <div className="flex items-center justify-between mb-3">
+                      <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <ShoppingBag className="w-5 h-5 text-primary" />
+                        {(searchProductsContent as any)?.[`title_${locale}`] ||
+                          (locale === 'ar' ? 'المنتجات' : 'Products')}
+                        <span className="text-sm font-normal text-slate-500">
+                          ({productsCount})
+                        </span>
+                      </h2>
+                      {productsCount > (searchProductsConfig.maxItems || 4) &&
+                        searchProductsConfig.showViewAll && (
+                          <button
+                            onClick={() => setActiveTab('products')}
+                            className="text-sm text-primary font-medium"
                           >
-                            {locale === 'ar' ? product.name_ar : product.name_en || product.name_ar}
-                          </h3>
-                          {product.description_ar && (
-                            <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
-                              {locale === 'ar'
-                                ? product.description_ar
-                                : product.description_en || product.description_ar}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center gap-2">
-                              {product.original_price && product.original_price > product.price && (
-                                <span className="text-xs text-slate-400 line-through">
-                                  {product.original_price} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                                </span>
-                              )}
-                              <span className="font-bold text-primary">
-                                {product.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Provider Info */}
-                          <div className="flex items-center gap-1.5 mt-1.5">
-                            {product.provider.logo_url ? (
+                            {(searchProductsContent as any)?.[`viewAllText_${locale}`] ||
+                              (locale === 'ar' ? 'عرض الكل' : 'View all')}
+                          </button>
+                        )}
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    {(activeTab === 'all'
+                      ? products.slice(0, searchProductsConfig.maxItems || 4)
+                      : products
+                    ).map((product) => {
+                      const quantity = getItemQuantity(product.id);
+                      return (
+                        <div
+                          key={product.id}
+                          className="bg-white rounded-xl border border-slate-100 p-3 flex gap-3 hover:border-primary/30 hover:shadow-sm transition-all"
+                        >
+                          {/* Product Image - Clickable to navigate */}
+                          <div
+                            onClick={() => handleProductClick(product)}
+                            className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 cursor-pointer"
+                          >
+                            {product.image_url ? (
                               <img
-                                src={product.provider.logo_url}
-                                alt=""
-                                className="w-4 h-4 rounded-full object-cover"
+                                src={product.image_url}
+                                alt={
+                                  locale === 'ar'
+                                    ? product.name_ar
+                                    : product.name_en || product.name_ar
+                                }
+                                className="w-full h-full object-cover"
                               />
                             ) : (
-                              <Store className="w-4 h-4 text-slate-400" />
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ShoppingBag className="w-8 h-8 text-slate-300" />
+                              </div>
                             )}
-                            <span className="text-xs text-slate-500">
+                          </div>
+
+                          {/* Product Info */}
+                          <div className="flex-1 min-w-0">
+                            <h3
+                              onClick={() => handleProductClick(product)}
+                              className="font-semibold text-slate-900 truncate cursor-pointer hover:text-primary"
+                            >
                               {locale === 'ar'
-                                ? product.provider.name_ar
-                                : product.provider.name_en || product.provider.name_ar}
-                            </span>
+                                ? product.name_ar
+                                : product.name_en || product.name_ar}
+                            </h3>
+                            {product.description_ar && (
+                              <p className="text-sm text-slate-500 line-clamp-1 mt-0.5">
+                                {locale === 'ar'
+                                  ? product.description_ar
+                                  : product.description_en || product.description_ar}
+                              </p>
+                            )}
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2">
+                                {product.original_price &&
+                                  product.original_price > product.price && (
+                                    <span className="text-xs text-slate-400 line-through">
+                                      {product.original_price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                    </span>
+                                  )}
+                                <span className="font-bold text-primary">
+                                  {product.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                                </span>
+                              </div>
+                            </div>
+                            {/* Provider Info */}
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              {product.provider.logo_url ? (
+                                <img
+                                  src={product.provider.logo_url}
+                                  alt=""
+                                  className="w-4 h-4 rounded-full object-cover"
+                                />
+                              ) : (
+                                <Store className="w-4 h-4 text-slate-400" />
+                              )}
+                              <span className="text-xs text-slate-500">
+                                {locale === 'ar'
+                                  ? product.provider.name_ar
+                                  : product.provider.name_en || product.provider.name_ar}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Add to Cart Button */}
+                          <div className="flex items-center flex-shrink-0">
+                            {quantity > 0 ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(product, quantity - 1);
+                                  }}
+                                  className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors"
+                                >
+                                  <Minus className="w-4 h-4" />
+                                </button>
+                                <span className="w-6 text-center font-semibold text-sm">
+                                  {quantity}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleQuantityChange(product, quantity + 1);
+                                  }}
+                                  className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToCart(product);
+                                }}
+                                className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm"
+                                aria-label={locale === 'ar' ? 'أضف للسلة' : 'Add to cart'}
+                              >
+                                <ShoppingCart className="w-5 h-5" />
+                              </button>
+                            )}
                           </div>
                         </div>
-
-                        {/* Add to Cart Button */}
-                        <div className="flex items-center flex-shrink-0">
-                          {quantity > 0 ? (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuantityChange(product, quantity - 1);
-                                }}
-                                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                              <span className="w-6 text-center font-semibold text-sm">
-                                {quantity}
-                              </span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleQuantityChange(product, quantity + 1);
-                                }}
-                                className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAddToCart(product);
-                              }}
-                              className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm"
-                              aria-label={locale === 'ar' ? 'أضف للسلة' : 'Add to cart'}
-                            >
-                              <ShoppingCart className="w-5 h-5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
           </div>
         )}
       </div>

@@ -364,6 +364,7 @@ export default function AdminProvidersPage() {
       coffee_patisserie: { ar: 'البن والحلويات', en: 'Coffee & Patisserie' },
       grocery: { ar: 'سوبر ماركت', en: 'Supermarket' },
       vegetables_fruits: { ar: 'خضروات وفواكه', en: 'Fruits & Vegetables' },
+      pharmacy: { ar: 'صيدليات', en: 'Pharmacies' },
       // Legacy support
       restaurant: { ar: 'مطعم', en: 'Restaurant' },
       coffee_shop: { ar: 'كافيه', en: 'Coffee Shop' },
@@ -501,7 +502,7 @@ export default function AdminProvidersPage() {
               </option>
             </select>
 
-            {/* Category Filter - Updated December 2025 */}
+            {/* Category Filter - Updated January 2026 */}
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -516,6 +517,7 @@ export default function AdminProvidersPage() {
               <option value="vegetables_fruits">
                 {locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}
               </option>
+              <option value="pharmacy">{locale === 'ar' ? 'صيدليات' : 'Pharmacies'}</option>
             </select>
 
             {/* Geographic Filter - Only show for non-regional admins */}
