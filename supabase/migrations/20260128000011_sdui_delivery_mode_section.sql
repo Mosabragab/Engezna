@@ -1,13 +1,8 @@
 -- ============================================================================
--- SDUI: Add Delivery Mode Section
+-- SDUI: Add Delivery Mode Section Data
 -- ============================================================================
--- Adds the delivery_mode section type for Delivery/Pickup toggle with address
+-- Insert delivery_mode section (requires enum to be committed first)
 -- ============================================================================
-
--- ----------------------------------------------------------------------------
--- Add delivery_mode to the enum
--- ----------------------------------------------------------------------------
-ALTER TYPE homepage_section_type ADD VALUE IF NOT EXISTS 'delivery_mode';
 
 -- ----------------------------------------------------------------------------
 -- Insert delivery_mode section (replaces or works alongside address_selector)
