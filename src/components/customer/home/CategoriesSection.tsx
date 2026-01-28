@@ -2,62 +2,10 @@
 
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-
-interface Category {
-  id: string;
-  key: string;
-  nameAr: string;
-  nameEn: string;
-  emoji: string;
-  gradient: string;
-}
-
-// Active categories - 4 categories currently available
-// Updated December 2024 - New design with emoji and gradient backgrounds
-// Keys must match database category values: restaurant_cafe, coffee_patisserie, grocery, vegetables_fruits
-const categories: Category[] = [
-  {
-    id: '1',
-    key: 'restaurant_cafe',
-    nameAr: 'مطاعم',
-    nameEn: 'Restaurants',
-    emoji: '🍔',
-    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)',
-  },
-  {
-    id: '2',
-    key: 'coffee_patisserie',
-    nameAr: 'البن والحلويات',
-    nameEn: 'Coffee & Sweets',
-    emoji: '☕',
-    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)',
-  },
-  {
-    id: '3',
-    key: 'grocery',
-    nameAr: 'سوبر ماركت',
-    nameEn: 'Supermarket',
-    emoji: '🛒',
-    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)',
-  },
-  {
-    id: '4',
-    key: 'vegetables_fruits',
-    nameAr: 'خضروات وفواكه',
-    nameEn: 'Vegetables & Fruits',
-    emoji: '🍌',
-    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
-  },
-  {
-    id: '5',
-    key: 'pharmacy',
-    nameAr: 'صيدليات',
-    nameEn: 'Pharmacies',
-    emoji: '💊',
-    gradient: 'linear-gradient(145deg, rgba(252,231,243,0.9) 0%, rgba(249,168,212,0.7) 100%)',
-  },
-];
+import { createClient } from '@/lib/supabase/client';
+import { type BusinessCategory, getCategoryGradient } from '@/lib/supabase/business-categories';
 
 interface CategoriesSectionProps {
   selectedCategory?: string;
@@ -75,8 +23,47 @@ export function CategoriesSection({
   className = '',
 }: CategoriesSectionProps) {
   const locale = useLocale();
+  const [categories, setCategories] = useState<BusinessCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch categories from database
+  useEffect(() => {
+    async function fetchCategories() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('business_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order');
+
+      if (!error && data) {
+        setCategories(data);
+      }
+      setLoading(false);
+    }
+    fetchCategories();
+  }, []);
 
   const sectionTitle = locale === 'ar' ? 'الأقسام' : 'Categories';
+
+  // Show skeleton while loading
+  if (loading) {
+    return (
+      <section className={cn('py-6 px-4 bg-white', className)}>
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-xl font-bold text-slate-900">{sectionTitle}</h2>
+        </div>
+        <div className="grid grid-cols-5 gap-2 sm:gap-3 items-start">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex flex-col items-center animate-pulse">
+              <div className="w-[64px] h-[64px] sm:w-[72px] sm:h-[72px] md:w-[84px] md:h-[84px] lg:w-[100px] lg:h-[100px] rounded-2xl md:rounded-3xl bg-slate-200" />
+              <div className="mt-2 h-4 w-16 bg-slate-200 rounded" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={cn('py-6 px-4 bg-white', className)}>
@@ -96,8 +83,10 @@ export function CategoriesSection({
 
       {/* Categories Grid - Elegant Design with Hover Effects */}
       <div className="grid grid-cols-5 gap-2 sm:gap-3 items-start">
-        {categories.map((category, index) => {
-          const isSelected = selectedCategory === category.key;
+        {categories.map((category) => {
+          const isSelected = selectedCategory === category.code;
+          const gradient = getCategoryGradient(category.code);
+          const categoryName = locale === 'ar' ? category.name_ar : category.name_en;
 
           const cardContent = (
             <div className="flex flex-col items-center">
@@ -112,7 +101,7 @@ export function CategoriesSection({
                   isSelected && 'scale-105 ring-2 ring-primary'
                 )}
                 style={{
-                  background: category.gradient,
+                  background: gradient,
                   boxShadow: '0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04)',
                 }}
               >
@@ -122,7 +111,7 @@ export function CategoriesSection({
                   className="text-[26px] sm:text-[30px] md:text-[36px] lg:text-[44px] leading-none select-none relative z-10"
                   style={{ filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.12))' }}
                 >
-                  {category.emoji}
+                  {category.icon || '📦'}
                 </span>
               </div>
 
@@ -134,18 +123,16 @@ export function CategoriesSection({
                   isSelected ? 'text-primary' : 'text-slate-700'
                 )}
               >
-                {locale === 'ar' ? category.nameAr : category.nameEn}
+                {categoryName}
               </span>
             </div>
           );
-
-          const categoryName = locale === 'ar' ? category.nameAr : category.nameEn;
 
           if (onCategoryClick) {
             return (
               <button
                 key={category.id}
-                onClick={() => onCategoryClick(category.key)}
+                onClick={() => onCategoryClick(category.code)}
                 aria-label={
                   locale === 'ar' ? `اختيار قسم ${categoryName}` : `Select ${categoryName} category`
                 }
@@ -160,7 +147,7 @@ export function CategoriesSection({
           return (
             <Link
               key={category.id}
-              href={`/${locale}/providers?category=${category.key}`}
+              href={`/${locale}/providers?category=${category.code}`}
               aria-label={locale === 'ar' ? `تصفح ${categoryName}` : `Browse ${categoryName}`}
               className="focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 rounded-2xl"
             >
@@ -173,5 +160,5 @@ export function CategoriesSection({
   );
 }
 
-export { categories };
-export type { Category };
+// Re-export types for backwards compatibility
+export type { BusinessCategory as Category };

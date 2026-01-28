@@ -1,10 +1,19 @@
 /**
  * Business Categories for Engezna Platform
- * Updated: December 2025
+ * Updated: January 2026
  *
- * MIGRATION NOTE:
- * OLD VALUES (DEPRECATED): 'restaurant', 'coffee_shop', 'juice_shop', 'pharmacy'
- * NEW VALUES: 'restaurant_cafe', 'coffee_patisserie', 'grocery', 'vegetables_fruits'
+ * IMPORTANT: This file is now a FALLBACK/TYPE DEFINITIONS file.
+ * The primary source of categories is the `business_categories` database table.
+ *
+ * Use `@/lib/supabase/business-categories.ts` for fetching categories from the database.
+ * These constants are kept for:
+ * - Type definitions (BusinessCategoryCode)
+ * - Fallback values when database is unavailable
+ * - Icon mappings (Lucide icons for UI components)
+ *
+ * To add a new category:
+ * 1. Add it to the `business_categories` table in Supabase
+ * 2. Optionally add a Lucide icon mapping in CATEGORY_ICONS below
  */
 
 import { UtensilsCrossed, Coffee, ShoppingCart, Apple, Pill } from 'lucide-react';
