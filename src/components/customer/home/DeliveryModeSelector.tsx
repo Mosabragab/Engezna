@@ -8,11 +8,14 @@ import {
   Store,
   MapPin,
   ChevronDown,
+  ChevronRight,
   Home,
   Briefcase,
   Plus,
   Check,
   Clock,
+  Calendar,
+  X,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useOrderMode, type SavedAddress } from '@/lib/contexts/OrderModeContext';
@@ -26,14 +29,29 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
-  const { orderType, setOrderType, selectedAddress, setSelectedAddress, isDelivery } =
-    useOrderMode();
+  const {
+    orderType,
+    setOrderType,
+    selectedAddress,
+    setSelectedAddress,
+    isDelivery,
+    timing,
+    setTiming,
+    scheduledTime,
+    setScheduledTime,
+  } = useOrderMode();
 
   const [addresses, setAddresses] = useState<SavedAddress[]>([]);
   const [showAddressDropdown, setShowAddressDropdown] = useState(false);
+  const [showTimingModal, setShowTimingModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const timingRef = useRef<HTMLDivElement>(null);
+
+  // Temporary scheduling state
+  const [tempDate, setTempDate] = useState<string>('');
+  const [tempTime, setTempTime] = useState<string>('');
 
   // Check auth and load addresses
   useEffect(() => {
@@ -77,11 +95,14 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
     loadData();
   }, [selectedAddress, setSelectedAddress]);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowAddressDropdown(false);
+      }
+      if (timingRef.current && !timingRef.current.contains(event.target as Node)) {
+        setShowTimingModal(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -105,6 +126,98 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
     const parts = [address.address_line1];
     if (address.area) parts.push(address.area);
     return parts.join('، ');
+  };
+
+  // Format scheduled time for display
+  const formatScheduledTime = () => {
+    if (!scheduledTime) return '';
+    const date = new Date(scheduledTime);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    let dateStr = '';
+    if (date.toDateString() === today.toDateString()) {
+      dateStr = isRTL ? 'اليوم' : 'Today';
+    } else if (date.toDateString() === tomorrow.toDateString()) {
+      dateStr = isRTL ? 'غداً' : 'Tomorrow';
+    } else {
+      dateStr = date.toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+      });
+    }
+
+    const timeStr = date.toLocaleTimeString(isRTL ? 'ar-EG' : 'en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return `${dateStr} • ${timeStr}`;
+  };
+
+  // Handle schedule confirmation
+  const handleScheduleConfirm = () => {
+    if (tempDate && tempTime) {
+      const dateTime = new Date(`${tempDate}T${tempTime}`);
+      setScheduledTime(dateTime);
+      setTiming('scheduled');
+      setShowTimingModal(false);
+    }
+  };
+
+  // Handle ASAP selection
+  const handleAsapSelect = () => {
+    setTiming('asap');
+    setScheduledTime(null);
+    setShowTimingModal(false);
+  };
+
+  // Generate available dates (next 7 days)
+  const getAvailableDates = () => {
+    const dates = [];
+    const today = new Date();
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      dates.push({
+        value: date.toISOString().split('T')[0],
+        label:
+          i === 0
+            ? isRTL
+              ? 'اليوم'
+              : 'Today'
+            : i === 1
+              ? isRTL
+                ? 'غداً'
+                : 'Tomorrow'
+              : date.toLocaleDateString(isRTL ? 'ar-EG' : 'en-US', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                }),
+      });
+    }
+    return dates;
+  };
+
+  // Generate time slots
+  const getTimeSlots = () => {
+    const slots = [];
+    for (let hour = 9; hour <= 23; hour++) {
+      for (const min of ['00', '30']) {
+        const time = `${hour.toString().padStart(2, '0')}:${min}`;
+        const label = new Date(`2000-01-01T${time}`).toLocaleTimeString(isRTL ? 'ar-EG' : 'en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true,
+        });
+        slots.push({ value: time, label });
+      }
+    }
+    return slots;
   };
 
   if (isLoading) {
@@ -307,6 +420,156 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
             </div>
           </div>
         )}
+
+        {/* Compact Timing Pill */}
+        <div className="border-t border-slate-100" ref={timingRef}>
+          <button
+            onClick={() => setShowTimingModal(!showTimingModal)}
+            className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-slate-50 transition-colors"
+          >
+            <Clock className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-slate-700">
+              {timing === 'asap' ? (
+                <>
+                  {isRTL ? 'الآن' : 'Now'}{' '}
+                  <span className="text-slate-400 font-normal">
+                    • {isRTL ? 'في أقرب وقت' : 'As soon as possible'}
+                  </span>
+                </>
+              ) : (
+                formatScheduledTime()
+              )}
+            </span>
+            <ChevronRight
+              className={cn(
+                'w-4 h-4 text-slate-400 transition-transform mr-auto',
+                isRTL && 'rotate-180',
+                showTimingModal && (isRTL ? '-rotate-90' : 'rotate-90')
+              )}
+            />
+            <span className="text-xs text-primary font-medium">{isRTL ? 'تغيير' : 'Change'}</span>
+          </button>
+
+          {/* Timing Modal/Dropdown */}
+          {showTimingModal && (
+            <div className="absolute left-4 right-4 z-50 bg-white border border-slate-200 rounded-xl shadow-xl mt-1 overflow-hidden">
+              {/* Header */}
+              <div className="p-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 className="font-semibold text-slate-800">
+                  {isRTL
+                    ? isDelivery
+                      ? 'موعد التوصيل'
+                      : 'موعد الاستلام'
+                    : isDelivery
+                      ? 'Delivery Time'
+                      : 'Pickup Time'}
+                </h3>
+                <button
+                  onClick={() => setShowTimingModal(false)}
+                  className="p-1 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-slate-500" />
+                </button>
+              </div>
+
+              {/* ASAP Option */}
+              <button
+                onClick={handleAsapSelect}
+                className={cn(
+                  'w-full p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors border-b border-slate-100',
+                  timing === 'asap' && 'bg-primary/5'
+                )}
+              >
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center',
+                    timing === 'asap' ? 'bg-primary/10' : 'bg-slate-100'
+                  )}
+                >
+                  <Clock
+                    className={cn('w-5 h-5', timing === 'asap' ? 'text-primary' : 'text-slate-500')}
+                  />
+                </div>
+                <div className="flex-1 text-start">
+                  <p className="font-medium text-slate-900">{isRTL ? 'الآن' : 'Now (ASAP)'}</p>
+                  <p className="text-xs text-slate-500">
+                    {isRTL ? 'في أقرب وقت ممكن' : 'As soon as possible'}
+                  </p>
+                </div>
+                {timing === 'asap' && <Check className="w-5 h-5 text-primary" />}
+              </button>
+
+              {/* Schedule Option */}
+              <div className="p-3">
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={cn(
+                      'w-10 h-10 rounded-full flex items-center justify-center',
+                      timing === 'scheduled' ? 'bg-primary/10' : 'bg-slate-100'
+                    )}
+                  >
+                    <Calendar
+                      className={cn(
+                        'w-5 h-5',
+                        timing === 'scheduled' ? 'text-primary' : 'text-slate-500'
+                      )}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">
+                      {isRTL ? 'تحديد موعد' : 'Schedule for later'}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {isRTL ? 'اختر الوقت المناسب' : 'Choose a specific time'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Date & Time Selectors */}
+                <div className="flex gap-2">
+                  <select
+                    value={tempDate}
+                    onChange={(e) => setTempDate(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">{isRTL ? 'اختر اليوم' : 'Select day'}</option>
+                    {getAvailableDates().map((date) => (
+                      <option key={date.value} value={date.value}>
+                        {date.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={tempTime}
+                    onChange={(e) => setTempTime(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
+                  >
+                    <option value="">{isRTL ? 'اختر الوقت' : 'Select time'}</option>
+                    {getTimeSlots().map((slot) => (
+                      <option key={slot.value} value={slot.value}>
+                        {slot.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Confirm Button */}
+                <button
+                  onClick={handleScheduleConfirm}
+                  disabled={!tempDate || !tempTime}
+                  className={cn(
+                    'w-full mt-3 py-2.5 rounded-lg font-medium text-sm transition-colors',
+                    tempDate && tempTime
+                      ? 'bg-primary text-white hover:bg-primary/90'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  )}
+                >
+                  {isRTL ? 'تأكيد الموعد' : 'Confirm Time'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

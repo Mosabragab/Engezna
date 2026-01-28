@@ -12,7 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { useLocation, type Governorate, type City, type District } from '@/lib/contexts';
+import {
+  useLocation,
+  type Governorate,
+  type City,
+  type District,
+  useOrderModeOptional,
+} from '@/lib/contexts';
 import {
   MapPin,
   User,
@@ -149,14 +155,36 @@ export default function CheckoutPage() {
   const [providerData, setProviderData] = useState<ProviderWithPickup | null>(null);
   const [loadingProviderData, setLoadingProviderData] = useState(true);
 
-  // Order type (delivery vs pickup)
+  // Get order mode from context (synced with homepage selection)
+  const orderModeContext = useOrderModeOptional();
+
+  // Order type (delivery vs pickup) - initialized from context
   const [orderType, setOrderType] = useState<OrderType>('delivery');
 
-  // Delivery timing (ASAP vs scheduled)
+  // Delivery timing (ASAP vs scheduled) - initialized from context
   const [deliveryTiming, setDeliveryTiming] = useState<DeliveryTiming>('asap');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [scheduledTimeError, setScheduledTimeError] = useState<string | null>(null);
+
+  // Sync order mode from context on mount
+  useEffect(() => {
+    if (orderModeContext) {
+      // Sync order type
+      setOrderType(orderModeContext.orderType);
+
+      // Sync timing
+      setDeliveryTiming(orderModeContext.timing);
+
+      // Sync scheduled time if set
+      if (orderModeContext.scheduledTime) {
+        const date = new Date(orderModeContext.scheduledTime);
+        setSelectedDate(date);
+        const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        setSelectedTime(timeStr);
+      }
+    }
+  }, []); // Only run on mount
 
   // User information
   const [fullName, setFullName] = useState('');

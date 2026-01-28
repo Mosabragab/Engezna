@@ -84,6 +84,7 @@ const sectionIcons: Record<string, string> = {
   // Homepage
   hero_search: '🔍',
   address_selector: '📍',
+  delivery_mode: '🚚',
   offers_carousel: '🎁',
   categories: '📂',
   reorder: '🔄',
