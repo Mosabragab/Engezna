@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -176,7 +176,6 @@ export default function AppLayoutPage() {
     fetchVersionHistory,
     rollbackToVersion,
     deleteVersion,
-    compareVersions,
     fetchAnalytics,
   } = useSDUIAdmin({ page: activePage });
 
@@ -252,7 +251,7 @@ export default function AppLayoutPage() {
     const section = localSections.find((s) => s.id === sectionId);
     if (!section) return;
 
-    const newVisibility = !(section as any).is_visible;
+    const newVisibility = !section.is_visible;
 
     setLocalSections((prev) =>
       prev.map((s) => (s.id === sectionId ? { ...s, is_visible: newVisibility } : s))
@@ -260,7 +259,7 @@ export default function AppLayoutPage() {
 
     try {
       await toggleVisibility(sectionId, newVisibility);
-    } catch (err) {
+    } catch {
       setLocalSections((prev) =>
         prev.map((s) => (s.id === sectionId ? { ...s, is_visible: !newVisibility } : s))
       );
@@ -599,7 +598,7 @@ export default function AppLayoutPage() {
                       onDragEnd={handleDragEnd}
                       onDragOver={(e) => e.preventDefault()}
                       className={`p-4 hover:bg-gray-50 transition-colors cursor-move ${
-                        (section as any).is_visible === false ? 'opacity-50' : ''
+                        section.is_visible === false ? 'opacity-50' : ''
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -636,12 +635,12 @@ export default function AppLayoutPage() {
                         <button
                           onClick={() => handleToggleVisibility(section.id)}
                           className={`p-2 rounded-lg transition-colors ${
-                            (section as any).is_visible !== false
+                            section.is_visible !== false
                               ? 'bg-green-100 text-green-600 hover:bg-green-200'
                               : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                           }`}
                         >
-                          {(section as any).is_visible !== false ? (
+                          {section.is_visible !== false ? (
                             <Eye className="w-5 h-5" />
                           ) : (
                             <EyeOff className="w-5 h-5" />
