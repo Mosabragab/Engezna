@@ -29,9 +29,23 @@ export const viewport: Viewport = {
 
 export function generateMetadata() {
   return {
-    title: 'Engezna - إنجزنا | Local Marketplace in Egypt',
+    // SEO: Include both Arabic variations (with/without hamza) for better search coverage
+    title: 'Engezna - إنجزنا - انجزنا | Local Marketplace in Egypt',
     description:
-      'منصة إنجزنا لتلبية احتياجات البيت اليومية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات',
+      'منصة إنجزنا (انجزنا) لتلبية احتياجات البيت اليومية: مطاعم، سوبر ماركت، صيدليات، خضروات وفاكهة، بن وحلويات. توصيل سريع في جميع محافظات مصر.',
+    // SEO: Keywords for Arabic search variations
+    keywords: [
+      'إنجزنا',
+      'انجزنا',
+      'Engezna',
+      'توصيل طلبات',
+      'مطاعم',
+      'سوبر ماركت',
+      'صيدليات',
+      'توصيل مصر',
+      'delivery Egypt',
+      'food delivery',
+    ],
     manifest: '/manifest.json',
     appleWebApp: {
       capable: true,
@@ -50,6 +64,52 @@ export function generateMetadata() {
       ],
       shortcut: '/icons/favicon-32-dark.png',
       apple: '/icons/icon-192x192.png',
+    },
+    // Open Graph for social sharing and SEO
+    openGraph: {
+      title: 'Engezna - إنجزنا - انجزنا | توصيل طلبات مصر',
+      description:
+        'منصة إنجزنا (انجزنا) لتوصيل الطلبات في مصر. مطاعم، سوبر ماركت، صيدليات، خضروات. 0% عمولة أول 3 شهور للتجار.',
+      url: 'https://www.engezna.com',
+      siteName: 'Engezna - إنجزنا',
+      locale: 'ar_EG',
+      alternateLocale: 'en_US',
+      type: 'website',
+      images: [
+        {
+          url: '/images/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: 'Engezna - إنجزنا - انجزنا',
+        },
+      ],
+    },
+    // Twitter Card
+    twitter: {
+      card: 'summary_large_image',
+      title: 'Engezna - إنجزنا - انجزنا | توصيل طلبات مصر',
+      description: 'منصة إنجزنا (انجزنا) لتوصيل الطلبات في مصر. 0% عمولة أول 3 شهور للتجار.',
+      images: ['/images/og-image.png'],
+    },
+    // Robots for SEO
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    // Alternate language versions
+    alternates: {
+      canonical: 'https://www.engezna.com',
+      languages: {
+        ar: 'https://www.engezna.com/ar',
+        en: 'https://www.engezna.com/en',
+      },
     },
   };
 }

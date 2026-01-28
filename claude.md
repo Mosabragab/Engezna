@@ -947,7 +947,7 @@ const categories = await supabase.from('provider_categories').select('*')
   - COD orders: Provider collects cash → Owes up to 7% commission to Engezna
   - Online orders: Engezna collects payment → Owes 93%+ payout to provider
   - Net balance calculation: Determines who pays whom
-  - 6-month grace period with 0% commission for new providers
+  - 3-month grace period with 0% commission for new providers
 
 - ✅ **Database Schema Update** (`20251207000003_settlements_cod_online_breakdown.sql`):
   - `cod_orders_count`, `cod_gross_revenue`, `cod_commission_owed`
