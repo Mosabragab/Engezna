@@ -8,3 +8,5 @@ export { GeoFilter, useGeoFilter, useAdminGeoFilter } from './GeoFilter';
 export type { GeoFilterValue } from './GeoFilter';
 export { SearchableSelect } from './SearchableSelect';
 export { ConstraintsEditor } from './ConstraintsEditor';
+export { RichTextEditor } from './RichTextEditor';
+export { BannerDesigner } from './BannerDesigner';

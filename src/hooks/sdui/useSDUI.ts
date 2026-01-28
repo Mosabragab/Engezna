@@ -7,7 +7,13 @@ import { createClient } from '@/lib/supabase/client';
 // Types
 // =============================================================================
 
-export type SDUIPageType = 'homepage' | 'offers' | 'welcome' | 'providers' | 'search' | 'provider_dashboard';
+export type SDUIPageType =
+  | 'homepage'
+  | 'offers'
+  | 'welcome'
+  | 'providers'
+  | 'search_results'
+  | 'provider_dashboard';
 
 export interface LayoutVersion {
   id: string;
@@ -56,20 +62,30 @@ export type HomepageSectionType =
   | 'dashboard_revenue'
   | 'dashboard_menu'
   | 'dashboard_reviews'
-  | 'dashboard_notifications';
+  | 'dashboard_notifications'
+  // Search results page sections
+  | 'search_header'
+  | 'search_input'
+  | 'search_tabs'
+  | 'search_stores'
+  | 'search_products'
+  | 'search_suggestions'
+  | 'search_empty'
+  // Custom content sections
+  | 'custom_html'
+  | 'custom_banner';
 
 export interface HomepageSection {
   id: string;
+  page?: SDUIPageType;
   section_type: HomepageSectionType;
   section_key: string;
   title_ar: string;
   title_en: string;
   config: Record<string, any>;
-  content: {
-    ar?: Record<string, string>;
-    en?: Record<string, string>;
-  };
+  content: Record<string, any>;
   display_order: number;
+  is_visible?: boolean;
 }
 
 export interface SDUIState {
@@ -964,6 +980,92 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     []
   );
 
+  // Create new section
+  const createSection = useCallback(
+    async (
+      sectionData: Omit<HomepageSection, 'id' | 'display_order'> & { display_order?: number }
+    ) => {
+      setIsSaving(true);
+      try {
+        const supabase = createClient();
+
+        // Get max display_order
+        const { data: maxOrder } = await supabase
+          .from('homepage_sections')
+          .select('display_order')
+          .eq('page', page)
+          .order('display_order', { ascending: false })
+          .limit(1)
+          .single();
+
+        const newOrder = (maxOrder?.display_order || 0) + 1;
+
+        const { data, error } = await supabase
+          .from('homepage_sections')
+          .insert({
+            ...sectionData,
+            page,
+            display_order: sectionData.display_order ?? newOrder,
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setSections((prev) => [...prev, data].sort((a, b) => a.display_order - b.display_order));
+        return data;
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [page]
+  );
+
+  // Update section
+  const updateSection = useCallback(
+    async (sectionId: string, updates: Partial<HomepageSection>) => {
+      setIsSaving(true);
+      try {
+        const supabase = createClient();
+        const { error } = await supabase
+          .from('homepage_sections')
+          .update(updates)
+          .eq('id', sectionId);
+
+        if (error) throw error;
+
+        setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, ...updates } : s)));
+      } catch (err: any) {
+        setError(err.message);
+        throw err;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    []
+  );
+
+  // Delete section
+  const deleteSection = useCallback(async (sectionId: string) => {
+    setIsSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('homepage_sections').delete().eq('id', sectionId);
+
+      if (error) throw error;
+
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
   // Create preview draft
   const createPreviewDraft = useCallback(
     async (sectionsData: HomepageSection[]): Promise<string> => {
@@ -1079,10 +1181,7 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
   const deleteVersion = useCallback(async (versionId: string) => {
     const supabase = createClient();
 
-    const { error } = await supabase
-      .from('homepage_layout_versions')
-      .delete()
-      .eq('id', versionId);
+    const { error } = await supabase.from('homepage_layout_versions').delete().eq('id', versionId);
 
     if (error) throw error;
   }, []);
@@ -1308,6 +1407,9 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     reorderSections,
     updateSectionConfig,
     updateSectionContent,
+    createSection,
+    updateSection,
+    deleteSection,
     createPreviewDraft,
     saveLayoutVersion,
     fetchVersionHistory,
