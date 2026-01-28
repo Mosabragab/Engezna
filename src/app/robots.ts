@@ -4,23 +4,35 @@
  * Defines crawling rules for search engines.
  * Blocks sensitive routes while allowing main content indexing.
  *
- * @version 1.0.0 - Phase 1.6 Implementation
- * @see docs/MASTER_IMPLEMENTATION_PLAN.md - Section 1.6
+ * @version 2.0.0 - SEO Improvements
  */
 
 import { MetadataRoute } from 'next';
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://engezna.com';
+// Use www version for consistency
+const BASE_URL = 'https://www.engezna.com';
 
+export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/provider/', '/api/', '/auth/', '/_next/', '/private/'],
+        disallow: [
+          '/admin/',
+          '/provider/',
+          '/api/',
+          '/auth/',
+          '/_next/',
+          '/private/',
+          '/profile/',
+          '/cart',
+          '/checkout',
+          '/orders/',
+          '/dev/',
+        ],
       },
     ],
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: `${BASE_URL}/sitemap.xml`,
   };
 }
