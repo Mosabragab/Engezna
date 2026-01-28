@@ -3,6 +3,9 @@
 -- Adds device type and user behavior targeting to sections
 -- ============================================================================
 
+-- Drop the existing function first (to allow new signature)
+DROP FUNCTION IF EXISTS public.get_page_sections(TEXT, TEXT, UUID, UUID);
+
 -- Add device targeting column
 ALTER TABLE public.homepage_sections
 ADD COLUMN IF NOT EXISTS target_devices TEXT[] DEFAULT ARRAY['mobile', 'desktop', 'tablet'];
