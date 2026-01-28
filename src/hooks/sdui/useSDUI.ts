@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 // Types
 // =============================================================================
 
-export type SDUIPageType = 'homepage' | 'offers' | 'welcome' | 'providers' | 'search';
+export type SDUIPageType = 'homepage' | 'offers' | 'welcome' | 'providers' | 'search' | 'provider_dashboard';
 
 export interface LayoutVersion {
   id: string;
@@ -49,7 +49,14 @@ export type HomepageSectionType =
   | 'providers_search'
   | 'providers_categories'
   | 'providers_filters'
-  | 'providers_grid';
+  | 'providers_grid'
+  // Provider dashboard sections
+  | 'dashboard_stats'
+  | 'dashboard_orders'
+  | 'dashboard_revenue'
+  | 'dashboard_menu'
+  | 'dashboard_reviews'
+  | 'dashboard_notifications';
 
 export interface HomepageSection {
   id: string;
@@ -89,6 +96,44 @@ export interface DailyAnalytics {
   views: number;
   clicks: number;
   interactions: number;
+}
+
+export interface ABTest {
+  id: string;
+  name: string;
+  description: string | null;
+  page: string;
+  section_key: string | null;
+  status: 'draft' | 'running' | 'paused' | 'completed';
+  traffic_percentage: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  goal_type: 'click' | 'conversion' | 'engagement' | 'custom';
+  goal_section_key: string | null;
+  created_at: string;
+}
+
+export interface ABTestVariant {
+  id: string;
+  test_id: string;
+  name: string;
+  is_control: boolean;
+  weight: number;
+  section_config: Record<string, any> | null;
+  section_content: Record<string, any> | null;
+  views: number;
+  conversions: number;
+}
+
+export interface ABTestResult {
+  variant_id: string;
+  variant_name: string;
+  is_control: boolean;
+  views: number;
+  conversions: number;
+  conversion_rate: number;
+  improvement_vs_control: number;
+  is_winner: boolean;
 }
 
 // =============================================================================
@@ -1117,6 +1162,141 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     [page]
   );
 
+  // =========================================================================
+  // A/B Testing Functions
+  // =========================================================================
+
+  // Fetch all A/B tests for this page
+  const fetchABTests = useCallback(async (): Promise<ABTest[]> => {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('sdui_ab_tests')
+      .select('*')
+      .eq('page', page)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return data || [];
+  }, [page]);
+
+  // Create new A/B test
+  const createABTest = useCallback(
+    async (test: Omit<ABTest, 'id' | 'created_at'>): Promise<string> => {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const { data, error } = await supabase
+        .from('sdui_ab_tests')
+        .insert({
+          ...test,
+          created_by: user?.id,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      return data.id;
+    },
+    []
+  );
+
+  // Update A/B test
+  const updateABTest = useCallback(async (testId: string, updates: Partial<ABTest>) => {
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('sdui_ab_tests')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', testId);
+
+    if (error) throw error;
+  }, []);
+
+  // Delete A/B test
+  const deleteABTest = useCallback(async (testId: string) => {
+    const supabase = createClient();
+
+    const { error } = await supabase.from('sdui_ab_tests').delete().eq('id', testId);
+
+    if (error) throw error;
+  }, []);
+
+  // Fetch variants for a test
+  const fetchABTestVariants = useCallback(async (testId: string): Promise<ABTestVariant[]> => {
+    const supabase = createClient();
+
+    const { data, error } = await supabase
+      .from('sdui_ab_test_variants')
+      .select('*')
+      .eq('test_id', testId)
+      .order('is_control', { ascending: false });
+
+    if (error) throw error;
+
+    return data || [];
+  }, []);
+
+  // Create variant
+  const createABTestVariant = useCallback(
+    async (variant: Omit<ABTestVariant, 'id' | 'views' | 'conversions'>): Promise<string> => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('sdui_ab_test_variants')
+        .insert(variant)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+
+      return data.id;
+    },
+    []
+  );
+
+  // Update variant
+  const updateABTestVariant = useCallback(
+    async (variantId: string, updates: Partial<ABTestVariant>) => {
+      const supabase = createClient();
+
+      const { error } = await supabase
+        .from('sdui_ab_test_variants')
+        .update(updates)
+        .eq('id', variantId);
+
+      if (error) throw error;
+    },
+    []
+  );
+
+  // Delete variant
+  const deleteABTestVariant = useCallback(async (variantId: string) => {
+    const supabase = createClient();
+
+    const { error } = await supabase.from('sdui_ab_test_variants').delete().eq('id', variantId);
+
+    if (error) throw error;
+  }, []);
+
+  // Get A/B test results
+  const getABTestResults = useCallback(async (testId: string): Promise<ABTestResult[]> => {
+    const supabase = createClient();
+
+    const { data, error } = await supabase.rpc('get_ab_test_results', {
+      p_test_id: testId,
+    });
+
+    if (error) throw error;
+
+    return data || [];
+  }, []);
+
   return {
     sections,
     page,
@@ -1136,5 +1316,15 @@ export function useSDUIAdmin(options: UseSDUIAdminOptions = {}) {
     compareVersions,
     fetchAnalytics,
     fetchDailyAnalytics,
+    // A/B Testing
+    fetchABTests,
+    createABTest,
+    updateABTest,
+    deleteABTest,
+    fetchABTestVariants,
+    createABTestVariant,
+    updateABTestVariant,
+    deleteABTestVariant,
+    getABTestResults,
   };
 }

@@ -21,8 +21,8 @@ This document outlines the comprehensive plan for expanding the Server-Driven UI
 | 3     | Analytics Dashboard | ✅ Done    | Track views, clicks, CTR           |
 | 3     | Advanced Targeting  | ✅ Done    | Device type, user behavior         |
 | 3     | Version History UI  | ✅ Done    | Rollback, visual comparison        |
-| 4     | A/B Testing         | 🔲 Pending | -                                  |
-| 4     | Provider Dashboard  | 🔲 Pending | -                                  |
+| 4     | A/B Testing         | ✅ Done    | Full framework with admin UI       |
+| 4     | Provider Dashboard  | ✅ Done    | 6 sections for dashboard           |
 
 ---
 
@@ -117,7 +117,10 @@ supabase/migrations/
 ├── 20260127000001_sdui_multipage_and_scheduling.sql (split into 3 parts)
 ├── 20260127000002_sdui_providers_page.sql (split into 2 parts)
 ├── 20260128000001_sdui_analytics.sql
-└── 20260128000002_sdui_advanced_targeting.sql
+├── 20260128000002_sdui_advanced_targeting.sql
+├── 20260128000003_sdui_ab_testing.sql
+├── 20260128000004_sdui_provider_dashboard.sql
+└── 20260128000005_sdui_provider_dashboard_seed.sql
 ```
 
 ---
@@ -204,21 +207,40 @@ supabase/migrations/
 
 ---
 
-## Phase 4: Provider Dashboard & A/B Testing
+## Phase 4: Provider Dashboard & A/B Testing ✅
 
-### 4.1 A/B Testing Framework
+### 4.1 A/B Testing Framework ✅
 
-- Create test variants
-- Traffic splitting
-- Statistical significance
-- Auto-winner selection
+**Status**: Done
 
-### 4.2 Provider Dashboard SDUI
+**Features Implemented**:
+- Create and manage A/B tests per page
+- Multiple variants with configurable weights
+- Traffic percentage control
+- User/device assignment persistence
+- View and conversion tracking
+- Results with improvement calculations
+- Admin UI at `/admin/ab-tests`
 
-- Quick stats cards
-- Recent orders
-- Revenue chart
-- Menu item performance
+**Database**:
+- `sdui_ab_tests` - Test definitions
+- `sdui_ab_test_variants` - Variant configurations
+- `sdui_ab_test_assignments` - User assignments
+- Functions: `get_ab_test_variant()`, `track_ab_test_view()`, `track_ab_test_conversion()`
+
+### 4.2 Provider Dashboard SDUI ✅
+
+**Status**: Done
+
+**Sections Implemented**:
+| Section Key              | Type                    | Description              |
+| ------------------------ | ----------------------- | ------------------------ |
+| `dashboard_stats`        | dashboard_stats         | Quick stats cards        |
+| `dashboard_orders`       | dashboard_orders        | Recent orders list       |
+| `dashboard_revenue`      | dashboard_revenue       | Revenue chart            |
+| `dashboard_menu`         | dashboard_menu          | Menu item performance    |
+| `dashboard_reviews`      | dashboard_reviews       | Recent reviews           |
+| `dashboard_notifications`| dashboard_notifications | Notifications panel      |
 
 ---
 
@@ -281,6 +303,8 @@ const { sections, toggleVisibility, reorderSections, createPreviewDraft, saveLay
 6. ~~Add analytics dashboard~~ ✅
 7. ~~Add advanced targeting (device/user)~~ ✅
 8. ~~Add version history UI~~ ✅
-9. Add content editor for custom HTML sections
-10. Integrate search results page with SDUI
-11. Implement A/B testing framework
+9. ~~Implement A/B testing framework~~ ✅
+10. ~~Add Provider Dashboard SDUI~~ ✅
+11. Add content editor for custom HTML sections
+12. Integrate search results page with SDUI
+13. Integrate provider dashboard page with SDUI hooks

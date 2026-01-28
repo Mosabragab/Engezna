@@ -7,4 +7,7 @@ export type {
   LayoutVersion,
   SectionAnalytics,
   DailyAnalytics,
+  ABTest,
+  ABTestVariant,
+  ABTestResult,
 } from './useSDUI';
