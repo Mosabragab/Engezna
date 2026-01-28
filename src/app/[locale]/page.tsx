@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CustomerLayout } from '@/components/customer/layout';
-import { AddressSelector } from '@/components/customer/layout/AddressSelector';
 import {
   HeroSection,
   CategoriesSection,
@@ -12,6 +11,7 @@ import {
   ReorderSection,
   TopRatedSection,
   NearbySection,
+  DeliveryModeSelector,
 } from '@/components/customer/home';
 import { useSDUI } from '@/hooks/sdui';
 
@@ -447,11 +447,9 @@ export default function HomePage() {
           />
         );
       case 'address_selector':
-        return (
-          <div key="address_selector" className="px-4 mt-3">
-            <AddressSelector className="w-full" />
-          </div>
-        );
+      case 'delivery_mode':
+        // New combined delivery mode selector (replaces old address_selector)
+        return <DeliveryModeSelector key="delivery_mode" className="mt-3" />;
       case 'offers_carousel':
         return (
           <OffersCarousel key="offers_carousel" onViewAll={handleViewAllOffers} className="mt-4" />

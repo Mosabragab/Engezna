@@ -28,6 +28,7 @@ export interface LayoutVersion {
 export type HomepageSectionType =
   | 'hero_search'
   | 'address_selector'
+  | 'delivery_mode'
   | 'offers_carousel'
   | 'categories'
   | 'reorder'
