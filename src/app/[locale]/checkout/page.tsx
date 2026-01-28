@@ -199,6 +199,10 @@ export default function CheckoutPage() {
   const [promoCodeLoading, setPromoCodeLoading] = useState(false);
   const [discountAmount, setDiscountAmount] = useState(0);
 
+  // Payment settings (from platform_settings)
+  const [allowCardPayment, setAllowCardPayment] = useState(true);
+  const [loadingPaymentSettings, setLoadingPaymentSettings] = useState(true);
+
   // Terms acceptance
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -303,6 +307,28 @@ export default function CheckoutPage() {
 
     loadProviderData();
   }, [provider?.id]);
+
+  // Load payment settings from platform_settings
+  useEffect(() => {
+    const loadPaymentSettings = async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('allow_card_payment')
+        .single();
+
+      if (data) {
+        setAllowCardPayment(data.allow_card_payment ?? true);
+        // If card payment is disabled and user had online selected, switch to cash
+        if (data.allow_card_payment === false && paymentMethod === 'online') {
+          setPaymentMethod('cash');
+        }
+      }
+      setLoadingPaymentSettings(false);
+    };
+
+    loadPaymentSettings();
+  }, []);
 
   useEffect(() => {
     // Don't redirect if order was just placed (cart cleared after success)
@@ -1616,30 +1642,32 @@ export default function CheckoutPage() {
                     </div>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('online')}
-                    disabled={isLoading}
-                    className={`w-full p-4 rounded-lg border-2 transition-all ${
-                      paymentMethod === 'online'
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5" />
-                      <div className="text-start">
-                        <div className="font-semibold">
-                          {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {locale === 'ar'
-                            ? 'ادفع ببطاقتك الائتمانية أو المحفظة'
-                            : 'Pay with card or wallet'}
+                  {allowCardPayment && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('online')}
+                      disabled={isLoading}
+                      className={`w-full p-4 rounded-lg border-2 transition-all ${
+                        paymentMethod === 'online'
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <CreditCard className="w-5 h-5" />
+                        <div className="text-start">
+                          <div className="font-semibold">
+                            {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {locale === 'ar'
+                              ? 'ادفع ببطاقتك الائتمانية أو المحفظة'
+                              : 'Pay with card or wallet'}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
                 </CardContent>
               </Card>
             </div>

@@ -44,6 +44,7 @@ import {
   TrendingDown,
   Minus,
   MousePointerClick,
+  CreditCard,
 } from 'lucide-react';
 
 // Page configurations
@@ -145,6 +146,23 @@ export default function AppLayoutPage() {
     getUser();
   }, []);
 
+  // Fetch payment settings on mount
+  useEffect(() => {
+    async function loadPaymentSettings() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('allow_card_payment')
+        .single();
+
+      if (data) {
+        setAllowCardPayment(data.allow_card_payment ?? true);
+      }
+      setLoadingPaymentSettings(false);
+    }
+    loadPaymentSettings();
+  }, []);
+
   const {
     sections: fetchedSections,
     isLoading,
@@ -182,6 +200,12 @@ export default function AppLayoutPage() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analytics, setAnalytics] = useState<SectionAnalytics[]>([]);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Payment settings state
+  const [allowCardPayment, setAllowCardPayment] = useState(true);
+  const [loadingPaymentSettings, setLoadingPaymentSettings] = useState(true);
+  const [savingPaymentSettings, setSavingPaymentSettings] = useState(false);
+  const [paymentSettingsSuccess, setPaymentSettingsSuccess] = useState(false);
 
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -387,6 +411,32 @@ export default function AppLayoutPage() {
       console.error('Failed to load analytics:', err);
     } finally {
       setLoadingAnalytics(false);
+    }
+  };
+
+  // Save payment settings
+  const handleSavePaymentSettings = async (newValue: boolean) => {
+    setSavingPaymentSettings(true);
+    setPaymentSettingsSuccess(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('platform_settings')
+        .update({
+          allow_card_payment: newValue,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', (await supabase.from('platform_settings').select('id').single()).data?.id);
+
+      if (!error) {
+        setAllowCardPayment(newValue);
+        setPaymentSettingsSuccess(true);
+        setTimeout(() => setPaymentSettingsSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error('Failed to save payment settings:', err);
+    } finally {
+      setSavingPaymentSettings(false);
     }
   };
 
@@ -715,6 +765,84 @@ export default function AppLayoutPage() {
                 <li>{isRTL ? '• اضغط على العين لإظهار/إخفاء' : '• Click eye icon to show/hide'}</li>
                 <li>{isRTL ? '• احفظ نسخة للرجوع إليها لاحقاً' : '• Save version for rollback'}</li>
               </ul>
+            </div>
+
+            {/* Payment Settings Card */}
+            <div className="mt-4 bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <CreditCard className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-gray-900">
+                  {isRTL ? 'إعدادات الدفع' : 'Payment Settings'}
+                </h3>
+              </div>
+
+              {loadingPaymentSettings ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          allowCardPayment
+                            ? 'bg-green-100 text-green-600'
+                            : 'bg-gray-200 text-gray-400'
+                        }`}
+                      >
+                        <CreditCard className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {isRTL ? 'الدفع الإلكتروني' : 'Online Payment'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {isRTL
+                            ? 'تفعيل/تعطيل الدفع بالبطاقة في صفحة الدفع'
+                            : 'Enable/disable card payment in checkout'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSavePaymentSettings(!allowCardPayment)}
+                      disabled={savingPaymentSettings}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        allowCardPayment ? 'bg-primary' : 'bg-gray-300'
+                      } ${savingPaymentSettings ? 'opacity-50' : ''}`}
+                    >
+                      {savingPaymentSettings ? (
+                        <Loader2 className="w-4 h-4 animate-spin absolute left-1/2 -translate-x-1/2 text-white" />
+                      ) : (
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            allowCardPayment
+                              ? isRTL
+                                ? 'translate-x-1'
+                                : 'translate-x-6'
+                              : isRTL
+                                ? 'translate-x-6'
+                                : 'translate-x-1'
+                          }`}
+                        />
+                      )}
+                    </button>
+                  </label>
+
+                  {paymentSettingsSuccess && (
+                    <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 p-2 rounded-lg">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
+                    </div>
+                  )}
+
+                  <p className="text-xs text-gray-500">
+                    {isRTL
+                      ? '* عند التعطيل، سيظهر فقط خيار الدفع عند الاستلام في صفحة الدفع'
+                      : '* When disabled, only Cash on Delivery option will appear in checkout'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
