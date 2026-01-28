@@ -106,17 +106,16 @@ ON CONFLICT (section_key) DO NOTHING;
 
 -- Save initial version
 INSERT INTO public.homepage_layout_versions (
-  page,
   version_name,
-  snapshot,
+  sections_snapshot,
   created_by
 )
 SELECT
-  'search_results',
   'Initial search page layout',
   jsonb_agg(
     jsonb_build_object(
       'id', id,
+      'page', page,
       'section_key', section_key,
       'section_type', section_type,
       'title_ar', title_ar,

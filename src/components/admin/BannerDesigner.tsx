@@ -712,13 +712,14 @@ export function BannerDesigner({
       {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          {/* Close button - fixed position relative to viewport */}
+          <button
+            onClick={() => setShowPreview(false)}
+            className="fixed top-6 right-6 z-[60] w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-xl hover:bg-gray-100 border border-gray-200"
+          >
+            <X className="w-6 h-6" />
+          </button>
           <div className="relative max-w-full max-h-full overflow-auto">
-            <button
-              onClick={() => setShowPreview(false)}
-              className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
             <div
               style={{
                 width: config.width,
