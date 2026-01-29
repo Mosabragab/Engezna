@@ -766,9 +766,7 @@ export default function OrderTrackingPage() {
                   <p className="font-bold text-slate-900">
                     {locale === 'ar' ? provider.name_ar : provider.name_en}
                   </p>
-                  {provider.is_featured && (
-                    <Crown className="w-4 h-4 text-premium flex-shrink-0" />
-                  )}
+                  {provider.is_featured && <Crown className="w-4 h-4 text-premium flex-shrink-0" />}
                   {provider.is_verified && (
                     <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
                   )}
