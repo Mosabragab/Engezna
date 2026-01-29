@@ -291,7 +291,8 @@ export default function ProviderSettingsPage() {
       if (file.size > 2 * 1024 * 1024) {
         setStoreMessage({
           type: 'error',
-          text: locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB',
+          text:
+            locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB',
         });
         return;
       }
@@ -307,7 +308,8 @@ export default function ProviderSettingsPage() {
       if (file.size > 5 * 1024 * 1024) {
         setStoreMessage({
           type: 'error',
-          text: locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5MB' : 'Image must be less than 5MB',
+          text:
+            locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5MB' : 'Image must be less than 5MB',
         });
         return;
       }
