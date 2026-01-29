@@ -64,6 +64,9 @@ interface Provider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
+  is_verified: boolean;
+  verified_at: string | null;
+  verified_by: string | null;
   phone: string | null;
   email: string | null;
   address_ar: string | null;

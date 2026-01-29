@@ -63,7 +63,9 @@ export interface AdminProvider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
-  // NOTE: is_verified column doesn't exist in database
+  is_verified: boolean; // Added via migration 20260129000001
+  verified_at: string | null;
+  verified_by: string | null;
   phone: string | null;
   email: string | null;
   address_ar: string | null; // Separate Arabic address
@@ -98,7 +100,7 @@ export interface ProviderFilters {
   cityId?: string;
   search?: string;
   isFeatured?: boolean;
-  // NOTE: isVerified removed - column doesn't exist in database
+  isVerified?: boolean; // Added via migration 20260129000001
   page?: number;
   limit?: number;
   sortBy?: 'created_at' | 'name_ar' | 'rating' | 'total_orders' | 'commission_rate';

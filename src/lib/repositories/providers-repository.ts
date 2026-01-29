@@ -60,7 +60,9 @@ export interface Provider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
-  // NOTE: is_verified column doesn't exist in database
+  is_verified: boolean; // Added via migration 20260129000001
+  verified_at: string | null;
+  verified_by: string | null;
   phone: string | null;
   email: string | null;
   address_ar: string | null;
@@ -89,13 +91,13 @@ export type ProviderInsert = Omit<
 export type ProviderUpdate = Partial<ProviderInsert>;
 
 // Provider listing options
-// NOTE: isVerified removed - column doesn't exist in database
 export interface ProviderListOptions {
   status?: ProviderStatus | ProviderStatus[];
   category?: string;
   cityId?: string;
   governorateId?: string;
   isFeatured?: boolean;
+  isVerified?: boolean; // Added via migration 20260129000001
   search?: string;
   sort?: 'rating' | 'delivery_time' | 'delivery_fee' | 'created_at' | 'name_ar' | 'total_orders';
   sortOrder?: 'asc' | 'desc';
@@ -104,11 +106,11 @@ export interface ProviderListOptions {
 }
 
 // Provider with relations select string
-// NOTE: Verified against actual database schema
+// NOTE: is_verified added via migration 20260129000001
 const PROVIDER_WITH_RELATIONS = `
   id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rejection_reason, commission_rate,
-  rating, total_reviews, total_orders, is_featured,
+  rating, total_reviews, total_orders, is_featured, is_verified, verified_at, verified_by,
   phone, email, address_ar, address_en, governorate_id, city_id,
   business_hours, delivery_fee, min_order_amount,
   estimated_delivery_time_min, created_at, updated_at,
@@ -117,20 +119,20 @@ const PROVIDER_WITH_RELATIONS = `
 `;
 
 // Optimized select for customer-facing provider listings (Phase 4.1)
-// NOTE: is_verified removed - doesn't exist in database
+// NOTE: is_verified added via migration 20260129000001
 const PROVIDER_LIST_SELECT = `
   id, name_ar, name_en, category, logo_url, cover_image_url,
-  status, rating, total_reviews, is_featured,
+  status, rating, total_reviews, is_featured, is_verified,
   delivery_fee, min_order_amount, estimated_delivery_time_min,
   governorate_id, city_id
 `;
 
 // Optimized select for provider detail pages
-// NOTE: Verified against actual database schema
+// NOTE: is_verified added via migration 20260129000001
 const PROVIDER_DETAIL_SELECT = `
   id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rating, total_reviews, total_orders,
-  is_featured, phone, email, address_ar, address_en,
+  is_featured, is_verified, verified_at, verified_by, phone, email, address_ar, address_en,
   governorate_id, city_id, business_hours,
   delivery_fee, min_order_amount, estimated_delivery_time_min, created_at
 `;
@@ -186,6 +188,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         cityId,
         governorateId,
         isFeatured,
+        isVerified,
         search,
         sort = 'rating',
         sortOrder = 'desc',
@@ -226,7 +229,9 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         query = query.eq('is_featured', isFeatured);
       }
 
-      // NOTE: is_verified filter removed - column doesn't exist in database
+      if (typeof isVerified === 'boolean') {
+        query = query.eq('is_verified', isVerified);
+      }
 
       // Search filter
       if (search?.trim()) {
@@ -294,6 +299,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         cityId,
         governorateId,
         isFeatured,
+        isVerified,
         search,
         sort = 'created_at',
         sortOrder = 'desc',
@@ -332,7 +338,9 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         query = query.eq('is_featured', isFeatured);
       }
 
-      // NOTE: is_verified filter removed - column doesn't exist in database
+      if (typeof isVerified === 'boolean') {
+        query = query.eq('is_verified', isVerified);
+      }
 
       if (search?.trim()) {
         query = query.or(
@@ -505,7 +513,26 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
     });
   }
 
-  // NOTE: toggleVerified method removed - is_verified column doesn't exist in database
+  /**
+   * Toggle verified status
+   * Added via migration 20260129000001
+   */
+  async toggleVerified(id: string, adminUserId?: string): Promise<RepositoryResult<Provider>> {
+    // First get current value
+    const { data: provider, error: fetchError } = await this.findById(id);
+
+    if (fetchError || !provider) {
+      return { data: null, error: fetchError ?? new Error('Provider not found') };
+    }
+
+    const newVerifiedStatus = !provider.is_verified;
+
+    return this.update(id, {
+      is_verified: newVerifiedStatus,
+      verified_at: newVerifiedStatus ? new Date().toISOString() : null,
+      verified_by: newVerifiedStatus ? adminUserId : null,
+    });
+  }
 
   /**
    * Update provider rating (called after review)

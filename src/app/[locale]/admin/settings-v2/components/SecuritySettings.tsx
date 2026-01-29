@@ -148,13 +148,13 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
         if (error) throw error;
       } else {
-        // Insert new
+        // Insert new (using correct column names: description, description_ar)
         const { error } = await supabase.from('app_settings').insert({
           setting_key: MAINTENANCE_KEY,
           setting_value: maintenance,
           category: 'system',
+          description: 'Maintenance mode settings',
           description_ar: 'إعدادات وضع الصيانة',
-          description_en: 'Maintenance mode settings',
           is_sensitive: false,
           is_readonly: false,
         });

@@ -21,13 +21,13 @@ const MAX_SIZE = 100;
 
 // Optimized provider select (Phase 4.1)
 // NOTE: Columns verified against actual database schema:
-// - is_verified: removed (doesn't exist)
+// - is_verified: added via migration 20260129000001
 // - address: replaced with address_ar, address_en
 // - opening_time, closing_time: replaced with business_hours (JSONB)
 const PROVIDER_SELECT = `
   id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rejection_reason, commission_rate,
-  rating, total_reviews, total_orders, is_featured,
+  rating, total_reviews, total_orders, is_featured, is_verified, verified_at, verified_by,
   phone, email, address_ar, address_en, governorate_id, city_id,
   business_hours, delivery_fee, min_order_amount,
   estimated_delivery_time_min, created_at, updated_at
@@ -54,6 +54,7 @@ export async function getProviders(
       cityId,
       search,
       isFeatured,
+      isVerified,
       page = 1,
       limit = PAGE_SIZE,
       sortBy = 'created_at',
@@ -99,7 +100,9 @@ export async function getProviders(
       query = query.eq('is_featured', isFeatured);
     }
 
-    // NOTE: is_verified column doesn't exist in database, filter removed
+    if (typeof isVerified === 'boolean') {
+      query = query.eq('is_verified', isVerified);
+    }
 
     // Search filter
     if (search && search.trim()) {
