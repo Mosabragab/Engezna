@@ -647,12 +647,21 @@ export default function ProviderDetailPage() {
                   setShowCommissionModal(true);
                 }}
                 variant="outline"
+                className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400"
               >
                 <Percent className="w-4 h-4 me-2" />
                 {locale === 'ar' ? 'تعديل العمولة' : 'Edit Commission'}
               </Button>
 
-              <Button onClick={toggleFeatured} variant="outline">
+              <Button
+                onClick={toggleFeatured}
+                variant="outline"
+                className={
+                  provider.is_featured
+                    ? 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400'
+                }
+              >
                 <Award className="w-4 h-4 me-2" />
                 {provider.is_featured
                   ? locale === 'ar'
@@ -666,7 +675,11 @@ export default function ProviderDetailPage() {
               <Button
                 onClick={toggleVerified}
                 variant="outline"
-                className={provider.is_verified ? 'border-green-500 text-green-600 hover:bg-green-50' : ''}
+                className={
+                  provider.is_verified
+                    ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400'
+                }
               >
                 <BadgeCheck className="w-4 h-4 me-2" />
                 {provider.is_verified

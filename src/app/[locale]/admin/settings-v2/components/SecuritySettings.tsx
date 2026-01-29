@@ -283,8 +283,86 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
             </div>
           ) : (
             <>
-              {/* Save Button - TOP for visibility */}
-              <div className="flex items-center justify-between p-4 bg-amber-100 rounded-lg border-2 border-amber-400">
+              {/* Provider Maintenance */}
+              <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                  <Store className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {isRTL ? 'صيانة التجار' : 'Provider Maintenance'}
+                    </p>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {isRTL
+                        ? 'عند التفعيل، لن يتمكن التجار من الوصول للوحة التحكم'
+                        : 'When enabled, providers cannot access the dashboard'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={maintenance.providers_maintenance}
+                  onClick={() =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      providers_maintenance: !prev.providers_maintenance,
+                    }))
+                  }
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                    maintenance.providers_maintenance ? 'bg-red-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      maintenance.providers_maintenance
+                        ? 'ltr:translate-x-8 rtl:translate-x-1'
+                        : 'ltr:translate-x-1 rtl:translate-x-8'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Customer Maintenance */}
+              <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                  <Users className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-slate-800">
+                      {isRTL ? 'صيانة العملاء' : 'Customer Maintenance'}
+                    </p>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {isRTL
+                        ? 'عند التفعيل، لن يتمكن العملاء من تصفح المتاجر أو إنشاء طلبات'
+                        : 'When enabled, customers cannot browse stores or create orders'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={maintenance.customers_maintenance}
+                  onClick={() =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      customers_maintenance: !prev.customers_maintenance,
+                    }))
+                  }
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                    maintenance.customers_maintenance ? 'bg-red-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      maintenance.customers_maintenance
+                        ? 'ltr:translate-x-8 rtl:translate-x-1'
+                        : 'ltr:translate-x-1 rtl:translate-x-8'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Save Button - Below toggles */}
+              <div className={`flex items-center justify-between p-4 bg-red-50 rounded-lg border-2 border-red-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="flex items-center gap-2">
                   {maintenanceSuccess && (
                     <div className="flex items-center gap-2 text-green-600">
@@ -300,17 +378,12 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                       <span className="font-medium">{maintenanceError}</span>
                     </div>
                   )}
-                  {!maintenanceSuccess && !maintenanceError && (
-                    <span className="text-amber-800 font-medium">
-                      {isRTL ? 'لا تنسَ حفظ التغييرات' : "Don't forget to save changes"}
-                    </span>
-                  )}
                 </div>
                 <Button
                   onClick={handleSaveMaintenance}
                   disabled={savingMaintenance}
                   size="lg"
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6"
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 shadow-md"
                 >
                   {savingMaintenance ? (
                     <Loader2 className="w-5 h-5 animate-spin me-2" />
@@ -321,89 +394,9 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                 </Button>
               </div>
 
-              {/* Provider Maintenance */}
-              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-3">
-                  <Store className="w-5 h-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-blue-800">
-                      {isRTL ? 'صيانة التجار' : 'Provider Maintenance'}
-                    </p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      {isRTL
-                        ? 'عند التفعيل، لن يتمكن التجار من الوصول للوحة التحكم'
-                        : 'When enabled, providers cannot access the dashboard'}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  onClick={() =>
-                    setMaintenance((prev) => ({
-                      ...prev,
-                      providers_maintenance: !prev.providers_maintenance,
-                    }))
-                  }
-                  className={`relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full transition-colors ${
-                    maintenance.providers_maintenance ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
-                      maintenance.providers_maintenance
-                        ? isRTL
-                          ? 'translate-x-2'
-                          : 'translate-x-8'
-                        : isRTL
-                          ? 'translate-x-8'
-                          : 'translate-x-1'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Customer Maintenance */}
-              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex items-start gap-3">
-                  <Users className="w-5 h-5 text-purple-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-purple-800">
-                      {isRTL ? 'صيانة العملاء' : 'Customer Maintenance'}
-                    </p>
-                    <p className="text-sm text-purple-700 mt-1">
-                      {isRTL
-                        ? 'عند التفعيل، لن يتمكن العملاء من تصفح المتاجر أو إنشاء طلبات'
-                        : 'When enabled, customers cannot browse stores or create orders'}
-                    </p>
-                  </div>
-                </div>
-                <div
-                  onClick={() =>
-                    setMaintenance((prev) => ({
-                      ...prev,
-                      customers_maintenance: !prev.customers_maintenance,
-                    }))
-                  }
-                  className={`relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full transition-colors ${
-                    maintenance.customers_maintenance ? 'bg-purple-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
-                      maintenance.customers_maintenance
-                        ? isRTL
-                          ? 'translate-x-2'
-                          : 'translate-x-8'
-                        : isRTL
-                          ? 'translate-x-8'
-                          : 'translate-x-1'
-                    }`}
-                  />
-                </div>
-              </div>
-
               {/* Launch Info */}
-              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                <AlertTriangle className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className={`flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+                <AlertTriangle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-green-800">
                     {isRTL ? 'نصيحة للإطلاق' : 'Launch Tip'}
