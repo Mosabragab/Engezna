@@ -77,13 +77,23 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     setUnreadCount(count || 0);
 
     // Also get pending orders for sidebar badge
-    const { count: pendingCount } = await supabase
+    // IMPORTANT: Match the same filter as orders page - exclude unpaid online payment orders
+    // Cash orders (payment_method = 'cash') are always visible
+    // Online payment orders only visible when payment_status = 'paid' or 'completed'
+    const { data: pendingOrdersData } = await supabase
       .from('orders')
-      .select('*', { count: 'exact', head: true })
+      .select('id, payment_method, payment_status')
       .eq('provider_id', providerId)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .or('order_flow.is.null,order_flow.eq.standard'); // Exclude custom orders
 
-    setPendingOrders(pendingCount || 0);
+    // Filter to match page logic
+    const visiblePendingOrders = (pendingOrdersData || []).filter((order) => {
+      if (order.payment_method === 'cash') return true;
+      return order.payment_status === 'paid' || order.payment_status === 'completed';
+    });
+
+    setPendingOrders(visiblePendingOrders.length);
 
     // Get pending refunds count (refunds awaiting provider response)
     const { count: refundsCount } = await supabase
@@ -114,12 +124,14 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
     setOnHoldOrders(onHoldCount || 0);
 
-    // Get pending custom orders count (طلبات مفتوحة تحتاج تسعير)
+    // Get active custom orders count (طلبات تحتاج متابعة)
+    // - 'pending' = بانتظار التسعير (يحتاج التاجر يسعّر)
+    // - 'priced' = بانتظار موافقة العميل (يحتاج متابعة)
     const { count: customOrdersCount } = await supabase
       .from('custom_order_requests')
       .select('*', { count: 'exact', head: true })
       .eq('provider_id', providerId)
-      .eq('status', 'pending');
+      .in('status', ['pending', 'priced']);
 
     setPendingCustomOrders(customOrdersCount || 0);
   }, []);
@@ -296,6 +308,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       )
       // ─────────────────────────────────────────────────────────────────────────
       // ORDERS: Real-time updates for pending orders badge (critical)
+      // IMPORTANT: Only count visible orders (cash or paid online payments)
       // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
@@ -306,8 +319,19 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           filter: `provider_id=eq.${providerId}`,
         },
         (payload) => {
-          const newOrder = payload.new as { status: string };
-          if (newOrder.status === 'pending') {
+          const newOrder = payload.new as {
+            status: string;
+            payment_method: string;
+            payment_status: string;
+            order_flow?: string;
+          };
+          // Only count if: pending AND (cash OR paid online) AND standard flow
+          const isVisible =
+            newOrder.payment_method === 'cash' ||
+            newOrder.payment_status === 'paid' ||
+            newOrder.payment_status === 'completed';
+          const isStandardFlow = !newOrder.order_flow || newOrder.order_flow === 'standard';
+          if (newOrder.status === 'pending' && isVisible && isStandardFlow) {
             setPendingOrders((prev) => prev + 1);
           }
         }
@@ -321,19 +345,52 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           filter: `provider_id=eq.${providerId}`,
         },
         (payload) => {
-          const oldOrder = payload.old as { status: string };
-          const newOrder = payload.new as { status: string };
+          const oldOrder = payload.old as {
+            status: string;
+            payment_method: string;
+            payment_status: string;
+            order_flow?: string;
+          };
+          const newOrder = payload.new as {
+            status: string;
+            payment_method: string;
+            payment_status: string;
+            order_flow?: string;
+          };
 
-          if (oldOrder.status === 'pending' && newOrder.status !== 'pending') {
+          // Check visibility for old and new states
+          const wasVisible =
+            oldOrder.payment_method === 'cash' ||
+            oldOrder.payment_status === 'paid' ||
+            oldOrder.payment_status === 'completed';
+          const isVisible =
+            newOrder.payment_method === 'cash' ||
+            newOrder.payment_status === 'paid' ||
+            newOrder.payment_status === 'completed';
+          const isStandardFlow = !newOrder.order_flow || newOrder.order_flow === 'standard';
+
+          // Decrement if was visible pending and now not
+          if (
+            oldOrder.status === 'pending' &&
+            wasVisible &&
+            (newOrder.status !== 'pending' || !isVisible)
+          ) {
             setPendingOrders((prev) => Math.max(0, prev - 1));
           }
-          if (oldOrder.status !== 'pending' && newOrder.status === 'pending') {
+          // Increment if becomes visible pending
+          if (
+            newOrder.status === 'pending' &&
+            isVisible &&
+            isStandardFlow &&
+            (oldOrder.status !== 'pending' || !wasVisible)
+          ) {
             setPendingOrders((prev) => prev + 1);
           }
         }
       )
       // ─────────────────────────────────────────────────────────────────────────
       // CUSTOM ORDERS: Real-time updates for custom order requests (critical)
+      // Track both 'pending' (needs pricing) and 'priced' (awaiting customer approval)
       // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
@@ -345,7 +402,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         (payload) => {
           const newRequest = payload.new as { status: string };
-          if (newRequest.status === 'pending') {
+          if (newRequest.status === 'pending' || newRequest.status === 'priced') {
             setPendingCustomOrders((prev) => prev + 1);
             // Play DISTINCT notification sound for custom orders
             try {
@@ -368,10 +425,15 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const oldRequest = payload.old as { status: string };
           const newRequest = payload.new as { status: string };
 
-          if (oldRequest.status === 'pending' && newRequest.status !== 'pending') {
+          const wasActive = oldRequest.status === 'pending' || oldRequest.status === 'priced';
+          const isActive = newRequest.status === 'pending' || newRequest.status === 'priced';
+
+          // Decrement if was active and now not
+          if (wasActive && !isActive) {
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
-          if (oldRequest.status !== 'pending' && newRequest.status === 'pending') {
+          // Increment if becomes active
+          if (!wasActive && isActive) {
             setPendingCustomOrders((prev) => prev + 1);
           }
         }
@@ -386,7 +448,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         (payload) => {
           const deleted = payload.old as { status: string };
-          if (deleted.status === 'pending') {
+          if (deleted.status === 'pending' || deleted.status === 'priced') {
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
         }
