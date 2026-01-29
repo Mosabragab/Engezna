@@ -105,10 +105,10 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
+          <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <Building className="w-5 h-5 text-primary" />
             {isRTL ? 'معلومات المنصة' : 'Platform Information'}
           </CardTitle>

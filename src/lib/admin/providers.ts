@@ -582,7 +582,20 @@ export async function updateProviderCommission(
       .eq('id', providerId)
       .single();
 
-    if (fetchError || !current) {
+    if (fetchError) {
+      console.error('updateProviderCommission fetch error:', {
+        code: fetchError.code,
+        message: fetchError.message,
+        providerId,
+      });
+      return {
+        success: false,
+        error: fetchError.code === 'PGRST116' ? 'Provider not found' : `Database error: ${fetchError.message}`,
+        errorCode: fetchError.code === 'PGRST116' ? 'NOT_FOUND' : 'DATABASE_ERROR',
+      };
+    }
+
+    if (!current) {
       return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
     }
 

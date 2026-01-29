@@ -1,12 +1,12 @@
 /**
  * Security & System Settings Tab
  *
- * Manages maintenance mode and admin password change.
+ * Manages maintenance mode (providers/customers) and admin password change.
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,12 +18,13 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
-  Save,
   Loader2,
   AlertCircle,
   CheckCircle2,
   Wrench,
   Mail,
+  Store,
+  Users,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -33,10 +34,27 @@ interface SecuritySettingsTabProps {
   user: User;
 }
 
+interface MaintenanceSettings {
+  providers_maintenance: boolean;
+  customers_maintenance: boolean;
+  maintenance_message_ar: string;
+  maintenance_message_en: string;
+}
+
+const DEFAULT_MAINTENANCE: MaintenanceSettings = {
+  providers_maintenance: false,
+  customers_maintenance: true, // Customers disabled by default for launch
+  maintenance_message_ar: 'المنصة تحت الصيانة - نعود قريباً',
+  maintenance_message_en: 'Platform under maintenance - Coming soon',
+};
+
+const MAINTENANCE_KEY = 'maintenance_settings';
+
 export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
   // Maintenance mode state
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [maintenanceLoading, setMaintenanceLoading] = useState(false);
+  const [maintenance, setMaintenance] = useState<MaintenanceSettings>(DEFAULT_MAINTENANCE);
+  const [loadingMaintenance, setLoadingMaintenance] = useState(true);
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [maintenanceSuccess, setMaintenanceSuccess] = useState(false);
   const [maintenanceError, setMaintenanceError] = useState<string | null>(null);
 
@@ -51,39 +69,88 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
 
-  // Handle maintenance mode toggle
-  const handleMaintenanceToggle = async (enabled: boolean) => {
-    setMaintenanceLoading(true);
+  // Load maintenance settings on mount
+  useEffect(() => {
+    loadMaintenanceSettings();
+  }, []);
+
+  const loadMaintenanceSettings = async () => {
+    setLoadingMaintenance(true);
+    const supabase = createClient();
+
+    try {
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', MAINTENANCE_KEY)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading maintenance settings:', error);
+      }
+
+      if (data?.setting_value) {
+        setMaintenance({ ...DEFAULT_MAINTENANCE, ...data.setting_value });
+      }
+    } catch (err) {
+      console.error('Error loading maintenance settings:', err);
+    }
+
+    setLoadingMaintenance(false);
+  };
+
+  // Handle maintenance mode save
+  const handleSaveMaintenance = async () => {
+    setSavingMaintenance(true);
     setMaintenanceError(null);
     setMaintenanceSuccess(false);
 
     const supabase = createClient();
 
-    // Update platform_settings or app_settings
-    const { error } = await supabase
-      .from('platform_settings')
-      .update({ maintenance_mode: enabled, updated_at: new Date().toISOString() })
-      .eq('id', 1); // Assuming single row
+    try {
+      // Try to update first
+      const { data: existing } = await supabase
+        .from('app_settings')
+        .select('id')
+        .eq('setting_key', MAINTENANCE_KEY)
+        .single();
 
-    if (error) {
-      // Try inserting if no row exists
-      const { error: insertError } = await supabase
-        .from('platform_settings')
-        .upsert({ id: 1, maintenance_mode: enabled, updated_at: new Date().toISOString() });
+      if (existing) {
+        // Update existing
+        const { error } = await supabase
+          .from('app_settings')
+          .update({
+            setting_value: maintenance,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('setting_key', MAINTENANCE_KEY);
 
-      if (insertError) {
-        setMaintenanceError(
-          isRTL ? 'فشل في تحديث وضع الصيانة' : 'Failed to update maintenance mode'
-        );
-        setMaintenanceLoading(false);
-        return;
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await supabase.from('app_settings').insert({
+          setting_key: MAINTENANCE_KEY,
+          setting_value: maintenance,
+          category: 'system',
+          description_ar: 'إعدادات وضع الصيانة',
+          description_en: 'Maintenance mode settings',
+          is_sensitive: false,
+          is_readonly: false,
+        });
+
+        if (error) throw error;
       }
+
+      setMaintenanceSuccess(true);
+      setTimeout(() => setMaintenanceSuccess(false), 3000);
+    } catch (err) {
+      console.error('Error saving maintenance settings:', err);
+      setMaintenanceError(
+        isRTL ? 'فشل في حفظ إعدادات الصيانة' : 'Failed to save maintenance settings'
+      );
     }
 
-    setMaintenanceMode(enabled);
-    setMaintenanceSuccess(true);
-    setTimeout(() => setMaintenanceSuccess(false), 3000);
-    setMaintenanceLoading(false);
+    setSavingMaintenance(false);
   };
 
   // Handle password change
@@ -154,67 +221,161 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Maintenance Mode Card */}
       <Card className="border-amber-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-amber-700">
+        <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
+          <CardTitle className={`flex items-center gap-2 text-amber-700 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <Wrench className="w-5 h-5" />
             {isRTL ? 'وضع الصيانة' : 'Maintenance Mode'}
           </CardTitle>
           <CardDescription>
             {isRTL
-              ? 'عند تفعيل وضع الصيانة، لن يتمكن العملاء والتجار من الوصول للمنصة'
-              : 'When maintenance mode is enabled, customers and providers cannot access the platform'}
+              ? 'تحكم في وصول التجار والعملاء للمنصة بشكل منفصل'
+              : 'Control provider and customer access to the platform separately'}
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-amber-50 rounded-lg border border-amber-200">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-800">
-                  {isRTL ? 'تحذير: هذا سيؤثر على جميع المستخدمين' : 'Warning: This affects all users'}
-                </p>
-                <p className="text-sm text-amber-700 mt-1">
-                  {isRTL
-                    ? 'سيظهر للمستخدمين رسالة "المنصة تحت الصيانة - نعود قريباً"'
-                    : 'Users will see "Platform under maintenance - Coming soon" message'}
-                </p>
+        <CardContent className="space-y-4">
+          {loadingMaintenance ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+            </div>
+          ) : (
+            <>
+              {/* Provider Maintenance */}
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <Store className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-800">
+                      {isRTL ? 'صيانة التجار' : 'Provider Maintenance'}
+                    </p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {isRTL
+                        ? 'عند التفعيل، لن يتمكن التجار من الوصول للوحة التحكم'
+                        : 'When enabled, providers cannot access the dashboard'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={maintenance.providers_maintenance}
+                  onCheckedChange={(checked) =>
+                    setMaintenance((prev) => ({ ...prev, providers_maintenance: checked }))
+                  }
+                  className="data-[state=checked]:bg-blue-600"
+                />
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {maintenanceLoading && <Loader2 className="w-4 h-4 animate-spin text-amber-600" />}
-              <Switch
-                checked={maintenanceMode}
-                onCheckedChange={handleMaintenanceToggle}
-                disabled={maintenanceLoading}
-                className="data-[state=checked]:bg-amber-600"
-              />
-            </div>
-          </div>
 
-          {maintenanceSuccess && (
-            <div className="mt-4 flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="text-sm">
-                {isRTL
-                  ? maintenanceMode
-                    ? 'تم تفعيل وضع الصيانة'
-                    : 'تم إلغاء وضع الصيانة'
-                  : maintenanceMode
-                    ? 'Maintenance mode enabled'
-                    : 'Maintenance mode disabled'}
-              </span>
-            </div>
-          )}
+              {/* Customer Maintenance */}
+              <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-start gap-3">
+                  <Users className="w-5 h-5 text-purple-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-purple-800">
+                      {isRTL ? 'صيانة العملاء' : 'Customer Maintenance'}
+                    </p>
+                    <p className="text-sm text-purple-700 mt-1">
+                      {isRTL
+                        ? 'عند التفعيل، لن يتمكن العملاء من تصفح المتاجر أو إنشاء طلبات'
+                        : 'When enabled, customers cannot browse stores or create orders'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={maintenance.customers_maintenance}
+                  onCheckedChange={(checked) =>
+                    setMaintenance((prev) => ({ ...prev, customers_maintenance: checked }))
+                  }
+                  className="data-[state=checked]:bg-purple-600"
+                />
+              </div>
 
-          {maintenanceError && (
-            <div className="mt-4 flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
-              <AlertCircle className="w-5 h-5" />
-              <span className="text-sm">{maintenanceError}</span>
-            </div>
+              {/* Launch Info */}
+              <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
+                <AlertTriangle className="w-5 h-5 text-green-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-green-800">
+                    {isRTL ? 'نصيحة للإطلاق' : 'Launch Tip'}
+                  </p>
+                  <p className="text-sm text-green-700 mt-1">
+                    {isRTL
+                      ? 'للمرحلة الأولى: أغلق وصول العملاء واسمح للتجار بالتسجيل والإعداد'
+                      : 'For Phase 1: Disable customer access and allow providers to register and setup'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Maintenance Messages */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="msg_ar">
+                    {isRTL ? 'رسالة الصيانة (عربي)' : 'Maintenance Message (Arabic)'}
+                  </Label>
+                  <Input
+                    id="msg_ar"
+                    value={maintenance.maintenance_message_ar}
+                    onChange={(e) =>
+                      setMaintenance((prev) => ({
+                        ...prev,
+                        maintenance_message_ar: e.target.value,
+                      }))
+                    }
+                    dir="rtl"
+                    placeholder="المنصة تحت الصيانة..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="msg_en">
+                    {isRTL ? 'رسالة الصيانة (إنجليزي)' : 'Maintenance Message (English)'}
+                  </Label>
+                  <Input
+                    id="msg_en"
+                    value={maintenance.maintenance_message_en}
+                    onChange={(e) =>
+                      setMaintenance((prev) => ({
+                        ...prev,
+                        maintenance_message_en: e.target.value,
+                      }))
+                    }
+                    dir="ltr"
+                    placeholder="Platform under maintenance..."
+                  />
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="flex items-center justify-between pt-4">
+                <div>
+                  {maintenanceSuccess && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="text-sm">
+                        {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
+                      </span>
+                    </div>
+                  )}
+                  {maintenanceError && (
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">{maintenanceError}</span>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSaveMaintenance}
+                  disabled={savingMaintenance}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  {savingMaintenance ? (
+                    <Loader2 className="w-4 h-4 animate-spin me-2" />
+                  ) : (
+                    <Wrench className="w-4 h-4 me-2" />
+                  )}
+                  {isRTL ? 'حفظ إعدادات الصيانة' : 'Save Maintenance Settings'}
+                </Button>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -100,8 +100,8 @@ export default function AdminSettingsV2Page() {
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Page Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className={`mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
+          <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
             <Settings className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">
               {isRTL ? 'إعدادات المنصة' : 'Platform Settings'}
@@ -115,13 +115,13 @@ export default function AdminSettingsV2Page() {
         </div>
 
         {/* Settings Tabs */}
-        <Tabs defaultValue="commission" className="w-full">
-          <TabsList className="w-full justify-start bg-white border rounded-lg p-1 mb-6 flex-wrap">
+        <Tabs defaultValue="commission" className="w-full" dir={isRTL ? 'rtl' : 'ltr'}>
+          <TabsList className={`w-full bg-white border rounded-lg p-1 mb-6 flex-wrap ${isRTL ? 'justify-end' : 'justify-start'}`}>
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="flex items-center gap-2 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white"
+                className={`flex items-center gap-2 px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white ${isRTL ? 'flex-row-reverse' : ''}`}
               >
                 <tab.icon className="w-4 h-4" />
                 <span>{tab.label}</span>
