@@ -147,6 +147,10 @@ export default function ProviderSettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Form states
   const [nameAr, setNameAr] = useState('');
@@ -162,6 +166,16 @@ export default function ProviderSettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  // Store tab message state
+  const [storeMessage, setStoreMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  // Delivery tab message state
+  const [deliveryMessage, setDeliveryMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
   // Pickup settings
   const [supportsPickup, setSupportsPickup] = useState(false);
   const [pickupInstructionsAr, setPickupInstructionsAr] = useState('');
@@ -169,6 +183,11 @@ export default function ProviderSettingsPage() {
   const [estimatedPickupTime, setEstimatedPickupTime] = useState('');
   const [savingPickup, setSavingPickup] = useState(false);
   const [savedPickup, setSavedPickup] = useState(false);
+  // Pickup tab message state
+  const [pickupMessage, setPickupMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Custom order settings
   const [operationMode, setOperationMode] = useState<'standard' | 'custom' | 'hybrid'>('standard');
@@ -177,6 +196,11 @@ export default function ProviderSettingsPage() {
   );
   const [savingCustomOrders, setSavingCustomOrders] = useState(false);
   const [savedCustomOrders, setSavedCustomOrders] = useState(false);
+  // Custom orders tab message state
+  const [customOrdersMessage, setCustomOrdersMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Location display (read-only)
   const [governorateName, setGovernorateName] = useState<{ ar: string; en: string } | null>(null);
@@ -265,11 +289,14 @@ export default function ProviderSettingsPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert(
-          locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB'
-        );
+        setStoreMessage({
+          type: 'error',
+          text:
+            locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 2MB' : 'Image must be less than 2MB',
+        });
         return;
       }
+      setStoreMessage(null);
       setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
     }
@@ -279,11 +306,14 @@ export default function ProviderSettingsPage() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        alert(
-          locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5MB' : 'Image must be less than 5MB'
-        );
+        setStoreMessage({
+          type: 'error',
+          text:
+            locale === 'ar' ? 'حجم الصورة يجب أن يكون أقل من 5MB' : 'Image must be less than 5MB',
+        });
         return;
       }
+      setStoreMessage(null);
       setCoverFile(file);
       setCoverPreview(URL.createObjectURL(file));
     }
@@ -345,7 +375,13 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id);
 
-    if (!error) {
+    if (error) {
+      setStoreMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'فشل في حفظ التغييرات' : 'Failed to save changes',
+      });
+    } else {
+      setStoreMessage(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
       setProvider((prev) =>
@@ -379,7 +415,13 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id);
 
-    if (!error) {
+    if (error) {
+      setDeliveryMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'فشل في حفظ التغييرات' : 'Failed to save changes',
+      });
+    } else {
+      setDeliveryMessage(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     }
@@ -404,7 +446,13 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id);
 
-    if (!error) {
+    if (error) {
+      setPickupMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'فشل في حفظ التغييرات' : 'Failed to save changes',
+      });
+    } else {
+      setPickupMessage(null);
       setSavedPickup(true);
       setTimeout(() => setSavedPickup(false), 3000);
       setProvider((prev) =>
@@ -443,7 +491,13 @@ export default function ProviderSettingsPage() {
       })
       .eq('id', provider.id);
 
-    if (!error) {
+    if (error) {
+      setCustomOrdersMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'فشل في حفظ التغييرات' : 'Failed to save changes',
+      });
+    } else {
+      setCustomOrdersMessage(null);
       setSavedCustomOrders(true);
       setTimeout(() => setSavedCustomOrders(false), 3000);
       setProvider((prev) =>
@@ -573,6 +627,7 @@ export default function ProviderSettingsPage() {
     }
 
     setDeletingAccount(true);
+    setDeleteMessage(null);
 
     try {
       // Call API to delete account
@@ -588,13 +643,18 @@ export default function ProviderSettingsPage() {
         window.location.href = `/${locale}`;
       } else {
         const data = await response.json();
-        alert(data.error || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'));
+        setDeleteMessage({
+          type: 'error',
+          text: data.error || (locale === 'ar' ? 'فشل حذف الحساب' : 'Failed to delete account'),
+        });
       }
     } catch (error) {
       console.error('Delete account error:', error);
-      alert(
-        locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account'
-      );
+      setDeleteMessage({
+        type: 'error',
+        text:
+          locale === 'ar' ? 'حدث خطأ أثناء حذف الحساب' : 'An error occurred while deleting account',
+      });
     } finally {
       setDeletingAccount(false);
     }
@@ -886,20 +946,34 @@ export default function ProviderSettingsPage() {
                   />
                 </div>
 
+                {/* Error/Success Message */}
+                {storeMessage && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-lg ${
+                      storeMessage.type === 'error'
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-green-50 text-green-600 border border-green-200'
+                    }`}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">{storeMessage.text}</span>
+                  </div>
+                )}
+
                 <Button className="w-full" onClick={handleSaveStore} disabled={saving}>
                   {saving ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : saved ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
                     </>
                   )}
@@ -975,20 +1049,34 @@ export default function ProviderSettingsPage() {
                   />
                 </div>
 
+                {/* Error/Success Message */}
+                {deliveryMessage && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-lg ${
+                      deliveryMessage.type === 'error'
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-green-50 text-green-600 border border-green-200'
+                    }`}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">{deliveryMessage.text}</span>
+                  </div>
+                )}
+
                 <Button className="w-full" onClick={handleSaveDelivery} disabled={saving}>
                   {saving ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : saved ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
                     </>
                   )}
@@ -1131,20 +1219,34 @@ export default function ProviderSettingsPage() {
                   </div>
                 )}
 
+                {/* Error/Success Message */}
+                {pickupMessage && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-lg ${
+                      pickupMessage.type === 'error'
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-green-50 text-green-600 border border-green-200'
+                    }`}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">{pickupMessage.text}</span>
+                  </div>
+                )}
+
                 <Button className="w-full" onClick={handleSavePickup} disabled={savingPickup}>
                   {savingPickup ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : savedPickup ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
                     </>
                   )}
@@ -1593,6 +1695,20 @@ export default function ProviderSettingsPage() {
                   </>
                 )}
 
+                {/* Error/Success Message */}
+                {customOrdersMessage && (
+                  <div
+                    className={`flex items-center gap-2 p-3 rounded-lg ${
+                      customOrdersMessage.type === 'error'
+                        ? 'bg-red-50 text-red-600 border border-red-200'
+                        : 'bg-green-50 text-green-600 border border-green-200'
+                    }`}
+                  >
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm">{customOrdersMessage.text}</span>
+                  </div>
+                )}
+
                 <Button
                   className="w-full"
                   onClick={handleSaveCustomOrders}
@@ -1600,17 +1716,17 @@ export default function ProviderSettingsPage() {
                 >
                   {savingCustomOrders ? (
                     <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
                     </>
                   ) : savedCustomOrders ? (
                     <>
-                      <Check className="w-4 h-4 mr-2" />
+                      <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
                     </>
                   ) : (
                     <>
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                       {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
                     </>
                   )}
@@ -2066,6 +2182,20 @@ export default function ProviderSettingsPage() {
                         />
                       </div>
 
+                      {/* Error Message */}
+                      {deleteMessage && (
+                        <div
+                          className={`flex items-center gap-2 p-3 rounded-lg ${
+                            deleteMessage.type === 'error'
+                              ? 'bg-red-50 text-red-600 border border-red-200'
+                              : 'bg-green-50 text-green-600 border border-green-200'
+                          }`}
+                        >
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span className="text-sm">{deleteMessage.text}</span>
+                        </div>
+                      )}
+
                       <div className="flex gap-3">
                         <Button
                           variant="outline"
@@ -2193,13 +2323,13 @@ export default function ProviderSettingsPage() {
               <div className="flex flex-wrap gap-2">
                 <Link href={`/${locale}/provider/products`}>
                   <Button variant="outline" size="sm" className="border-slate-300">
-                    <Store className="w-4 h-4 mr-2" />
+                    <Store className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                     {locale === 'ar' ? 'المنتجات' : 'Products'}
                   </Button>
                 </Link>
                 <Link href={`/${locale}/provider/orders`}>
                   <Button variant="outline" size="sm" className="border-slate-300">
-                    <Bell className="w-4 h-4 mr-2" />
+                    <Bell className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
                     {locale === 'ar' ? 'الطلبات' : 'Orders'}
                   </Button>
                 </Link>

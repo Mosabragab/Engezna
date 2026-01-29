@@ -365,8 +365,22 @@ const DEFAULT_WELCOME_SECTIONS: HomepageSection[] = [
     title_en: 'Available Governorates',
     config: {},
     content: {
-      ar: { title: 'متاحين في' },
-      en: { title: 'Available In' },
+      ar: {
+        title: 'متاحين في',
+        subtitle: 'نتوسع باستمرار - قريباً في محافظات أكثر!',
+        governorates: [
+          { id: 'beni-suef', name_ar: 'بني سويف', name_en: 'Beni Suef' },
+          { id: 'fayoum', name_ar: 'الفيوم', name_en: 'Fayoum' },
+        ],
+      },
+      en: {
+        title: 'Available In',
+        subtitle: 'We are constantly expanding - coming soon to more governorates!',
+        governorates: [
+          { id: 'beni-suef', name_ar: 'بني سويف', name_en: 'Beni Suef' },
+          { id: 'fayoum', name_ar: 'الفيوم', name_en: 'Fayoum' },
+        ],
+      },
     },
     display_order: 5,
   },
