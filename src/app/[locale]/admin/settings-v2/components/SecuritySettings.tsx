@@ -283,6 +283,44 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
             </div>
           ) : (
             <>
+              {/* Save Button - TOP for visibility */}
+              <div className="flex items-center justify-between p-4 bg-amber-100 rounded-lg border-2 border-amber-400">
+                <div className="flex items-center gap-2">
+                  {maintenanceSuccess && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="font-medium">
+                        {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
+                      </span>
+                    </div>
+                  )}
+                  {maintenanceError && (
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="font-medium">{maintenanceError}</span>
+                    </div>
+                  )}
+                  {!maintenanceSuccess && !maintenanceError && (
+                    <span className="text-amber-800 font-medium">
+                      {isRTL ? 'لا تنسَ حفظ التغييرات' : "Don't forget to save changes"}
+                    </span>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSaveMaintenance}
+                  disabled={savingMaintenance}
+                  size="lg"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold px-6"
+                >
+                  {savingMaintenance ? (
+                    <Loader2 className="w-5 h-5 animate-spin me-2" />
+                  ) : (
+                    <Wrench className="w-5 h-5 me-2" />
+                  )}
+                  {isRTL ? 'حفظ الإعدادات' : 'Save Settings'}
+                </Button>
+              </div>
+
               {/* Provider Maintenance */}
               <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-start gap-3">
@@ -298,13 +336,29 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                     </p>
                   </div>
                 </div>
-                <Switch
-                  checked={maintenance.providers_maintenance}
-                  onCheckedChange={(checked) =>
-                    setMaintenance((prev) => ({ ...prev, providers_maintenance: checked }))
+                <div
+                  onClick={() =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      providers_maintenance: !prev.providers_maintenance,
+                    }))
                   }
-                  className="data-[state=checked]:bg-blue-600"
-                />
+                  className={`relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full transition-colors ${
+                    maintenance.providers_maintenance ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                      maintenance.providers_maintenance
+                        ? isRTL
+                          ? 'translate-x-2'
+                          : 'translate-x-8'
+                        : isRTL
+                          ? 'translate-x-8'
+                          : 'translate-x-1'
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Customer Maintenance */}
@@ -322,13 +376,29 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                     </p>
                   </div>
                 </div>
-                <Switch
-                  checked={maintenance.customers_maintenance}
-                  onCheckedChange={(checked) =>
-                    setMaintenance((prev) => ({ ...prev, customers_maintenance: checked }))
+                <div
+                  onClick={() =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      customers_maintenance: !prev.customers_maintenance,
+                    }))
                   }
-                  className="data-[state=checked]:bg-purple-600"
-                />
+                  className={`relative inline-flex h-7 w-14 cursor-pointer items-center rounded-full transition-colors ${
+                    maintenance.customers_maintenance ? 'bg-purple-600' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${
+                      maintenance.customers_maintenance
+                        ? isRTL
+                          ? 'translate-x-2'
+                          : 'translate-x-8'
+                        : isRTL
+                          ? 'translate-x-8'
+                          : 'translate-x-1'
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Launch Info */}
@@ -384,37 +454,6 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                 </div>
               </div>
 
-              {/* Save Button */}
-              <div className="flex items-center justify-between pt-4">
-                <div>
-                  {maintenanceSuccess && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span className="text-sm">
-                        {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                      </span>
-                    </div>
-                  )}
-                  {maintenanceError && (
-                    <div className="flex items-center gap-2 text-red-600">
-                      <AlertCircle className="w-4 h-4" />
-                      <span className="text-sm">{maintenanceError}</span>
-                    </div>
-                  )}
-                </div>
-                <Button
-                  onClick={handleSaveMaintenance}
-                  disabled={savingMaintenance}
-                  className="bg-amber-600 hover:bg-amber-700"
-                >
-                  {savingMaintenance ? (
-                    <Loader2 className="w-4 h-4 animate-spin me-2" />
-                  ) : (
-                    <Wrench className="w-4 h-4 me-2" />
-                  )}
-                  {isRTL ? 'حفظ إعدادات الصيانة' : 'Save Maintenance Settings'}
-                </Button>
-              </div>
             </>
           )}
         </CardContent>
