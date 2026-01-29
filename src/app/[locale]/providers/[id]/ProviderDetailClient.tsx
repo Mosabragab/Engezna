@@ -613,9 +613,9 @@ export default function ProviderDetailClient({
           {/* Badges */}
           <div className="flex items-center gap-2 mt-2">
             {provider.is_featured && (
-              <div className="flex items-center gap-1 bg-amber-100 px-2 py-1 rounded-full">
-                <Crown className="w-3.5 h-3.5 text-amber-600" />
-                <span className="text-xs font-medium text-amber-700">
+              <div className="flex items-center gap-1 bg-premium/20 px-2 py-1 rounded-full">
+                <Crown className="w-3.5 h-3.5 text-premium" />
+                <span className="text-xs font-medium text-foreground">
                   {locale === 'ar' ? 'مميز' : 'Featured'}
                 </span>
               </div>

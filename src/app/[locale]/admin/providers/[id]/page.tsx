@@ -565,8 +565,8 @@ export default function ProviderDetailPage() {
                     {getStatusLabel(provider.status)}
                   </span>
                   {provider.is_featured && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1">
-                      <Award className="w-4 h-4" />
+                    <span className="text-sm px-3 py-1 rounded-full bg-premium/20 text-foreground flex items-center gap-1">
+                      <Award className="w-4 h-4 text-premium" />
                       {locale === 'ar' ? 'مميز' : 'Featured'}
                     </span>
                   )}

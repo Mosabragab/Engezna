@@ -119,7 +119,7 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
         )}
         {/* Featured Badge */}
         {provider.is_featured && (
-          <div className="absolute top-1 start-1 bg-amber-400/95 backdrop-blur-sm text-amber-900 p-1 rounded-md">
+          <div className="absolute top-1 start-1 bg-premium/95 backdrop-blur-sm text-slate-900 p-1 rounded-md">
             <Crown className="w-3 h-3" />
           </div>
         )}

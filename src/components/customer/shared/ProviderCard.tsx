@@ -85,7 +85,7 @@ export function ProviderCard({
             )}
             {/* Featured Badge */}
             {provider.is_featured && (
-              <div className="absolute top-2 start-2 bg-amber-400/95 backdrop-blur-md text-amber-900 px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
+              <div className="absolute top-2 start-2 bg-premium/95 backdrop-blur-md text-slate-900 px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
                 <Crown className="w-3 h-3" />
               </div>
             )}
@@ -142,7 +142,7 @@ export function ProviderCard({
 
           {/* Featured Badge */}
           {provider.is_featured && (
-            <div className="absolute top-3 start-3 bg-amber-400/95 backdrop-blur-md text-amber-900 px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+            <div className="absolute top-3 start-3 bg-premium/95 backdrop-blur-md text-slate-900 px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm">
               <Crown className="w-3.5 h-3.5" />
               <span>{locale === 'ar' ? 'مميز' : 'Featured'}</span>
             </div>
