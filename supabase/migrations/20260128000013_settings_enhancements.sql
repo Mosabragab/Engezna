@@ -1,22 +1,150 @@
 -- ============================================================================
--- DATABASE-DRIVEN SETTINGS SYSTEM
+-- SETTINGS ENHANCEMENTS MIGRATION
 -- ============================================================================
--- Description: Central settings management with audit trail
--- Features:
---   - app_settings: Main settings table with JSONB values
---   - settings_changelog: Audit trail for all changes
---   - Commission and Security Deposit initial settings
+-- Description: Enhances existing settings infrastructure without duplication
+--
+-- IMPORTANT: This migration is SAFE for existing data:
+--   - All ALTER TABLE commands use ADD COLUMN IF NOT EXISTS
+--   - All new columns have DEFAULT values
+--   - No data is deleted or modified
+--
+-- What this migration does:
+--   1. Adds preferred_language to profiles table
+--   2. Adds notification channels to notification_preferences table
+--   3. Creates audit trail for commission_settings (commission_settings_changelog)
+--   4. Creates app_settings for non-commission settings (security, general, payment, delivery)
+--   5. Creates settings_changelog for app_settings audit trail
 -- ============================================================================
 
 -- ============================================================================
--- SECTION 1: SETTINGS CATEGORY ENUM
+-- SECTION 1: ADD preferred_language TO profiles
 -- ============================================================================
+-- Safe: ADD COLUMN IF NOT EXISTS + DEFAULT value
+-- Existing rows will get 'ar' as default
 
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS preferred_language TEXT DEFAULT 'ar';
+
+COMMENT ON COLUMN profiles.preferred_language IS 'User preferred language (ar, en)';
+
+-- ============================================================================
+-- SECTION 2: ADD NOTIFICATION CHANNELS TO notification_preferences
+-- ============================================================================
+-- Safe: ADD COLUMN IF NOT EXISTS + DEFAULT true
+-- Existing rows will have all channels enabled by default
+
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS push_enabled BOOLEAN DEFAULT true;
+
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS email_enabled BOOLEAN DEFAULT true;
+
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS sms_enabled BOOLEAN DEFAULT false;
+
+ALTER TABLE notification_preferences
+ADD COLUMN IF NOT EXISTS whatsapp_enabled BOOLEAN DEFAULT false;
+
+COMMENT ON COLUMN notification_preferences.push_enabled IS 'Enable push notifications';
+COMMENT ON COLUMN notification_preferences.email_enabled IS 'Enable email notifications';
+COMMENT ON COLUMN notification_preferences.sms_enabled IS 'Enable SMS notifications';
+COMMENT ON COLUMN notification_preferences.whatsapp_enabled IS 'Enable WhatsApp notifications';
+
+-- ============================================================================
+-- SECTION 3: AUDIT TRAIL FOR commission_settings
+-- ============================================================================
+-- Creates a changelog table specifically for commission_settings
+
+CREATE TABLE IF NOT EXISTS commission_settings_changelog (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Change details
+  old_value JSONB,
+  new_value JSONB NOT NULL,
+
+  -- Who made the change
+  changed_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  changed_by_email TEXT,
+
+  -- When and why
+  changed_at TIMESTAMPTZ DEFAULT NOW(),
+  change_reason TEXT,
+
+  -- Additional context
+  ip_address INET,
+  user_agent TEXT
+);
+
+-- Create index for audit queries
+CREATE INDEX IF NOT EXISTS idx_commission_changelog_changed_at
+ON commission_settings_changelog(changed_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_commission_changelog_changed_by
+ON commission_settings_changelog(changed_by);
+
+-- Trigger function to auto-log commission_settings changes
+CREATE OR REPLACE FUNCTION log_commission_settings_change()
+RETURNS TRIGGER AS $$
+DECLARE
+  admin_email TEXT;
+BEGIN
+  -- Get admin email if available
+  SELECT email INTO admin_email
+  FROM admin_users
+  WHERE id = NEW.updated_by;
+
+  -- Insert changelog entry
+  INSERT INTO commission_settings_changelog (
+    old_value,
+    new_value,
+    changed_by,
+    changed_by_email
+  ) VALUES (
+    CASE WHEN TG_OP = 'UPDATE' THEN row_to_json(OLD)::jsonb ELSE NULL END,
+    row_to_json(NEW)::jsonb,
+    NEW.updated_by,
+    admin_email
+  );
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger (drop first to avoid duplicates)
+DROP TRIGGER IF EXISTS trigger_log_commission_change ON commission_settings;
+CREATE TRIGGER trigger_log_commission_change
+  AFTER INSERT OR UPDATE ON commission_settings
+  FOR EACH ROW
+  EXECUTE FUNCTION log_commission_settings_change();
+
+-- RLS for commission_settings_changelog
+ALTER TABLE commission_settings_changelog ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "commission_changelog_select_policy" ON commission_settings_changelog;
+CREATE POLICY "commission_changelog_select_policy" ON commission_settings_changelog
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM admin_users
+      WHERE id = auth.uid()
+    )
+  );
+
+DROP POLICY IF EXISTS "commission_changelog_insert_policy" ON commission_settings_changelog;
+CREATE POLICY "commission_changelog_insert_policy" ON commission_settings_changelog
+  FOR INSERT
+  WITH CHECK (TRUE);
+
+-- ============================================================================
+-- SECTION 4: APP_SETTINGS FOR NON-COMMISSION SETTINGS
+-- ============================================================================
+-- Note: Commission settings are in commission_settings table (NOT duplicated here)
+
+-- Create settings category enum if not exists
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'settings_category') THEN
     CREATE TYPE settings_category AS ENUM (
-      'commission',
       'security',
       'general',
       'payment',
@@ -26,10 +154,7 @@ BEGIN
   END IF;
 END$$;
 
--- ============================================================================
--- SECTION 2: MAIN SETTINGS TABLE
--- ============================================================================
-
+-- Main settings table (for non-commission settings)
 CREATE TABLE IF NOT EXISTS app_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
@@ -54,12 +179,12 @@ CREATE TABLE IF NOT EXISTS app_settings (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create index for fast lookups
+-- Create indexes for fast lookups
 CREATE INDEX IF NOT EXISTS idx_app_settings_key ON app_settings(setting_key);
 CREATE INDEX IF NOT EXISTS idx_app_settings_category ON app_settings(category);
 
 -- ============================================================================
--- SECTION 3: SETTINGS CHANGELOG (AUDIT TABLE)
+-- SECTION 5: SETTINGS CHANGELOG (AUDIT TABLE FOR app_settings)
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS settings_changelog (
@@ -91,7 +216,7 @@ CREATE INDEX IF NOT EXISTS idx_settings_changelog_changed_at ON settings_changel
 CREATE INDEX IF NOT EXISTS idx_settings_changelog_changed_by ON settings_changelog(changed_by);
 
 -- ============================================================================
--- SECTION 4: AUTO-UPDATE TIMESTAMP TRIGGER
+-- SECTION 6: AUTO-UPDATE TIMESTAMP TRIGGER FOR app_settings
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION update_app_settings_timestamp()
@@ -109,10 +234,10 @@ CREATE TRIGGER trigger_app_settings_updated_at
   EXECUTE FUNCTION update_app_settings_timestamp();
 
 -- ============================================================================
--- SECTION 5: AUTO-LOG CHANGES TO CHANGELOG
+-- SECTION 7: AUTO-LOG CHANGES TO settings_changelog
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION log_settings_change()
+CREATE OR REPLACE FUNCTION log_app_settings_change()
 RETURNS TRIGGER AS $$
 DECLARE
   admin_email TEXT;
@@ -143,14 +268,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS trigger_log_settings_change ON app_settings;
-CREATE TRIGGER trigger_log_settings_change
+DROP TRIGGER IF EXISTS trigger_log_app_settings_change ON app_settings;
+CREATE TRIGGER trigger_log_app_settings_change
   AFTER INSERT OR UPDATE ON app_settings
   FOR EACH ROW
-  EXECUTE FUNCTION log_settings_change();
+  EXECUTE FUNCTION log_app_settings_change();
 
 -- ============================================================================
--- SECTION 6: RLS POLICIES
+-- SECTION 8: RLS POLICIES
 -- ============================================================================
 
 ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
@@ -205,11 +330,11 @@ CREATE POLICY "settings_changelog_insert_policy" ON settings_changelog
   WITH CHECK (TRUE);
 
 -- ============================================================================
--- SECTION 7: HELPER FUNCTIONS
+-- SECTION 9: HELPER FUNCTIONS
 -- ============================================================================
 
 -- Get setting value with fallback
-CREATE OR REPLACE FUNCTION get_setting(
+CREATE OR REPLACE FUNCTION get_app_setting(
   p_key TEXT,
   p_fallback JSONB DEFAULT NULL
 )
@@ -226,7 +351,7 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- Update setting with reason
-CREATE OR REPLACE FUNCTION update_setting(
+CREATE OR REPLACE FUNCTION update_app_setting(
   p_key TEXT,
   p_value JSONB,
   p_reason TEXT DEFAULT NULL
@@ -299,48 +424,9 @@ END;
 $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 -- ============================================================================
--- SECTION 8: SEED INITIAL SETTINGS
+-- SECTION 10: SEED INITIAL SETTINGS (NON-COMMISSION ONLY)
 -- ============================================================================
-
--- Commission Settings
-INSERT INTO app_settings (
-  setting_key,
-  category,
-  setting_value,
-  description,
-  description_ar,
-  is_sensitive,
-  validation_schema
-) VALUES (
-  'commission',
-  'commission',
-  jsonb_build_object(
-    'enabled', true,
-    'grace_period_days', 90,
-    'default_rate', 7.0,
-    'max_rate', 7.0,
-    'min_rate', 0.0,
-    'customer_fee_enabled', false,
-    'customer_fee_rate', 0.0
-  ),
-  'Commission settings for providers including grace period and rates',
-  'إعدادات العمولة للتجار بما في ذلك فترة السماح والنسب',
-  FALSE,
-  jsonb_build_object(
-    'type', 'object',
-    'properties', jsonb_build_object(
-      'enabled', jsonb_build_object('type', 'boolean'),
-      'grace_period_days', jsonb_build_object('type', 'integer', 'min', 0, 'max', 365),
-      'default_rate', jsonb_build_object('type', 'number', 'min', 0, 'max', 100),
-      'max_rate', jsonb_build_object('type', 'number', 'min', 0, 'max', 100),
-      'min_rate', jsonb_build_object('type', 'number', 'min', 0, 'max', 100),
-      'customer_fee_enabled', jsonb_build_object('type', 'boolean'),
-      'customer_fee_rate', jsonb_build_object('type', 'number', 'min', 0, 'max', 100)
-    )
-  )
-) ON CONFLICT (setting_key) DO UPDATE SET
-  setting_value = EXCLUDED.setting_value,
-  updated_at = NOW();
+-- Note: Commission settings are managed in commission_settings table
 
 -- Security Deposit Settings
 INSERT INTO app_settings (
@@ -379,71 +465,138 @@ INSERT INTO app_settings (
       'is_required_for_new_providers', jsonb_build_object('type', 'boolean')
     )
   )
-) ON CONFLICT (setting_key) DO UPDATE SET
-  setting_value = EXCLUDED.setting_value,
-  updated_at = NOW();
+) ON CONFLICT (setting_key) DO NOTHING;
 
--- Tiered Commission Settings (for custom orders)
+-- General Platform Settings
 INSERT INTO app_settings (
   setting_key,
   category,
   setting_value,
   description,
   description_ar,
-  is_sensitive,
-  validation_schema
+  is_sensitive
 ) VALUES (
-  'commission_tiers',
-  'commission',
-  jsonb_build_array(
-    jsonb_build_object('min_amount', 0, 'max_amount', 500, 'rate', 7.0),
-    jsonb_build_object('min_amount', 500, 'max_amount', 1000, 'rate', 6.0),
-    jsonb_build_object('min_amount', 1000, 'max_amount', 2000, 'rate', 5.0),
-    jsonb_build_object('min_amount', 2000, 'max_amount', 5000, 'rate', 4.0),
-    jsonb_build_object('min_amount', 5000, 'max_amount', null, 'rate', 3.0)
-  ),
-  'Tiered commission rates based on order amount',
-  'نسب العمولة المتدرجة بناءً على قيمة الطلب',
-  FALSE,
+  'platform_info',
+  'general',
   jsonb_build_object(
-    'type', 'array',
-    'items', jsonb_build_object(
-      'type', 'object',
-      'properties', jsonb_build_object(
-        'min_amount', jsonb_build_object('type', 'number', 'min', 0),
-        'max_amount', jsonb_build_object('type', 'number', 'nullable', true),
-        'rate', jsonb_build_object('type', 'number', 'min', 0, 'max', 100)
-      )
-    )
-  )
-) ON CONFLICT (setting_key) DO UPDATE SET
-  setting_value = EXCLUDED.setting_value,
-  updated_at = NOW();
+    'app_name_ar', 'إنجزنا',
+    'app_name_en', 'Engezna',
+    'support_email', 'support@engezna.com',
+    'support_phone', '+201000000000',
+    'support_whatsapp', '+201000000000',
+    'default_currency', 'EGP',
+    'default_language', 'ar',
+    'timezone', 'Africa/Cairo'
+  ),
+  'General platform information and contact details',
+  'معلومات المنصة العامة وبيانات الاتصال',
+  FALSE
+) ON CONFLICT (setting_key) DO NOTHING;
+
+-- Payment Settings
+INSERT INTO app_settings (
+  setting_key,
+  category,
+  setting_value,
+  description,
+  description_ar,
+  is_sensitive
+) VALUES (
+  'payment_methods',
+  'payment',
+  jsonb_build_object(
+    'cod_enabled', true,
+    'cod_label_ar', 'الدفع عند الاستلام',
+    'cod_label_en', 'Cash on Delivery',
+    'online_payment_enabled', false,
+    'wallet_payment_enabled', true,
+    'min_order_for_online_payment', 0
+  ),
+  'Payment methods configuration',
+  'إعدادات طرق الدفع',
+  FALSE
+) ON CONFLICT (setting_key) DO NOTHING;
+
+-- Delivery Settings (Platform-wide defaults)
+INSERT INTO app_settings (
+  setting_key,
+  category,
+  setting_value,
+  description,
+  description_ar,
+  is_sensitive
+) VALUES (
+  'delivery_defaults',
+  'delivery',
+  jsonb_build_object(
+    'default_delivery_fee', 15,
+    'default_delivery_time_min', 30,
+    'default_delivery_radius_km', 5,
+    'free_delivery_threshold', 200,
+    'max_delivery_radius_km', 50
+  ),
+  'Default delivery settings for new providers',
+  'إعدادات التوصيل الافتراضية للتجار الجدد',
+  FALSE
+) ON CONFLICT (setting_key) DO NOTHING;
+
+-- Notification Settings (Platform-wide)
+INSERT INTO app_settings (
+  setting_key,
+  category,
+  setting_value,
+  description,
+  description_ar,
+  is_sensitive
+) VALUES (
+  'notification_defaults',
+  'notifications',
+  jsonb_build_object(
+    'order_reminder_minutes', 15,
+    'review_request_delay_hours', 24,
+    'abandoned_cart_reminder_hours', 2,
+    'promotion_frequency_days', 7
+  ),
+  'Default notification timing settings',
+  'إعدادات توقيت الإشعارات الافتراضية',
+  FALSE
+) ON CONFLICT (setting_key) DO NOTHING;
 
 -- ============================================================================
--- SECTION 9: GRANT PERMISSIONS
+-- SECTION 11: GRANT PERMISSIONS
 -- ============================================================================
 
 GRANT SELECT ON app_settings TO authenticated;
 GRANT SELECT ON settings_changelog TO authenticated;
-GRANT EXECUTE ON FUNCTION get_setting(TEXT, JSONB) TO authenticated;
+GRANT SELECT ON commission_settings_changelog TO authenticated;
+GRANT EXECUTE ON FUNCTION get_app_setting(TEXT, JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_settings_by_category(settings_category) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_setting_changelog(TEXT, INT) TO authenticated;
 
 -- ============================================================================
--- SECTION 10: COMMENTS FOR DOCUMENTATION
+-- SECTION 12: COMMENTS FOR DOCUMENTATION
 -- ============================================================================
 
-COMMENT ON TABLE app_settings IS 'Central configuration table for all application settings';
-COMMENT ON TABLE settings_changelog IS 'Audit trail for all settings changes';
+COMMENT ON TABLE app_settings IS 'Central configuration table for non-commission application settings';
+COMMENT ON TABLE settings_changelog IS 'Audit trail for all app_settings changes';
+COMMENT ON TABLE commission_settings_changelog IS 'Audit trail for commission_settings changes';
 
-COMMENT ON COLUMN app_settings.setting_key IS 'Unique identifier for the setting (e.g., commission, security_deposit)';
+COMMENT ON COLUMN app_settings.setting_key IS 'Unique identifier for the setting (e.g., security_deposit, platform_info)';
 COMMENT ON COLUMN app_settings.setting_value IS 'JSONB value containing the actual setting configuration';
 COMMENT ON COLUMN app_settings.is_sensitive IS 'If true, only admins can view this setting';
 COMMENT ON COLUMN app_settings.is_readonly IS 'If true, setting cannot be modified via UI';
 COMMENT ON COLUMN app_settings.validation_schema IS 'JSON Schema for frontend validation reference';
 
-COMMENT ON COLUMN settings_changelog.old_value IS 'Previous value before change (NULL for new settings)';
-COMMENT ON COLUMN settings_changelog.new_value IS 'New value after change';
-COMMENT ON COLUMN settings_changelog.changed_by IS 'Admin user who made the change';
-COMMENT ON COLUMN settings_changelog.change_reason IS 'Optional reason for the change';
+-- ============================================================================
+-- MIGRATION COMPLETE
+-- ============================================================================
+-- Summary of changes:
+--   1. profiles.preferred_language added (default: 'ar')
+--   2. notification_preferences: push_enabled, email_enabled, sms_enabled, whatsapp_enabled added
+--   3. commission_settings_changelog table created with trigger
+--   4. app_settings table created (for non-commission settings)
+--   5. settings_changelog table created for app_settings audit
+--   6. Initial settings seeded: security_deposit, platform_info, payment_methods, delivery_defaults, notification_defaults
+--
+-- Note: Commission settings remain in commission_settings table (not duplicated)
+-- ============================================================================

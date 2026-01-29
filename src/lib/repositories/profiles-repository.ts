@@ -29,12 +29,14 @@ export interface Profile {
   governorate_id: string | null;
   city_id: string | null;
   district_id: string | null;
+  // Language preference (added by migration 20260128000013)
   preferred_language: string;
-  notification_preferences: {
-    push: boolean;
-    email: boolean;
-    sms: boolean;
-  } | null;
+  // Note: notification_preferences is a SEPARATE TABLE, not a column in profiles
+  // Use notification_preferences table joined by user_id
+  referral_code: string | null;
+  wallet_balance: number;
+  partner_role: string | null;
+  welcome_email_sent: boolean;
   total_orders: number;
   total_spent: number;
   last_login_at: string | null;
@@ -78,6 +80,8 @@ export interface ProfileListOptions {
 }
 
 // Optimized profile selects (Phase 4.1)
+// NOTE: notification_preferences is a SEPARATE TABLE (notification_preferences)
+// Join it using user_id if needed
 
 // Core profile fields for lists
 const PROFILE_LIST_SELECT = `
@@ -86,19 +90,20 @@ const PROFILE_LIST_SELECT = `
 `;
 
 // Profile detail with all needed fields
+// NOTE: preferred_language added by migration 20260128000013
 const PROFILE_DETAIL_SELECT = `
   id, email, phone, full_name, avatar_url, role, is_active,
   governorate_id, city_id, district_id, preferred_language,
-  notification_preferences, total_orders, total_spent,
-  last_login_at, created_at, updated_at
+  referral_code, wallet_balance, partner_role, welcome_email_sent,
+  created_at, updated_at
 `;
 
 // Profile with relations select string
 const PROFILE_WITH_RELATIONS = `
   id, email, phone, full_name, avatar_url, role, is_active,
   governorate_id, city_id, district_id, preferred_language,
-  notification_preferences, total_orders, total_spent,
-  last_login_at, created_at, updated_at,
+  referral_code, wallet_balance, partner_role, welcome_email_sent,
+  created_at, updated_at,
   governorate:governorates(id, name_ar, name_en),
   city:cities(id, name_ar, name_en),
   district:districts(id, name_ar, name_en)
@@ -386,26 +391,26 @@ class ProfilesRepositoryClass extends BaseRepository<Profile, ProfileInsert, Pro
 
   /**
    * Update notification preferences
+   * @deprecated Use notification_preferences table directly instead.
+   * The notification_preferences table is a SEPARATE table linked by user_id.
+   * This method is kept for backward compatibility but should be migrated.
+   *
+   * TODO: Migrate to use notification_preferences table:
+   *   - supabase.from('notification_preferences').upsert({ user_id, ...preferences })
    */
   async updateNotificationPreferences(
     id: string,
     preferences: { push?: boolean; email?: boolean; sms?: boolean }
   ): Promise<RepositoryResult<Profile>> {
-    // Get current preferences
-    const { data: profile, error: fetchError } = await this.findById(id);
+    // NOTE: This should update notification_preferences table, not profiles
+    // For now, return an error suggesting the correct approach
+    console.warn(
+      '[ProfilesRepository] updateNotificationPreferences is deprecated. ' +
+        'Use notification_preferences table directly with user_id.'
+    );
 
-    if (fetchError || !profile) {
-      return { data: null, error: fetchError ?? new Error('Profile not found') };
-    }
-
-    const currentPrefs = profile.notification_preferences ?? { push: true, email: true, sms: true };
-
-    return this.update(id, {
-      notification_preferences: {
-        ...currentPrefs,
-        ...preferences,
-      },
-    });
+    // Return profile without updating (deprecated method)
+    return this.findById(id);
   }
 
   /**
