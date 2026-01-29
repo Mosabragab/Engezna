@@ -5,7 +5,11 @@
 -- This migration sets up automatic expiration for priced custom orders
 -- that customers haven't responded to within the allowed time.
 --
--- @version 1.0
+-- Features:
+-- 1. Live status view - shows real-time expiration status without cron
+-- 2. Cron job (every 2 hours) - updates database status and sends notifications
+--
+-- @version 1.1
 -- @date January 2026
 -- ============================================================================
 
@@ -16,6 +20,59 @@
 -- Note: pg_cron must be enabled by Supabase support for hosted projects
 -- For local development, this will work if pg_cron is installed
 CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- ============================================================================
+-- 1.5. Create Live Status View (Real-time expiration without cron)
+-- ============================================================================
+
+-- This view shows the correct status in real-time
+-- Even if the cron hasn't run yet, the UI will show "expired" correctly
+DROP VIEW IF EXISTS custom_order_requests_live;
+
+CREATE VIEW custom_order_requests_live AS
+SELECT
+  r.*,
+  -- Real-time status calculation
+  CASE
+    WHEN r.status = 'priced' AND (
+      -- Check pricing_expires_at
+      (r.pricing_expires_at IS NOT NULL AND r.pricing_expires_at < NOW())
+      OR
+      -- Fallback: 24 hours from priced_at
+      (r.pricing_expires_at IS NULL AND r.priced_at IS NOT NULL AND r.priced_at < NOW() - INTERVAL '24 hours')
+    ) THEN 'expired'::TEXT
+    ELSE r.status
+  END AS live_status,
+  -- Time remaining (null if expired or not priced)
+  CASE
+    WHEN r.status = 'priced' AND r.pricing_expires_at IS NOT NULL AND r.pricing_expires_at > NOW()
+    THEN r.pricing_expires_at - NOW()
+    WHEN r.status = 'priced' AND r.pricing_expires_at IS NULL AND r.priced_at IS NOT NULL
+         AND r.priced_at + INTERVAL '24 hours' > NOW()
+    THEN (r.priced_at + INTERVAL '24 hours') - NOW()
+    ELSE NULL
+  END AS time_remaining,
+  -- Is expired flag for easy filtering
+  CASE
+    WHEN r.status = 'priced' AND (
+      (r.pricing_expires_at IS NOT NULL AND r.pricing_expires_at < NOW())
+      OR
+      (r.pricing_expires_at IS NULL AND r.priced_at IS NOT NULL AND r.priced_at < NOW() - INTERVAL '24 hours')
+    ) THEN TRUE
+    ELSE FALSE
+  END AS is_expired
+FROM custom_order_requests r;
+
+-- Grant access to the view
+GRANT SELECT ON custom_order_requests_live TO authenticated;
+GRANT SELECT ON custom_order_requests_live TO anon;
+
+COMMENT ON VIEW custom_order_requests_live IS
+  'Real-time view of custom order requests with live_status that reflects expiration immediately.
+   Use this view instead of the table for displaying status to users.
+   - live_status: The actual current status (expired if past deadline)
+   - time_remaining: Time left for customer to respond (NULL if expired)
+   - is_expired: Boolean flag for easy filtering';
 
 -- ============================================================================
 -- 2. Create function to expire priced custom orders
@@ -136,7 +193,7 @@ COMMENT ON FUNCTION expire_priced_custom_orders IS
    Uses pricing_expires_at or falls back to 24 hours from priced_at.';
 
 -- ============================================================================
--- 3. Schedule the cron job (runs every hour)
+-- 3. Schedule the cron job (runs every 2 hours)
 -- ============================================================================
 
 -- Remove existing job if any
@@ -145,10 +202,14 @@ WHERE EXISTS (
   SELECT 1 FROM cron.job WHERE jobname = 'expire-priced-custom-orders'
 );
 
--- Schedule job to run every hour
+-- Schedule job to run every 2 hours (at minute 0)
+-- Note: The view handles real-time status display
+-- This cron is only for:
+--   1. Updating the actual database status
+--   2. Sending notifications to customer and provider
 SELECT cron.schedule(
   'expire-priced-custom-orders',  -- job name
-  '0 * * * *',                     -- every hour at minute 0
+  '0 */2 * * *',                   -- every 2 hours at minute 0
   'SELECT expire_priced_custom_orders()'
 );
 
