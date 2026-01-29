@@ -1,7 +1,7 @@
 /**
  * Admin Settings V2 Page
  *
- * Modern settings management page using React Query hooks.
+ * Modern settings management page using React hooks.
  * Features:
  * - Tab-based navigation
  * - Isolated components per section
@@ -11,15 +11,19 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import {
   Percent,
   Building,
   CreditCard,
   Truck,
   Settings,
+  Loader2,
 } from 'lucide-react';
 
 // Tab Components
@@ -34,6 +38,19 @@ export default function AdminSettingsV2Page() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const { toggle: toggleSidebar } = useAdminSidebar();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      const supabase = createClient();
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
+      setLoading(false);
+    };
+    fetchUser();
+  }, []);
 
   const tabs = [
     {
@@ -58,9 +75,21 @@ export default function AdminSettingsV2Page() {
     },
   ];
 
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50" dir={isRTL ? 'rtl' : 'ltr'}>
-      <AdminHeader onMenuClick={toggleSidebar} />
+      <AdminHeader
+        user={user}
+        title={isRTL ? 'إعدادات المنصة' : 'Platform Settings'}
+        onMenuClick={toggleSidebar}
+      />
 
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Page Header */}

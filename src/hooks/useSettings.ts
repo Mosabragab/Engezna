@@ -1,19 +1,18 @@
 /**
- * Settings React Query Hooks
+ * Settings Hooks
  *
- * Provides cached, type-safe access to application settings.
+ * Provides cached access to application settings using useState/useEffect pattern.
  *
  * Features:
- * - 15-minute stale time for performance
- * - Automatic revalidation on window focus disabled
- * - Fallback to defaults on error
- * - Optimistic updates for mutations
+ * - Local state caching per hook instance
+ * - Type-safe access with Zod validation
+ * - Loading and error states
+ * - Mutation functions with refetch
  */
 
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { z } from 'zod';
 import {
   // Service functions
@@ -60,30 +59,128 @@ import {
 } from '@/lib/settings';
 
 // ============================================================================
-// QUERY KEYS
+// TYPES
 // ============================================================================
 
-export const SETTINGS_QUERY_KEYS = {
-  commission: ['settings', 'commission'] as const,
-  commissionChangelog: ['settings', 'commission', 'changelog'] as const,
-  appSettings: ['settings', 'app'] as const,
-  appSettingsChangelog: (key?: string) =>
-    key ? (['settings', 'app', 'changelog', key] as const) : (['settings', 'app', 'changelog'] as const),
-  securityDeposit: ['settings', 'app', 'security_deposit'] as const,
-  platformInfo: ['settings', 'app', 'platform_info'] as const,
-  paymentMethods: ['settings', 'app', 'payment_methods'] as const,
-  deliveryDefaults: ['settings', 'app', 'delivery_defaults'] as const,
-  notificationDefaults: ['settings', 'app', 'notification_defaults'] as const,
-  notificationPreferences: (userId: string) => ['settings', 'notifications', userId] as const,
-  userLanguage: (userId: string) => ['settings', 'language', userId] as const,
-};
+interface QueryState<T> {
+  data: T | null;
+  isLoading: boolean;
+  error: Error | null;
+  refetch: () => Promise<void>;
+}
+
+interface MutationState<TVariables, TResult = void> {
+  mutate: (variables: TVariables) => void;
+  mutateAsync: (variables: TVariables) => Promise<TResult>;
+  isPending: boolean;
+  isSuccess: boolean;
+  isError: boolean;
+  error: Error | null;
+  reset: () => void;
+}
 
 // ============================================================================
-// CACHE CONFIGURATION
+// GENERIC QUERY HOOK
 // ============================================================================
 
-const STALE_TIME = 15 * 60 * 1000; // 15 minutes
-const GC_TIME = 30 * 60 * 1000; // 30 minutes
+function useQuery<T>(
+  queryFn: () => Promise<T>,
+  options?: { enabled?: boolean; initialData?: T }
+): QueryState<T> {
+  const { enabled = true, initialData = null } = options || {};
+  const [data, setData] = useState<T | null>(initialData);
+  const [isLoading, setIsLoading] = useState(enabled);
+  const [error, setError] = useState<Error | null>(null);
+  const mountedRef = useRef(true);
+
+  const fetchData = useCallback(async () => {
+    if (!enabled) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await queryFn();
+      if (mountedRef.current) {
+        setData(result);
+      }
+    } catch (err) {
+      if (mountedRef.current) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch data'));
+      }
+    } finally {
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }, [queryFn, enabled]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    fetchData();
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchData]);
+
+  return { data, isLoading, error, refetch: fetchData };
+}
+
+// ============================================================================
+// GENERIC MUTATION HOOK
+// ============================================================================
+
+function useMutation<TVariables, TResult = void>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+  options?: { onSuccess?: (result: TResult, variables: TVariables) => void }
+): MutationState<TVariables, TResult> {
+  const [isPending, setIsPending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const reset = useCallback(() => {
+    setIsPending(false);
+    setIsSuccess(false);
+    setIsError(false);
+    setError(null);
+  }, []);
+
+  const mutateAsync = useCallback(
+    async (variables: TVariables): Promise<TResult> => {
+      setIsPending(true);
+      setIsSuccess(false);
+      setIsError(false);
+      setError(null);
+
+      try {
+        const result = await mutationFn(variables);
+        setIsSuccess(true);
+        options?.onSuccess?.(result, variables);
+        return result;
+      } catch (err) {
+        setIsError(true);
+        const errorObj = err instanceof Error ? err : new Error('Mutation failed');
+        setError(errorObj);
+        throw errorObj;
+      } finally {
+        setIsPending(false);
+      }
+    },
+    [mutationFn, options]
+  );
+
+  const mutate = useCallback(
+    (variables: TVariables) => {
+      mutateAsync(variables).catch(() => {
+        // Error already handled in mutateAsync
+      });
+    },
+    [mutateAsync]
+  );
+
+  return { mutate, mutateAsync, isPending, isSuccess, isError, error, reset };
+}
 
 // ============================================================================
 // COMMISSION SETTINGS HOOKS
@@ -92,48 +189,35 @@ const GC_TIME = 30 * 60 * 1000; // 30 minutes
 /**
  * Hook to fetch commission settings
  */
-export function useCommissionSettings() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.commission,
-    queryFn: fetchCommissionSettings,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+export function useCommissionSettings(): QueryState<CommissionSettings> {
+  const queryFn = useCallback(() => fetchCommissionSettings(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to update commission settings
  */
 export function useUpdateCommissionSettings() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
+  const mutationFn = useCallback(
+    async ({
       settings,
       userId,
     }: {
       settings: Partial<Omit<CommissionSettings, 'id' | 'updated_at'>>;
       userId?: string;
     }) => updateCommissionSettings(settings, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.commission });
-      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.commissionChangelog });
-    },
-  });
+    []
+  );
+
+  return useMutation(mutationFn);
 }
 
 /**
  * Hook to fetch commission settings changelog
  */
-export function useCommissionChangelog(limit = 50) {
-  return useQuery({
-    queryKey: [...SETTINGS_QUERY_KEYS.commissionChangelog, limit],
-    queryFn: () => fetchCommissionChangelog(limit),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-  });
+export function useCommissionChangelog(limit = 50): QueryState<SettingsChangelog[]> {
+  const queryFn = useCallback(() => fetchCommissionChangelog(limit), [limit]);
+  return useQuery(queryFn);
 }
 
 // ============================================================================
@@ -143,21 +227,19 @@ export function useCommissionChangelog(limit = 50) {
 /**
  * Hook to fetch all app settings
  */
-export function useAppSettings() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.appSettings,
-    queryFn: fetchAllAppSettings,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
+export function useAppSettings(): QueryState<Record<string, unknown>> {
+  const queryFn = useCallback(() => fetchAllAppSettings(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to get a specific setting with type safety
  */
-export function useSetting<T>(key: string, schema: z.ZodSchema<T>, fallback: T) {
+export function useSetting<T>(
+  key: string,
+  schema: z.ZodSchema<T>,
+  fallback: T
+): { value: T; isLoading: boolean; error: Error | null; refetch: () => Promise<void> } {
   const { data: settings, isLoading, error, refetch } = useAppSettings();
 
   const value = useMemo(() => {
@@ -172,28 +254,27 @@ export function useSetting<T>(key: string, schema: z.ZodSchema<T>, fallback: T) 
  * Hook to update an app setting
  */
 export function useUpdateAppSetting() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ key, value, reason }: { key: string; value: unknown; reason?: string }) =>
+  const mutationFn = useCallback(
+    async ({ key, value, reason }: { key: string; value: unknown; reason?: string }) =>
       updateAppSetting(key, value, reason),
-    onSuccess: (_, { key }) => {
-      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.appSettings });
-      queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEYS.appSettingsChangelog(key) });
-    },
-  });
+    []
+  );
+
+  return useMutation(mutationFn);
 }
 
 /**
  * Hook to fetch app settings changelog
  */
-export function useAppSettingsChangelog(key?: string, limit = 50) {
-  return useQuery({
-    queryKey: [...SETTINGS_QUERY_KEYS.appSettingsChangelog(key), limit],
-    queryFn: () => fetchAppSettingsChangelog(key, limit),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-  });
+export function useAppSettingsChangelog(
+  key?: string,
+  limit = 50
+): QueryState<SettingsChangelog[]> {
+  const queryFn = useCallback(
+    () => fetchAppSettingsChangelog(key, limit),
+    [key, limit]
+  );
+  return useQuery(queryFn);
 }
 
 // ============================================================================
@@ -203,66 +284,41 @@ export function useAppSettingsChangelog(key?: string, limit = 50) {
 /**
  * Hook to fetch security deposit settings
  */
-export function useSecurityDeposit() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.securityDeposit,
-    queryFn: fetchSecurityDeposit,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-  });
+export function useSecurityDeposit(): QueryState<SecurityDeposit> {
+  const queryFn = useCallback(() => fetchSecurityDeposit(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to fetch platform info
  */
-export function usePlatformInfo() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.platformInfo,
-    queryFn: fetchPlatformInfo,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-  });
+export function usePlatformInfo(): QueryState<PlatformInfo> {
+  const queryFn = useCallback(() => fetchPlatformInfo(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to fetch payment methods
  */
-export function usePaymentMethods() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.paymentMethods,
-    queryFn: fetchPaymentMethods,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-  });
+export function usePaymentMethods(): QueryState<PaymentMethods> {
+  const queryFn = useCallback(() => fetchPaymentMethods(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to fetch delivery defaults
  */
-export function useDeliveryDefaults() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.deliveryDefaults,
-    queryFn: fetchDeliveryDefaults,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-  });
+export function useDeliveryDefaults(): QueryState<DeliveryDefaults> {
+  const queryFn = useCallback(() => fetchDeliveryDefaults(), []);
+  return useQuery(queryFn);
 }
 
 /**
  * Hook to fetch notification defaults
  */
-export function useNotificationDefaults() {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.notificationDefaults,
-    queryFn: fetchNotificationDefaults,
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
-  });
+export function useNotificationDefaults(): QueryState<NotificationDefaults> {
+  const queryFn = useCallback(() => fetchNotificationDefaults(), []);
+  return useQuery(queryFn);
 }
 
 // ============================================================================
@@ -272,36 +328,34 @@ export function useNotificationDefaults() {
 /**
  * Hook to fetch user's notification preferences
  */
-export function useNotificationPreferences(userId: string | null | undefined) {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.notificationPreferences(userId || ''),
-    queryFn: () => (userId ? fetchNotificationPreferences(userId) : null),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    enabled: !!userId,
-  });
+export function useNotificationPreferences(
+  userId: string | null | undefined
+): QueryState<NotificationPreferences | null> {
+  const queryFn = useCallback(
+    () => (userId ? fetchNotificationPreferences(userId) : Promise.resolve(null)),
+    [userId]
+  );
+  return useQuery(queryFn, { enabled: !!userId });
 }
 
 /**
  * Hook to update notification preferences
  */
 export function useUpdateNotificationPreferences() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
+  const mutationFn = useCallback(
+    async ({
       userId,
       preferences,
     }: {
       userId: string;
-      preferences: Partial<Omit<NotificationPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>;
+      preferences: Partial<
+        Omit<NotificationPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+      >;
     }) => upsertNotificationPreferences(userId, preferences),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({
-        queryKey: SETTINGS_QUERY_KEYS.notificationPreferences(userId),
-      });
-    },
-  });
+    []
+  );
+
+  return useMutation(mutationFn);
 }
 
 // ============================================================================
@@ -311,44 +365,51 @@ export function useUpdateNotificationPreferences() {
 /**
  * Hook to fetch user's preferred language
  */
-export function useUserLanguage(userId: string | null | undefined) {
-  return useQuery({
-    queryKey: SETTINGS_QUERY_KEYS.userLanguage(userId || ''),
-    queryFn: () => (userId ? fetchUserLanguage(userId) : 'ar'),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    enabled: !!userId,
-  });
+export function useUserLanguage(
+  userId: string | null | undefined
+): QueryState<'ar' | 'en'> {
+  const queryFn = useCallback(
+    async (): Promise<'ar' | 'en'> => {
+      if (!userId) return 'ar';
+      const result = await fetchUserLanguage(userId);
+      return result as 'ar' | 'en';
+    },
+    [userId]
+  );
+  return useQuery<'ar' | 'en'>(queryFn, { enabled: !!userId });
 }
 
 /**
  * Hook to update user's preferred language
  */
 export function useUpdateUserLanguage() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ userId, language }: { userId: string; language: 'ar' | 'en' }) =>
+  const mutationFn = useCallback(
+    async ({ userId, language }: { userId: string; language: 'ar' | 'en' }) =>
       updateUserLanguage(userId, language),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({
-        queryKey: SETTINGS_QUERY_KEYS.userLanguage(userId),
-      });
-    },
-  });
+    []
+  );
+
+  return useMutation(mutationFn);
 }
 
 // ============================================================================
-// REFRESH HELPER
+// REFRESH HELPER (Compatibility - individual hooks handle their own refetch)
 // ============================================================================
 
 /**
- * Hook to manually refresh all settings
+ * Hook to get a refresh function (for compatibility)
+ * Note: With useState pattern, each hook manages its own state.
+ * Call refetch() on individual hooks to refresh data.
  */
 export function useRefreshSettings() {
-  const queryClient = useQueryClient();
-
   return useCallback(() => {
-    return queryClient.invalidateQueries({ queryKey: ['settings'] });
-  }, [queryClient]);
+    // No-op - individual hooks should call their own refetch
+    console.warn(
+      'useRefreshSettings is deprecated. Use refetch() on individual hooks instead.'
+    );
+    return Promise.resolve();
+  }, []);
 }
+
+// Re-export SETTING_KEYS for convenience
+export { SETTING_KEYS };
