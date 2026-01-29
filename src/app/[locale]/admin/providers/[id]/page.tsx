@@ -464,7 +464,7 @@ export default function ProviderDetailPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -487,7 +487,7 @@ export default function ProviderDetailPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -507,7 +507,7 @@ export default function ProviderDetailPage() {
               {locale === 'ar' ? 'المتجر غير موجود' : 'Provider Not Found'}
             </h1>
             <Link href={`/${locale}/admin/providers`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}
               </Button>
             </Link>
@@ -891,7 +891,7 @@ export default function ProviderDetailPage() {
             {recentOrders.length > 0 && (
               <Link
                 href={`/${locale}/admin/orders?provider=${providerId}`}
-                className="block text-center text-sm text-red-600 hover:text-red-700 mt-4"
+                className="block text-center text-sm text-primary hover:text-primary/90 mt-4"
               >
                 {locale === 'ar' ? 'عرض كل الطلبات' : 'View All Orders'}
               </Link>
@@ -938,7 +938,7 @@ export default function ProviderDetailPage() {
                         onChange={(e) => setActionReason(e.target.value)}
                         placeholder={locale === 'ar' ? 'أدخل السبب...' : 'Enter reason...'}
                         rows={3}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   )}
@@ -1004,7 +1004,7 @@ export default function ProviderDetailPage() {
                 min={0}
                 max={100}
                 step={0.5}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-slate-500 mt-1">
                 {locale === 'ar' ? 'النسبة الحالية: ' : 'Current rate: '}
@@ -1041,7 +1041,7 @@ export default function ProviderDetailPage() {
               </Button>
               <Button
                 onClick={updateCommission}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={commissionLoading || newCommissionRate === provider.commission_rate}
               >
                 {commissionLoading ? (

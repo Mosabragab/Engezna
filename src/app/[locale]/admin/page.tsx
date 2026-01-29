@@ -350,7 +350,7 @@ export default function AdminDashboard() {
                 {locale === 'ar' ? 'يجب تسجيل الدخول كمسؤول للوصول' : 'Admin access required'}
               </p>
               <Link href={`/${locale}/auth/login`}>
-                <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
                   {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
                 </Button>
               </Link>
@@ -588,7 +588,7 @@ export default function AdminDashboard() {
               </h3>
               <Link
                 href={`/${locale}/admin/orders`}
-                className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                className="text-sm text-primary hover:text-primary/90 flex items-center gap-1"
               >
                 {locale === 'ar' ? 'عرض الكل' : 'View All'}
                 <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />
@@ -636,7 +636,7 @@ export default function AdminDashboard() {
               </h3>
               <Link
                 href={`/${locale}/admin/providers?status=pending`}
-                className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                className="text-sm text-primary hover:text-primary/90 flex items-center gap-1"
               >
                 {locale === 'ar' ? 'عرض الكل' : 'View All'}
                 <ArrowRight className={`w-4 h-4 ${isRTL ? 'rotate-180' : ''}`} />

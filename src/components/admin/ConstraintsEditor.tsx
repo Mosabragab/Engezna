@@ -618,7 +618,7 @@ export function ConstraintsEditor({
               type="checkbox"
               checked={constraints.requires_approval || false}
               onChange={(e) => updateConstraint('requires_approval', e.target.checked || undefined)}
-              className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+              className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
             />
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-slate-500" />

@@ -360,7 +360,7 @@ export function AdminHeader({
             size="sm"
             onClick={switchLanguage}
             disabled={isPending}
-            className="flex items-center gap-1.5 text-slate-600 hover:text-red-600 hover:bg-slate-100"
+            className="flex items-center gap-1.5 text-slate-600 hover:text-primary hover:bg-slate-100"
           >
             <Globe className="w-4 h-4" />
             <span className="text-sm font-medium hidden sm:inline">
@@ -375,7 +375,7 @@ export function AdminHeader({
             onMouseLeave={() => setNotificationsOpen(false)}
           >
             <button
-              className="relative p-2 text-slate-500 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="relative p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
               aria-label={
                 locale === 'ar'
                   ? `الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروءة)` : ''}`
@@ -404,7 +404,7 @@ export function AdminHeader({
                     {unreadCount > 0 && (
                       <button
                         onClick={markAllAsRead}
-                        className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+                        className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                       >
                         <CheckCheck className="w-3 h-3" />
                         {locale === 'ar' ? 'قراءة الكل' : 'Mark all read'}
@@ -478,7 +478,7 @@ export function AdminHeader({
                       </button>
                       <Link
                         href={`/${locale}/admin/orders`}
-                        className="text-xs text-red-600 hover:text-red-700"
+                        className="text-xs text-primary hover:text-primary/80"
                       >
                         {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
                       </Link>
@@ -496,8 +496,8 @@ export function AdminHeader({
             onMouseLeave={() => setAccountMenuOpen(false)}
           >
             <button className="flex items-center gap-2 p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-              <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="font-semibold text-sm text-red-600">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="font-semibold text-sm text-primary">
                   {user?.email?.charAt(0).toUpperCase()}
                 </span>
               </div>

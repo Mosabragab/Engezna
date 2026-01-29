@@ -332,7 +332,7 @@ export default function AdminOrdersPage() {
                 {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
               </h1>
               <Link href={`/${locale}/auth/login`}>
-                <Button size="lg" className="bg-red-600 hover:bg-red-700">
+                <Button size="lg" className="bg-primary hover:bg-primary/90">
                   {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
                 </Button>
               </Link>
@@ -431,14 +431,14 @@ export default function AdminOrdersPage() {
                   }
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                  className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               >
                 <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
                 <option value="pending">{locale === 'ar' ? 'معلق' : 'Pending'}</option>
@@ -455,7 +455,7 @@ export default function AdminOrdersPage() {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               >
                 <option value="all">{locale === 'ar' ? 'كل الفئات' : 'All Categories'}</option>
                 <option value="restaurant_cafe">{locale === 'ar' ? 'مطاعم' : 'Restaurants'}</option>
@@ -473,7 +473,7 @@ export default function AdminOrdersPage() {
                 type="date"
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               />
 
               <Button

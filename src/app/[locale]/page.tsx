@@ -234,7 +234,7 @@ export default function HomePage() {
     let query = supabase
       .from('providers')
       .select(
-        'id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id'
+        'id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id, rating, is_featured, is_verified, delivery_fee, estimated_delivery_time_min, total_reviews, min_order_amount'
       )
       .in('status', ['open', 'closed']);
 
@@ -269,7 +269,7 @@ export default function HomePage() {
     let query = supabase
       .from('providers')
       .select(
-        'id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id, rating, is_featured, delivery_fee, estimated_delivery_time_min'
+        'id, name_ar, name_en, logo_url, cover_image_url, category, status, city_id, governorate_id, rating, is_featured, is_verified, delivery_fee, estimated_delivery_time_min, total_reviews, min_order_amount'
       )
       .in('status', ['open', 'closed']);
 

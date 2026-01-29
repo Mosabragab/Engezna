@@ -45,6 +45,8 @@ import {
   X,
   RotateCcw,
   TrendingUp,
+  Crown,
+  BadgeCheck,
 } from 'lucide-react';
 
 export type ProviderData = {
@@ -65,6 +67,8 @@ export type ProviderData = {
   status: string;
   commission_rate: number;
   city_id: string | null;
+  is_featured?: boolean;
+  is_verified?: boolean;
   operation_mode?: 'standard' | 'custom' | 'hybrid';
   custom_order_settings?: {
     accepts_text?: boolean;
@@ -597,8 +601,33 @@ export default function ProviderDetailClient({
         {/* Provider Info */}
         <div className="px-4 pt-12 pb-4">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
+              {provider.is_verified && (
+                <BadgeCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              )}
+            </div>
             <StatusBadge status={mapProviderStatus(provider.status)} size="sm" />
+          </div>
+
+          {/* Badges */}
+          <div className="flex items-center gap-2 mt-2">
+            {provider.is_featured && (
+              <div className="flex items-center gap-1 bg-amber-100 px-2 py-1 rounded-full">
+                <Crown className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-xs font-medium text-amber-700">
+                  {locale === 'ar' ? 'مميز' : 'Featured'}
+                </span>
+              </div>
+            )}
+            {provider.is_verified && (
+              <div className="flex items-center gap-1 bg-emerald-100 px-2 py-1 rounded-full">
+                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-xs font-medium text-emerald-700">
+                  {locale === 'ar' ? 'موثّق' : 'Verified'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Rating */}

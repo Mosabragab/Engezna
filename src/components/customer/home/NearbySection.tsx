@@ -3,7 +3,7 @@
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, ChevronLeft, ChevronRight, Crown, BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Provider {
@@ -15,6 +15,8 @@ interface Provider {
   category: string;
   distance?: number; // in km
   status: string;
+  is_featured?: boolean;
+  is_verified?: boolean;
 }
 
 interface NearbySectionProps {
@@ -115,6 +117,12 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
         ) : (
           <div className="w-full h-full flex items-center justify-center text-3xl">{emoji}</div>
         )}
+        {/* Featured Badge */}
+        {provider.is_featured && (
+          <div className="absolute top-1 start-1 bg-amber-400/95 backdrop-blur-sm text-amber-900 p-1 rounded-md">
+            <Crown className="w-3 h-3" />
+          </div>
+        )}
         {/* Status Badge */}
         {provider.status === 'closed' && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -125,7 +133,12 @@ function NearbyMiniCard({ provider, locale }: { provider: Provider; locale: stri
 
       {/* Info */}
       <div className="p-2">
-        <h3 className="font-semibold text-slate-900 text-sm truncate mb-1">{name}</h3>
+        <div className="flex items-center gap-1 mb-1">
+          <h3 className="font-semibold text-slate-900 text-sm truncate">{name}</h3>
+          {provider.is_verified && (
+            <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          )}
+        </div>
         {provider.distance !== undefined && (
           <div className="flex items-center gap-1 text-xs text-slate-500">
             <MapPin className="w-3 h-3" />

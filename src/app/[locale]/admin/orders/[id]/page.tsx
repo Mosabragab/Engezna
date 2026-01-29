@@ -365,7 +365,7 @@ export default function AdminOrderDetailsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -384,7 +384,7 @@ export default function AdminOrderDetailsPage() {
             {locale === 'ar' ? 'الطلب غير موجود' : 'Order Not Found'}
           </h1>
           <Link href={`/${locale}/admin/orders`}>
-            <Button className="bg-red-600 hover:bg-red-700 mt-4">
+            <Button className="bg-primary hover:bg-primary/90 mt-4">
               {locale === 'ar' ? 'العودة للطلبات' : 'Back to Orders'}
             </Button>
           </Link>
@@ -643,7 +643,7 @@ export default function AdminOrderDetailsPage() {
                   )}
                   <div className="flex justify-between font-bold text-lg pt-2 border-t border-slate-200">
                     <span>{locale === 'ar' ? 'الإجمالي' : 'Total'}</span>
-                    <span className="text-red-600">
+                    <span className="text-primary">
                       {formatCurrency(order.total, locale)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                     </span>
                   </div>
@@ -910,7 +910,7 @@ export default function AdminOrderDetailsPage() {
                           {order.customer.full_name || '-'}
                         </p>
                         <Link href={`/${locale}/admin/customers/${order.customer.id}`}>
-                          <span className="text-xs text-red-600 hover:underline">
+                          <span className="text-xs text-primary hover:underline">
                             {locale === 'ar' ? 'عرض الملف' : 'View Profile'}
                           </span>
                         </Link>
@@ -969,7 +969,7 @@ export default function AdminOrderDetailsPage() {
                         <Phone className="w-4 h-4 text-slate-400" />
                         <a
                           href={`tel:${order.provider.phone}`}
-                          className="text-slate-600 hover:text-red-600"
+                          className="text-slate-600 hover:text-primary"
                         >
                           {order.provider.phone}
                         </a>
@@ -1091,7 +1091,7 @@ export default function AdminOrderDetailsPage() {
                             <Phone className="w-3 h-3" />
                             <a
                               href={`tel:${order.delivery_address.phone}`}
-                              className="hover:text-red-600"
+                              className="hover:text-primary"
                             >
                               {order.delivery_address.phone}
                             </a>

@@ -288,7 +288,7 @@ export default function AdminActivityLogPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="flex-1 flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -311,7 +311,7 @@ export default function AdminActivityLogPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -342,14 +342,14 @@ export default function AdminActivityLogPage() {
                 placeholder={locale === 'ar' ? 'بحث في السجل...' : 'Search activity log...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
             <select
               value={actionFilter}
               onChange={(e) => setActionFilter(e.target.value as FilterAction)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الإجراءات' : 'All Actions'}</option>
               <option value="create">{locale === 'ar' ? 'إنشاء' : 'Create'}</option>
@@ -363,7 +363,7 @@ export default function AdminActivityLogPage() {
             <select
               value={entityFilter}
               onChange={(e) => setEntityFilter(e.target.value as FilterEntity)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الكيانات' : 'All Entities'}</option>
               <option value="provider">{locale === 'ar' ? 'متجر' : 'Provider'}</option>
@@ -377,7 +377,7 @@ export default function AdminActivityLogPage() {
               type="date"
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             />
 
             <Button

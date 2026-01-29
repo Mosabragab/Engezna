@@ -308,8 +308,8 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                       providers_maintenance: !prev.providers_maintenance,
                     }))
                   }
-                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
-                    maintenance.providers_maintenance ? 'bg-red-600' : 'bg-gray-300'
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    maintenance.providers_maintenance ? 'bg-primary' : 'bg-gray-300'
                   }`}
                 >
                   <span
@@ -347,8 +347,8 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                       customers_maintenance: !prev.customers_maintenance,
                     }))
                   }
-                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
-                    maintenance.customers_maintenance ? 'bg-red-600' : 'bg-gray-300'
+                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    maintenance.customers_maintenance ? 'bg-primary' : 'bg-gray-300'
                   }`}
                 >
                   <span
@@ -362,7 +362,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               </div>
 
               {/* Save Button - Below toggles */}
-              <div className={`flex items-center justify-between p-4 bg-red-50 rounded-lg border-2 border-red-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div className={`flex items-center justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/30 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="flex items-center gap-2">
                   {maintenanceSuccess && (
                     <div className="flex items-center gap-2 text-green-600">
@@ -383,7 +383,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   onClick={handleSaveMaintenance}
                   disabled={savingMaintenance}
                   size="lg"
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 shadow-md"
+                  className="bg-primary hover:bg-primary/90 text-white font-bold px-8 shadow-md"
                 >
                   {savingMaintenance ? (
                     <Loader2 className="w-5 h-5 animate-spin me-2" />
