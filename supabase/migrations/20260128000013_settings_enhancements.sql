@@ -89,13 +89,16 @@ DECLARE
   admin_email TEXT;
 BEGIN
   -- Get admin email from profiles via admin_users.user_id
-  -- Note: admin_users.user_id references profiles.id (which is auth.uid())
-  SELECT p.email INTO admin_email
-  FROM profiles p
-  JOIN admin_users a ON a.user_id = p.id
-  WHERE a.user_id = NEW.updated_by;
+  -- Note: NEW.updated_by should be profiles.id (auth.uid())
+  -- Will return NULL if user not found or updated_by is NULL
+  IF NEW.updated_by IS NOT NULL THEN
+    SELECT p.email INTO admin_email
+    FROM profiles p
+    JOIN admin_users a ON a.user_id = p.id
+    WHERE a.user_id = NEW.updated_by;
+  END IF;
 
-  -- Insert changelog entry
+  -- Insert changelog entry (changed_by and changed_by_email may be NULL)
   INSERT INTO commission_settings_changelog (
     old_value,
     new_value,
@@ -243,15 +246,22 @@ CREATE OR REPLACE FUNCTION log_app_settings_change()
 RETURNS TRIGGER AS $$
 DECLARE
   admin_email TEXT;
+  current_user_id UUID;
 BEGIN
+  -- Get current user ID (may be NULL if using service role)
+  current_user_id := auth.uid();
+
   -- Get admin email from profiles via admin_users.user_id
   -- Note: auth.uid() = admin_users.user_id = profiles.id
-  SELECT p.email INTO admin_email
-  FROM profiles p
-  JOIN admin_users a ON a.user_id = p.id
-  WHERE a.user_id = auth.uid();
+  -- Will return NULL if user not found or auth.uid() is NULL
+  IF current_user_id IS NOT NULL THEN
+    SELECT p.email INTO admin_email
+    FROM profiles p
+    JOIN admin_users a ON a.user_id = p.id
+    WHERE a.user_id = current_user_id;
+  END IF;
 
-  -- Insert changelog entry
+  -- Insert changelog entry (changed_by and changed_by_email may be NULL)
   INSERT INTO settings_changelog (
     setting_key,
     old_value,
@@ -263,7 +273,7 @@ BEGIN
     NEW.setting_key,
     CASE WHEN TG_OP = 'UPDATE' THEN OLD.setting_value ELSE NULL END,
     NEW.setting_value,
-    auth.uid(),
+    current_user_id,
     admin_email,
     current_setting('app.change_reason', true)
   );
