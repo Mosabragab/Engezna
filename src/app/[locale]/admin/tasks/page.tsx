@@ -594,7 +594,7 @@ export default function AdminTasksPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -612,12 +612,12 @@ export default function AdminTasksPage() {
         </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <Shield className="w-16 h-16 text-primary mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2 text-slate-900">
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -688,14 +688,14 @@ export default function AdminTasksPage() {
             <Button
               variant={viewMode === 'all' ? 'default' : 'outline'}
               onClick={() => setViewMode('all')}
-              className={viewMode === 'all' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={viewMode === 'all' ? 'bg-primary hover:bg-primary/90' : ''}
             >
               {locale === 'ar' ? 'كل المهام' : 'All Tasks'}
             </Button>
             <Button
               variant={viewMode === 'my' ? 'default' : 'outline'}
               onClick={() => setViewMode('my')}
-              className={viewMode === 'my' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={viewMode === 'my' ? 'bg-primary hover:bg-primary/90' : ''}
             >
               {locale === 'ar' ? 'مهامي' : 'My Tasks'}
             </Button>
@@ -714,14 +714,14 @@ export default function AdminTasksPage() {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
               <option value="new">{locale === 'ar' ? 'جديدة' : 'New'}</option>
@@ -735,7 +735,7 @@ export default function AdminTasksPage() {
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value as FilterPriority)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الأولويات' : 'All Priorities'}</option>
               <option value="urgent">{locale === 'ar' ? 'عاجلة' : 'Urgent'}</option>
@@ -759,7 +759,7 @@ export default function AdminTasksPage() {
             {isSuperAdmin && (
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90"
               >
                 <Plus className="w-4 h-4" />
                 {locale === 'ar' ? 'مهمة جديدة' : 'New Task'}
@@ -974,7 +974,7 @@ export default function AdminTasksPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder={locale === 'ar' ? 'عنوان المهمة' : 'Task title'}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -988,7 +988,7 @@ export default function AdminTasksPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder={locale === 'ar' ? 'وصف تفصيلي للمهمة' : 'Detailed task description'}
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -1001,7 +1001,7 @@ export default function AdminTasksPage() {
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as TaskType })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     {Object.entries(typeConfig).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1019,7 +1019,7 @@ export default function AdminTasksPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, priority: e.target.value as TaskPriority })
                     }
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     {Object.entries(priorityConfig).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1038,7 +1038,7 @@ export default function AdminTasksPage() {
                 <select
                   value={formData.assigned_to}
                   onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">{locale === 'ar' ? 'اختر المشرف' : 'Select supervisor'}</option>
                   {supervisors.map((s) => (
@@ -1058,7 +1058,7 @@ export default function AdminTasksPage() {
                   type="datetime-local"
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -1071,7 +1071,7 @@ export default function AdminTasksPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, requires_approval: e.target.checked })
                     }
-                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                   />
                   <span className="text-sm text-slate-700">
                     {locale === 'ar'
@@ -1084,7 +1084,7 @@ export default function AdminTasksPage() {
                     type="checkbox"
                     checked={formData.auto_escalate}
                     onChange={(e) => setFormData({ ...formData, auto_escalate: e.target.checked })}
-                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                   />
                   <span className="text-sm text-slate-700">
                     {locale === 'ar' ? 'تصعيد تلقائي عند التأخر' : 'Auto-escalate when overdue'}
@@ -1104,7 +1104,7 @@ export default function AdminTasksPage() {
               </Button>
               <Button
                 onClick={handleCreateTask}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (
@@ -1167,7 +1167,7 @@ export default function AdminTasksPage() {
                   onChange={(e) =>
                     setUpdateData({ ...updateData, progress_percentage: parseInt(e.target.value) })
                   }
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-red-600"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary"
                 />
                 <div className="flex justify-between text-xs text-slate-500 mt-1">
                   <span>0%</span>
@@ -1186,7 +1186,7 @@ export default function AdminTasksPage() {
                   onChange={(e) =>
                     setUpdateData({ ...updateData, status: e.target.value as TaskStatus })
                   }
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="in_progress">
                     {locale === 'ar' ? 'قيد التنفيذ' : 'In Progress'}
@@ -1210,7 +1210,7 @@ export default function AdminTasksPage() {
                       : 'Add a comment about this update...'
                   }
                   rows={3}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -1229,7 +1229,7 @@ export default function AdminTasksPage() {
               </Button>
               <Button
                 onClick={handleUpdateTask}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

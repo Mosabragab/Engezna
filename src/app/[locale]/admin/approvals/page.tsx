@@ -692,7 +692,7 @@ export default function AdminApprovalsPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse"></div>
         <div className="flex-1 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -710,12 +710,12 @@ export default function AdminApprovalsPage() {
         </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <Shield className="w-16 h-16 text-primary mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2 text-slate-900">
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -792,7 +792,7 @@ export default function AdminApprovalsPage() {
             <Button
               variant={viewMode === 'pending' ? 'default' : 'outline'}
               onClick={() => setViewMode('pending')}
-              className={viewMode === 'pending' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={viewMode === 'pending' ? 'bg-primary hover:bg-primary/90' : ''}
             >
               {locale === 'ar' ? 'في انتظار قراري' : 'Pending My Decision'}
               {stats.pending > 0 && (
@@ -804,14 +804,14 @@ export default function AdminApprovalsPage() {
             <Button
               variant={viewMode === 'my' ? 'default' : 'outline'}
               onClick={() => setViewMode('my')}
-              className={viewMode === 'my' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={viewMode === 'my' ? 'bg-primary hover:bg-primary/90' : ''}
             >
               {locale === 'ar' ? 'طلباتي' : 'My Requests'}
             </Button>
             <Button
               variant={viewMode === 'all' ? 'default' : 'outline'}
               onClick={() => setViewMode('all')}
-              className={viewMode === 'all' ? 'bg-red-600 hover:bg-red-700' : ''}
+              className={viewMode === 'all' ? 'bg-primary hover:bg-primary/90' : ''}
             >
               {locale === 'ar' ? 'الكل' : 'All'}
             </Button>
@@ -830,14 +830,14 @@ export default function AdminApprovalsPage() {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
               <option value="pending">{locale === 'ar' ? 'في الانتظار' : 'Pending'}</option>
@@ -848,7 +848,7 @@ export default function AdminApprovalsPage() {
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as FilterType)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الأنواع' : 'All Types'}</option>
               {Object.entries(typeConfig).map(([key, config]) => (
@@ -872,7 +872,7 @@ export default function AdminApprovalsPage() {
 
             <Button
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
               {locale === 'ar' ? 'طلب موافقة' : 'New Request'}
@@ -1064,7 +1064,7 @@ export default function AdminApprovalsPage() {
                   locale === 'ar' ? 'أضف ملاحظات على قرارك...' : 'Add notes to your decision...'
                 }
                 rows={4}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -1126,7 +1126,7 @@ export default function AdminApprovalsPage() {
 
             {loadingEntities ? (
               <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-8 h-8 text-red-500 animate-spin" />
+                <RefreshCw className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : (
               <div className="space-y-4">
@@ -1140,7 +1140,7 @@ export default function AdminApprovalsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, type: e.target.value as ApprovalType, title: '' })
                     }
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     {Object.entries(typeConfig).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1170,7 +1170,7 @@ export default function AdminApprovalsPage() {
                         value={formData.amount}
                         onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                         placeholder="0.00"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   </>
@@ -1193,7 +1193,7 @@ export default function AdminApprovalsPage() {
                       <select
                         value={formData.ban_reason}
                         onChange={(e) => setFormData({ ...formData, ban_reason: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       >
                         <option value="">{locale === 'ar' ? 'اختر السبب' : 'Select reason'}</option>
                         <option value="fraud">
@@ -1235,7 +1235,7 @@ export default function AdminApprovalsPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, suspend_reason: e.target.value })
                         }
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       >
                         <option value="">{locale === 'ar' ? 'اختر السبب' : 'Select reason'}</option>
                         <option value="quality">
@@ -1279,7 +1279,7 @@ export default function AdminApprovalsPage() {
                         placeholder="0"
                         min="0"
                         max="100"
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   </>
@@ -1299,7 +1299,7 @@ export default function AdminApprovalsPage() {
                             setFormData({ ...formData, promo_code: e.target.value.toUpperCase() })
                           }
                           placeholder="PROMO20"
-                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 uppercase"
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary uppercase"
                         />
                       </div>
                       <div>
@@ -1315,7 +1315,7 @@ export default function AdminApprovalsPage() {
                           placeholder="10"
                           min="1"
                           max="100"
-                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                          className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                         />
                       </div>
                     </div>
@@ -1332,7 +1332,7 @@ export default function AdminApprovalsPage() {
                       value={formData.amount}
                       onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                       placeholder="0.00"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 )}
@@ -1356,7 +1356,7 @@ export default function AdminApprovalsPage() {
                     placeholder={
                       getAutoTitle() || (locale === 'ar' ? 'عنوان الطلب' : 'Request title')
                     }
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
@@ -1370,7 +1370,7 @@ export default function AdminApprovalsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, priority: e.target.value as ApprovalPriority })
                     }
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     {Object.entries(priorityConfig).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1392,7 +1392,7 @@ export default function AdminApprovalsPage() {
                       locale === 'ar' ? 'أي معلومات إضافية...' : 'Any additional information...'
                     }
                     rows={2}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
@@ -1410,7 +1410,7 @@ export default function AdminApprovalsPage() {
                         : 'Why do you need this approval?'
                     }
                     rows={4}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -1427,7 +1427,7 @@ export default function AdminApprovalsPage() {
               </Button>
               <Button
                 onClick={handleCreateRequest}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (
