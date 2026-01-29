@@ -35,13 +35,25 @@ export type OrderStatus =
 // مقدم الخدمة - Provider
 // ═══════════════════════════════════════════════════════════════════════
 
+// Business hours structure (JSONB in database)
+export interface BusinessHours {
+  monday?: { open: string; close: string; is_open?: boolean };
+  tuesday?: { open: string; close: string; is_open?: boolean };
+  wednesday?: { open: string; close: string; is_open?: boolean };
+  thursday?: { open: string; close: string; is_open?: boolean };
+  friday?: { open: string; close: string; is_open?: boolean };
+  saturday?: { open: string; close: string; is_open?: boolean };
+  sunday?: { open: string; close: string; is_open?: boolean };
+}
+
 export interface AdminProvider {
   id: string;
+  owner_id: string | null;
   name_ar: string;
   name_en: string;
   description_ar: string | null;
   description_en: string | null;
-  category: string;
+  category: string; // USER-DEFINED enum in database
   logo_url: string | null;
   cover_image_url: string | null;
   status: ProviderStatus;
@@ -51,14 +63,16 @@ export interface AdminProvider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
-  is_verified: boolean;
+  is_verified: boolean; // Added via migration 20260129000001
+  verified_at: string | null;
+  verified_by: string | null;
   phone: string | null;
   email: string | null;
-  address: string | null;
+  address_ar: string | null; // Separate Arabic address
+  address_en: string | null; // Separate English address
   governorate_id: string | null;
   city_id: string | null;
-  opening_time: string | null;
-  closing_time: string | null;
+  business_hours: BusinessHours | null; // JSONB column for hours
   delivery_fee: number;
   min_order_amount: number;
   estimated_delivery_time_min: number;
@@ -86,7 +100,7 @@ export interface ProviderFilters {
   cityId?: string;
   search?: string;
   isFeatured?: boolean;
-  isVerified?: boolean;
+  isVerified?: boolean; // Added via migration 20260129000001
   page?: number;
   limit?: number;
   sortBy?: 'created_at' | 'name_ar' | 'rating' | 'total_orders' | 'commission_rate';

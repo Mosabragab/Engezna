@@ -45,6 +45,8 @@ import {
   X,
   RotateCcw,
   TrendingUp,
+  Crown,
+  BadgeCheck,
 } from 'lucide-react';
 
 export type ProviderData = {
@@ -65,6 +67,8 @@ export type ProviderData = {
   status: string;
   commission_rate: number;
   city_id: string | null;
+  is_featured?: boolean;
+  is_verified?: boolean;
   operation_mode?: 'standard' | 'custom' | 'hybrid';
   custom_order_settings?: {
     accepts_text?: boolean;
@@ -401,6 +405,8 @@ export default function ProviderDetailClient({
         commission_rate: provider.commission_rate,
         category: provider.category,
         logo_url: provider.logo_url,
+        is_featured: provider.is_featured,
+        is_verified: provider.is_verified,
       });
 
       if (result.requiresConfirmation) {
@@ -429,6 +435,8 @@ export default function ProviderDetailClient({
         commission_rate: provider.commission_rate,
         category: provider.category,
         logo_url: provider.logo_url,
+        is_featured: provider.is_featured,
+        is_verified: provider.is_verified,
       };
 
       let result;
@@ -597,8 +605,33 @@ export default function ProviderDetailClient({
         {/* Provider Info */}
         <div className="px-4 pt-12 pb-4">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
+              {provider.is_verified && (
+                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
+              )}
+            </div>
             <StatusBadge status={mapProviderStatus(provider.status)} size="sm" />
+          </div>
+
+          {/* Badges */}
+          <div className="flex items-center gap-2 mt-2">
+            {provider.is_featured && (
+              <div className="flex items-center gap-1 bg-premium/20 px-2 py-1 rounded-full">
+                <Crown className="w-3.5 h-3.5 text-premium" />
+                <span className="text-xs font-medium text-foreground">
+                  {locale === 'ar' ? 'مميز' : 'Featured'}
+                </span>
+              </div>
+            )}
+            {provider.is_verified && (
+              <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
+                <BadgeCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">
+                  {locale === 'ar' ? 'موثّق' : 'Verified'}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Rating */}

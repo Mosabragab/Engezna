@@ -573,7 +573,7 @@ export default function AdminRolesPage() {
         </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <Shield className="w-16 h-16 text-primary mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2 text-slate-900">
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
@@ -583,7 +583,7 @@ export default function AdminRolesPage() {
                 : 'This page is only available for super admins'}
             </p>
             <Link href={`/${locale}/admin`}>
-              <Button className="bg-red-600 hover:bg-red-700">
+              <Button className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'العودة للوحة التحكم' : 'Back to Dashboard'}
               </Button>
             </Link>
@@ -660,7 +660,7 @@ export default function AdminRolesPage() {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
@@ -678,7 +678,7 @@ export default function AdminRolesPage() {
 
             <Button
               onClick={openCreateModal}
-              className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+              className="flex items-center gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
               {locale === 'ar' ? 'دور جديد' : 'New Role'}
@@ -847,7 +847,7 @@ export default function AdminRolesPage() {
                       })
                     }
                     placeholder="role_code"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 font-mono"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono"
                     disabled={editingRole?.is_system}
                   />
                 </div>
@@ -862,7 +862,7 @@ export default function AdminRolesPage() {
                       value={formData.name_ar}
                       onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
                       placeholder="اسم الدور"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       dir="rtl"
                     />
                   </div>
@@ -875,7 +875,7 @@ export default function AdminRolesPage() {
                       value={formData.name_en}
                       onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                       placeholder="Role Name"
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -894,7 +894,7 @@ export default function AdminRolesPage() {
                     }
                     placeholder={locale === 'ar' ? 'وصف الدور...' : 'Role description...'}
                     rows={2}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
@@ -917,7 +917,7 @@ export default function AdminRolesPage() {
                     <select
                       value={formData.icon}
                       onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     >
                       <option value="Crown">{locale === 'ar' ? 'تاج' : 'Crown'}</option>
                       <option value="UserCog">{locale === 'ar' ? 'مستخدم' : 'User'}</option>
@@ -975,14 +975,14 @@ export default function AdminRolesPage() {
                               }}
                               className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
                                 allSelected
-                                  ? 'bg-red-600 border-red-600 text-white'
+                                  ? 'bg-primary border-primary text-white'
                                   : someSelected
-                                    ? 'bg-red-100 border-red-600'
+                                    ? 'bg-primary/20 border-primary'
                                     : 'border-slate-300'
                               }`}
                             >
                               {allSelected && <CheckCircle2 className="w-3 h-3" />}
-                              {someSelected && <div className="w-2 h-2 bg-red-600 rounded-sm" />}
+                              {someSelected && <div className="w-2 h-2 bg-primary rounded-sm" />}
                             </button>
                             <span className="font-medium text-slate-900">
                               {locale === 'ar' ? resource.name_ar : resource.name_en}
@@ -1011,7 +1011,7 @@ export default function AdminRolesPage() {
                                     type="checkbox"
                                     checked={isSelected}
                                     onChange={() => togglePermission(perm.id)}
-                                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                                   />
                                   <span className="text-sm text-slate-700">
                                     {locale === 'ar' ? action?.name_ar : action?.name_en}
@@ -1052,7 +1052,7 @@ export default function AdminRolesPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

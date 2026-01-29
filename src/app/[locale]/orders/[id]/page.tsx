@@ -28,6 +28,8 @@ import {
   MessageSquare,
   DollarSign,
   RotateCcw,
+  Crown,
+  BadgeCheck,
 } from 'lucide-react';
 import { OrderChat } from '@/components/shared/OrderChat';
 import {
@@ -164,6 +166,8 @@ type Provider = {
   name_en: string;
   phone: string;
   logo_url: string | null;
+  is_featured?: boolean;
+  is_verified?: boolean;
 };
 
 type Review = {
@@ -345,7 +349,7 @@ export default function OrderTrackingPage() {
     // Fetch provider
     const { data: providerData, error: providerError } = await supabase
       .from('providers')
-      .select('name_ar, name_en, phone, logo_url')
+      .select('name_ar, name_en, phone, logo_url, is_featured, is_verified')
       .eq('id', orderData.provider_id)
       .single();
 
@@ -758,9 +762,17 @@ export default function OrderTrackingPage() {
                 </div>
               )}
               <div className="flex-1">
-                <p className="font-bold text-slate-900">
-                  {locale === 'ar' ? provider.name_ar : provider.name_en}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-bold text-slate-900">
+                    {locale === 'ar' ? provider.name_ar : provider.name_en}
+                  </p>
+                  {provider.is_featured && (
+                    <Crown className="w-4 h-4 text-premium flex-shrink-0" />
+                  )}
+                  {provider.is_verified && (
+                    <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
+                  )}
+                </div>
                 <a
                   href={`tel:${provider.phone}`}
                   className="text-sm text-primary hover:underline flex items-center gap-1"
@@ -1382,9 +1394,17 @@ export default function OrderTrackingPage() {
                     </div>
                   )}
                   <div>
-                    <p className="font-semibold text-slate-900">
-                      {locale === 'ar' ? provider.name_ar : provider.name_en}
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-slate-900">
+                        {locale === 'ar' ? provider.name_ar : provider.name_en}
+                      </p>
+                      {provider.is_featured && (
+                        <Crown className="w-3.5 h-3.5 text-premium flex-shrink-0" />
+                      )}
+                      {provider.is_verified && (
+                        <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500">
                       {locale === 'ar' ? 'طلب رقم:' : 'Order:'} #
                       {order?.order_number || order?.id.slice(0, 8)}

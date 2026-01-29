@@ -20,12 +20,16 @@ const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
 
 // Optimized provider select (Phase 4.1)
+// NOTE: Columns verified against actual database schema:
+// - is_verified: added via migration 20260129000001
+// - address: replaced with address_ar, address_en
+// - opening_time, closing_time: replaced with business_hours (JSONB)
 const PROVIDER_SELECT = `
   id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rejection_reason, commission_rate,
-  rating, total_reviews, total_orders, is_featured, is_verified,
-  phone, email, address, governorate_id, city_id,
-  opening_time, closing_time, delivery_fee, min_order_amount,
+  rating, total_reviews, total_orders, is_featured, is_verified, verified_at, verified_by,
+  phone, email, address_ar, address_en, governorate_id, city_id,
+  business_hours, delivery_fee, min_order_amount,
   estimated_delivery_time_min, created_at, updated_at
 `;
 
@@ -582,7 +586,20 @@ export async function updateProviderCommission(
       .eq('id', providerId)
       .single();
 
-    if (fetchError || !current) {
+    if (fetchError) {
+      console.error('updateProviderCommission fetch error:', {
+        code: fetchError.code,
+        message: fetchError.message,
+        providerId,
+      });
+      return {
+        success: false,
+        error: fetchError.code === 'PGRST116' ? 'Provider not found' : `Database error: ${fetchError.message}`,
+        errorCode: fetchError.code === 'PGRST116' ? 'NOT_FOUND' : 'DATABASE_ERROR',
+      };
+    }
+
+    if (!current) {
       return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
     }
 
@@ -679,6 +696,77 @@ export async function toggleProviderFeatured(
       resourceName: current.name_ar,
       oldData: { is_featured: current.is_featured },
       newData: { is_featured: isFeatured },
+    });
+
+    return { success: true, data: updated as AdminProvider };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+      errorCode: 'DATABASE_ERROR',
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// تبديل حالة التوثيق - Toggle Verified Status
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * تبديل حالة توثيق مقدم الخدمة
+ * Toggle provider verification status
+ */
+export async function toggleProviderVerified(
+  adminId: string,
+  providerId: string,
+  isVerified: boolean
+): Promise<OperationResult<AdminProvider>> {
+  try {
+    const supabase = createAdminClient();
+
+    // Fetch current provider
+    const { data: current, error: fetchError } = await supabase
+      .from('providers')
+      .select(PROVIDER_SELECT)
+      .eq('id', providerId)
+      .single();
+
+    if (fetchError || !current) {
+      return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
+    }
+
+    // Update provider with verification data
+    const { data: updated, error: updateError } = await supabase
+      .from('providers')
+      .update({
+        is_verified: isVerified,
+        verified_at: isVerified ? new Date().toISOString() : null,
+        verified_by: isVerified ? adminId : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', providerId)
+      .select(
+        `
+        *,
+        governorate:governorates(id, name_ar, name_en),
+        city:cities(id, name_ar, name_en)
+      `
+      )
+      .single();
+
+    if (updateError) {
+      return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
+    }
+
+    // Log audit action
+    await logAuditAction(adminId, {
+      action: AUDIT_ACTIONS.PROVIDER_UPDATED,
+      resourceType: 'provider',
+      resourceId: providerId,
+      resourceName: current.name_ar,
+      oldData: { is_verified: current.is_verified },
+      newData: { is_verified: isVerified },
+      reason: isVerified ? 'Provider verified by admin' : 'Provider verification removed',
     });
 
     return { success: true, data: updated as AdminProvider };

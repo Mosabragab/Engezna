@@ -26,7 +26,7 @@ import {
   RefreshCw,
   X,
   Edit2,
-  Award,
+  Crown,
   Package,
   DollarSign,
   Percent,
@@ -34,7 +34,20 @@ import {
   User as UserIcon,
   Eye,
   AlertTriangle,
+  AlertCircle,
+  BadgeCheck,
 } from 'lucide-react';
+
+// Business hours structure (JSONB in database)
+interface BusinessHours {
+  monday?: { open: string; close: string; is_open?: boolean };
+  tuesday?: { open: string; close: string; is_open?: boolean };
+  wednesday?: { open: string; close: string; is_open?: boolean };
+  thursday?: { open: string; close: string; is_open?: boolean };
+  friday?: { open: string; close: string; is_open?: boolean };
+  saturday?: { open: string; close: string; is_open?: boolean };
+  sunday?: { open: string; close: string; is_open?: boolean };
+}
 
 interface Provider {
   id: string;
@@ -52,12 +65,14 @@ interface Provider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
+  is_verified: boolean;
+  verified_at: string | null;
+  verified_by: string | null;
   phone: string | null;
   email: string | null;
   address_ar: string | null;
   address_en: string | null;
-  opening_time: string | null;
-  closing_time: string | null;
+  business_hours: BusinessHours | null;
   delivery_fee: number;
   min_order_amount: number;
   estimated_delivery_time_min: number;
@@ -109,6 +124,8 @@ export default function ProviderDetailPage() {
   const [showCommissionModal, setShowCommissionModal] = useState(false);
   const [newCommissionRate, setNewCommissionRate] = useState(0);
   const [commissionLoading, setCommissionLoading] = useState(false);
+  const [commissionError, setCommissionError] = useState<string | null>(null);
+  const [commissionSuccess, setCommissionSuccess] = useState(false);
 
   // Define loadProviderStats first (called by loadProvider)
   const loadProviderStats = useCallback(async () => {
@@ -251,6 +268,8 @@ export default function ProviderDetailPage() {
 
   async function updateCommission() {
     setCommissionLoading(true);
+    setCommissionError(null);
+    setCommissionSuccess(false);
 
     try {
       const response = await fetch('/api/admin/providers', {
@@ -266,11 +285,20 @@ export default function ProviderDetailPage() {
       const result = await response.json();
 
       if (result.success) {
+        setCommissionSuccess(true);
         await loadProvider();
-        setShowCommissionModal(false);
+        setTimeout(() => {
+          setShowCommissionModal(false);
+          setCommissionSuccess(false);
+        }, 1500);
+      } else {
+        setCommissionError(
+          result.error || (locale === 'ar' ? 'فشل في تحديث العمولة' : 'Failed to update commission')
+        );
       }
-    } catch {
-      // Error handled silently
+    } catch (err) {
+      console.error('Commission update error:', err);
+      setCommissionError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
     setCommissionLoading(false);
@@ -285,6 +313,28 @@ export default function ProviderDetailPage() {
           action: 'toggleFeatured',
           providerId,
           isFeatured: !provider?.is_featured,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await loadProvider();
+      }
+    } catch {
+      // Error handled silently
+    }
+  }
+
+  async function toggleVerified() {
+    try {
+      const response = await fetch('/api/admin/providers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggleVerified',
+          providerId,
+          isVerified: !provider?.is_verified,
         }),
       });
 
@@ -414,7 +464,7 @@ export default function ProviderDetailPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -437,7 +487,7 @@ export default function ProviderDetailPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -457,7 +507,7 @@ export default function ProviderDetailPage() {
               {locale === 'ar' ? 'المتجر غير موجود' : 'Provider Not Found'}
             </h1>
             <Link href={`/${locale}/admin/providers`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}
               </Button>
             </Link>
@@ -515,8 +565,8 @@ export default function ProviderDetailPage() {
                     {getStatusLabel(provider.status)}
                   </span>
                   {provider.is_featured && (
-                    <span className="text-sm px-3 py-1 rounded-full bg-amber-100 text-amber-700 flex items-center gap-1">
-                      <Award className="w-4 h-4" />
+                    <span className="text-sm px-3 py-1 rounded-full bg-premium/20 text-foreground flex items-center gap-1">
+                      <Crown className="w-4 h-4 text-premium" />
                       {locale === 'ar' ? 'مميز' : 'Featured'}
                     </span>
                   )}
@@ -590,13 +640,29 @@ export default function ProviderDetailPage() {
                 </Button>
               ) : null}
 
-              <Button onClick={() => setShowCommissionModal(true)} variant="outline">
+              <Button
+                onClick={() => {
+                  setCommissionError(null);
+                  setCommissionSuccess(false);
+                  setShowCommissionModal(true);
+                }}
+                variant="outline"
+                className="border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400"
+              >
                 <Percent className="w-4 h-4 me-2" />
                 {locale === 'ar' ? 'تعديل العمولة' : 'Edit Commission'}
               </Button>
 
-              <Button onClick={toggleFeatured} variant="outline">
-                <Award className="w-4 h-4 me-2" />
+              <Button
+                onClick={toggleFeatured}
+                variant="outline"
+                className={
+                  provider.is_featured
+                    ? 'border-premium bg-premium/10 text-foreground hover:bg-premium/20'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400'
+                }
+              >
+                <Crown className="w-4 h-4 me-2" />
                 {provider.is_featured
                   ? locale === 'ar'
                     ? 'إزالة التميز'
@@ -604,6 +670,25 @@ export default function ProviderDetailPage() {
                   : locale === 'ar'
                     ? 'تمييز المتجر'
                     : 'Mark Featured'}
+              </Button>
+
+              <Button
+                onClick={toggleVerified}
+                variant="outline"
+                className={
+                  provider.is_verified
+                    ? 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800'
+                    : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400'
+                }
+              >
+                <BadgeCheck className="w-4 h-4 me-2" />
+                {provider.is_verified
+                  ? locale === 'ar'
+                    ? 'إلغاء التوثيق'
+                    : 'Remove Verified'
+                  : locale === 'ar'
+                    ? 'توثيق المتجر'
+                    : 'Verify Provider'}
               </Button>
             </div>
           </div>
@@ -743,13 +828,13 @@ export default function ProviderDetailPage() {
                   </p>
                 </div>
 
-                {provider.opening_time && provider.closing_time && (
+                {provider.business_hours && (
                   <div>
                     <label className="text-sm text-slate-500 block mb-1">
                       {locale === 'ar' ? 'ساعات العمل' : 'Working Hours'}
                     </label>
-                    <p className="text-slate-700">
-                      {provider.opening_time} - {provider.closing_time}
+                    <p className="text-slate-700 text-sm">
+                      {locale === 'ar' ? 'متاح' : 'Available'}
                     </p>
                   </div>
                 )}
@@ -806,7 +891,7 @@ export default function ProviderDetailPage() {
             {recentOrders.length > 0 && (
               <Link
                 href={`/${locale}/admin/orders?provider=${providerId}`}
-                className="block text-center text-sm text-red-600 hover:text-red-700 mt-4"
+                className="block text-center text-sm text-primary hover:text-primary/90 mt-4"
               >
                 {locale === 'ar' ? 'عرض كل الطلبات' : 'View All Orders'}
               </Link>
@@ -853,7 +938,7 @@ export default function ProviderDetailPage() {
                         onChange={(e) => setActionReason(e.target.value)}
                         placeholder={locale === 'ar' ? 'أدخل السبب...' : 'Enter reason...'}
                         rows={3}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                       />
                     </div>
                   )}
@@ -919,13 +1004,31 @@ export default function ProviderDetailPage() {
                 min={0}
                 max={100}
                 step={0.5}
-                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               />
               <p className="text-xs text-slate-500 mt-1">
                 {locale === 'ar' ? 'النسبة الحالية: ' : 'Current rate: '}
                 {provider.commission_rate}%
               </p>
             </div>
+
+            {/* Error Message */}
+            {commissionError && (
+              <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{commissionError}</span>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {commissionSuccess && (
+              <div className="mb-4 flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">
+                  {locale === 'ar' ? 'تم تحديث العمولة بنجاح' : 'Commission updated successfully'}
+                </span>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button
@@ -938,7 +1041,7 @@ export default function ProviderDetailPage() {
               </Button>
               <Button
                 onClick={updateCommission}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={commissionLoading || newCommissionRate === provider.commission_rate}
               >
                 {commissionLoading ? (

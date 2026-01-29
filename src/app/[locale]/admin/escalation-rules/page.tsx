@@ -356,7 +356,7 @@ export default function EscalationRulesPage() {
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -374,12 +374,12 @@ export default function EscalationRulesPage() {
         </header>
         <div className="flex-1 flex items-center justify-center bg-slate-50">
           <div className="text-center bg-white p-8 rounded-2xl border border-slate-200 shadow-lg">
-            <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <Shield className="w-16 h-16 text-primary mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2 text-slate-900">
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/admin`}>
-              <Button className="bg-red-600 hover:bg-red-700">
+              <Button className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'العودة' : 'Go Back'}
               </Button>
             </Link>
@@ -410,7 +410,7 @@ export default function EscalationRulesPage() {
                 : 'Manage automatic escalation rules for sensitive operations'}
             </p>
           </div>
-          <Button onClick={openCreateModal} className="bg-red-600 hover:bg-red-700">
+          <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90">
             <Plus className="w-4 h-4 me-2" />
             {locale === 'ar' ? 'قاعدة جديدة' : 'New Rule'}
           </Button>
@@ -487,7 +487,7 @@ export default function EscalationRulesPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={locale === 'ar' ? 'بحث عن قاعدة...' : 'Search for a rule...'}
-              className="w-full ps-10 pe-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              className="w-full ps-10 pe-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
             />
           </div>
         </div>
@@ -684,7 +684,7 @@ export default function EscalationRulesPage() {
                     value={formData.name_ar}
                     onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
                     placeholder="استرداد مبلغ كبير"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     dir="rtl"
                   />
                 </div>
@@ -697,7 +697,7 @@ export default function EscalationRulesPage() {
                     value={formData.name_en}
                     onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
                     placeholder="Large Refund"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -719,18 +719,18 @@ export default function EscalationRulesPage() {
                         }
                         className={`p-3 rounded-lg border-2 transition-colors text-center ${
                           formData.trigger_type === type.value
-                            ? 'border-red-500 bg-red-50'
+                            ? 'border-primary bg-primary/10'
                             : 'border-slate-200 hover:border-slate-300'
                         }`}
                       >
                         <Icon
                           className={`w-5 h-5 mx-auto mb-1 ${
-                            formData.trigger_type === type.value ? 'text-red-600' : 'text-slate-400'
+                            formData.trigger_type === type.value ? 'text-primary' : 'text-slate-400'
                           }`}
                         />
                         <p
                           className={`text-xs font-medium ${
-                            formData.trigger_type === type.value ? 'text-red-700' : 'text-slate-600'
+                            formData.trigger_type === type.value ? 'text-primary' : 'text-slate-600'
                           }`}
                         >
                           {locale === 'ar' ? type.label.ar : type.label.en}
@@ -750,7 +750,7 @@ export default function EscalationRulesPage() {
                   <select
                     value={formData.resource}
                     onChange={(e) => setFormData({ ...formData, resource: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{locale === 'ar' ? 'اختر...' : 'Select...'}</option>
                     {RESOURCES.map((res) => (
@@ -767,7 +767,7 @@ export default function EscalationRulesPage() {
                   <select
                     value={formData.action}
                     onChange={(e) => setFormData({ ...formData, action: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{locale === 'ar' ? 'اختر...' : 'Select...'}</option>
                     {ACTIONS.map((act) => (
@@ -790,7 +790,7 @@ export default function EscalationRulesPage() {
                     value={formData.amount}
                     onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
                     placeholder="500"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
               )}
@@ -807,7 +807,7 @@ export default function EscalationRulesPage() {
                       setFormData({ ...formData, count_per_day: Number(e.target.value) })
                     }
                     placeholder="5"
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
               )}
@@ -893,7 +893,7 @@ export default function EscalationRulesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, escalate_to_role_id: e.target.value })
                   }
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 >
                   <option value="">{locale === 'ar' ? 'اختر دور...' : 'Select role...'}</option>
                   {roles.map((role) => (
@@ -914,7 +914,7 @@ export default function EscalationRulesPage() {
                   value={formData.priority}
                   onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
                   min="0"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
                 <p className="text-xs text-slate-500 mt-1">
                   {locale === 'ar'
@@ -935,7 +935,7 @@ export default function EscalationRulesPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

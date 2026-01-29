@@ -44,6 +44,8 @@ export type Provider = {
   commission_rate?: number;
   category?: string;
   logo_url?: string | null;
+  is_featured?: boolean;
+  is_verified?: boolean;
 };
 
 export type CartItem = {

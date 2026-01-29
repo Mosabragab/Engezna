@@ -410,7 +410,7 @@ export default function AdminAnalyticsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -440,7 +440,7 @@ export default function AdminAnalyticsPage() {
                   onClick={() => setPeriodFilter(period)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     periodFilter === period
-                      ? 'bg-red-600 text-white shadow-md'
+                      ? 'bg-primary text-white shadow-md'
                       : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >

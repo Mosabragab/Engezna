@@ -3,7 +3,7 @@
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Clock, Truck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Clock, Truck, ChevronLeft, ChevronRight, Crown, BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Provider {
@@ -18,6 +18,8 @@ interface Provider {
   estimated_delivery_time_min: number;
   delivery_fee: number;
   status: string;
+  is_featured?: boolean;
+  is_verified?: boolean;
 }
 
 interface TopRatedSectionProps {
@@ -105,6 +107,12 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
         ) : (
           <div className="w-full h-full flex items-center justify-center text-2xl">🏪</div>
         )}
+        {/* Featured Badge */}
+        {provider.is_featured && (
+          <div className="absolute top-1 start-1 bg-premium/95 backdrop-blur-sm text-slate-900 p-1 rounded-md">
+            <Crown className="w-3 h-3" />
+          </div>
+        )}
         {/* Status Badge */}
         {provider.status === 'closed' && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
@@ -115,7 +123,12 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
 
       {/* Info */}
       <div className="p-2">
-        <h3 className="font-semibold text-slate-900 text-sm truncate mb-1">{name}</h3>
+        <div className="flex items-center gap-1 mb-1">
+          <h3 className="font-semibold text-slate-900 text-sm truncate">{name}</h3>
+          {provider.is_verified && (
+            <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+          )}
+        </div>
         <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">
           <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
           <span className="font-medium">{provider.rating.toFixed(1)}</span>

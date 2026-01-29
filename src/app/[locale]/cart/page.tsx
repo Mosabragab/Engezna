@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift, Sparkles } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Store, Percent, Tag, Gift, Sparkles, Crown, BadgeCheck } from 'lucide-react';
 import { useCart, CartItem } from '@/lib/store/cart';
 import { CustomerLayout } from '@/components/customer/layout';
 import { createClient } from '@/lib/supabase/client';
@@ -296,7 +296,15 @@ export default function CartPage() {
                 )}
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">{getName(provider)}</h3>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-semibold text-slate-900">{getName(provider)}</h3>
+                  {provider.is_featured && (
+                    <Crown className="w-4 h-4 text-premium flex-shrink-0" />
+                  )}
+                  {provider.is_verified && (
+                    <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
+                  )}
+                </div>
                 <p className="text-sm text-slate-500">
                   {items.length} {locale === 'ar' ? 'عناصر' : 'items'}
                 </p>

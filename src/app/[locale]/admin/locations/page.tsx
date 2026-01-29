@@ -667,7 +667,7 @@ export default function AdminLocationsPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <main className="flex-1 flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </main>
       </>
     );
@@ -690,7 +690,7 @@ export default function AdminLocationsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -719,7 +719,7 @@ export default function AdminLocationsPage() {
               onClick={() => setActiveTab('locations')}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'locations'
-                  ? 'border-red-600 text-red-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -735,7 +735,7 @@ export default function AdminLocationsPage() {
               }}
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'analytics'
-                  ? 'border-red-600 text-red-600'
+                  ? 'border-primary text-primary'
                   : 'border-transparent text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -798,7 +798,7 @@ export default function AdminLocationsPage() {
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
                   viewLevel === 'governorates'
-                    ? 'bg-red-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
@@ -816,7 +816,7 @@ export default function AdminLocationsPage() {
                     }}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
                       viewLevel === 'cities'
-                        ? 'bg-red-600 text-white'
+                        ? 'bg-primary text-white'
                         : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
@@ -835,7 +835,7 @@ export default function AdminLocationsPage() {
                     onClick={() => setViewLevel('districts')}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
                       viewLevel === 'districts'
-                        ? 'bg-red-600 text-white'
+                        ? 'bg-primary text-white'
                         : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
@@ -860,7 +860,7 @@ export default function AdminLocationsPage() {
                     placeholder={locale === 'ar' ? 'بحث...' : 'Search...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                    className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
                   />
                 </div>
 
@@ -869,7 +869,7 @@ export default function AdminLocationsPage() {
                     type="checkbox"
                     checked={showInactive}
                     onChange={(e) => setShowInactive(e.target.checked)}
-                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                   />
                   <span className="text-sm text-slate-600">
                     {locale === 'ar' ? 'عرض غير النشطة' : 'Show inactive'}
@@ -891,7 +891,7 @@ export default function AdminLocationsPage() {
                 {isSuperAdmin && (
                   <Button
                     onClick={openAddModal}
-                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                    className="flex items-center gap-2 bg-primary hover:bg-primary/90"
                   >
                     <Plus className="w-4 h-4" />
                     {viewLevel === 'governorates'
@@ -962,7 +962,7 @@ export default function AdminLocationsPage() {
                                   setViewLevel('districts');
                                 }
                               }}
-                              className="font-medium text-slate-900 hover:text-red-600 flex items-center gap-2"
+                              className="font-medium text-slate-900 hover:text-primary flex items-center gap-2"
                             >
                               {item.name_ar}
                               {viewLevel !== 'districts' && (
@@ -1118,7 +1118,7 @@ export default function AdminLocationsPage() {
 
             {analyticsLoading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-red-500 border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
               </div>
             ) : (
               <>
@@ -1187,7 +1187,7 @@ export default function AdminLocationsPage() {
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="p-4 border-b border-slate-200 bg-slate-50">
                     <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-                      <Target className="w-5 h-5 text-red-600" />
+                      <Target className="w-5 h-5 text-primary" />
                       {locale === 'ar'
                         ? 'ترتيب المحافظات حسب جاهزية التوسع'
                         : 'Governorate Ranking by Expansion Readiness'}
@@ -1536,7 +1536,7 @@ export default function AdminLocationsPage() {
                   <select
                     value={selectedGovernorateToActivate}
                     onChange={(e) => setSelectedGovernorateToActivate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="">
                       {locale === 'ar' ? 'اختر المحافظة...' : 'Select governorate...'}
@@ -1572,7 +1572,7 @@ export default function AdminLocationsPage() {
                         setFormData({ ...formData, governorate_id: e.target.value });
                         setSelectedCityToActivate('');
                       }}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     >
                       <option value="">
                         {locale === 'ar' ? 'اختر المحافظة...' : 'Select governorate...'}
@@ -1630,7 +1630,7 @@ export default function AdminLocationsPage() {
                           <select
                             value={selectedCityToActivate}
                             onChange={(e) => setSelectedCityToActivate(e.target.value)}
-                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                           >
                             <option value="">
                               {locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}
@@ -1674,7 +1674,7 @@ export default function AdminLocationsPage() {
                         type="text"
                         value={formData.name_ar}
                         onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                         dir="rtl"
                       />
                     </div>
@@ -1687,7 +1687,7 @@ export default function AdminLocationsPage() {
                         type="text"
                         value={formData.name_en}
                         onChange={(e) => setFormData({ ...formData, name_en: e.target.value })}
-                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                         dir="ltr"
                       />
                     </div>
@@ -1704,7 +1704,7 @@ export default function AdminLocationsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, governorate_id: e.target.value, city_id: '' })
                     }
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="">
                       {locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'}
@@ -1726,7 +1726,7 @@ export default function AdminLocationsPage() {
                   <select
                     value={formData.city_id}
                     onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="">{locale === 'ar' ? 'بدون مدينة' : 'No city'}</option>
                     {cities
@@ -1760,7 +1760,7 @@ export default function AdminLocationsPage() {
                             e.target.value === '' ? null : parseFloat(e.target.value),
                         })
                       }
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
                       placeholder={
                         locale === 'ar'
                           ? 'اتركه فارغاً للنسبة الافتراضية (7%)'
@@ -1804,7 +1804,7 @@ export default function AdminLocationsPage() {
                         aria-checked={formData.is_active}
                         dir="ltr"
                         onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
                           formData.is_active ? 'bg-green-500' : 'bg-slate-300'
                         }`}
                       >
@@ -1845,7 +1845,7 @@ export default function AdminLocationsPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

@@ -415,7 +415,7 @@ export default function AdminAnnouncementsPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="flex-1 p-6">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent mx-auto mt-20"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mt-20"></div>
         </div>
       </>
     );
@@ -438,7 +438,7 @@ export default function AdminAnnouncementsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -509,14 +509,14 @@ export default function AdminAnnouncementsPage() {
                 placeholder={locale === 'ar' ? 'بحث في الإعلانات...' : 'Search announcements...'}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as FilterType)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الأنواع' : 'All Types'}</option>
               <option value="urgent">{locale === 'ar' ? 'عاجل' : 'Urgent'}</option>
@@ -527,7 +527,7 @@ export default function AdminAnnouncementsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
               <option value="active">{locale === 'ar' ? 'نشطة' : 'Active'}</option>
@@ -550,7 +550,7 @@ export default function AdminAnnouncementsPage() {
             {isSuperAdmin && (
               <Button
                 onClick={openCreateModal}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90"
               >
                 <Plus className="w-4 h-4" />
                 {locale === 'ar' ? 'إعلان جديد' : 'New Announcement'}
@@ -785,7 +785,7 @@ export default function AdminAnnouncementsPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder={locale === 'ar' ? 'عنوان الإعلان' : 'Announcement title'}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -802,7 +802,7 @@ export default function AdminAnnouncementsPage() {
                         name="type"
                         checked={formData.type === key}
                         onChange={() => setFormData({ ...formData, type: key as AnnouncementType })}
-                        className="text-red-600 focus:ring-red-500"
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="text-sm text-slate-700">
                         {config.label[locale === 'ar' ? 'ar' : 'en']}
@@ -822,7 +822,7 @@ export default function AdminAnnouncementsPage() {
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder={locale === 'ar' ? 'محتوى الإعلان' : 'Announcement content'}
                   rows={6}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -835,7 +835,7 @@ export default function AdminAnnouncementsPage() {
                   type="datetime-local"
                   value={formData.expires_at}
                   onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -846,7 +846,7 @@ export default function AdminAnnouncementsPage() {
                     type="checkbox"
                     checked={formData.is_pinned}
                     onChange={(e) => setFormData({ ...formData, is_pinned: e.target.checked })}
-                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                   />
                   <span className="text-sm text-slate-700">
                     {locale === 'ar' ? 'تثبيت في أعلى القائمة' : 'Pin to top'}
@@ -859,7 +859,7 @@ export default function AdminAnnouncementsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, require_read_confirmation: e.target.checked })
                     }
-                    className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                   />
                   <span className="text-sm text-slate-700">
                     {locale === 'ar' ? 'طلب تأكيد القراءة' : 'Require read confirmation'}
@@ -879,7 +879,7 @@ export default function AdminAnnouncementsPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

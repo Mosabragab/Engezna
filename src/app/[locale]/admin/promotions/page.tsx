@@ -330,7 +330,7 @@ export default function AdminPromotionsPage() {
           <div className="h-8 bg-slate-200 rounded animate-pulse w-48"></div>
         </div>
         <main className="flex-1 p-4 lg:p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </main>
       </>
     );
@@ -353,7 +353,7 @@ export default function AdminPromotionsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -430,14 +430,14 @@ export default function AdminPromotionsPage() {
                 }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as FilterStatus)}
-              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+              className="px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
             >
               <option value="all">{locale === 'ar' ? 'كل الحالات' : 'All Status'}</option>
               <option value="active">{locale === 'ar' ? 'مفعل' : 'Active'}</option>
@@ -456,7 +456,7 @@ export default function AdminPromotionsPage() {
 
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="bg-red-600 hover:bg-red-700 flex items-center gap-2"
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               {locale === 'ar' ? 'كود جديد' : 'New Code'}
@@ -632,7 +632,7 @@ export default function AdminPromotionsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, code: e.target.value.toUpperCase() })
                     }
-                    className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500 font-mono uppercase"
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary font-mono uppercase"
                     placeholder="SAVE20"
                   />
                   <Button variant="outline" onClick={generateCode}>
@@ -650,7 +650,7 @@ export default function AdminPromotionsPage() {
                   type="text"
                   value={formData.description_ar}
                   onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   placeholder="خصم 20% على جميع الطلبات"
                 />
               </div>
@@ -664,7 +664,7 @@ export default function AdminPromotionsPage() {
                   type="text"
                   value={formData.description_en}
                   onChange={(e) => setFormData({ ...formData, description_en: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   placeholder="20% off all orders"
                 />
               </div>
@@ -683,7 +683,7 @@ export default function AdminPromotionsPage() {
                         discount_type: e.target.value as 'percentage' | 'fixed',
                       })
                     }
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
                     <option value="percentage">
                       {locale === 'ar' ? 'نسبة مئوية' : 'Percentage'}
@@ -701,7 +701,7 @@ export default function AdminPromotionsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, discount_value: parseFloat(e.target.value) || 0 })
                     }
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     min="0"
                   />
                 </div>
@@ -722,7 +722,7 @@ export default function AdminPromotionsPage() {
                         min_order_amount: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     min="0"
                   />
                 </div>
@@ -739,7 +739,7 @@ export default function AdminPromotionsPage() {
                         max_discount_amount: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                     min="0"
                   />
                 </div>
@@ -755,7 +755,7 @@ export default function AdminPromotionsPage() {
                     type="date"
                     value={formData.valid_from}
                     onChange={(e) => setFormData({ ...formData, valid_from: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>
@@ -766,7 +766,7 @@ export default function AdminPromotionsPage() {
                     type="date"
                     value={formData.valid_until}
                     onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -784,7 +784,7 @@ export default function AdminPromotionsPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, usage_limit: parseInt(e.target.value) || 0 })
                   }
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   min="0"
                 />
               </div>
@@ -796,7 +796,7 @@ export default function AdminPromotionsPage() {
                   id="is_active"
                   checked={formData.is_active}
                   onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                 />
                 <label htmlFor="is_active" className="text-sm text-slate-700">
                   {locale === 'ar' ? 'تفعيل الكود فوراً' : 'Activate immediately'}
@@ -816,7 +816,7 @@ export default function AdminPromotionsPage() {
               <Button
                 onClick={handleCreatePromo}
                 disabled={!formData.code || !formData.valid_until}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-primary hover:bg-primary/90"
               >
                 {locale === 'ar' ? 'إنشاء' : 'Create'}
               </Button>

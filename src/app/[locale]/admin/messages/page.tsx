@@ -434,7 +434,7 @@ export default function AdminMessagesPage() {
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </main>
       </>
     );
@@ -457,7 +457,7 @@ export default function AdminMessagesPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -507,7 +507,7 @@ export default function AdminMessagesPage() {
             {/* Compose Button */}
             <Button
               onClick={() => setShowComposeModal(true)}
-              className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
               {locale === 'ar' ? 'رسالة جديدة' : 'Compose'}
@@ -520,7 +520,7 @@ export default function AdminMessagesPage() {
                   setViewMode('inbox');
                   setSelectedMessage(null);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${viewMode === 'inbox' ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${viewMode === 'inbox' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-50'}`}
               >
                 <Inbox className="w-5 h-5" />
                 <span className="flex-1">{locale === 'ar' ? 'الوارد' : 'Inbox'}</span>
@@ -535,7 +535,7 @@ export default function AdminMessagesPage() {
                   setViewMode('sent');
                   setSelectedMessage(null);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${viewMode === 'sent' ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${viewMode === 'sent' ? 'bg-primary/10 text-primary' : 'hover:bg-slate-50'}`}
               >
                 <SendIcon className="w-5 h-5" />
                 <span className="flex-1">{locale === 'ar' ? 'المرسل' : 'Sent'}</span>
@@ -640,7 +640,7 @@ export default function AdminMessagesPage() {
                       placeholder={locale === 'ar' ? 'بحث في الرسائل...' : 'Search messages...'}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500`}
+                      className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary`}
                     />
                   </div>
                 </div>
@@ -748,7 +748,7 @@ export default function AdminMessagesPage() {
                   id="is_broadcast"
                   checked={formData.is_broadcast}
                   onChange={(e) => setFormData({ ...formData, is_broadcast: e.target.checked })}
-                  className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                 />
                 <label htmlFor="is_broadcast" className="text-sm text-slate-700">
                   {locale === 'ar' ? 'إرسال للجميع (بث عام)' : 'Send to all (broadcast)'}
@@ -770,7 +770,7 @@ export default function AdminMessagesPage() {
                             type="checkbox"
                             checked={formData.recipients.includes(s.id)}
                             onChange={() => toggleRecipient(s.id)}
-                            className="w-4 h-4 text-red-600 border-slate-300 rounded focus:ring-red-500"
+                            className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
                           />
                           <span className="text-sm text-slate-700">{s.full_name || s.email}</span>
                         </label>
@@ -789,7 +789,7 @@ export default function AdminMessagesPage() {
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   placeholder={locale === 'ar' ? 'موضوع الرسالة' : 'Message subject'}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -805,7 +805,7 @@ export default function AdminMessagesPage() {
                       name="priority"
                       checked={formData.priority === 'normal'}
                       onChange={() => setFormData({ ...formData, priority: 'normal' })}
-                      className="text-red-600 focus:ring-red-500"
+                      className="text-primary focus:ring-primary"
                     />
                     <span className="text-sm text-slate-700">
                       {locale === 'ar' ? 'عادية' : 'Normal'}
@@ -817,7 +817,7 @@ export default function AdminMessagesPage() {
                       name="priority"
                       checked={formData.priority === 'urgent'}
                       onChange={() => setFormData({ ...formData, priority: 'urgent' })}
-                      className="text-red-600 focus:ring-red-500"
+                      className="text-primary focus:ring-primary"
                     />
                     <span className="text-sm text-slate-700">
                       {locale === 'ar' ? 'عاجلة' : 'Urgent'}
@@ -838,7 +838,7 @@ export default function AdminMessagesPage() {
                     locale === 'ar' ? 'اكتب رسالتك هنا...' : 'Write your message here...'
                   }
                   rows={6}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-red-500"
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -854,7 +854,7 @@ export default function AdminMessagesPage() {
               </Button>
               <Button
                 onClick={handleSendMessage}
-                className="flex-1 bg-red-600 hover:bg-red-700"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={formLoading}
               >
                 {formLoading ? (

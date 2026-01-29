@@ -273,7 +273,7 @@ export function SearchableSelect({
         className={`
           flex items-center justify-between gap-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-colors
           ${disabled ? 'bg-slate-100 cursor-not-allowed' : 'bg-white hover:border-slate-300'}
-          ${isOpen ? 'border-red-500 ring-2 ring-red-500/20' : 'border-slate-200'}
+          ${isOpen ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200'}
         `}
       >
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -322,7 +322,7 @@ export function SearchableSelect({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={locale === 'ar' ? 'بحث...' : 'Search...'}
-                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500`}
+                className={`w-full ${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-primary`}
                 autoFocus
               />
             </div>
@@ -344,7 +344,7 @@ export function SearchableSelect({
           <div className="max-h-60 overflow-y-auto">
             {loading ? (
               <div className="p-4 text-center text-slate-500">
-                <div className="animate-spin rounded-full h-6 w-6 border-2 border-red-500 border-t-transparent mx-auto mb-2"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
                 {locale === 'ar' ? 'جاري التحميل...' : 'Loading...'}
               </div>
             ) : filteredItems.length > 0 ? (
@@ -354,15 +354,15 @@ export function SearchableSelect({
                   onClick={() => handleSelect(item)}
                   className={`
                     flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors
-                    ${item.id === value ? 'bg-red-50' : 'hover:bg-slate-50'}
+                    ${item.id === value ? 'bg-primary/10' : 'hover:bg-slate-50'}
                   `}
                 >
-                  <span className={`${item.id === value ? 'text-red-600' : 'text-slate-400'}`}>
+                  <span className={`${item.id === value ? 'text-primary' : 'text-slate-400'}`}>
                     {getIcon()}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-medium truncate ${item.id === value ? 'text-red-600' : 'text-slate-900'}`}
+                      className={`font-medium truncate ${item.id === value ? 'text-primary' : 'text-slate-900'}`}
                     >
                       {item.label}
                     </p>
@@ -370,7 +370,7 @@ export function SearchableSelect({
                       <p className="text-xs text-slate-500 truncate">{item.sublabel}</p>
                     )}
                   </div>
-                  {item.id === value && <Check className="w-4 h-4 text-red-600" />}
+                  {item.id === value && <Check className="w-4 h-4 text-primary" />}
                 </div>
               ))
             ) : (

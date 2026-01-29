@@ -270,7 +270,7 @@ export function AdminSidebar({
     {
       icon: Settings,
       label: { ar: 'الإعدادات', en: 'Settings' },
-      path: `/${locale}/admin/settings`,
+      path: `/${locale}/admin/settings-v2`,
       resource: 'settings',
     },
   ];
