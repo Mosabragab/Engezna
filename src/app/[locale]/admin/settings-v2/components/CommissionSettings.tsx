@@ -78,9 +78,7 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
       <Card>
         <CardContent className="p-8 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ms-2 text-gray-600">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </span>
+          <span className="ms-2 text-gray-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
         </CardContent>
       </Card>
     );
@@ -103,7 +101,9 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
-          <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Percent className="w-5 h-5 text-primary" />
             {isRTL ? 'إعدادات العمولة' : 'Commission Settings'}
           </CardTitle>
@@ -118,9 +118,7 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
           {/* Commission Enabled Toggle */}
           <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
             <div>
-              <Label className="font-medium">
-                {isRTL ? 'تفعيل العمولة' : 'Enable Commission'}
-              </Label>
+              <Label className="font-medium">{isRTL ? 'تفعيل العمولة' : 'Enable Commission'}</Label>
               <p className="text-sm text-gray-500 mt-1">
                 {isRTL
                   ? 'تفعيل أو تعطيل نظام العمولة بالكامل'
@@ -244,9 +242,7 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                {isRTL
-                  ? 'رسوم ثابتة تُضاف على كل طلب'
-                  : 'Fixed fee added to each order'}
+                {isRTL ? 'رسوم ثابتة تُضاف على كل طلب' : 'Fixed fee added to each order'}
               </p>
             </div>
           </div>
@@ -257,17 +253,13 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
               {updateMutation.isSuccess && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
                 </div>
               )}
               {updateMutation.isError && (
                 <div className="flex items-center gap-2 text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'فشل في الحفظ' : 'Failed to save'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'فشل في الحفظ' : 'Failed to save'}</span>
                 </div>
               )}
             </div>

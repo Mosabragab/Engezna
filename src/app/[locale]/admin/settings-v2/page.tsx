@@ -17,15 +17,7 @@ import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
-import {
-  Percent,
-  Building,
-  CreditCard,
-  Truck,
-  Settings,
-  Loader2,
-  Shield,
-} from 'lucide-react';
+import { Percent, Building, CreditCard, Truck, Settings, Loader2, Shield } from 'lucide-react';
 
 // Tab Components
 import {
@@ -47,7 +39,9 @@ export default function AdminSettingsV2Page() {
   useEffect(() => {
     const fetchUser = async () => {
       const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser();
       setUser(authUser);
       setLoading(false);
     };
@@ -101,7 +95,9 @@ export default function AdminSettingsV2Page() {
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         {/* Page Header */}
         <div className={`mb-6 ${isRTL ? 'text-right' : 'text-left'}`}>
-          <div className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <div
+            className={`flex items-center gap-3 mb-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Settings className="w-8 h-8 text-primary" />
             <h1 className="text-2xl font-bold text-gray-900">
               {isRTL ? 'إعدادات المنصة' : 'Platform Settings'}
@@ -116,7 +112,9 @@ export default function AdminSettingsV2Page() {
 
         {/* Settings Tabs */}
         <Tabs defaultValue="commission" className="w-full" dir={isRTL ? 'rtl' : 'ltr'}>
-          <TabsList className={`w-full bg-white border rounded-lg p-1 mb-6 flex-wrap ${isRTL ? 'justify-end' : 'justify-start'}`}>
+          <TabsList
+            className={`w-full bg-white border rounded-lg p-1 mb-6 flex-wrap ${isRTL ? 'justify-end' : 'justify-start'}`}
+          >
             {tabs.map((tab) => (
               <TabsTrigger
                 key={tab.id}

@@ -24,11 +24,7 @@ import {
   CheckCircle2,
   MessageCircle,
 } from 'lucide-react';
-import {
-  usePlatformInfo,
-  useUpdateAppSetting,
-  useAppSettingsChangelog,
-} from '@/hooks/useSettings';
+import { usePlatformInfo, useUpdateAppSetting, useAppSettingsChangelog } from '@/hooks/useSettings';
 import { SETTING_KEYS, type PlatformInfo } from '@/lib/settings';
 import { SettingsChangelogDisplay } from './SettingsChangelog';
 
@@ -83,9 +79,7 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
       <Card>
         <CardContent className="p-8 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ms-2 text-gray-600">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </span>
+          <span className="ms-2 text-gray-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
         </CardContent>
       </Card>
     );
@@ -108,7 +102,9 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
-          <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Building className="w-5 h-5 text-primary" />
             {isRTL ? 'معلومات المنصة' : 'Platform Information'}
           </CardTitle>
@@ -258,17 +254,13 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
               {updateMutation.isSuccess && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
                 </div>
               )}
               {updateMutation.isError && (
                 <div className="flex items-center gap-2 text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'فشل في الحفظ' : 'Failed to save'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'فشل في الحفظ' : 'Failed to save'}</span>
                 </div>
               )}
             </div>

@@ -594,7 +594,10 @@ export async function updateProviderCommission(
       });
       return {
         success: false,
-        error: fetchError.code === 'PGRST116' ? 'Provider not found' : `Database error: ${fetchError.message}`,
+        error:
+          fetchError.code === 'PGRST116'
+            ? 'Provider not found'
+            : `Database error: ${fetchError.message}`,
         errorCode: fetchError.code === 'PGRST116' ? 'NOT_FOUND' : 'DATABASE_ERROR',
       };
     }

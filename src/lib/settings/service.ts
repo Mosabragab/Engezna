@@ -106,9 +106,7 @@ export async function fetchCommissionChangelog(limit = 50): Promise<SettingsChan
     return [];
   }
 
-  return data.map((row) =>
-    validateSetting(SettingsChangelogSchema, row, row as SettingsChangelog)
-  );
+  return data.map((row) => validateSetting(SettingsChangelogSchema, row, row as SettingsChangelog));
 }
 
 // ============================================================================
@@ -121,9 +119,7 @@ export async function fetchCommissionChangelog(limit = 50): Promise<SettingsChan
 export async function fetchAllAppSettings(): Promise<Record<string, unknown>> {
   const supabase = createClient();
 
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('setting_key, setting_value');
+  const { data, error } = await supabase.from('app_settings').select('setting_key, setting_value');
 
   if (error) {
     console.error('[Settings] Failed to fetch app settings:', error);
@@ -221,9 +217,7 @@ export async function fetchAppSettingsChangelog(
     return [];
   }
 
-  return data.map((row) =>
-    validateSetting(SettingsChangelogSchema, row, row as SettingsChangelog)
-  );
+  return data.map((row) => validateSetting(SettingsChangelogSchema, row, row as SettingsChangelog));
 }
 
 // ============================================================================
@@ -304,7 +298,9 @@ export async function fetchNotificationPreferences(
  */
 export async function upsertNotificationPreferences(
   userId: string,
-  preferences: Partial<Omit<NotificationPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+  preferences: Partial<
+    Omit<NotificationPreferences, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+  >
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = createClient();
 

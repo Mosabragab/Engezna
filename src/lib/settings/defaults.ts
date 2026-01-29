@@ -46,7 +46,8 @@ export const DEFAULT_SECURITY_DEPOSIT: SecurityDeposit = {
     partial_refund_percentage: 50,
     conditions: ['no_outstanding_debt', 'no_active_disputes'],
   },
-  terms_ar: 'يتم استرداد مبلغ التأمين بالكامل بعد 180 يوماً من إنهاء الخدمة في حال عدم وجود مستحقات',
+  terms_ar:
+    'يتم استرداد مبلغ التأمين بالكامل بعد 180 يوماً من إنهاء الخدمة في حال عدم وجود مستحقات',
   terms_en:
     'Security deposit is fully refundable after 180 days of service termination with no outstanding dues',
 };

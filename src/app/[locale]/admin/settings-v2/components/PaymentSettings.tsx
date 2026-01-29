@@ -79,9 +79,7 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
       <Card>
         <CardContent className="p-8 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ms-2 text-gray-600">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </span>
+          <span className="ms-2 text-gray-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
         </CardContent>
       </Card>
     );
@@ -127,9 +125,7 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
       id: 'wallet',
       icon: Wallet,
       title: isRTL ? 'محفظة إنجزنا' : 'Engezna Wallet',
-      description: isRTL
-        ? 'الدفع من رصيد المحفظة الإلكترونية'
-        : 'Payment from e-wallet balance',
+      description: isRTL ? 'الدفع من رصيد المحفظة الإلكترونية' : 'Payment from e-wallet balance',
       enabled: formData.wallet_payment_enabled,
       onToggle: () => handleChange('wallet_payment_enabled', !formData.wallet_payment_enabled),
       color: 'bg-purple-100 text-purple-700',
@@ -140,7 +136,9 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
-          <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <CreditCard className="w-5 h-5 text-primary" />
             {isRTL ? 'طرق الدفع' : 'Payment Methods'}
           </CardTitle>
@@ -165,10 +163,7 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
                   <div className={`p-2 rounded-lg ${method.color}`}>
                     <method.icon className="w-5 h-5" />
                   </div>
-                  <Switch
-                    checked={method.enabled}
-                    onCheckedChange={method.onToggle}
-                  />
+                  <Switch checked={method.enabled} onCheckedChange={method.onToggle} />
                 </div>
                 <h3 className="font-medium text-gray-900 mb-1">{method.title}</h3>
                 <p className="text-sm text-gray-500">{method.description}</p>
@@ -242,17 +237,13 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
               {updateMutation.isSuccess && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
                 </div>
               )}
               {updateMutation.isError && (
                 <div className="flex items-center gap-2 text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'فشل في الحفظ' : 'Failed to save'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'فشل في الحفظ' : 'Failed to save'}</span>
                 </div>
               )}
             </div>
