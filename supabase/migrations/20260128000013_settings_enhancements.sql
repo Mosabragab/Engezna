@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS commission_settings_changelog (
   old_value JSONB,
   new_value JSONB NOT NULL,
 
-  -- Who made the change
-  changed_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  -- Who made the change (user_id from auth.uid() / profiles.id)
+  changed_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   changed_by_email TEXT,
 
   -- When and why
@@ -88,10 +88,12 @@ RETURNS TRIGGER AS $$
 DECLARE
   admin_email TEXT;
 BEGIN
-  -- Get admin email if available
-  SELECT email INTO admin_email
-  FROM admin_users
-  WHERE id = NEW.updated_by;
+  -- Get admin email from profiles via admin_users.user_id
+  -- Note: admin_users.user_id references profiles.id (which is auth.uid())
+  SELECT p.email INTO admin_email
+  FROM profiles p
+  JOIN admin_users a ON a.user_id = p.id
+  WHERE a.user_id = NEW.updated_by;
 
   -- Insert changelog entry
   INSERT INTO commission_settings_changelog (
@@ -126,7 +128,7 @@ CREATE POLICY "commission_changelog_select_policy" ON commission_settings_change
   USING (
     EXISTS (
       SELECT 1 FROM admin_users
-      WHERE id = auth.uid()
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -197,8 +199,8 @@ CREATE TABLE IF NOT EXISTS settings_changelog (
   old_value JSONB,
   new_value JSONB NOT NULL,
 
-  -- Who made the change
-  changed_by UUID REFERENCES admin_users(id) ON DELETE SET NULL,
+  -- Who made the change (user_id from auth.uid() / profiles.id)
+  changed_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
   changed_by_email TEXT,
 
   -- When and why
@@ -242,10 +244,12 @@ RETURNS TRIGGER AS $$
 DECLARE
   admin_email TEXT;
 BEGIN
-  -- Get admin email if available
-  SELECT email INTO admin_email
-  FROM admin_users
-  WHERE id = auth.uid();
+  -- Get admin email from profiles via admin_users.user_id
+  -- Note: auth.uid() = admin_users.user_id = profiles.id
+  SELECT p.email INTO admin_email
+  FROM profiles p
+  JOIN admin_users a ON a.user_id = p.id
+  WHERE a.user_id = auth.uid();
 
   -- Insert changelog entry
   INSERT INTO settings_changelog (
@@ -289,7 +293,7 @@ CREATE POLICY "app_settings_select_policy" ON app_settings
     is_sensitive = FALSE
     OR EXISTS (
       SELECT 1 FROM admin_users
-      WHERE id = auth.uid()
+      WHERE user_id = auth.uid()
     )
   );
 
@@ -300,14 +304,14 @@ CREATE POLICY "app_settings_modify_policy" ON app_settings
   USING (
     EXISTS (
       SELECT 1 FROM admin_users
-      WHERE id = auth.uid()
+      WHERE user_id = auth.uid()
       AND role IN ('super_admin', 'admin', 'operations_manager')
     )
   )
   WITH CHECK (
     EXISTS (
       SELECT 1 FROM admin_users
-      WHERE id = auth.uid()
+      WHERE user_id = auth.uid()
       AND role IN ('super_admin', 'admin', 'operations_manager')
     )
   );
@@ -319,7 +323,7 @@ CREATE POLICY "settings_changelog_select_policy" ON settings_changelog
   USING (
     EXISTS (
       SELECT 1 FROM admin_users
-      WHERE id = auth.uid()
+      WHERE user_id = auth.uid()
     )
   );
 
