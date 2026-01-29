@@ -79,9 +79,7 @@ export function DeliverySettingsTab({ isRTL }: DeliverySettingsTabProps) {
       <Card>
         <CardContent className="p-8 flex items-center justify-center">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          <span className="ms-2 text-gray-600">
-            {isRTL ? 'جاري التحميل...' : 'Loading...'}
-          </span>
+          <span className="ms-2 text-gray-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
         </CardContent>
       </Card>
     );
@@ -104,7 +102,9 @@ export function DeliverySettingsTab({ isRTL }: DeliverySettingsTabProps) {
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card>
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
-          <CardTitle className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Truck className="w-5 h-5 text-primary" />
             {isRTL ? 'إعدادات التوصيل' : 'Delivery Settings'}
           </CardTitle>
@@ -169,9 +169,7 @@ export function DeliverySettingsTab({ isRTL }: DeliverySettingsTabProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                {isRTL
-                  ? 'الوقت المتوقع للتوصيل بالدقائق'
-                  : 'Expected delivery time in minutes'}
+                {isRTL ? 'الوقت المتوقع للتوصيل بالدقائق' : 'Expected delivery time in minutes'}
               </p>
             </div>
 
@@ -227,9 +225,7 @@ export function DeliverySettingsTab({ isRTL }: DeliverySettingsTabProps) {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                {isRTL
-                  ? 'أقصى نطاق يمكن للتاجر تعيينه'
-                  : 'Maximum radius a provider can set'}
+                {isRTL ? 'أقصى نطاق يمكن للتاجر تعيينه' : 'Maximum radius a provider can set'}
               </p>
             </div>
           </div>
@@ -279,17 +275,13 @@ export function DeliverySettingsTab({ isRTL }: DeliverySettingsTabProps) {
               {updateMutation.isSuccess && (
                 <div className="flex items-center gap-2 text-green-600">
                   <CheckCircle2 className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}</span>
                 </div>
               )}
               {updateMutation.isError && (
                 <div className="flex items-center gap-2 text-red-600">
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm">
-                    {isRTL ? 'فشل في الحفظ' : 'Failed to save'}
-                  </span>
+                  <span className="text-sm">{isRTL ? 'فشل في الحفظ' : 'Failed to save'}</span>
                 </div>
               )}
             </div>

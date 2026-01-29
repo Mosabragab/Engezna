@@ -12,32 +12,32 @@ Before implementing new features, we analyzed the existing database structure to
 
 ### Existing Tables (DO NOT DUPLICATE)
 
-| Table                       | Purpose                              | Status     |
-| --------------------------- | ------------------------------------ | ---------- |
-| `commission_settings`       | Commission rates, grace period       | ✅ Exists   |
-| `notification_preferences`  | User notification settings           | ✅ Exists   |
-| `provider_notifications`    | Notification log for providers       | ✅ Exists   |
-| `customer_notifications`    | Notification log for customers       | ✅ Exists   |
-| `providers.business_hours`  | Provider working hours (JSONB)       | ✅ Exists   |
-| `providers.custom_order_settings` | Custom order config (JSONB)    | ✅ Exists   |
+| Table                             | Purpose                        | Status    |
+| --------------------------------- | ------------------------------ | --------- |
+| `commission_settings`             | Commission rates, grace period | ✅ Exists |
+| `notification_preferences`        | User notification settings     | ✅ Exists |
+| `provider_notifications`          | Notification log for providers | ✅ Exists |
+| `customer_notifications`          | Notification log for customers | ✅ Exists |
+| `providers.business_hours`        | Provider working hours (JSONB) | ✅ Exists |
+| `providers.custom_order_settings` | Custom order config (JSONB)    | ✅ Exists |
 
 ### New Tables (Created by this plan)
 
-| Table                          | Purpose                              | Status     |
-| ------------------------------ | ------------------------------------ | ---------- |
-| `app_settings`                 | Non-commission platform settings     | 🆕 New      |
-| `settings_changelog`           | Audit trail for app_settings         | 🆕 New      |
-| `commission_settings_changelog`| Audit trail for commission_settings  | 🆕 New      |
+| Table                           | Purpose                             | Status |
+| ------------------------------- | ----------------------------------- | ------ |
+| `app_settings`                  | Non-commission platform settings    | 🆕 New |
+| `settings_changelog`            | Audit trail for app_settings        | 🆕 New |
+| `commission_settings_changelog` | Audit trail for commission_settings | 🆕 New |
 
 ### Enhanced Columns
 
-| Table                      | Column              | Purpose                    | Status     |
-| -------------------------- | ------------------- | -------------------------- | ---------- |
-| `profiles`                 | `preferred_language`| User language preference   | 🆕 Added    |
-| `notification_preferences` | `push_enabled`      | Push notification channel  | 🆕 Added    |
-| `notification_preferences` | `email_enabled`     | Email notification channel | 🆕 Added    |
-| `notification_preferences` | `sms_enabled`       | SMS notification channel   | 🆕 Added    |
-| `notification_preferences` | `whatsapp_enabled`  | WhatsApp channel           | 🆕 Added    |
+| Table                      | Column               | Purpose                    | Status   |
+| -------------------------- | -------------------- | -------------------------- | -------- |
+| `profiles`                 | `preferred_language` | User language preference   | 🆕 Added |
+| `notification_preferences` | `push_enabled`       | Push notification channel  | 🆕 Added |
+| `notification_preferences` | `email_enabled`      | Email notification channel | 🆕 Added |
+| `notification_preferences` | `sms_enabled`        | SMS notification channel   | 🆕 Added |
+| `notification_preferences` | `whatsapp_enabled`   | WhatsApp channel           | 🆕 Added |
 
 ---
 
@@ -86,19 +86,19 @@ Before implementing new features, we analyzed the existing database structure to
 
 ## Requirements Checklist
 
-| Requirement              | Implementation                                     | Status      |
-| ------------------------ | -------------------------------------------------- | ----------- |
-| Caching Strategy         | React Query with 15-minute stale time              | ⏳ Pending  |
-| Type Safety              | Zod schemas for all JSONB validation               | ⏳ Pending  |
-| Audit Trail (Commission) | `commission_settings_changelog` table              | ✅ Complete |
-| Audit Trail (App)        | `settings_changelog` table with full tracking      | ✅ Complete |
-| Commission Settings      | Uses existing `commission_settings` table          | ✅ Exists   |
-| Security Deposit         | `app_settings` with key `security_deposit`         | ✅ Complete |
-| Platform Info            | `app_settings` with key `platform_info`            | ✅ Complete |
-| Payment Methods          | `app_settings` with key `payment_methods`          | ✅ Complete |
-| Delivery Defaults        | `app_settings` with key `delivery_defaults`        | ✅ Complete |
-| User Language            | `profiles.preferred_language` column               | ✅ Complete |
-| Notification Channels    | `notification_preferences` enhanced columns        | ✅ Complete |
+| Requirement              | Implementation                                | Status      |
+| ------------------------ | --------------------------------------------- | ----------- |
+| Caching Strategy         | React Query with 15-minute stale time         | ⏳ Pending  |
+| Type Safety              | Zod schemas for all JSONB validation          | ⏳ Pending  |
+| Audit Trail (Commission) | `commission_settings_changelog` table         | ✅ Complete |
+| Audit Trail (App)        | `settings_changelog` table with full tracking | ✅ Complete |
+| Commission Settings      | Uses existing `commission_settings` table     | ✅ Exists   |
+| Security Deposit         | `app_settings` with key `security_deposit`    | ✅ Complete |
+| Platform Info            | `app_settings` with key `platform_info`       | ✅ Complete |
+| Payment Methods          | `app_settings` with key `payment_methods`     | ✅ Complete |
+| Delivery Defaults        | `app_settings` with key `delivery_defaults`   | ✅ Complete |
+| User Language            | `profiles.preferred_language` column          | ✅ Complete |
+| Notification Channels    | `notification_preferences` enhanced columns   | ✅ Complete |
 
 ---
 
@@ -140,13 +140,13 @@ CREATE TABLE app_settings (
 
 ### 1.3 Settings Categories
 
-| Category      | Settings                                             |
-| ------------- | ---------------------------------------------------- |
-| security      | security_deposit                                     |
-| general       | platform_info (app_name, support_email, etc.)        |
-| payment       | payment_methods (cod_enabled, online_enabled, etc.)  |
-| delivery      | delivery_defaults (default_fee, radius, time, etc.)  |
-| notifications | notification_defaults (timing settings)              |
+| Category      | Settings                                            |
+| ------------- | --------------------------------------------------- |
+| security      | security_deposit                                    |
+| general       | platform_info (app_name, support_email, etc.)       |
+| payment       | payment_methods (cod_enabled, online_enabled, etc.) |
+| delivery      | delivery_defaults (default_fee, radius, time, etc.) |
+| notifications | notification_defaults (timing settings)             |
 
 ### 1.4 Notification Preferences (EXISTING - ENHANCED)
 
@@ -198,11 +198,13 @@ export const SecurityDepositSchema = z.object({
   amount: z.number().min(0).default(0),
   currency: z.enum(['EGP', 'USD']).default('EGP'),
   is_required_for_new_providers: z.boolean().default(false),
-  refund_rules: z.object({
-    full_refund_after_days: z.number().int().min(0).default(180),
-    partial_refund_percentage: z.number().min(0).max(100).default(50),
-    conditions: z.array(z.string()).default([]),
-  }).optional(),
+  refund_rules: z
+    .object({
+      full_refund_after_days: z.number().int().min(0).default(180),
+      partial_refund_percentage: z.number().min(0).max(100).default(50),
+      conditions: z.array(z.string()).default([]),
+    })
+    .optional(),
   terms_ar: z.string().optional(),
   terms_en: z.string().optional(),
 });
@@ -277,11 +279,7 @@ export type NotificationPreferences = z.infer<typeof NotificationPreferencesSche
 ### 2.6 Validation Helper
 
 ```typescript
-export function validateSetting<T>(
-  schema: z.ZodSchema<T>,
-  value: unknown,
-  fallback: T
-): T {
+export function validateSetting<T>(schema: z.ZodSchema<T>, value: unknown, fallback: T): T {
   const result = schema.safeParse(value);
   if (result.success) {
     return result.data;
@@ -309,10 +307,7 @@ export function useCommissionSettings() {
     queryKey: COMMISSION_QUERY_KEY,
     queryFn: async () => {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from('commission_settings')
-        .select('*')
-        .single();
+      const { data, error } = await supabase.from('commission_settings').select('*').single();
 
       if (error) throw error;
       return CommissionSettingsSchema.parse(data);
@@ -340,21 +335,20 @@ export function useAppSettings() {
       if (error) throw error;
 
       // Transform to key-value map
-      return data.reduce((acc, row) => {
-        acc[row.setting_key] = row.setting_value;
-        return acc;
-      }, {} as Record<string, unknown>);
+      return data.reduce(
+        (acc, row) => {
+          acc[row.setting_key] = row.setting_value;
+          return acc;
+        },
+        {} as Record<string, unknown>
+      );
     },
     staleTime: STALE_TIME,
     refetchOnWindowFocus: false,
   });
 }
 
-export function useSetting<T>(
-  key: string,
-  schema: z.ZodSchema<T>,
-  fallback: T
-) {
+export function useSetting<T>(key: string, schema: z.ZodSchema<T>, fallback: T) {
   const { data: settings, isLoading, error } = useAppSettings();
 
   const value = useMemo(() => {
@@ -489,13 +483,13 @@ If issues occur:
 
 The migration file (`20260128000013_settings_enhancements.sql`) is designed to be **safe for existing data**:
 
-| Operation                        | Safety Mechanism                           |
-| -------------------------------- | ------------------------------------------ |
-| `ALTER TABLE ADD COLUMN`         | Uses `IF NOT EXISTS`                       |
-| New columns                      | All have `DEFAULT` values                  |
-| New tables                       | Uses `CREATE TABLE IF NOT EXISTS`          |
-| Triggers                         | Uses `DROP TRIGGER IF EXISTS` before create|
-| Seed data                        | Uses `ON CONFLICT DO NOTHING`              |
+| Operation                | Safety Mechanism                            |
+| ------------------------ | ------------------------------------------- |
+| `ALTER TABLE ADD COLUMN` | Uses `IF NOT EXISTS`                        |
+| New columns              | All have `DEFAULT` values                   |
+| New tables               | Uses `CREATE TABLE IF NOT EXISTS`           |
+| Triggers                 | Uses `DROP TRIGGER IF EXISTS` before create |
+| Seed data                | Uses `ON CONFLICT DO NOTHING`               |
 
 ---
 

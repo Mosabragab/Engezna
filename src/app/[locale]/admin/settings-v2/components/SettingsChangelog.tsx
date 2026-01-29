@@ -42,9 +42,7 @@ export function SettingsChangelogDisplay({
     return (
       <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center text-gray-500">
         <History className="w-5 h-5 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">
-          {isRTL ? 'لا توجد تغييرات سابقة' : 'No previous changes'}
-        </p>
+        <p className="text-sm">{isRTL ? 'لا توجد تغييرات سابقة' : 'No previous changes'}</p>
       </div>
     );
   }

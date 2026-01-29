@@ -266,14 +266,8 @@ export function useUpdateAppSetting() {
 /**
  * Hook to fetch app settings changelog
  */
-export function useAppSettingsChangelog(
-  key?: string,
-  limit = 50
-): QueryState<SettingsChangelog[]> {
-  const queryFn = useCallback(
-    () => fetchAppSettingsChangelog(key, limit),
-    [key, limit]
-  );
+export function useAppSettingsChangelog(key?: string, limit = 50): QueryState<SettingsChangelog[]> {
+  const queryFn = useCallback(() => fetchAppSettingsChangelog(key, limit), [key, limit]);
   return useQuery(queryFn);
 }
 
@@ -365,17 +359,12 @@ export function useUpdateNotificationPreferences() {
 /**
  * Hook to fetch user's preferred language
  */
-export function useUserLanguage(
-  userId: string | null | undefined
-): QueryState<'ar' | 'en'> {
-  const queryFn = useCallback(
-    async (): Promise<'ar' | 'en'> => {
-      if (!userId) return 'ar';
-      const result = await fetchUserLanguage(userId);
-      return result as 'ar' | 'en';
-    },
-    [userId]
-  );
+export function useUserLanguage(userId: string | null | undefined): QueryState<'ar' | 'en'> {
+  const queryFn = useCallback(async (): Promise<'ar' | 'en'> => {
+    if (!userId) return 'ar';
+    const result = await fetchUserLanguage(userId);
+    return result as 'ar' | 'en';
+  }, [userId]);
   return useQuery<'ar' | 'en'>(queryFn, { enabled: !!userId });
 }
 
@@ -404,9 +393,7 @@ export function useUpdateUserLanguage() {
 export function useRefreshSettings() {
   return useCallback(() => {
     // No-op - individual hooks should call their own refetch
-    console.warn(
-      'useRefreshSettings is deprecated. Use refetch() on individual hooks instead.'
-    );
+    console.warn('useRefreshSettings is deprecated. Use refetch() on individual hooks instead.');
     return Promise.resolve();
   }, []);
 }

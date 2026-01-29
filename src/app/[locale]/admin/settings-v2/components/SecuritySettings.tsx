@@ -112,9 +112,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
       }
     } catch (err) {
       console.error('Error loading maintenance settings:', err);
-      setMaintenanceError(
-        isRTL ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred'
-      );
+      setMaintenanceError(isRTL ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
     setLoadingMaintenance(false);
@@ -177,9 +175,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
         );
       } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
         setMaintenanceError(
-          isRTL
-            ? 'لا تملك صلاحية تعديل الإعدادات'
-            : 'You do not have permission to modify settings'
+          isRTL ? 'لا تملك صلاحية تعديل الإعدادات' : 'You do not have permission to modify settings'
         );
       } else {
         setMaintenanceError(
@@ -214,9 +210,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError(
-        isRTL ? 'كلمة المرور الجديدة غير متطابقة' : 'New passwords do not match'
-      );
+      setPasswordError(isRTL ? 'كلمة المرور الجديدة غير متطابقة' : 'New passwords do not match');
       return;
     }
 
@@ -231,9 +225,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
     });
 
     if (signInError) {
-      setPasswordError(
-        isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect'
-      );
+      setPasswordError(isRTL ? 'كلمة المرور الحالية غير صحيحة' : 'Current password is incorrect');
       setChangingPassword(false);
       return;
     }
@@ -244,9 +236,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
     });
 
     if (updateError) {
-      setPasswordError(
-        isRTL ? 'فشل في تغيير كلمة المرور' : 'Failed to change password'
-      );
+      setPasswordError(isRTL ? 'فشل في تغيير كلمة المرور' : 'Failed to change password');
       setChangingPassword(false);
       return;
     }
@@ -265,7 +255,9 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
       {/* Maintenance Mode Card */}
       <Card className="border-amber-200">
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
-          <CardTitle className={`flex items-center gap-2 text-amber-700 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}>
+          <CardTitle
+            className={`flex items-center gap-2 text-amber-700 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Wrench className="w-5 h-5" />
             {isRTL ? 'وضع الصيانة' : 'Maintenance Mode'}
           </CardTitle>
@@ -284,8 +276,12 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
           ) : (
             <>
               {/* Provider Maintenance */}
-              <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+              <div
+                className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
+                <div
+                  className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                >
                   <Store className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-slate-800">
@@ -323,8 +319,12 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               </div>
 
               {/* Customer Maintenance */}
-              <div className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+              <div
+                className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
+                <div
+                  className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+                >
                   <Users className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-medium text-slate-800">
@@ -362,7 +362,9 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               </div>
 
               {/* Save Button - Below toggles */}
-              <div className={`flex items-center justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/30 ${isRTL ? 'flex-row-reverse' : ''}`}>
+              <div
+                className={`flex items-center justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/30 ${isRTL ? 'flex-row-reverse' : ''}`}
+              >
                 <div className="flex items-center gap-2">
                   {maintenanceSuccess && (
                     <div className="flex items-center gap-2 text-green-600">
@@ -395,7 +397,9 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               </div>
 
               {/* Launch Info */}
-              <div className={`flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}>
+              <div
+                className={`flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+              >
                 <AlertTriangle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-green-800">
@@ -446,7 +450,6 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   />
                 </div>
               </div>
-
             </>
           )}
         </CardContent>
@@ -460,9 +463,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
             {isRTL ? 'تغيير كلمة المرور' : 'Change Password'}
           </CardTitle>
           <CardDescription>
-            {isRTL
-              ? 'قم بتحديث كلمة مرور حسابك الإداري'
-              : 'Update your admin account password'}
+            {isRTL ? 'قم بتحديث كلمة مرور حسابك الإداري' : 'Update your admin account password'}
           </CardDescription>
         </CardHeader>
 
@@ -472,9 +473,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-gray-500" />
               <div>
-                <p className="text-sm text-gray-500">
-                  {isRTL ? 'البريد الإلكتروني' : 'Email'}
-                </p>
+                <p className="text-sm text-gray-500">{isRTL ? 'البريد الإلكتروني' : 'Email'}</p>
                 <p className="font-medium text-gray-900">{user?.email}</p>
               </div>
             </div>
@@ -493,9 +492,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   type={showCurrentPassword ? 'text' : 'password'}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder={
-                    isRTL ? 'أدخل كلمة المرور الحالية' : 'Enter current password'
-                  }
+                  placeholder={isRTL ? 'أدخل كلمة المرور الحالية' : 'Enter current password'}
                   className="pe-10"
                 />
                 <button
@@ -514,18 +511,14 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
             {/* New Password */}
             <div className="space-y-2">
-              <Label htmlFor="new_password">
-                {isRTL ? 'كلمة المرور الجديدة' : 'New Password'}
-              </Label>
+              <Label htmlFor="new_password">{isRTL ? 'كلمة المرور الجديدة' : 'New Password'}</Label>
               <div className="relative">
                 <Input
                   id="new_password"
                   type={showNewPassword ? 'text' : 'password'}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder={
-                    isRTL ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'
-                  }
+                  placeholder={isRTL ? 'أدخل كلمة المرور الجديدة' : 'Enter new password'}
                   className="pe-10"
                 />
                 <button
@@ -533,11 +526,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {showNewPassword ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -553,9 +542,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder={
-                    isRTL ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'
-                  }
+                  placeholder={isRTL ? 'أعد إدخال كلمة المرور الجديدة' : 'Re-enter new password'}
                   className="pe-10"
                 />
                 <button
@@ -585,9 +572,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
                 <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm">
-                  {isRTL
-                    ? 'تم تغيير كلمة المرور بنجاح'
-                    : 'Password changed successfully'}
+                  {isRTL ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully'}
                 </span>
               </div>
             )}
@@ -615,9 +600,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
             <div>
-              <p className="font-medium text-blue-800">
-                {isRTL ? 'نصائح أمنية' : 'Security Tips'}
-              </p>
+              <p className="font-medium text-blue-800">{isRTL ? 'نصائح أمنية' : 'Security Tips'}</p>
               <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
                 <li>
                   {isRTL
@@ -630,9 +613,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                     : "Don't share your password with anyone"}
                 </li>
                 <li>
-                  {isRTL
-                    ? 'قم بتغيير كلمة المرور بشكل دوري'
-                    : 'Change your password regularly'}
+                  {isRTL ? 'قم بتغيير كلمة المرور بشكل دوري' : 'Change your password regularly'}
                 </li>
               </ul>
             </div>
