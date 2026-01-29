@@ -2,6 +2,7 @@
  * Security & System Settings Tab
  *
  * Manages maintenance mode (providers/customers) and admin password change.
+ * Consistent design with other settings tabs (Commission, General, etc.)
  */
 
 'use client';
@@ -25,6 +26,8 @@ import {
   Mail,
   Store,
   Users,
+  Save,
+  Info,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -253,12 +256,12 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
   return (
     <div className="space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Maintenance Mode Card */}
-      <Card className="border-amber-200">
+      <Card>
         <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
           <CardTitle
-            className={`flex items-center gap-2 text-amber-700 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
           >
-            <Wrench className="w-5 h-5" />
+            <Wrench className="w-5 h-5 text-primary" />
             {isRTL ? 'وضع الصيانة' : 'Maintenance Mode'}
           </CardTitle>
           <CardDescription>
@@ -268,155 +271,71 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           {loadingMaintenance ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="w-6 h-6 animate-spin text-amber-600" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="ms-2 text-gray-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</span>
             </div>
           ) : (
             <>
-              {/* Provider Maintenance */}
-              <div
-                className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}
-              >
-                <div
-                  className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
-                >
-                  <Store className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-slate-800">
+              {/* Provider Maintenance Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className={isRTL ? 'text-right' : 'text-left'}>
+                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Store className="w-4 h-4 text-blue-600" />
+                    <Label className="font-medium">
                       {isRTL ? 'صيانة التجار' : 'Provider Maintenance'}
-                    </p>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {isRTL
-                        ? 'عند التفعيل، لن يتمكن التجار من الوصول للوحة التحكم'
-                        : 'When enabled, providers cannot access the dashboard'}
-                    </p>
+                    </Label>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={maintenance.providers_maintenance}
-                  onClick={() =>
-                    setMaintenance((prev) => ({
-                      ...prev,
-                      providers_maintenance: !prev.providers_maintenance,
-                    }))
-                  }
-                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                    maintenance.providers_maintenance ? 'bg-primary' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                      maintenance.providers_maintenance
-                        ? 'ltr:translate-x-8 rtl:translate-x-1'
-                        : 'ltr:translate-x-1 rtl:translate-x-8'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Customer Maintenance */}
-              <div
-                className={`flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 ${isRTL ? 'flex-row-reverse' : ''}`}
-              >
-                <div
-                  className={`flex items-start gap-3 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
-                >
-                  <Users className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-slate-800">
-                      {isRTL ? 'صيانة العملاء' : 'Customer Maintenance'}
-                    </p>
-                    <p className="text-sm text-slate-600 mt-1">
-                      {isRTL
-                        ? 'عند التفعيل، لن يتمكن العملاء من تصفح المتاجر أو إنشاء طلبات'
-                        : 'When enabled, customers cannot browse stores or create orders'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={maintenance.customers_maintenance}
-                  onClick={() =>
-                    setMaintenance((prev) => ({
-                      ...prev,
-                      customers_maintenance: !prev.customers_maintenance,
-                    }))
-                  }
-                  className={`relative inline-flex h-7 w-14 flex-shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                    maintenance.customers_maintenance ? 'bg-primary' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                      maintenance.customers_maintenance
-                        ? 'ltr:translate-x-8 rtl:translate-x-1'
-                        : 'ltr:translate-x-1 rtl:translate-x-8'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Save Button - Below toggles */}
-              <div
-                className={`flex items-center justify-between p-4 bg-primary/10 rounded-lg border-2 border-primary/30 ${isRTL ? 'flex-row-reverse' : ''}`}
-              >
-                <div className="flex items-center gap-2">
-                  {maintenanceSuccess && (
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-medium">
-                        {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
-                      </span>
-                    </div>
-                  )}
-                  {maintenanceError && (
-                    <div className="flex items-center gap-2 text-red-600">
-                      <AlertCircle className="w-5 h-5" />
-                      <span className="font-medium">{maintenanceError}</span>
-                    </div>
-                  )}
-                </div>
-                <Button
-                  onClick={handleSaveMaintenance}
-                  disabled={savingMaintenance}
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white font-bold px-8 shadow-md"
-                >
-                  {savingMaintenance ? (
-                    <Loader2 className="w-5 h-5 animate-spin me-2" />
-                  ) : (
-                    <Wrench className="w-5 h-5 me-2" />
-                  )}
-                  {isRTL ? 'حفظ الإعدادات' : 'Save Settings'}
-                </Button>
-              </div>
-
-              {/* Launch Info */}
-              <div
-                className={`flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
-              >
-                <AlertTriangle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium text-green-800">
-                    {isRTL ? 'نصيحة للإطلاق' : 'Launch Tip'}
-                  </p>
-                  <p className="text-sm text-green-700 mt-1">
+                  <p className="text-sm text-gray-500 mt-1">
                     {isRTL
-                      ? 'للمرحلة الأولى: أغلق وصول العملاء واسمح للتجار بالتسجيل والإعداد'
-                      : 'For Phase 1: Disable customer access and allow providers to register and setup'}
+                      ? 'عند التفعيل، لن يتمكن التجار من الوصول للوحة التحكم'
+                      : 'When enabled, providers cannot access the dashboard'}
                   </p>
                 </div>
+                <Switch
+                  checked={maintenance.providers_maintenance}
+                  onCheckedChange={(checked) =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      providers_maintenance: checked,
+                    }))
+                  }
+                />
+              </div>
+
+              {/* Customer Maintenance Toggle */}
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className={isRTL ? 'text-right' : 'text-left'}>
+                  <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                    <Users className="w-4 h-4 text-purple-600" />
+                    <Label className="font-medium">
+                      {isRTL ? 'صيانة العملاء' : 'Customer Maintenance'}
+                    </Label>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {isRTL
+                      ? 'عند التفعيل، لن يتمكن العملاء من تصفح المتاجر أو إنشاء طلبات'
+                      : 'When enabled, customers cannot browse stores or create orders'}
+                  </p>
+                </div>
+                <Switch
+                  checked={maintenance.customers_maintenance}
+                  onCheckedChange={(checked) =>
+                    setMaintenance((prev) => ({
+                      ...prev,
+                      customers_maintenance: checked,
+                    }))
+                  }
+                />
               </div>
 
               {/* Maintenance Messages */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="msg_ar">
+                  <Label htmlFor="msg_ar" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
                     {isRTL ? 'رسالة الصيانة (عربي)' : 'Maintenance Message (Arabic)'}
                   </Label>
                   <Input
@@ -433,7 +352,8 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="msg_en">
+                  <Label htmlFor="msg_en" className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-500" />
                     {isRTL ? 'رسالة الصيانة (إنجليزي)' : 'Maintenance Message (English)'}
                   </Label>
                   <Input
@@ -450,6 +370,55 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   />
                 </div>
               </div>
+
+              {/* Launch Tip Info */}
+              <div
+                className={`flex items-start gap-3 p-4 bg-amber-50 rounded-lg border border-amber-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+              >
+                <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-800">
+                    {isRTL ? 'نصيحة للإطلاق' : 'Launch Tip'}
+                  </p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    {isRTL
+                      ? 'للمرحلة الأولى: أغلق وصول العملاء واسمح للتجار بالتسجيل والإعداد'
+                      : 'For Phase 1: Disable customer access and allow providers to register and setup'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Save Button - Consistent with other tabs */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div>
+                  {maintenanceSuccess && (
+                    <div className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span className="text-sm">
+                        {isRTL ? 'تم الحفظ بنجاح' : 'Saved successfully'}
+                      </span>
+                    </div>
+                  )}
+                  {maintenanceError && (
+                    <div className="flex items-center gap-2 text-red-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <span className="text-sm">{maintenanceError}</span>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  onClick={handleSaveMaintenance}
+                  disabled={savingMaintenance}
+                  className="flex items-center gap-2"
+                >
+                  {savingMaintenance ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  {isRTL ? 'حفظ التغييرات' : 'Save Changes'}
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
@@ -457,8 +426,10 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
       {/* Password Change Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
             <Lock className="w-5 h-5 text-primary" />
             {isRTL ? 'تغيير كلمة المرور' : 'Change Password'}
           </CardTitle>
@@ -469,21 +440,24 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
         <CardContent className="space-y-6">
           {/* Admin Email Display */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500">{isRTL ? 'البريد الإلكتروني' : 'Email'}</p>
-                <p className="font-medium text-gray-900">{user?.email}</p>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Mail className="w-4 h-4 text-gray-500" />
+                <Label className="font-medium">
+                  {isRTL ? 'البريد الإلكتروني' : 'Email Address'}
+                </Label>
               </div>
+              <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
             </div>
           </div>
 
-          {/* Password Fields */}
-          <div className="space-y-4 max-w-md">
+          {/* Password Fields Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Current Password */}
             <div className="space-y-2">
-              <Label htmlFor="current_password">
+              <Label htmlFor="current_password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-gray-500" />
                 {isRTL ? 'كلمة المرور الحالية' : 'Current Password'}
               </Label>
               <div className="relative">
@@ -509,9 +483,15 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
               </div>
             </div>
 
+            {/* Empty space for grid alignment */}
+            <div className="hidden md:block" />
+
             {/* New Password */}
             <div className="space-y-2">
-              <Label htmlFor="new_password">{isRTL ? 'كلمة المرور الجديدة' : 'New Password'}</Label>
+              <Label htmlFor="new_password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-gray-500" />
+                {isRTL ? 'كلمة المرور الجديدة' : 'New Password'}
+              </Label>
               <div className="relative">
                 <Input
                   id="new_password"
@@ -529,11 +509,15 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="text-xs text-gray-500">
+                {isRTL ? 'يجب أن تكون 6 أحرف على الأقل' : 'Must be at least 6 characters'}
+              </p>
             </div>
 
             {/* Confirm New Password */}
             <div className="space-y-2">
-              <Label htmlFor="confirm_password">
+              <Label htmlFor="confirm_password" className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-gray-500" />
                 {isRTL ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
               </Label>
               <div className="relative">
@@ -557,36 +541,39 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                   )}
                 </button>
               </div>
+              <p className="text-xs text-gray-500">
+                {isRTL ? 'أعد كتابة نفس كلمة المرور' : 'Re-enter the same password'}
+              </p>
             </div>
+          </div>
 
-            {/* Error Message */}
-            {passwordError && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{passwordError}</span>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {passwordSuccess && (
-              <div className="flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
-                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">
-                  {isRTL ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully'}
-                </span>
-              </div>
-            )}
-
-            {/* Submit Button */}
+          {/* Save Button - Consistent with other tabs */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div>
+              {passwordSuccess && (
+                <div className="flex items-center gap-2 text-green-600">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span className="text-sm">
+                    {isRTL ? 'تم تغيير كلمة المرور بنجاح' : 'Password changed successfully'}
+                  </span>
+                </div>
+              )}
+              {passwordError && (
+                <div className="flex items-center gap-2 text-red-600">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm">{passwordError}</span>
+                </div>
+              )}
+            </div>
             <Button
               onClick={handleChangePassword}
               disabled={changingPassword}
-              className="w-full flex items-center justify-center gap-2"
+              className="flex items-center gap-2"
             >
               {changingPassword ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Lock className="w-4 h-4" />
+                <Save className="w-4 h-4" />
               )}
               {isRTL ? 'تغيير كلمة المرور' : 'Change Password'}
             </Button>
@@ -594,14 +581,28 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
         </CardContent>
       </Card>
 
-      {/* Security Info Card */}
-      <Card className="border-blue-200 bg-blue-50/50">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+      {/* Security Tips Card */}
+      <Card>
+        <CardHeader className={isRTL ? 'text-right' : 'text-left'}>
+          <CardTitle
+            className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse justify-end' : ''}`}
+          >
+            <Shield className="w-5 h-5 text-primary" />
+            {isRTL ? 'نصائح أمنية' : 'Security Tips'}
+          </CardTitle>
+          <CardDescription>
+            {isRTL ? 'إرشادات للحفاظ على أمان حسابك' : 'Guidelines to keep your account secure'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div
+            className={`flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200 ${isRTL ? 'flex-row-reverse text-right' : ''}`}
+          >
+            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-blue-800">{isRTL ? 'نصائح أمنية' : 'Security Tips'}</p>
-              <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+              <ul
+                className={`text-sm text-blue-700 space-y-2 ${isRTL ? 'list-disc list-inside' : 'list-disc list-inside'}`}
+              >
                 <li>
                   {isRTL
                     ? 'استخدم كلمة مرور قوية تحتوي على أحرف وأرقام ورموز'
@@ -614,6 +615,11 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
                 </li>
                 <li>
                   {isRTL ? 'قم بتغيير كلمة المرور بشكل دوري' : 'Change your password regularly'}
+                </li>
+                <li>
+                  {isRTL
+                    ? 'تأكد من تسجيل الخروج من الأجهزة غير الموثوقة'
+                    : 'Always log out from untrusted devices'}
                 </li>
               </ul>
             </div>

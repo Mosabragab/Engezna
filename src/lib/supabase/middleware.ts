@@ -7,31 +7,56 @@ import { type NextRequest, NextResponse } from 'next/server';
 type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin';
 
 /**
- * Check if maintenance mode is enabled
- * Returns cached result for 30 seconds to reduce DB queries
+ * Maintenance mode settings structure from app_settings table
  */
-let maintenanceCache: { enabled: boolean; timestamp: number } | null = null;
+interface MaintenanceSettings {
+  providers_maintenance: boolean;
+  customers_maintenance: boolean;
+  maintenance_message_ar?: string;
+  maintenance_message_en?: string;
+}
+
+/**
+ * Get maintenance settings from cache or database
+ * Returns cached result for 30 seconds to reduce DB queries
+ *
+ * Note: Reads from app_settings table (setting_key = 'maintenance_settings')
+ * which stores separate flags for providers and customers maintenance
+ */
+let maintenanceCache: { settings: MaintenanceSettings | null; timestamp: number } | null = null;
 const CACHE_DURATION = 30000; // 30 seconds
 
-async function checkMaintenanceMode(
+async function getMaintenanceSettings(
   supabase: ReturnType<typeof createServerClient>
-): Promise<boolean> {
+): Promise<MaintenanceSettings | null> {
   // Return cached result if still valid
   if (maintenanceCache && Date.now() - maintenanceCache.timestamp < CACHE_DURATION) {
-    return maintenanceCache.enabled;
+    return maintenanceCache.settings;
   }
 
   try {
-    const { data } = await supabase.from('platform_settings').select('maintenance_mode').single();
+    // Read from app_settings table (new unified settings system)
+    const { data } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'maintenance_settings')
+      .single();
 
-    const isEnabled = data?.maintenance_mode === true;
-    maintenanceCache = { enabled: isEnabled, timestamp: Date.now() };
-    return isEnabled;
+    const settings = data?.setting_value as MaintenanceSettings | null;
+    maintenanceCache = { settings, timestamp: Date.now() };
+
+    return settings;
   } catch {
     // If query fails, assume not in maintenance mode
-    return false;
+    maintenanceCache = { settings: null, timestamp: Date.now() };
+    return null;
   }
 }
+
+/**
+ * Maintenance mode type based on the route being accessed
+ */
+type MaintenanceType = 'customers' | 'providers' | 'none';
 
 /**
  * Creates a Supabase client for middleware operations
@@ -84,23 +109,58 @@ export async function updateSession(request: NextRequest) {
   // ============================================================================
   // MAINTENANCE MODE CHECK (Kill Switch)
   // ============================================================================
-  // Skip maintenance check for:
-  // - Admin routes (so admins can disable maintenance mode)
-  // - Maintenance page itself
+  // Separate maintenance modes:
+  // - customers_maintenance: blocks public pages (home, stores, products, checkout)
+  // - providers_maintenance: blocks provider dashboard (/provider/*)
+  // - Admin routes are NEVER blocked (so admins can always manage the platform)
+  //
+  // Routes that are never blocked:
+  // - Admin routes (/admin/*) - admins must always have access
+  // - Maintenance page itself (/maintenance)
+  // - Auth/Login pages - so users can still log in
   // - API routes
   // - Static files
+
   const pathWithoutLocaleForMaintenance = pathname.replace(/^\/(ar|en)/, '');
   const isAdminRoute = pathWithoutLocaleForMaintenance.startsWith('/admin');
   const isMaintenancePage = pathWithoutLocaleForMaintenance === '/maintenance';
   const isApiRoute = pathname.startsWith('/api');
   const isStaticFile = pathname.includes('.');
+  const isAuthPage =
+    pathWithoutLocaleForMaintenance.startsWith('/auth') ||
+    pathWithoutLocaleForMaintenance.startsWith('/provider/login') ||
+    pathWithoutLocaleForMaintenance.startsWith('/provider/register');
 
-  if (!isAdminRoute && !isMaintenancePage && !isApiRoute && !isStaticFile) {
-    const isMaintenanceMode = await checkMaintenanceMode(supabase);
-    if (isMaintenanceMode) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/${locale}/maintenance`;
-      return NextResponse.redirect(url);
+  // Determine which type of maintenance to check
+  const isProviderRoute =
+    pathWithoutLocaleForMaintenance === '/provider' ||
+    (pathWithoutLocaleForMaintenance.startsWith('/provider/') &&
+      !pathWithoutLocaleForMaintenance.startsWith('/provider/login') &&
+      !pathWithoutLocaleForMaintenance.startsWith('/provider/register'));
+
+  // Skip maintenance check for admin, auth, api, static files, and maintenance page
+  const shouldCheckMaintenance =
+    !isAdminRoute && !isMaintenancePage && !isApiRoute && !isStaticFile && !isAuthPage;
+
+  if (shouldCheckMaintenance) {
+    const maintenanceSettings = await getMaintenanceSettings(supabase);
+
+    if (maintenanceSettings) {
+      // Check provider maintenance for provider dashboard routes
+      if (isProviderRoute && maintenanceSettings.providers_maintenance) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/${locale}/maintenance`;
+        url.searchParams.set('type', 'provider');
+        return NextResponse.redirect(url);
+      }
+
+      // Check customer maintenance for public pages (non-provider routes)
+      if (!isProviderRoute && maintenanceSettings.customers_maintenance) {
+        const url = request.nextUrl.clone();
+        url.pathname = `/${locale}/maintenance`;
+        url.searchParams.set('type', 'customer');
+        return NextResponse.redirect(url);
+      }
     }
   }
 
