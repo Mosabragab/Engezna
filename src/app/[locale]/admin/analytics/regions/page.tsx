@@ -465,7 +465,7 @@ export default function AdminRegionalAnalyticsPage() {
       <>
         <div className="h-16 bg-white border-b border-slate-200 animate-pulse" />
         <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent"></div>
         </div>
       </>
     );
@@ -488,7 +488,7 @@ export default function AdminRegionalAnalyticsPage() {
               {locale === 'ar' ? 'غير مصرح' : 'Unauthorized'}
             </h1>
             <Link href={`/${locale}/auth/login`}>
-              <Button size="lg" className="bg-red-600 hover:bg-red-700">
+              <Button size="lg" className="bg-primary hover:bg-primary/90">
                 {locale === 'ar' ? 'تسجيل الدخول' : 'Login'}
               </Button>
             </Link>
@@ -516,7 +516,7 @@ export default function AdminRegionalAnalyticsPage() {
           <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
           <button
             onClick={() => handleBreadcrumbClick('governorates')}
-            className={`${viewLevel === 'governorates' ? 'text-red-600 font-medium' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`${viewLevel === 'governorates' ? 'text-primary font-medium' : 'text-slate-500 hover:text-slate-700'}`}
           >
             {locale === 'ar' ? 'المحافظات' : 'Governorates'}
           </button>
@@ -525,7 +525,7 @@ export default function AdminRegionalAnalyticsPage() {
               <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
               <button
                 onClick={() => handleBreadcrumbClick('cities')}
-                className={`${viewLevel === 'cities' ? 'text-red-600 font-medium' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`${viewLevel === 'cities' ? 'text-primary font-medium' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 {locale === 'ar'
                   ? governorates.find((g) => g.id === selectedGovernorate)?.name_ar
@@ -536,7 +536,7 @@ export default function AdminRegionalAnalyticsPage() {
           {selectedCity && (
             <>
               <ChevronRight className={`w-4 h-4 text-slate-400 ${isRTL ? 'rotate-180' : ''}`} />
-              <span className="text-red-600 font-medium">
+              <span className="text-primary font-medium">
                 {locale === 'ar'
                   ? cities.find((c) => c.id === selectedCity)?.name_ar
                   : cities.find((c) => c.id === selectedCity)?.name_en}
@@ -553,7 +553,7 @@ export default function AdminRegionalAnalyticsPage() {
               onClick={() => setPeriodFilter(period)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 periodFilter === period
-                  ? 'bg-red-600 text-white shadow-md'
+                  ? 'bg-primary text-white shadow-md'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
@@ -660,7 +660,7 @@ export default function AdminRegionalAnalyticsPage() {
                     onClick={() => handleBreadcrumbClick(level)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                       viewLevel === level
-                        ? 'bg-red-600 text-white'
+                        ? 'bg-primary text-white'
                         : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
@@ -754,7 +754,7 @@ export default function AdminRegionalAnalyticsPage() {
                       </div>
                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-red-500 rounded-full"
+                          className="h-full bg-primary rounded-full"
                           style={{ width: `${(region.revenue / maxRevenue) * 100}%` }}
                         />
                       </div>
