@@ -34,6 +34,7 @@ import {
   User as UserIcon,
   Eye,
   AlertTriangle,
+  AlertCircle,
 } from 'lucide-react';
 
 interface Provider {
@@ -109,6 +110,8 @@ export default function ProviderDetailPage() {
   const [showCommissionModal, setShowCommissionModal] = useState(false);
   const [newCommissionRate, setNewCommissionRate] = useState(0);
   const [commissionLoading, setCommissionLoading] = useState(false);
+  const [commissionError, setCommissionError] = useState<string | null>(null);
+  const [commissionSuccess, setCommissionSuccess] = useState(false);
 
   // Define loadProviderStats first (called by loadProvider)
   const loadProviderStats = useCallback(async () => {
@@ -251,6 +254,8 @@ export default function ProviderDetailPage() {
 
   async function updateCommission() {
     setCommissionLoading(true);
+    setCommissionError(null);
+    setCommissionSuccess(false);
 
     try {
       const response = await fetch('/api/admin/providers', {
@@ -266,11 +271,20 @@ export default function ProviderDetailPage() {
       const result = await response.json();
 
       if (result.success) {
+        setCommissionSuccess(true);
         await loadProvider();
-        setShowCommissionModal(false);
+        setTimeout(() => {
+          setShowCommissionModal(false);
+          setCommissionSuccess(false);
+        }, 1500);
+      } else {
+        setCommissionError(
+          result.error || (locale === 'ar' ? 'فشل في تحديث العمولة' : 'Failed to update commission')
+        );
       }
-    } catch {
-      // Error handled silently
+    } catch (err) {
+      console.error('Commission update error:', err);
+      setCommissionError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
     }
 
     setCommissionLoading(false);
@@ -590,7 +604,14 @@ export default function ProviderDetailPage() {
                 </Button>
               ) : null}
 
-              <Button onClick={() => setShowCommissionModal(true)} variant="outline">
+              <Button
+                onClick={() => {
+                  setCommissionError(null);
+                  setCommissionSuccess(false);
+                  setShowCommissionModal(true);
+                }}
+                variant="outline"
+              >
                 <Percent className="w-4 h-4 me-2" />
                 {locale === 'ar' ? 'تعديل العمولة' : 'Edit Commission'}
               </Button>
@@ -926,6 +947,24 @@ export default function ProviderDetailPage() {
                 {provider.commission_rate}%
               </p>
             </div>
+
+            {/* Error Message */}
+            {commissionError && (
+              <div className="mb-4 flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{commissionError}</span>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {commissionSuccess && (
+              <div className="mb-4 flex items-center gap-2 text-green-600 bg-green-50 p-3 rounded-lg">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">
+                  {locale === 'ar' ? 'تم تحديث العمولة بنجاح' : 'Commission updated successfully'}
+                </span>
+              </div>
+            )}
 
             <div className="flex gap-3">
               <Button

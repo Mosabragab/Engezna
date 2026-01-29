@@ -24,6 +24,7 @@ import {
   Truck,
   Settings,
   Loader2,
+  Shield,
 } from 'lucide-react';
 
 // Tab Components
@@ -32,6 +33,7 @@ import {
   GeneralSettingsTab,
   PaymentSettingsTab,
   DeliverySettingsTab,
+  SecuritySettingsTab,
 } from './components';
 
 export default function AdminSettingsV2Page() {
@@ -72,6 +74,11 @@ export default function AdminSettingsV2Page() {
       id: 'delivery',
       label: isRTL ? 'التوصيل' : 'Delivery',
       icon: Truck,
+    },
+    {
+      id: 'security',
+      label: isRTL ? 'الأمان' : 'Security',
+      icon: Shield,
     },
   ];
 
@@ -140,6 +147,11 @@ export default function AdminSettingsV2Page() {
           {/* Delivery Tab */}
           <TabsContent value="delivery">
             <DeliverySettingsTab isRTL={isRTL} />
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security">
+            <SecuritySettingsTab isRTL={isRTL} user={user} />
           </TabsContent>
         </Tabs>
       </main>

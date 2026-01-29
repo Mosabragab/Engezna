@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Percent,
   Calendar,
@@ -126,24 +127,10 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
                   : 'Enable or disable the commission system entirely'}
               </p>
             </div>
-            <button
-              onClick={() => handleChange('commission_enabled', !formData.commission_enabled)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                formData.commission_enabled ? 'bg-primary' : 'bg-gray-300'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  formData.commission_enabled
-                    ? isRTL
-                      ? '-translate-x-6'
-                      : 'translate-x-6'
-                    : isRTL
-                      ? '-translate-x-1'
-                      : 'translate-x-1'
-                }`}
-              />
-            </button>
+            <Switch
+              checked={formData.commission_enabled}
+              onCheckedChange={(checked) => handleChange('commission_enabled', checked)}
+            />
           </div>
 
           {/* Commission Rates Grid */}
@@ -234,24 +221,10 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
                   <DollarSign className="w-4 h-4 text-gray-500" />
                   {isRTL ? 'رسوم الخدمة' : 'Service Fee'}
                 </Label>
-                <button
-                  onClick={() => handleChange('service_fee_enabled', !formData.service_fee_enabled)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                    formData.service_fee_enabled ? 'bg-primary' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                      formData.service_fee_enabled
-                        ? isRTL
-                          ? '-translate-x-5'
-                          : 'translate-x-5'
-                        : isRTL
-                          ? '-translate-x-1'
-                          : 'translate-x-1'
-                    }`}
-                  />
-                </button>
+                <Switch
+                  checked={formData.service_fee_enabled}
+                  onCheckedChange={(checked) => handleChange('service_fee_enabled', checked)}
+                />
               </div>
               <div className="relative">
                 <Input

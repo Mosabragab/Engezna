@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   CreditCard,
   Banknote,
@@ -164,24 +165,10 @@ export function PaymentSettingsTab({ isRTL }: PaymentSettingsTabProps) {
                   <div className={`p-2 rounded-lg ${method.color}`}>
                     <method.icon className="w-5 h-5" />
                   </div>
-                  <button
-                    onClick={method.onToggle}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      method.enabled ? 'bg-primary' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        method.enabled
-                          ? isRTL
-                            ? '-translate-x-6'
-                            : 'translate-x-6'
-                          : isRTL
-                            ? '-translate-x-1'
-                            : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                  <Switch
+                    checked={method.enabled}
+                    onCheckedChange={method.onToggle}
+                  />
                 </div>
                 <h3 className="font-medium text-gray-900 mb-1">{method.title}</h3>
                 <p className="text-sm text-gray-500">{method.description}</p>

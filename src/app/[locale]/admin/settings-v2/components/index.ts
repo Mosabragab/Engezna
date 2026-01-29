@@ -8,4 +8,5 @@ export { CommissionSettingsTab } from './CommissionSettings';
 export { GeneralSettingsTab } from './GeneralSettings';
 export { PaymentSettingsTab } from './PaymentSettings';
 export { DeliverySettingsTab } from './DeliverySettings';
+export { SecuritySettingsTab } from './SecuritySettings';
 export { SettingsChangelogDisplay } from './SettingsChangelog';
