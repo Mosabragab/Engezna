@@ -51,7 +51,7 @@ export interface AdminProvider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
-  is_verified: boolean;
+  is_verified?: boolean; // Optional - column may not exist
   phone: string | null;
   email: string | null;
   address: string | null;

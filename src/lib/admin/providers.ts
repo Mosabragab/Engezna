@@ -20,10 +20,11 @@ const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
 
 // Optimized provider select (Phase 4.1)
+// NOTE: is_verified removed - column doesn't exist in database
 const PROVIDER_SELECT = `
   id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rejection_reason, commission_rate,
-  rating, total_reviews, total_orders, is_featured, is_verified,
+  rating, total_reviews, total_orders, is_featured,
   phone, email, address, governorate_id, city_id,
   opening_time, closing_time, delivery_fee, min_order_amount,
   estimated_delivery_time_min, created_at, updated_at

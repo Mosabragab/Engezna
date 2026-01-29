@@ -76,6 +76,7 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
   const loadMaintenanceSettings = async () => {
     setLoadingMaintenance(true);
+    setMaintenanceError(null);
     const supabase = createClient();
 
     try {
@@ -85,8 +86,25 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
         .eq('setting_key', MAINTENANCE_KEY)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading maintenance settings:', error);
+      if (error) {
+        // PGRST116 = row not found, which is OK
+        // 42P01 = table doesn't exist
+        if (error.code === '42P01') {
+          console.error('app_settings table does not exist. Please run migration.');
+          setMaintenanceError(
+            isRTL
+              ? 'جدول الإعدادات غير موجود. يرجى تشغيل التحديثات.'
+              : 'Settings table not found. Please run database migrations.'
+          );
+        } else if (error.code !== 'PGRST116') {
+          console.error('Error loading maintenance settings:', error);
+          setMaintenanceError(
+            isRTL
+              ? `خطأ في تحميل الإعدادات: ${error.message}`
+              : `Error loading settings: ${error.message}`
+          );
+        }
+        // PGRST116 is OK - just means no data yet
       }
 
       if (data?.setting_value) {
@@ -94,6 +112,9 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
       }
     } catch (err) {
       console.error('Error loading maintenance settings:', err);
+      setMaintenanceError(
+        isRTL ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred'
+      );
     }
 
     setLoadingMaintenance(false);
@@ -143,11 +164,30 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
       setMaintenanceSuccess(true);
       setTimeout(() => setMaintenanceSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error saving maintenance settings:', err);
-      setMaintenanceError(
-        isRTL ? 'فشل في حفظ إعدادات الصيانة' : 'Failed to save maintenance settings'
-      );
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+
+      // Check for common errors
+      if (errorMessage.includes('42P01') || errorMessage.includes('does not exist')) {
+        setMaintenanceError(
+          isRTL
+            ? 'جدول الإعدادات غير موجود. يرجى تشغيل التحديثات.'
+            : 'Settings table not found. Please run database migrations.'
+        );
+      } else if (errorMessage.includes('permission') || errorMessage.includes('policy')) {
+        setMaintenanceError(
+          isRTL
+            ? 'لا تملك صلاحية تعديل الإعدادات'
+            : 'You do not have permission to modify settings'
+        );
+      } else {
+        setMaintenanceError(
+          isRTL
+            ? `فشل في حفظ الإعدادات: ${errorMessage}`
+            : `Failed to save settings: ${errorMessage}`
+        );
+      }
     }
 
     setSavingMaintenance(false);
