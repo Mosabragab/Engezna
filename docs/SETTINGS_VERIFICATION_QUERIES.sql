@@ -46,13 +46,45 @@ WHERE table_schema = 'public'
 AND table_name = 'providers'
 ORDER BY ordinal_position;
 
--- Check if is_verified column exists (it shouldn't)
+-- Check columns that DON'T exist (verify schema fixes)
+-- is_verified: should NOT exist
 SELECT EXISTS (
   SELECT FROM information_schema.columns
   WHERE table_schema = 'public'
   AND table_name = 'providers'
   AND column_name = 'is_verified'
-) AS is_verified_exists;
+) AS is_verified_exists_should_be_false;
+
+-- address: should NOT exist (replaced by address_ar, address_en)
+SELECT EXISTS (
+  SELECT FROM information_schema.columns
+  WHERE table_schema = 'public'
+  AND table_name = 'providers'
+  AND column_name = 'address'
+) AS address_exists_should_be_false;
+
+-- opening_time: should NOT exist (replaced by business_hours)
+SELECT EXISTS (
+  SELECT FROM information_schema.columns
+  WHERE table_schema = 'public'
+  AND table_name = 'providers'
+  AND column_name = 'opening_time'
+) AS opening_time_exists_should_be_false;
+
+-- Check columns that SHOULD exist
+SELECT EXISTS (
+  SELECT FROM information_schema.columns
+  WHERE table_schema = 'public'
+  AND table_name = 'providers'
+  AND column_name = 'address_ar'
+) AS address_ar_exists_should_be_true;
+
+SELECT EXISTS (
+  SELECT FROM information_schema.columns
+  WHERE table_schema = 'public'
+  AND table_name = 'providers'
+  AND column_name = 'business_hours'
+) AS business_hours_exists_should_be_true;
 
 -- ═══════════════════════════════════════════════════════════════════════════════
 -- 3. CHECK APP_SETTINGS DATA

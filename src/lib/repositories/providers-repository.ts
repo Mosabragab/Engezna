@@ -27,14 +27,30 @@ export type ProviderStatus =
   | 'temporarily_paused'
   | 'on_vacation';
 
+// Business hours structure (JSONB in database)
+export interface BusinessHours {
+  monday?: { open: string; close: string; is_open?: boolean };
+  tuesday?: { open: string; close: string; is_open?: boolean };
+  wednesday?: { open: string; close: string; is_open?: boolean };
+  thursday?: { open: string; close: string; is_open?: boolean };
+  friday?: { open: string; close: string; is_open?: boolean };
+  saturday?: { open: string; close: string; is_open?: boolean };
+  sunday?: { open: string; close: string; is_open?: boolean };
+}
+
 // Provider entity type
+// NOTE: Columns verified against actual database schema:
+// - is_verified: doesn't exist
+// - address: replaced with address_ar, address_en
+// - opening_time, closing_time: replaced with business_hours (JSONB)
 export interface Provider {
   id: string;
+  owner_id: string | null;
   name_ar: string;
   name_en: string;
   description_ar: string | null;
   description_en: string | null;
-  category: string;
+  category: string; // USER-DEFINED enum in database
   logo_url: string | null;
   cover_image_url: string | null;
   status: ProviderStatus;
@@ -44,14 +60,14 @@ export interface Provider {
   total_reviews: number;
   total_orders: number;
   is_featured: boolean;
-  is_verified: boolean;
+  // NOTE: is_verified column doesn't exist in database
   phone: string | null;
   email: string | null;
-  address: string | null;
+  address_ar: string | null;
+  address_en: string | null;
   governorate_id: string | null;
   city_id: string | null;
-  opening_time: string | null;
-  closing_time: string | null;
+  business_hours: BusinessHours | null;
   delivery_fee: number;
   min_order_amount: number;
   estimated_delivery_time_min: number;
@@ -73,13 +89,13 @@ export type ProviderInsert = Omit<
 export type ProviderUpdate = Partial<ProviderInsert>;
 
 // Provider listing options
+// NOTE: isVerified removed - column doesn't exist in database
 export interface ProviderListOptions {
   status?: ProviderStatus | ProviderStatus[];
   category?: string;
   cityId?: string;
   governorateId?: string;
   isFeatured?: boolean;
-  isVerified?: boolean;
   search?: string;
   sort?: 'rating' | 'delivery_time' | 'delivery_fee' | 'created_at' | 'name_ar' | 'total_orders';
   sortOrder?: 'asc' | 'desc';
@@ -88,31 +104,34 @@ export interface ProviderListOptions {
 }
 
 // Provider with relations select string
+// NOTE: Verified against actual database schema
 const PROVIDER_WITH_RELATIONS = `
-  id, name_ar, name_en, description_ar, description_en, category,
+  id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rejection_reason, commission_rate,
-  rating, total_reviews, total_orders, is_featured, is_verified,
-  phone, email, address, governorate_id, city_id,
-  opening_time, closing_time, delivery_fee, min_order_amount,
+  rating, total_reviews, total_orders, is_featured,
+  phone, email, address_ar, address_en, governorate_id, city_id,
+  business_hours, delivery_fee, min_order_amount,
   estimated_delivery_time_min, created_at, updated_at,
   governorate:governorates(id, name_ar, name_en),
   city:cities(id, name_ar, name_en)
 `;
 
 // Optimized select for customer-facing provider listings (Phase 4.1)
+// NOTE: is_verified removed - doesn't exist in database
 const PROVIDER_LIST_SELECT = `
   id, name_ar, name_en, category, logo_url, cover_image_url,
-  status, rating, total_reviews, is_featured, is_verified,
+  status, rating, total_reviews, is_featured,
   delivery_fee, min_order_amount, estimated_delivery_time_min,
   governorate_id, city_id
 `;
 
 // Optimized select for provider detail pages
+// NOTE: Verified against actual database schema
 const PROVIDER_DETAIL_SELECT = `
-  id, name_ar, name_en, description_ar, description_en, category,
+  id, owner_id, name_ar, name_en, description_ar, description_en, category,
   logo_url, cover_image_url, status, rating, total_reviews, total_orders,
-  is_featured, is_verified, phone, email, address,
-  governorate_id, city_id, opening_time, closing_time,
+  is_featured, phone, email, address_ar, address_en,
+  governorate_id, city_id, business_hours,
   delivery_fee, min_order_amount, estimated_delivery_time_min, created_at
 `;
 
@@ -167,7 +186,6 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         cityId,
         governorateId,
         isFeatured,
-        isVerified,
         search,
         sort = 'rating',
         sortOrder = 'desc',
@@ -208,9 +226,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         query = query.eq('is_featured', isFeatured);
       }
 
-      if (typeof isVerified === 'boolean') {
-        query = query.eq('is_verified', isVerified);
-      }
+      // NOTE: is_verified filter removed - column doesn't exist in database
 
       // Search filter
       if (search?.trim()) {
@@ -278,7 +294,6 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         cityId,
         governorateId,
         isFeatured,
-        isVerified,
         search,
         sort = 'created_at',
         sortOrder = 'desc',
@@ -317,9 +332,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
         query = query.eq('is_featured', isFeatured);
       }
 
-      if (typeof isVerified === 'boolean') {
-        query = query.eq('is_verified', isVerified);
-      }
+      // NOTE: is_verified filter removed - column doesn't exist in database
 
       if (search?.trim()) {
         query = query.or(
@@ -492,21 +505,7 @@ class ProvidersRepositoryClass extends BaseRepository<Provider, ProviderInsert, 
     });
   }
 
-  /**
-   * Toggle verified status
-   */
-  async toggleVerified(id: string): Promise<RepositoryResult<Provider>> {
-    // First get current value
-    const { data: provider, error: fetchError } = await this.findById(id);
-
-    if (fetchError || !provider) {
-      return { data: null, error: fetchError ?? new Error('Provider not found') };
-    }
-
-    return this.update(id, {
-      is_verified: !provider.is_verified,
-    });
-  }
+  // NOTE: toggleVerified method removed - is_verified column doesn't exist in database
 
   /**
    * Update provider rating (called after review)

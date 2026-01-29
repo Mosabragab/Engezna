@@ -37,6 +37,17 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+// Business hours structure (JSONB in database)
+interface BusinessHours {
+  monday?: { open: string; close: string; is_open?: boolean };
+  tuesday?: { open: string; close: string; is_open?: boolean };
+  wednesday?: { open: string; close: string; is_open?: boolean };
+  thursday?: { open: string; close: string; is_open?: boolean };
+  friday?: { open: string; close: string; is_open?: boolean };
+  saturday?: { open: string; close: string; is_open?: boolean };
+  sunday?: { open: string; close: string; is_open?: boolean };
+}
+
 interface Provider {
   id: string;
   name_ar: string;
@@ -57,8 +68,7 @@ interface Provider {
   email: string | null;
   address_ar: string | null;
   address_en: string | null;
-  opening_time: string | null;
-  closing_time: string | null;
+  business_hours: BusinessHours | null;
   delivery_fee: number;
   min_order_amount: number;
   estimated_delivery_time_min: number;
@@ -764,13 +774,13 @@ export default function ProviderDetailPage() {
                   </p>
                 </div>
 
-                {provider.opening_time && provider.closing_time && (
+                {provider.business_hours && (
                   <div>
                     <label className="text-sm text-slate-500 block mb-1">
                       {locale === 'ar' ? 'ساعات العمل' : 'Working Hours'}
                     </label>
-                    <p className="text-slate-700">
-                      {provider.opening_time} - {provider.closing_time}
+                    <p className="text-slate-700 text-sm">
+                      {locale === 'ar' ? 'متاح' : 'Available'}
                     </p>
                   </div>
                 )}
