@@ -709,6 +709,77 @@ export async function toggleProviderFeatured(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// تبديل حالة التوثيق - Toggle Verified Status
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * تبديل حالة توثيق مقدم الخدمة
+ * Toggle provider verification status
+ */
+export async function toggleProviderVerified(
+  adminId: string,
+  providerId: string,
+  isVerified: boolean
+): Promise<OperationResult<AdminProvider>> {
+  try {
+    const supabase = createAdminClient();
+
+    // Fetch current provider
+    const { data: current, error: fetchError } = await supabase
+      .from('providers')
+      .select(PROVIDER_SELECT)
+      .eq('id', providerId)
+      .single();
+
+    if (fetchError || !current) {
+      return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
+    }
+
+    // Update provider with verification data
+    const { data: updated, error: updateError } = await supabase
+      .from('providers')
+      .update({
+        is_verified: isVerified,
+        verified_at: isVerified ? new Date().toISOString() : null,
+        verified_by: isVerified ? adminId : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', providerId)
+      .select(
+        `
+        *,
+        governorate:governorates(id, name_ar, name_en),
+        city:cities(id, name_ar, name_en)
+      `
+      )
+      .single();
+
+    if (updateError) {
+      return { success: false, error: updateError.message, errorCode: 'DATABASE_ERROR' };
+    }
+
+    // Log audit action
+    await logAuditAction(adminId, {
+      action: AUDIT_ACTIONS.PROVIDER_UPDATED,
+      resourceType: 'provider',
+      resourceId: providerId,
+      resourceName: current.name_ar,
+      oldData: { is_verified: current.is_verified },
+      newData: { is_verified: isVerified },
+      reason: isVerified ? 'Provider verified by admin' : 'Provider verification removed',
+    });
+
+    return { success: true, data: updated as AdminProvider };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Unknown error',
+      errorCode: 'DATABASE_ERROR',
+    };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // إحصائيات مقدمي الخدمة - Provider Statistics
 // ═══════════════════════════════════════════════════════════════════════
 

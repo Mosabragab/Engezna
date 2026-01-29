@@ -35,6 +35,7 @@ import {
   Eye,
   AlertTriangle,
   AlertCircle,
+  BadgeCheck,
 } from 'lucide-react';
 
 // Business hours structure (JSONB in database)
@@ -312,6 +313,28 @@ export default function ProviderDetailPage() {
           action: 'toggleFeatured',
           providerId,
           isFeatured: !provider?.is_featured,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        await loadProvider();
+      }
+    } catch {
+      // Error handled silently
+    }
+  }
+
+  async function toggleVerified() {
+    try {
+      const response = await fetch('/api/admin/providers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggleVerified',
+          providerId,
+          isVerified: !provider?.is_verified,
         }),
       });
 
@@ -638,6 +661,21 @@ export default function ProviderDetailPage() {
                   : locale === 'ar'
                     ? 'تمييز المتجر'
                     : 'Mark Featured'}
+              </Button>
+
+              <Button
+                onClick={toggleVerified}
+                variant="outline"
+                className={provider.is_verified ? 'border-green-500 text-green-600 hover:bg-green-50' : ''}
+              >
+                <BadgeCheck className="w-4 h-4 me-2" />
+                {provider.is_verified
+                  ? locale === 'ar'
+                    ? 'إلغاء التوثيق'
+                    : 'Remove Verified'
+                  : locale === 'ar'
+                    ? 'توثيق المتجر'
+                    : 'Verify Provider'}
               </Button>
             </div>
           </div>

@@ -9,6 +9,7 @@ import {
   reactivateProvider,
   updateProviderCommission,
   toggleProviderFeatured,
+  toggleProviderVerified,
   getProviderStats,
 } from '@/lib/admin/providers';
 import type { ProviderFilters } from '@/lib/admin/types';
@@ -183,6 +184,27 @@ export async function POST(request: NextRequest) {
           );
         }
         const result = await toggleProviderFeatured(user.id, providerId, isFeatured);
+        return NextResponse.json(result);
+      }
+
+      // ───────────────────────────────────────────────────────────────────
+      // تبديل حالة التوثيق
+      // ───────────────────────────────────────────────────────────────────
+      case 'toggleVerified': {
+        const { providerId, isVerified } = params;
+        if (!providerId) {
+          return NextResponse.json(
+            { success: false, error: 'Provider ID is required' },
+            { status: 400 }
+          );
+        }
+        if (typeof isVerified !== 'boolean') {
+          return NextResponse.json(
+            { success: false, error: 'Verified status is required' },
+            { status: 400 }
+          );
+        }
+        const result = await toggleProviderVerified(user.id, providerId, isVerified);
         return NextResponse.json(result);
       }
 

@@ -148,11 +148,11 @@ export function SecuritySettingsTab({ isRTL, user }: SecuritySettingsTabProps) {
 
         if (error) throw error;
       } else {
-        // Insert new (using correct column names: description, description_ar)
+        // Insert new (using correct column names and valid enum value)
         const { error } = await supabase.from('app_settings').insert({
           setting_key: MAINTENANCE_KEY,
           setting_value: maintenance,
-          category: 'system',
+          category: 'security', // Valid enum: security, general, payment, delivery, notifications
           description: 'Maintenance mode settings',
           description_ar: 'إعدادات وضع الصيانة',
           is_sensitive: false,
