@@ -37,6 +37,8 @@ interface Provider {
   min_order_amount: number;
   estimated_delivery_time_min: number;
   status: string;
+  is_featured?: boolean;
+  is_verified?: boolean;
 }
 
 export default function OffersPage() {

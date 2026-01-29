@@ -3,7 +3,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Star, Clock, Truck, MapPin, Heart } from 'lucide-react';
+import { Star, Clock, Truck, MapPin, Heart, BadgeCheck, Crown } from 'lucide-react';
 import { useState } from 'react';
 
 interface Provider {
@@ -21,6 +21,8 @@ interface Provider {
   min_order_amount: number;
   estimated_delivery_time_min: number;
   status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
+  is_featured?: boolean;
+  is_verified?: boolean;
 }
 
 interface ProviderCardProps {
@@ -81,6 +83,12 @@ export function ProviderCard({
                 <span className="text-4xl">🏪</span>
               </div>
             )}
+            {/* Featured Badge */}
+            {provider.is_featured && (
+              <div className="absolute top-2 start-2 bg-amber-400/95 backdrop-blur-md text-amber-900 px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 shadow-sm">
+                <Crown className="w-3 h-3" />
+              </div>
+            )}
             {/* Closed Overlay */}
             {isClosed && (
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
@@ -91,9 +99,15 @@ export function ProviderCard({
             )}
           </div>
           <div className="p-3.5">
-            <h3 className="font-semibold text-sm truncate text-slate-800 group-hover:text-primary transition-colors">
-              {name}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-sm truncate text-slate-800 group-hover:text-primary transition-colors">
+                {name}
+              </h3>
+              {/* Verified Badge */}
+              {provider.is_verified && (
+                <BadgeCheck className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              )}
+            </div>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
               <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -126,8 +140,16 @@ export function ProviderCard({
             </div>
           )}
 
+          {/* Featured Badge */}
+          {provider.is_featured && (
+            <div className="absolute top-3 start-3 bg-amber-400/95 backdrop-blur-md text-amber-900 px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+              <Crown className="w-3.5 h-3.5" />
+              <span>{locale === 'ar' ? 'مميز' : 'Featured'}</span>
+            </div>
+          )}
+
           {/* Discount Badge */}
-          {hasDiscount && (
+          {hasDiscount && !provider.is_featured && (
             <div className="absolute top-3 start-3 badge-discount-elegant">
               -{discountPercentage}%
             </div>
@@ -169,10 +191,19 @@ export function ProviderCard({
 
         {/* Content */}
         <div className="p-4">
-          {/* Name & Category */}
-          <h3 className="font-bold text-lg text-slate-900 group-hover:text-primary transition-colors">
-            {name}
-          </h3>
+          {/* Name & Verified Badge */}
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-lg text-slate-900 group-hover:text-primary transition-colors">
+              {name}
+            </h3>
+            {/* Verified Badge */}
+            {provider.is_verified && (
+              <div className="flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-lg text-xs font-medium">
+                <BadgeCheck className="w-3.5 h-3.5" />
+                <span>{locale === 'ar' ? 'موثّق' : 'Verified'}</span>
+              </div>
+            )}
+          </div>
 
           {/* Rating - Elegant pill */}
           <div className="flex items-center gap-2 mt-2">

@@ -19,6 +19,8 @@ interface Provider {
   min_order_amount: number;
   estimated_delivery_time_min: number;
   status: string;
+  is_featured?: boolean;
+  is_verified?: boolean;
 }
 
 interface FavoriteProvider {
@@ -96,7 +98,9 @@ export function useFavorites() {
             delivery_fee,
             min_order_amount,
             estimated_delivery_time_min,
-            status
+            status,
+            is_featured,
+            is_verified
           )
         `
         )
@@ -155,7 +159,7 @@ export function useFavorites() {
         const { data: providerData } = await supabase
           .from('providers')
           .select(
-            'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status'
+            'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, is_verified'
           )
           .eq('id', providerId)
           .single();

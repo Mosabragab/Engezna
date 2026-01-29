@@ -29,6 +29,7 @@ export type Provider = {
   estimated_delivery_time_min: number;
   status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
   is_featured?: boolean;
+  is_verified?: boolean;
   city_id?: string;
   governorate_id?: string;
 };
@@ -273,7 +274,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       let query = supabase
         .from('providers')
         .select(
-          'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, city_id, governorate_id'
+          'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, is_verified, city_id, governorate_id'
         )
         .in('status', ['open', 'closed'])
         .order('is_featured', { ascending: false })
