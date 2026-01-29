@@ -126,7 +126,7 @@ function ProviderMiniCard({ provider, locale }: { provider: Provider; locale: st
         <div className="flex items-center gap-1 mb-1">
           <h3 className="font-semibold text-slate-900 text-sm truncate">{name}</h3>
           {provider.is_verified && (
-            <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+            <BadgeCheck className="w-3.5 h-3.5 text-primary flex-shrink-0" />
           )}
         </div>
         <div className="flex items-center gap-1 text-xs text-slate-600 mb-1">

@@ -604,7 +604,7 @@ export default function ProviderDetailClient({
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{getName(provider)}</h1>
               {provider.is_verified && (
-                <BadgeCheck className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+                <BadgeCheck className="w-5 h-5 text-primary flex-shrink-0" />
               )}
             </div>
             <StatusBadge status={mapProviderStatus(provider.status)} size="sm" />
@@ -621,9 +621,9 @@ export default function ProviderDetailClient({
               </div>
             )}
             {provider.is_verified && (
-              <div className="flex items-center gap-1 bg-emerald-100 px-2 py-1 rounded-full">
-                <BadgeCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-xs font-medium text-emerald-700">
+              <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded-full">
+                <BadgeCheck className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-medium text-primary">
                   {locale === 'ar' ? 'موثّق' : 'Verified'}
                 </span>
               </div>

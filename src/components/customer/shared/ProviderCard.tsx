@@ -105,7 +105,7 @@ export function ProviderCard({
               </h3>
               {/* Verified Badge */}
               {provider.is_verified && (
-                <BadgeCheck className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
@@ -198,7 +198,7 @@ export function ProviderCard({
             </h3>
             {/* Verified Badge */}
             {provider.is_verified && (
-              <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg text-xs font-medium">
+              <div className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-0.5 rounded-lg text-xs font-medium">
                 <BadgeCheck className="w-3.5 h-3.5" />
                 <span>{locale === 'ar' ? 'موثّق' : 'Verified'}</span>
               </div>
