@@ -38,6 +38,8 @@ import {
   Clock,
   Calendar,
   AlertCircle,
+  Crown,
+  BadgeCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { OrderType, DeliveryTiming } from '@/types/database';
@@ -1685,9 +1687,17 @@ export default function CheckoutPage() {
                   {/* Provider Info */}
                   {provider && (
                     <div className="pb-4 border-b">
-                      <p className="font-semibold">
-                        {locale === 'ar' ? provider.name_ar : provider.name_en}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold">
+                          {locale === 'ar' ? provider.name_ar : provider.name_en}
+                        </p>
+                        {provider.is_featured && (
+                          <Crown className="w-4 h-4 text-premium flex-shrink-0" />
+                        )}
+                        {provider.is_verified && (
+                          <BadgeCheck className="w-4 h-4 text-primary flex-shrink-0" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-2">
                         {orderType === 'pickup' ? (
                           <>

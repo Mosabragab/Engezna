@@ -26,7 +26,7 @@ import {
   RefreshCw,
   X,
   Edit2,
-  Award,
+  Crown,
   Package,
   DollarSign,
   Percent,
@@ -566,7 +566,7 @@ export default function ProviderDetailPage() {
                   </span>
                   {provider.is_featured && (
                     <span className="text-sm px-3 py-1 rounded-full bg-premium/20 text-foreground flex items-center gap-1">
-                      <Award className="w-4 h-4 text-premium" />
+                      <Crown className="w-4 h-4 text-premium" />
                       {locale === 'ar' ? 'مميز' : 'Featured'}
                     </span>
                   )}
@@ -658,11 +658,11 @@ export default function ProviderDetailPage() {
                 variant="outline"
                 className={
                   provider.is_featured
-                    ? 'border-amber-500 bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800'
+                    ? 'border-premium bg-premium/10 text-foreground hover:bg-premium/20'
                     : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-400'
                 }
               >
-                <Award className="w-4 h-4 me-2" />
+                <Crown className="w-4 h-4 me-2" />
                 {provider.is_featured
                   ? locale === 'ar'
                     ? 'إزالة التميز'

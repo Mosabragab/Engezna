@@ -405,6 +405,8 @@ export default function ProviderDetailClient({
         commission_rate: provider.commission_rate,
         category: provider.category,
         logo_url: provider.logo_url,
+        is_featured: provider.is_featured,
+        is_verified: provider.is_verified,
       });
 
       if (result.requiresConfirmation) {
@@ -433,6 +435,8 @@ export default function ProviderDetailClient({
         commission_rate: provider.commission_rate,
         category: provider.category,
         logo_url: provider.logo_url,
+        is_featured: provider.is_featured,
+        is_verified: provider.is_verified,
       };
 
       let result;
