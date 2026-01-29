@@ -1,14 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { Button } from '@/components/ui/button';
 import { Footer } from '@/components/shared/Footer';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
-import { GovernoratesList, GovernoratesListSkeleton } from '@/components/welcome/GovernoratesList';
+import { GovernoratesList } from '@/components/welcome/GovernoratesList';
 import { useSDUI } from '@/hooks/sdui';
 import {
   ListChecks,
@@ -344,9 +343,14 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
                   </h2>
                 </div>
 
-                <Suspense fallback={<GovernoratesListSkeleton locale={locale} />}>
-                  <GovernoratesList locale={locale} />
-                </Suspense>
+                <GovernoratesList
+                  locale={locale}
+                  governorates={
+                    Array.isArray(governoratesContent.governorates)
+                      ? governoratesContent.governorates
+                      : []
+                  }
+                />
 
                 <p className="text-slate-600 text-sm">
                   {governoratesContent.subtitle ||

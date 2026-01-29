@@ -1,38 +1,26 @@
-import { createStaticClient } from '@/lib/supabase/static';
-import { MapPin, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface Governorate {
   id: string;
   name_ar: string;
   name_en: string;
-  is_active: boolean;
 }
 
 interface GovernoratesListProps {
   locale: string;
+  governorates?: Governorate[];
 }
 
-// This component fetches data - will be streamed with Suspense
-export async function GovernoratesList({ locale }: GovernoratesListProps) {
+/**
+ * GovernoratesList - Displays available governorates from SDUI content
+ *
+ * Now receives governorates as props from SDUI instead of fetching from database.
+ * This allows admins to control the displayed governorates via App Layout settings.
+ */
+export function GovernoratesList({ locale, governorates }: GovernoratesListProps) {
   const isRTL = locale === 'ar';
 
-  const supabase = createStaticClient();
-
-  // Handle missing Supabase client (e.g., in test environments)
-  if (!supabase) {
-    return (
-      <p className="text-slate-500 mb-6">
-        {isRTL ? 'قريباً في محافظتك' : 'Coming soon to your governorate'}
-      </p>
-    );
-  }
-
-  const { data: governorates } = await supabase
-    .from('governorates')
-    .select('id, name_ar, name_en, is_active')
-    .eq('is_active', true)
-    .order('name_ar');
-
+  // If no governorates provided or empty array, show "coming soon" message
   if (!governorates || governorates.length === 0) {
     return (
       <p className="text-slate-500 mb-6">
