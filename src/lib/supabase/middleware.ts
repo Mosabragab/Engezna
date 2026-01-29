@@ -7,10 +7,23 @@ import { type NextRequest, NextResponse } from 'next/server';
 type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin';
 
 /**
- * Check if maintenance mode is enabled
- * Returns cached result for 30 seconds to reduce DB queries
+ * Maintenance mode settings structure from app_settings table
  */
-let maintenanceCache: { enabled: boolean; timestamp: number } | null = null;
+interface MaintenanceSettings {
+  providers_maintenance: boolean;
+  customers_maintenance: boolean;
+  maintenance_message_ar?: string;
+  maintenance_message_en?: string;
+}
+
+/**
+ * Check if maintenance mode is enabled for customers
+ * Returns cached result for 30 seconds to reduce DB queries
+ *
+ * Note: Reads from app_settings table (setting_key = 'maintenance_settings')
+ * which stores separate flags for providers and customers maintenance
+ */
+let maintenanceCache: { settings: MaintenanceSettings | null; timestamp: number } | null = null;
 const CACHE_DURATION = 30000; // 30 seconds
 
 async function checkMaintenanceMode(
@@ -18,17 +31,25 @@ async function checkMaintenanceMode(
 ): Promise<boolean> {
   // Return cached result if still valid
   if (maintenanceCache && Date.now() - maintenanceCache.timestamp < CACHE_DURATION) {
-    return maintenanceCache.enabled;
+    return maintenanceCache.settings?.customers_maintenance === true;
   }
 
   try {
-    const { data } = await supabase.from('platform_settings').select('maintenance_mode').single();
+    // Read from app_settings table (new unified settings system)
+    const { data } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'maintenance_settings')
+      .single();
 
-    const isEnabled = data?.maintenance_mode === true;
-    maintenanceCache = { enabled: isEnabled, timestamp: Date.now() };
-    return isEnabled;
+    const settings = data?.setting_value as MaintenanceSettings | null;
+    maintenanceCache = { settings, timestamp: Date.now() };
+
+    // Return customers_maintenance flag (this controls public access)
+    return settings?.customers_maintenance === true;
   } catch {
     // If query fails, assume not in maintenance mode
+    maintenanceCache = { settings: null, timestamp: Date.now() };
     return false;
   }
 }
