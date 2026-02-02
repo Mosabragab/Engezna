@@ -179,13 +179,14 @@ export function ProviderCard({
             </button>
           )}
 
-          {/* Status Badge - Solid colors for visibility on all backgrounds */}
+          {/* Status Badge - Inline styles for guaranteed visibility */}
           <div
-            className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-md border ${
-              isOpen
-                ? 'bg-emerald-500 text-white border-emerald-600'
-                : 'bg-red-500 text-white border-red-600'
-            }`}
+            className="absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-lg"
+            style={{
+              backgroundColor: isOpen ? '#10b981' : '#ef4444',
+              color: '#ffffff',
+              border: isOpen ? '2px solid #059669' : '2px solid #dc2626',
+            }}
           >
             {isOpen ? t('open') : t('closed')}
           </div>
