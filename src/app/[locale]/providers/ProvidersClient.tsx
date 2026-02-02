@@ -12,6 +12,7 @@ import { useSDUI } from '@/hooks/sdui';
 import { Star, Clock, Percent, ArrowUpDown, MapPin, Navigation } from 'lucide-react';
 import { useUserLocation } from '@/lib/contexts';
 import Link from 'next/link';
+import { BusinessHours } from '@/lib/utils/business-hours';
 
 export type Provider = {
   id: string;
@@ -32,6 +33,7 @@ export type Provider = {
   is_verified?: boolean;
   city_id?: string;
   governorate_id?: string;
+  business_hours?: BusinessHours | null;
 };
 
 type SortOption = 'rating' | 'delivery_time' | 'delivery_fee';
@@ -274,7 +276,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       let query = supabase
         .from('providers')
         .select(
-          'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, is_verified, city_id, governorate_id'
+          'id, name_ar, name_en, description_ar, description_en, category, logo_url, cover_image_url, rating, total_reviews, delivery_fee, min_order_amount, estimated_delivery_time_min, status, is_featured, is_verified, city_id, governorate_id, business_hours'
         )
         .in('status', ['open', 'closed'])
         .order('is_featured', { ascending: false })
