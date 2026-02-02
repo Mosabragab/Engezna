@@ -179,10 +179,12 @@ export function ProviderCard({
             </button>
           )}
 
-          {/* Status Badge - Elegant glassmorphism */}
+          {/* Status Badge - Solid colors for visibility on all backgrounds */}
           <div
-            className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold backdrop-blur-md shadow-sm ${
-              isOpen ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
+            className={`absolute bottom-3 start-3 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-md border ${
+              isOpen
+                ? 'bg-emerald-500 text-white border-emerald-600'
+                : 'bg-red-500 text-white border-red-600'
             }`}
           >
             {isOpen ? t('open') : t('closed')}
