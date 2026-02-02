@@ -63,3 +63,37 @@ This file serves as a map for all brand-related documentation.
   - Align campaigns with brand voice and promises (no sign-up fees, low commissions, etc.).
 
 ---
+
+## 5. Target Business Categories
+
+All branding documentation applies to these 5 business categories:
+
+| Arabic               | English             |
+| -------------------- | ------------------- |
+| المطاعم              | Restaurants         |
+| الصيدليات            | Pharmacies          |
+| السوبر ماركت         | Supermarkets        |
+| الخضراوات والفاكهه   | Vegetables & Fruits |
+| البن والحلويات       | Coffee & Patisserie     |
+
+---
+
+## ملخص بالعربية
+
+هذا الملف هو الدليل الرئيسي لجميع وثائق العلامة التجارية لإنجزنا.
+
+**الملفات الأساسية:**
+
+1. **BRAND_IDENTITY_GUIDE.md** - الدليل الشامل للهوية البصرية (القصة، الرؤية، الألوان، الخطوط)
+2. **BRAND_QUICK_REFERENCE.md** - مرجع سريع من صفحة واحدة
+3. **BRAND_IMPLEMENTATION_GUIDE.md** - دليل المطورين والمنتجات
+4. **VISUAL_ASSETS_GUIDE.md** - دليل المصممين (الشعار، الأيقونات، التخطيط)
+5. **engezna-theme.css** - ملف CSS للألوان والأنماط
+
+**الفئات المستهدفة:** المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات
+
+**للمطورين الجدد:** ابدأ بـ BRAND_QUICK_REFERENCE.md ثم BRAND_IMPLEMENTATION_GUIDE.md
+**للمصممين الجدد:** ابدأ بـ BRAND_IDENTITY_GUIDE.md ثم VISUAL_ASSETS_GUIDE.md
+**للتسويق:** استخدم BRAND_IDENTITY_GUIDE.md + BRAND_QUICK_REFERENCE.md
+
+---
