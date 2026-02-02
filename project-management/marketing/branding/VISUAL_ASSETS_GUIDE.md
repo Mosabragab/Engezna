@@ -205,13 +205,13 @@ Illustrations:
 
 All visual assets should support these 5 business categories:
 
-| Arabic               | English             | Imagery Style                    |
-| -------------------- | ------------------- | -------------------------------- |
-| المطاعم              | Restaurants         | Food, delivery, local eateries   |
-| الصيدليات            | Pharmacies          | Healthcare, medicine, pharmacy   |
-| السوبر ماركت         | Supermarkets        | Groceries, shopping, daily needs |
-| الخضراوات والفاكهه   | Vegetables & Fruits | Fresh produce, markets, baskets  |
-| البن والحلويات       | Coffee & Patisserie     | Coffee, desserts, cafes          |
+| Arabic             | English             | Imagery Style                    |
+| ------------------ | ------------------- | -------------------------------- |
+| المطاعم            | Restaurants         | Food, delivery, local eateries   |
+| الصيدليات          | Pharmacies          | Healthcare, medicine, pharmacy   |
+| السوبر ماركت       | Supermarkets        | Groceries, shopping, daily needs |
+| الخضراوات والفاكهه | Vegetables & Fruits | Fresh produce, markets, baskets  |
+| البن والحلويات     | Coffee & Patisserie | Coffee, desserts, cafes          |
 
 ---
 
@@ -222,34 +222,40 @@ All visual assets should support these 5 business categories:
 **النقاط الرئيسية:**
 
 ### نظام الشعار
+
 1. **الشعار الرئيسي:** ثنائي اللغة (عربي + إنجليزي)
 2. **الشعار العربي فقط:** إنجزنا - اللون #009DE0
 3. **الشعار الإنجليزي:** Engezna - اللون #009DE0
 4. **الشعار المتحرك (جديد):** خط Aref Ruqaa، لون #0F172A، حركة RTL
 
 ### أيقونة التطبيق
+
 - **الشكل:** مربع مدور
 - **الخلفية:** #009DE0
 - **النص/الرمز:** أبيض
 
 ### الألوان الآمنة
+
 - أزرق إنجزنا على أبيض
 - أبيض على أزرق إنجزنا
 - أخضر العروض على داكن أو أبيض
 - ذهبي للميزات المميزة
 
 ### الخطوط
+
 - **عربي:** Noto Sans Arabic (700 للعناوين، 500 للنص الثانوي)
 - **إنجليزي:** Noto Sans / Inter (600-700 للعناوين)
 - **الشعار المتحرك:** Aref Ruqaa Bold
 
 ### أسلوب التصوير
+
 - صور واقعية بطابع مصري محلي
 - محلات حقيقية في المحافظات
 - طعام حقيقي، منتجات طازجة
 - تجنب الصور الغربية الجاهزة
 
 ### الفئات المستهدفة
+
 المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات
 
 ---

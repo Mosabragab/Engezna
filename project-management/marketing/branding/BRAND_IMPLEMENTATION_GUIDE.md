@@ -419,13 +419,13 @@ Before deploying navigation changes:
 
 All implementation must support these 5 business categories:
 
-| Arabic               | English             | Key                 |
-| -------------------- | ------------------- | ------------------- |
-| المطاعم              | Restaurants         | `restaurants`       |
-| الصيدليات            | Pharmacies          | `pharmacy`          |
-| السوبر ماركت         | Supermarkets        | `supermarket`       |
-| الخضراوات والفاكهه   | Vegetables & Fruits | `vegetables-fruits` |
-| البن والحلويات       | Coffee & Patisserie     | `coffee-patisserie`     |
+| Arabic             | English             | Key                 |
+| ------------------ | ------------------- | ------------------- |
+| المطاعم            | Restaurants         | `restaurants`       |
+| الصيدليات          | Pharmacies          | `pharmacy`          |
+| السوبر ماركت       | Supermarkets        | `supermarket`       |
+| الخضراوات والفاكهه | Vegetables & Fruits | `vegetables-fruits` |
+| البن والحلويات     | Coffee & Patisserie | `coffee-patisserie` |
 
 ---
 
@@ -436,33 +436,40 @@ All implementation must support these 5 business categories:
 **النقاط الرئيسية:**
 
 ### التسمية والهيكل
+
 - **اسم المنتج:** Engezna / إنجزنا
 - **Package IDs:** `com.engezna.app.customer` و `com.engezna.app.merchant`
 - **المواقع:** `engezna.com` و `merchant.engezna.com`
 
 ### اللغة والترجمة
+
 - اللغة الأساسية: العربية (اللهجة المصرية)
 - اللغة الثانوية: الإنجليزية
 - تخطيط RTL للواجهة العربية
 
 ### الألوان الأساسية (CSS Tokens)
+
 - `--color-primary: 198 100% 44%;` (#009DE0)
 - `--color-secondary: 0 0% 0%;` (#000000)
 - `--color-white: 0 0% 100%;` (#FFFFFF)
 
 ### قواعد العمل في الكود
+
 - **رسوم التسجيل:** 0 دائماً (لا يُعرض أي رسوم)
 - **العمولة:** 0% أول 3 شهور، ثم 7% كحد أقصى
 - **رسوم الخدمة للعميل:** 0% دائماً
 
 ### الثيم
+
 - **Light-Only Theme:** لا يوجد وضع داكن
 - تم إزالة `next-themes` و prefixes `dark:`
 
 ### الفئات المستهدفة
+
 المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات
 
 ### قائمة الاختبار
+
 - اختبار على Desktop و Mobile
 - اختبار حالات Hover
 - اختبار تخطيط RTL

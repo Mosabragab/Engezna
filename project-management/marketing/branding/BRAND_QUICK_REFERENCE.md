@@ -16,13 +16,13 @@ Last Updated: 2026-01-13
   Connect customers with local service providers across all Egyptian governorates, replacing phone-based ordering with app-based ordering.
 
 **Target Categories (5):**
-| Arabic               | English             |
+| Arabic | English |
 | -------------------- | ------------------- |
-| المطاعم              | Restaurants         |
-| الصيدليات            | Pharmacies          |
-| السوبر ماركت         | Supermarkets        |
-| الخضراوات والفاكهه   | Vegetables & Fruits |
-| البن والحلويات       | Coffee & Patisserie     |
+| المطاعم | Restaurants |
+| الصيدليات | Pharmacies |
+| السوبر ماركت | Supermarkets |
+| الخضراوات والفاكهه | Vegetables & Fruits |
+| البن والحلويات | Coffee & Patisserie |
 
 **Expansion Strategy:**
 
@@ -148,10 +148,12 @@ Last Updated: 2026-01-13
 مرجع سريع للعلامة التجارية إنجزنا من صفحة واحدة.
 
 **الهوية:**
+
 - **الاسم:** إنجزنا / Engezna
 - **الشعار:** عايز تطلب؟ إنجزنا
 
 **الفئات المستهدفة (5 فئات):**
+
 1. المطاعم
 2. الصيدليات
 3. السوبر ماركت
@@ -159,22 +161,26 @@ Last Updated: 2026-01-13
 5. البن والحلويات
 
 **نموذج العمل:**
+
 - رسوم التسجيل: 0 جنيه - مجاناً للأبد
 - العمولة: 0% أول 3 شهور، ثم 7% كحد أقصى
 - رسوم الخدمة للعميل: 0%
 - التوصيل: عن طريق التاجر
 
 **الألوان:**
+
 - أزرق إنجزنا: #009DE0
 - النجاح: #22C55E
 - التحذير: #CA8A04
 - الخطأ: #EF4444
 
 **الخطوط:**
+
 - عربي: Noto Sans Arabic
 - إنجليزي: Noto Sans / Inter
 
 **الصوت والنبرة:**
+
 - واثق، نشيط، محلي، عملي
 - لهجة مصرية بسيطة
 

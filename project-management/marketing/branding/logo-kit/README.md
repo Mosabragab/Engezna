@@ -181,13 +181,13 @@ For brand inquiries or custom assets, contact the design team.
 
 The logo and brand assets are used across all 5 business categories:
 
-| Arabic               | English             |
-| -------------------- | ------------------- |
-| المطاعم              | Restaurants         |
-| الصيدليات            | Pharmacies          |
-| السوبر ماركت         | Supermarkets        |
-| الخضراوات والفاكهه   | Vegetables & Fruits |
-| البن والحلويات       | Coffee & Patisserie     |
+| Arabic             | English             |
+| ------------------ | ------------------- |
+| المطاعم            | Restaurants         |
+| الصيدليات          | Pharmacies          |
+| السوبر ماركت       | Supermarkets        |
+| الخضراوات والفاكهه | Vegetables & Fruits |
+| البن والحلويات     | Coffee & Patisserie |
 
 ---
 
@@ -198,34 +198,40 @@ The logo and brand assets are used across all 5 business categories:
 **النقاط الرئيسية:**
 
 ### الألوان الأساسية
+
 - **أزرق إنجزنا:** #009DE0 (اللون الأساسي)
 - **أزرق داكن:** #0077B6 (للتدرجات)
 - **الفحمي:** #0F172A (خلفية الأيقونات)
 - **أبيض:** #FFFFFF (النص على الداكن)
 
 ### الأيقونة الرسمية
+
 - النص الكامل "إنجزنا" (وليس حرف واحد)
 - الخلفية: الفحمي #0F172A
 - لون النص: أبيض #FFFFFF
 - نستخدم الفحمي بدلاً من الأسود المصمت
 
 ### أحجام PWA المطلوبة
+
 - `icon-192x192.png` - للـ PWA و Apple Touch
 - `icon-512x512.png` - للـ PWA والإشعارات
 - `favicon-32-dark.png` - للمتصفح
 - `favicon-64-dark.png` - للمتصفح والشارات
 
 ### الخطوط
+
 - **شعار:** Aref Ruqaa Bold
 - **عربي:** Noto Sans Arabic
 - **إنجليزي:** Noto Sans
 
 ### كيفية التصدير
+
 1. افتح `logo-exporter.html` في المتصفح
 2. انتظر تحميل الخطوط (3-5 ثواني)
 3. اضغط على "تحميل PNG" للشعار المطلوب
 
 ### الفئات المستهدفة
+
 المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات
 
 ---

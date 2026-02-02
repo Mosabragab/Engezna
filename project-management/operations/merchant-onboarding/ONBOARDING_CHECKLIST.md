@@ -138,13 +138,13 @@
 
 ## الفئات المستهدفة
 
-| الفئة                      | نظام التشغيل المفضل |
-| -------------------------- | ------------------- |
-| المطاعم (Restaurants)      | قائمة (Standard)    |
-| الصيدليات (Pharmacies)     | تسعير (Custom)      |
-| السوبر ماركت (Supermarkets) | تسعير (Custom)      |
-| الخضراوات والفاكهه (Vegetables & Fruits) | تسعير (Custom) |
-| البن والحلويات (Coffee & Patisserie) | هجين (Hybrid)  |
+| الفئة                                    | نظام التشغيل المفضل |
+| ---------------------------------------- | ------------------- |
+| المطاعم (Restaurants)                    | قائمة (Standard)    |
+| الصيدليات (Pharmacies)                   | تسعير (Custom)      |
+| السوبر ماركت (Supermarkets)              | تسعير (Custom)      |
+| الخضراوات والفاكهه (Vegetables & Fruits) | تسعير (Custom)      |
+| البن والحلويات (Coffee & Patisserie)     | هجين (Hybrid)       |
 
 ---
 

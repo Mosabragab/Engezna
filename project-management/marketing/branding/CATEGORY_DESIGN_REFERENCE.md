@@ -15,7 +15,7 @@ Last Updated: 2024-12-19
 | 2   | pharmacy          | الصيدليات          | Pharmacies          | 💊    | Soft Rose    | `rgba(255,228,230,0.85)` → `rgba(254,205,211,0.7)` |
 | 3   | supermarket       | السوبر ماركت       | Supermarkets        | 🛒    | Engezna Blue | `rgba(224,244,255,0.9)` → `rgba(186,230,253,0.75)` |
 | 4   | vegetables-fruits | الخضراوات والفاكهه | Vegetables & Fruits | 🍌    | Soft Mint    | `rgba(209,250,229,0.85)` → `rgba(167,243,208,0.7)` |
-| 5   | coffee-patisserie     | البن والحلويات     | Coffee & Patisserie     | ☕    | Soft Beige   | `rgba(245,235,220,0.9)` → `rgba(237,224,205,0.75)` |
+| 5   | coffee-patisserie | البن والحلويات     | Coffee & Patisserie | ☕    | Soft Beige   | `rgba(245,235,220,0.9)` → `rgba(237,224,205,0.75)` |
 
 ---
 
@@ -30,7 +30,7 @@ const categories = [
     nameAr: 'المطاعم',
     nameEn: 'Restaurants',
     emoji: '🍔',
-    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(254,243,199,0.85) 0%, rgba(254,249,195,0.7) 100%)',
   },
   {
     id: '2',
@@ -38,7 +38,7 @@ const categories = [
     nameAr: 'الصيدليات',
     nameEn: 'Pharmacies',
     emoji: '💊',
-    gradient: 'linear-gradient(145deg, rgba(255,228,230,0.85) 0%, rgba(254,205,211,0.7) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(255,228,230,0.85) 0%, rgba(254,205,211,0.7) 100%)',
   },
   {
     id: '3',
@@ -46,7 +46,7 @@ const categories = [
     nameAr: 'السوبر ماركت',
     nameEn: 'Supermarkets',
     emoji: '🛒',
-    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(224,244,255,0.9) 0%, rgba(186,230,253,0.75) 100%)',
   },
   {
     id: '4',
@@ -54,7 +54,7 @@ const categories = [
     nameAr: 'الخضراوات والفاكهه',
     nameEn: 'Vegetables & Fruits',
     emoji: '🍌',
-    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)'
+    gradient: 'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
   },
   {
     id: '5',
@@ -62,8 +62,8 @@ const categories = [
     nameAr: 'البن والحلويات',
     nameEn: 'Coffee & Patisserie',
     emoji: '☕',
-    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)'
-  }
+    gradient: 'linear-gradient(145deg, rgba(245,235,220,0.9) 0%, rgba(237,224,205,0.75) 100%)',
+  },
 ];
 ```
 
@@ -282,10 +282,10 @@ src/app/[locale]/welcome/page.tsx                   (صفحة الترحيب)
 
 ## 10. Change Log
 
-| Date       | Version | Changes                                                               |
-| ---------- | ------- | --------------------------------------------------------------------- |
-| 2024-12-19 | 1.0     | Initial release with 9 categories                                     |
-| 2024-12-19 | 1.1     | Reduced to 4 active categories, saved 5 for future, responsive design |
+| Date       | Version | Changes                                                                  |
+| ---------- | ------- | ------------------------------------------------------------------------ |
+| 2024-12-19 | 1.0     | Initial release with 9 categories                                        |
+| 2024-12-19 | 1.1     | Reduced to 4 active categories, saved 5 for future, responsive design    |
 | 2026-02-02 | 2.0     | Activated all 5 core categories including Pharmacy, added Arabic summary |
 
 ---
@@ -296,15 +296,16 @@ src/app/[locale]/welcome/page.tsx                   (صفحة الترحيب)
 
 **الأقسام الخمسة المفعّلة:**
 
-| القسم              | الإيموجي | اللون       | Key               |
-| ------------------ | -------- | ----------- | ----------------- |
-| المطاعم            | 🍔       | كريمي دافئ  | `restaurants`     |
-| الصيدليات          | 💊       | وردي ناعم   | `pharmacy`        |
-| السوبر ماركت       | 🛒       | أزرق إنجزنا | `supermarket`     |
+| القسم              | الإيموجي | اللون       | Key                 |
+| ------------------ | -------- | ----------- | ------------------- |
+| المطاعم            | 🍔       | كريمي دافئ  | `restaurants`       |
+| الصيدليات          | 💊       | وردي ناعم   | `pharmacy`          |
+| السوبر ماركت       | 🛒       | أزرق إنجزنا | `supermarket`       |
 | الخضراوات والفاكهه | 🍌       | نعناعي ناعم | `vegetables-fruits` |
-| البن والحلويات     | ☕       | بيج ناعم    | `coffee-patisserie`   |
+| البن والحلويات     | ☕       | بيج ناعم    | `coffee-patisserie` |
 
 **المواصفات التقنية:**
+
 - **حجم الكارت:** 64px على الموبايل، 88px على الشاشات الكبيرة
 - **زاوية التدرج:** 145 درجة
 - **حجم الإيموجي:** 24px على الموبايل، 36px على الشاشات الكبيرة
@@ -313,11 +314,13 @@ src/app/[locale]/welcome/page.tsx                   (صفحة الترحيب)
 - **لون التحديد:** #009DE0 (Engezna Blue)
 
 **قواعد التصميم:**
+
 1. الإيموجي بلون مختلف عن الخلفية للتباين
 2. ألوان Pastel بشفافية 70-90%
 3. التدرج بزاوية 145 درجة للاتساق
 4. اختبار على الموبايل (الحجم 64px مناسب للمس)
 
 **مواقع الكود:**
+
 - `src/components/customer/home/CategoriesSection.tsx`
 - `src/app/[locale]/welcome/page.tsx`

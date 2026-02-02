@@ -68,13 +68,13 @@ This file serves as a map for all brand-related documentation.
 
 All branding documentation applies to these 5 business categories:
 
-| Arabic               | English             |
-| -------------------- | ------------------- |
-| المطاعم              | Restaurants         |
-| الصيدليات            | Pharmacies          |
-| السوبر ماركت         | Supermarkets        |
-| الخضراوات والفاكهه   | Vegetables & Fruits |
-| البن والحلويات       | Coffee & Patisserie     |
+| Arabic             | English             |
+| ------------------ | ------------------- |
+| المطاعم            | Restaurants         |
+| الصيدليات          | Pharmacies          |
+| السوبر ماركت       | Supermarkets        |
+| الخضراوات والفاكهه | Vegetables & Fruits |
+| البن والحلويات     | Coffee & Patisserie |
 
 ---
 
