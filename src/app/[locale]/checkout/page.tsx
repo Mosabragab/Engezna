@@ -51,6 +51,7 @@ import {
   formatTimeForDisplay,
   formatDateForDisplay,
   combineDateAndTime,
+  isWithinBusinessHours,
   DEFAULT_BUSINESS_HOURS,
 } from '@/lib/utils/business-hours';
 
@@ -114,6 +115,7 @@ interface ProviderWithPickup {
   estimated_delivery_time_min: number;
   commission_rate?: number;
   category?: string;
+  status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
   // Pickup settings
   supports_pickup: boolean;
   pickup_instructions_ar: string | null;
@@ -283,6 +285,7 @@ export default function CheckoutPage() {
           estimated_delivery_time_min,
           commission_rate,
           category,
+          status,
           supports_pickup,
           pickup_instructions_ar,
           pickup_instructions_en,
@@ -803,6 +806,31 @@ export default function CheckoutPage() {
     if (!provider) return;
 
     if (!validateForm()) return;
+
+    // Check if store is currently open for orders
+    // Provider status must be 'open' for any orders
+    if (providerData && providerData.status !== 'open') {
+      setError(
+        locale === 'ar'
+          ? 'المتجر غير متاح حالياً لاستقبال الطلبات.'
+          : 'The store is currently not accepting orders.'
+      );
+      return;
+    }
+
+    // For ASAP orders, also check business hours
+    // For scheduled orders, this is already validated in validateForm
+    if (deliveryTiming === 'asap' && providerData?.business_hours) {
+      const isStoreOpen = isWithinBusinessHours(new Date(), providerData.business_hours);
+      if (!isStoreOpen) {
+        setError(
+          locale === 'ar'
+            ? 'المتجر مغلق حالياً. يمكنك تحديد موعد لاستلام/توصيل طلبك لاحقاً.'
+            : 'The store is currently closed. You can schedule your order for later.'
+        );
+        return;
+      }
+    }
 
     // Check minimum order amount
     const subtotal = getSubtotal();

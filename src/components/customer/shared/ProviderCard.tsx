@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Clock, Truck, MapPin, Heart, BadgeCheck, Crown } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { isWithinBusinessHours, BusinessHours } from '@/lib/utils/business-hours';
 
 interface Provider {
   id: string;
@@ -23,6 +24,7 @@ interface Provider {
   status: 'open' | 'closed' | 'temporarily_paused' | 'on_vacation' | 'pending_approval';
   is_featured?: boolean;
   is_verified?: boolean;
+  business_hours?: BusinessHours | null;
 }
 
 interface ProviderCardProps {
@@ -49,8 +51,20 @@ export function ProviderCard({
   const [favorite, setFavorite] = useState(isFavorite);
 
   const name = locale === 'ar' ? provider.name_ar : provider.name_en;
-  const isOpen = provider.status === 'open';
-  const isClosed = provider.status === 'closed';
+
+  // Check if store is truly open: status must be 'open' AND within business hours
+  const isOpen = useMemo(() => {
+    // If status is not 'open', store is closed
+    if (provider.status !== 'open') return false;
+
+    // If no business hours set, assume always open when status is 'open'
+    if (!provider.business_hours) return true;
+
+    // Check if current time is within business hours
+    return isWithinBusinessHours(new Date(), provider.business_hours);
+  }, [provider.status, provider.business_hours]);
+
+  const isClosed = !isOpen;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault();
