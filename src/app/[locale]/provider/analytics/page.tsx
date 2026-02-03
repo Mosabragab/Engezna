@@ -200,9 +200,13 @@ export default function AnalyticsPage() {
         prevEndDate = new Date(now.getFullYear(), now.getMonth() - 1, 0);
         break;
       case 'custom':
-        startDate = customStartDate ? new Date(customStartDate) : new Date(now.getFullYear(), now.getMonth(), 1);
+        startDate = customStartDate
+          ? new Date(customStartDate)
+          : new Date(now.getFullYear(), now.getMonth(), 1);
         endDate = customEndDate ? new Date(customEndDate) : now;
-        const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        const daysDiff = Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
         prevEndDate = new Date(startDate);
         prevEndDate.setDate(prevEndDate.getDate() - 1);
         prevStartDate = new Date(prevEndDate);
@@ -269,7 +273,9 @@ export default function AnalyticsPage() {
 
       // Order counts (for current period)
       const completedOrders = periodOrders.filter((o) => o.status === 'delivered').length;
-      const cancelledOrders = periodOrders.filter((o) => ['cancelled', 'rejected'].includes(o.status)).length;
+      const cancelledOrders = periodOrders.filter((o) =>
+        ['cancelled', 'rejected'].includes(o.status)
+      ).length;
       const pendingOrders = periodOrders.filter(
         (o) => !['delivered', 'cancelled', 'rejected'].includes(o.status)
       ).length;
@@ -286,7 +292,10 @@ export default function AnalyticsPage() {
       // Revenue calculations
       const periodRevenue = confirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
       const previousPeriodRevenue = prevConfirmedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-      const totalCommission = confirmedOrders.reduce((sum, o) => sum + (o.platform_commission || 0), 0);
+      const totalCommission = confirmedOrders.reduce(
+        (sum, o) => sum + (o.platform_commission || 0),
+        0
+      );
       const netRevenue = periodRevenue - totalCommission;
 
       // All-time revenue for comparison
@@ -307,7 +316,9 @@ export default function AnalyticsPage() {
         }
       });
       const totalCustomers = Object.keys(customerOrderCount).length;
-      const returningCustomers = Object.values(customerOrderCount).filter((count) => count > 1).length;
+      const returningCustomers = Object.values(customerOrderCount).filter(
+        (count) => count > 1
+      ).length;
       const newCustomers = totalCustomers - returningCustomers;
 
       // Average order value
@@ -321,7 +332,8 @@ export default function AnalyticsPage() {
 
       confirmedOrders.forEach((o) => {
         if (o.accepted_at && o.ready_at) {
-          const prepTime = (new Date(o.ready_at).getTime() - new Date(o.accepted_at).getTime()) / 60000;
+          const prepTime =
+            (new Date(o.ready_at).getTime() - new Date(o.accepted_at).getTime()) / 60000;
           if (prepTime > 0 && prepTime < 300) {
             // Sanity check: less than 5 hours
             totalPrepTime += prepTime;
@@ -330,7 +342,8 @@ export default function AnalyticsPage() {
         }
         if (o.out_for_delivery_at && o.delivered_at) {
           const deliveryTime =
-            (new Date(o.delivered_at).getTime() - new Date(o.out_for_delivery_at).getTime()) / 60000;
+            (new Date(o.delivered_at).getTime() - new Date(o.out_for_delivery_at).getTime()) /
+            60000;
           if (deliveryTime > 0 && deliveryTime < 300) {
             totalDeliveryTime += deliveryTime;
             deliveryCount++;
@@ -407,7 +420,8 @@ export default function AnalyticsPage() {
       // Reviews analysis
       const reviewStats: ReviewStats = {
         totalReviews: reviews.length,
-        avgRating: reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0,
+        avgRating:
+          reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0,
         distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
       };
       reviews.forEach((r) => {
@@ -553,7 +567,7 @@ export default function AnalyticsPage() {
   };
 
   const formatHour = (hour: number) => {
-    const suffix = hour >= 12 ? (locale === 'ar' ? 'م' : 'PM') : (locale === 'ar' ? 'ص' : 'AM');
+    const suffix = hour >= 12 ? (locale === 'ar' ? 'م' : 'PM') : locale === 'ar' ? 'ص' : 'AM';
     const h = hour % 12 || 12;
     return `${h} ${suffix}`;
   };
@@ -719,7 +733,9 @@ export default function AnalyticsPage() {
               {getGrowthPercent() !== 0 && (
                 <div
                   className={`flex items-center gap-1 px-3 py-2 rounded-xl text-sm ${
-                    getGrowthPercent() >= 0 ? 'bg-green-500/30 text-green-100' : 'bg-red-500/30 text-red-100'
+                    getGrowthPercent() >= 0
+                      ? 'bg-green-500/30 text-green-100'
+                      : 'bg-red-500/30 text-red-100'
                   }`}
                 >
                   {getGrowthPercent() >= 0 ? (
@@ -775,7 +791,9 @@ export default function AnalyticsPage() {
             <CardContent className="pt-4 pb-4 text-center">
               <CheckCircle2 className="w-6 h-6 text-green-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-green-600">{completionRate}%</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'معدل الإكمال' : 'Completion'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'معدل الإكمال' : 'Completion'}
+              </p>
             </CardContent>
           </Card>
 
@@ -791,7 +809,9 @@ export default function AnalyticsPage() {
             <CardContent className="pt-4 pb-4 text-center">
               <UserCheck className="w-6 h-6 text-purple-500 mx-auto mb-2" />
               <p className="text-2xl font-bold text-purple-600">{returningRate}%</p>
-              <p className="text-xs text-slate-500">{locale === 'ar' ? 'عملاء متكررون' : 'Returning'}</p>
+              <p className="text-xs text-slate-500">
+                {locale === 'ar' ? 'عملاء متكررون' : 'Returning'}
+              </p>
             </CardContent>
           </Card>
 
@@ -802,7 +822,9 @@ export default function AnalyticsPage() {
                 {data.reviewStats.avgRating.toFixed(1)}
               </p>
               <p className="text-xs text-slate-500">
-                {locale === 'ar' ? `${data.reviewStats.totalReviews} تقييم` : `${data.reviewStats.totalReviews} reviews`}
+                {locale === 'ar'
+                  ? `${data.reviewStats.totalReviews} تقييم`
+                  : `${data.reviewStats.totalReviews} reviews`}
               </p>
             </CardContent>
           </Card>
@@ -837,16 +859,15 @@ export default function AnalyticsPage() {
                         }}
                         title={`${day.date}: ${formatCurrency(day.revenue)}`}
                       >
-                        <div
-                          className="w-full bg-primary rounded-t"
-                          style={{ height: '100%' }}
-                        />
+                        <div className="w-full bg-primary rounded-t" style={{ height: '100%' }} />
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-between text-xs text-slate-400">
-                  <span>{data.dailyRevenue[Math.max(0, data.dailyRevenue.length - 14)]?.date.slice(5)}</span>
+                  <span>
+                    {data.dailyRevenue[Math.max(0, data.dailyRevenue.length - 14)]?.date.slice(5)}
+                  </span>
                   <span>{data.dailyRevenue[data.dailyRevenue.length - 1]?.date.slice(5)}</span>
                 </div>
               </div>
@@ -897,7 +918,9 @@ export default function AnalyticsPage() {
                       {locale === 'ar' ? 'متوسط الطلب' : 'Avg Order Value'}
                     </span>
                   </div>
-                  <span className="font-bold text-amber-700">{formatCurrency(data.avgOrderValue)}</span>
+                  <span className="font-bold text-amber-700">
+                    {formatCurrency(data.avgOrderValue)}
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -925,7 +948,11 @@ export default function AnalyticsPage() {
                       <div className="flex-1 h-6 bg-slate-100 rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full ${
-                            index === 0 ? 'bg-primary' : index === 1 ? 'bg-primary/70' : 'bg-primary/50'
+                            index === 0
+                              ? 'bg-primary'
+                              : index === 1
+                                ? 'bg-primary/70'
+                                : 'bg-primary/50'
                           }`}
                           style={{ width: `${peak.percentage}%` }}
                         />
@@ -955,7 +982,9 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-amber-700">
                     {locale === 'ar' ? 'الدفع عند الاستلام' : 'Cash on Delivery'}
                   </p>
-                  <p className="text-2xl font-bold text-amber-900">{formatCurrency(data.codRevenue)}</p>
+                  <p className="text-2xl font-bold text-amber-900">
+                    {formatCurrency(data.codRevenue)}
+                  </p>
                 </div>
                 <div className="text-end">
                   <p className="text-lg font-semibold text-amber-800">{data.codOrders}</p>
@@ -975,7 +1004,9 @@ export default function AnalyticsPage() {
                   <p className="text-sm text-blue-700">
                     {locale === 'ar' ? 'الدفع الإلكتروني' : 'Online Payment'}
                   </p>
-                  <p className="text-2xl font-bold text-blue-900">{formatCurrency(data.onlineRevenue)}</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {formatCurrency(data.onlineRevenue)}
+                  </p>
                 </div>
                 <div className="text-end">
                   <p className="text-lg font-semibold text-blue-800">{data.onlineOrders}</p>
@@ -1022,11 +1053,15 @@ export default function AnalyticsPage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="p-2 bg-green-50 rounded-lg">
                   <p className="text-lg font-bold text-green-600">{data.completedOrders}</p>
-                  <p className="text-xs text-green-700">{locale === 'ar' ? 'مكتمل' : 'Completed'}</p>
+                  <p className="text-xs text-green-700">
+                    {locale === 'ar' ? 'مكتمل' : 'Completed'}
+                  </p>
                 </div>
                 <div className="p-2 bg-amber-50 rounded-lg">
                   <p className="text-lg font-bold text-amber-600">{data.pendingOrders}</p>
-                  <p className="text-xs text-amber-700">{locale === 'ar' ? 'قيد التنفيذ' : 'Pending'}</p>
+                  <p className="text-xs text-amber-700">
+                    {locale === 'ar' ? 'قيد التنفيذ' : 'Pending'}
+                  </p>
                 </div>
                 <div className="p-2 bg-red-50 rounded-lg">
                   <p className="text-lg font-bold text-red-600">{data.cancelledOrders}</p>
@@ -1048,12 +1083,17 @@ export default function AnalyticsPage() {
               {data.cancellationReasons.length === 0 ? (
                 <div className="text-center py-6 text-slate-400">
                   <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                  <p className="text-sm">{locale === 'ar' ? 'لا توجد إلغاءات' : 'No cancellations'}</p>
+                  <p className="text-sm">
+                    {locale === 'ar' ? 'لا توجد إلغاءات' : 'No cancellations'}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {data.cancellationReasons.slice(0, 4).map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
+                    >
                       <div className="flex-1">
                         <p className="text-sm text-slate-700 truncate">
                           {item.reason || (locale === 'ar' ? 'بدون سبب' : 'No reason')}
@@ -1087,17 +1127,23 @@ export default function AnalyticsPage() {
               <div className="text-center p-4 bg-blue-50 rounded-xl">
                 <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-blue-700">{data.totalCustomers}</p>
-                <p className="text-xs text-blue-600">{locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}</p>
+                <p className="text-xs text-blue-600">
+                  {locale === 'ar' ? 'إجمالي العملاء' : 'Total Customers'}
+                </p>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl">
                 <UserCheck className="w-8 h-8 text-green-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-green-700">{data.returningCustomers}</p>
-                <p className="text-xs text-green-600">{locale === 'ar' ? 'عملاء متكررون' : 'Returning'}</p>
+                <p className="text-xs text-green-600">
+                  {locale === 'ar' ? 'عملاء متكررون' : 'Returning'}
+                </p>
               </div>
               <div className="text-center p-4 bg-purple-50 rounded-xl">
                 <Star className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-purple-700">{data.newCustomers}</p>
-                <p className="text-xs text-purple-600">{locale === 'ar' ? 'عملاء جدد' : 'New Customers'}</p>
+                <p className="text-xs text-purple-600">
+                  {locale === 'ar' ? 'عملاء جدد' : 'New Customers'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1117,7 +1163,9 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <p className="text-4xl font-bold text-slate-900">{data.reviewStats.avgRating.toFixed(1)}</p>
+                  <p className="text-4xl font-bold text-slate-900">
+                    {data.reviewStats.avgRating.toFixed(1)}
+                  </p>
                   <div className="flex items-center justify-center gap-0.5 mt-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
@@ -1144,7 +1192,9 @@ export default function AnalyticsPage() {
                           style={{
                             width: `${
                               data.reviewStats.totalReviews > 0
-                                ? (data.reviewStats.distribution[rating] / data.reviewStats.totalReviews) * 100
+                                ? (data.reviewStats.distribution[rating] /
+                                    data.reviewStats.totalReviews) *
+                                  100
                                 : 0
                             }%`,
                           }}
@@ -1206,7 +1256,9 @@ export default function AnalyticsPage() {
                       </p>
                     </div>
                     <div className="text-end shrink-0">
-                      <p className="font-bold text-primary">{formatCurrency(product.total_revenue)}</p>
+                      <p className="font-bold text-primary">
+                        {formatCurrency(product.total_revenue)}
+                      </p>
                     </div>
                   </div>
                 ))}

@@ -845,17 +845,17 @@ export default function ProviderDashboard() {
             </Link>
 
             <Link
-              href={`/${locale}/provider/reports`}
+              href={`/${locale}/provider/analytics`}
               className="bg-white rounded-2xl p-5 border border-slate-100 shadow-elegant hover:shadow-elegant-lg hover:-translate-y-1 hover:border-success/30 transition-all duration-300 group"
             >
               <div className="w-12 h-12 bg-success/10 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <BarChart3 className="w-6 h-6 text-success" strokeWidth={1.8} />
               </div>
               <p className="font-semibold text-slate-800">
-                {locale === 'ar' ? 'التقارير' : 'Reports'}
+                {locale === 'ar' ? 'التحليلات' : 'Analytics'}
               </p>
               <p className="text-xs text-slate-500 mt-0.5">
-                {locale === 'ar' ? 'عرض الإحصائيات' : 'View analytics'}
+                {locale === 'ar' ? 'عرض الإحصائيات' : 'View statistics'}
               </p>
             </Link>
 
