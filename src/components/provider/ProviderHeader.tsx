@@ -317,9 +317,9 @@ export function ProviderHeader({
             {/* Notifications Dropdown Panel */}
             {notificationsOpen && (
               <div
-                className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full mt-2 w-80 sm:w-96 z-50 animate-slide-up`}
+                className={`absolute ${isRTL ? 'left-0' : 'right-0'} top-full pt-2 w-80 sm:w-96 z-50`}
               >
-                <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 overflow-hidden">
+                <div className="bg-white rounded-2xl shadow-elegant-lg border border-slate-100 overflow-hidden animate-slide-up">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-slate-50/80 border-b border-slate-100">
                     <div>
