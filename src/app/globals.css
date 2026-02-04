@@ -1259,3 +1259,93 @@ input[type='number'].price-input {
     transform: scale(1.08);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Print Styles - Order Details & Invoice Printing
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media print {
+  /* Hide sidebar, header, and navigation */
+  aside,
+  nav,
+  header,
+  [data-sidebar],
+  [data-admin-sidebar],
+  .print\\:hidden {
+    display: none !important;
+  }
+
+  /* Show main content full width */
+  main {
+    margin: 0 !important;
+    padding: 15px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Reset body */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force white backgrounds for cards */
+  .bg-white,
+  [class*='bg-slate-50'] {
+    background-color: white !important;
+  }
+
+  /* Keep status colors visible */
+  [class*='bg-green'],
+  [class*='bg-red'],
+  [class*='bg-yellow'],
+  [class*='bg-blue'],
+  [class*='bg-amber'],
+  [class*='bg-purple'],
+  [class*='bg-cyan'] {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide action buttons */
+  button:not(.print-keep),
+  a[href^='tel:'],
+  a[href^='mailto:'] {
+    display: none !important;
+  }
+
+  /* Ensure text is visible */
+  * {
+    color: black !important;
+  }
+
+  /* Keep colorful text for totals */
+  .text-primary,
+  .text-green-600,
+  .text-red-600 {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page breaks */
+  .print-page-break {
+    page-break-before: always;
+  }
+
+  /* Show borders */
+  .border,
+  [class*='border-'] {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Grid adjustments */
+  .grid {
+    display: block !important;
+  }
+
+  .lg\\:col-span-2 {
+    width: 100% !important;
+  }
+}

@@ -330,10 +330,11 @@ export function AdminSidebar({
 
       {/* Sidebar - Glassmorphism Design */}
       <aside
+        data-admin-sidebar
         className={`
           fixed lg:static inset-y-0 z-50
           w-64 bg-white/95 backdrop-blur-md shadow-elegant
-          transform flex flex-col overflow-hidden
+          transform flex flex-col overflow-hidden print:hidden
           ${hasMounted ? 'transition-transform duration-300 ease-in-out' : ''}
           ${isRTL ? 'right-0 border-l border-slate-200/50' : 'left-0 border-r border-slate-200/50'}
           ${isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full lg:translate-x-0' : '-translate-x-full lg:translate-x-0'}

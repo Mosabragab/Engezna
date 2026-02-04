@@ -25,10 +25,11 @@ const ORDER_SELECT = `
   cancelled_reason, cancelled_by
 `;
 
-// Optimized order items select
+// Optimized order items select - Updated to include all necessary fields
 const ORDER_ITEMS_SELECT = `
   id, order_id, menu_item_id, variant_id, quantity,
-  unit_price, total_price, notes, addons
+  unit_price, total_price, item_name_ar, item_name_en,
+  item_price, special_instructions, customizations
 `;
 
 // ═══════════════════════════════════════════════════════════════════════
