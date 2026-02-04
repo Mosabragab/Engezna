@@ -3,15 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X,
-  Camera,
-  FileText,
-  Sparkles,
-  ArrowLeft,
-  ArrowRight,
-  ChevronRight,
-} from 'lucide-react';
+import { X, Camera, FileText, Sparkles, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -219,9 +211,7 @@ export function CustomOrderWelcomeBanner({
                       <span className="text-primary font-bold text-lg">1</span>
                     </div>
                     <p className="text-white text-sm font-medium">
-                      {isRTL
-                        ? 'أرسل طلبك بالصورة أو اكتبه'
-                        : 'Send your order via image or text'}
+                      {isRTL ? 'أرسل طلبك بالصورة أو اكتبه' : 'Send your order via image or text'}
                     </p>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">

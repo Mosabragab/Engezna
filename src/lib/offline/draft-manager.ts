@@ -331,11 +331,7 @@ export class DraftManager {
    * Check if draft has meaningful content worth saving
    */
   private hasMeaningfulContent(draft: DraftInput): boolean {
-    return !!(
-      draft.text?.trim() ||
-      draft.imageDataUrls?.length ||
-      draft.notes?.trim()
-    );
+    return !!(draft.text?.trim() || draft.imageDataUrls?.length || draft.notes?.trim());
   }
 
   /**
