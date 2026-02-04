@@ -50,7 +50,7 @@ export function EngeznaLogo({
       <span
         className={`font-bold ${sizes[size]} ${className}`}
         style={{
-          fontFamily: "'Aref Ruqaa', serif",
+          fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif",
           color: '#0F172A',
         }}
       >
@@ -69,7 +69,7 @@ export function EngeznaLogo({
         <span
           className={`logo-text-${uniqueId} font-bold ${sizes[size]} relative inline-block`}
           style={{
-            fontFamily: "'Aref Ruqaa', serif",
+            fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif",
             color: '#0F172A',
             lineHeight: 1.2,
           }}
@@ -133,7 +133,7 @@ export function EngeznaLoading({ size = 'sm' }: { size?: 'xs' | 'sm' | 'md' }) {
       <div className="w-5 h-5 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
       <span
         className={`font-bold ${sizes[size]}`}
-        style={{ fontFamily: "'Aref Ruqaa', serif", color: '#0F172A' }}
+        style={{ fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif", color: '#0F172A' }}
       >
         إنجزنا
       </span>

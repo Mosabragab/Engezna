@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getToken, onMessage, MessagePayload } from 'firebase/messaging';
 import { getFirebaseMessaging } from '@/lib/firebase/config';
 import { createClient } from '@/lib/supabase/client';
+
+// Type imports only (no runtime cost)
+import type { MessagePayload } from 'firebase/messaging';
 
 // VAPID key for Firebase Cloud Messaging
 // This is the public key used for web push
@@ -143,6 +145,8 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       // Wait for service worker to be ready
       await navigator.serviceWorker.ready;
 
+      // Dynamic import getToken to avoid loading Firebase on initial page load
+      const { getToken } = await import('firebase/messaging');
       const token = await getToken(messaging, {
         vapidKey: VAPID_KEY,
         serviceWorkerRegistration: swRegistration,
@@ -263,8 +267,10 @@ export function usePushNotifications(): UsePushNotificationsReturn {
     (callback: (payload: NotificationPayload) => void): (() => void) => {
       let unsubscribe: (() => void) | null = null;
 
-      getFirebaseMessaging().then((messaging) => {
+      getFirebaseMessaging().then(async (messaging) => {
         if (messaging) {
+          // Dynamic import onMessage to avoid loading Firebase on initial page load
+          const { onMessage } = await import('firebase/messaging');
           unsubscribe = onMessage(messaging, (payload: MessagePayload) => {
             console.log('Foreground message received:', payload);
 

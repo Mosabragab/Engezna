@@ -99,7 +99,7 @@ export default function OfflinePage() {
         <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-gray-700">
           <WifiOff className="w-12 h-12 text-gray-400" />
         </div>
-        <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: "'Aref Ruqaa', serif" }}>
+        <h1 className="text-3xl font-bold mb-2" style={{ fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif" }}>
           إنجزنا
         </h1>
       </div>

@@ -1,6 +1,3 @@
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getMessaging, Messaging, isSupported } from 'firebase/messaging';
-
 // Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyAMUPCzi2GacDUFIwFLZA11vpFI-bhAAmg',
@@ -13,23 +10,28 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-1YF8CT5QB6',
 };
 
-// Initialize Firebase (singleton pattern)
-let firebaseApp: FirebaseApp | null = null;
+// Firebase app instance (lazy loaded)
+let firebaseApp: import('firebase/app').FirebaseApp | null = null;
 
-export function getFirebaseApp(): FirebaseApp {
+// Get Firebase app (lazy loads Firebase SDK)
+export async function getFirebaseApp(): Promise<import('firebase/app').FirebaseApp> {
   if (!firebaseApp) {
+    const { initializeApp, getApps } = await import('firebase/app');
     firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   }
   return firebaseApp;
 }
 
-// Get Firebase Messaging instance (only in browser)
-let messagingInstance: Messaging | null = null;
+// Get Firebase Messaging instance (lazy loads Firebase Messaging SDK)
+let messagingInstance: import('firebase/messaging').Messaging | null = null;
 
-export async function getFirebaseMessaging(): Promise<Messaging | null> {
+export async function getFirebaseMessaging(): Promise<import('firebase/messaging').Messaging | null> {
   if (typeof window === 'undefined') {
     return null;
   }
+
+  // Dynamic import Firebase Messaging
+  const { getMessaging, isSupported } = await import('firebase/messaging');
 
   // Check if messaging is supported
   const supported = await isSupported();
@@ -39,7 +41,7 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
   }
 
   if (!messagingInstance) {
-    const app = getFirebaseApp();
+    const app = await getFirebaseApp();
     messagingInstance = getMessaging(app);
   }
 
