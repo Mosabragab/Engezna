@@ -12,7 +12,6 @@ import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
   Clock,
   FileText,
-  Mic,
   Image as ImageIcon,
   CheckCircle2,
   XCircle,
@@ -33,9 +32,8 @@ type CustomOrderRequest = {
   id: string;
   broadcast_id: string;
   provider_id: string;
-  input_type: 'text' | 'voice' | 'image' | 'mixed';
+  input_type: 'text' | 'image' | 'mixed';
   original_text: string | null;
-  voice_url: string | null;
   image_urls: string[] | null;
   customer_notes: string | null;
   status: 'pending' | 'priced' | 'approved' | 'rejected' | 'expired' | 'cancelled';
@@ -114,7 +112,6 @@ const STATUS_CONFIG: Record<
 
 const INPUT_TYPE_ICONS = {
   text: FileText,
-  voice: Mic,
   image: ImageIcon,
   mixed: FileText,
 };
@@ -608,7 +605,7 @@ export default function CustomOrdersListPage() {
                         {request.broadcast?.transcribed_text ||
                           request.broadcast?.original_text ||
                           request.original_text ||
-                          (isRTL ? '(تسجيل صوتي / صور)' : '(Voice/Image order)')}
+                          (isRTL ? '(صور)' : '(Image order)')}
                       </p>
                       {request.customer_notes && (
                         <p className="text-xs text-slate-500 mt-1">

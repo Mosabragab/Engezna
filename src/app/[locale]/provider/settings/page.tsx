@@ -35,7 +35,6 @@ import {
   Trash2,
   Package,
   ClipboardList,
-  Mic,
   Image as ImageIcon,
   FileText,
   Sparkles,
@@ -54,7 +53,6 @@ import { Label } from '@/components/ui/label';
 
 type CustomOrderSettings = {
   accepts_text: boolean;
-  accepts_voice: boolean;
   accepts_image: boolean;
   pricing_timeout_hours: number;
   auto_cancel_after_hours: number;
@@ -68,7 +66,6 @@ type CustomOrderSettings = {
 
 const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
   accepts_text: true,
-  accepts_voice: true,
   accepts_image: true,
   pricing_timeout_hours: 2,
   auto_cancel_after_hours: 24,
@@ -76,9 +73,9 @@ const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
   max_items_per_order: 50,
   show_price_history: true,
   welcome_banner_enabled: true,
-  welcome_banner_text_ar: 'مرحباً! يمكنك إرسال طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً',
+  welcome_banner_text_ar: 'مرحباً! يمكنك إرسال طلبك بالصورة أو النص وسنقوم بتسعيره فوراً',
   welcome_banner_text_en:
-    'Welcome! Send your order via voice, image, or text and we will price it immediately',
+    'Welcome! Send your order via image or text and we will price it immediately',
 };
 
 type Provider = {
@@ -1265,8 +1262,8 @@ export default function ProviderSettingsPage() {
                 </CardTitle>
                 <p className="text-sm text-slate-500 mt-1">
                   {locale === 'ar'
-                    ? 'اسمح للعملاء بإرسال طلباتهم بالصوت أو الصورة أو النص، وقم بتسعيرها يدوياً'
-                    : 'Allow customers to send orders via voice, image, or text, and price them manually'}
+                    ? 'اسمح للعملاء بإرسال طلباتهم بالصورة أو النص، وقم بتسعيرها يدوياً'
+                    : 'Allow customers to send orders via image or text, and price them manually'}
                 </p>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1426,7 +1423,7 @@ export default function ProviderSettingsPage() {
                         {locale === 'ar' ? 'طرق استقبال الطلبات' : 'Order Input Methods'}
                       </Label>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {/* Text */}
                         <button
                           onClick={() =>
@@ -1452,37 +1449,6 @@ export default function ProviderSettingsPage() {
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
                             {locale === 'ar' ? 'كتابة الطلب' : 'Type order'}
-                          </p>
-                        </button>
-
-                        {/* Voice */}
-                        <button
-                          onClick={() =>
-                            setCustomOrderSettings((s) => ({
-                              ...s,
-                              accepts_voice: !s.accepts_voice,
-                            }))
-                          }
-                          className={`p-4 rounded-xl border transition-all ${
-                            customOrderSettings.accepts_voice
-                              ? 'border-primary bg-primary/5'
-                              : 'border-slate-200 hover:border-slate-300'
-                          }`}
-                        >
-                          <Mic
-                            className={`w-6 h-6 mx-auto mb-2 ${
-                              customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-400'
-                            }`}
-                          />
-                          <p
-                            className={`font-medium ${
-                              customOrderSettings.accepts_voice ? 'text-primary' : 'text-slate-600'
-                            }`}
-                          >
-                            {locale === 'ar' ? 'صوتي' : 'Voice'}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1">
-                            {locale === 'ar' ? 'تسجيل صوتي' : 'Voice recording'}
                           </p>
                         </button>
 
@@ -1670,8 +1636,8 @@ export default function ProviderSettingsPage() {
                           >
                             <li>
                               {locale === 'ar'
-                                ? 'العميل يرسل طلبه (نص/صوت/صورة)'
-                                : 'Customer sends order (text/voice/image)'}
+                                ? 'العميل يرسل طلبه (نص/صورة)'
+                                : 'Customer sends order (text/image)'}
                             </li>
                             <li>
                               {locale === 'ar'
