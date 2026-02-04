@@ -1269,8 +1269,7 @@ input[type='number'].price-input {
   nav,
   header,
   [data-sidebar],
-  [data-admin-sidebar],
-  .print\\:hidden {
+  [data-admin-sidebar] {
     display: none !important;
   }
 
@@ -1292,8 +1291,7 @@ input[type='number'].price-input {
   }
 
   /* Force white backgrounds for cards */
-  .bg-white,
-  [class*='bg-slate-50'] {
+  .bg-white {
     background-color: white !important;
   }
 
@@ -1310,15 +1308,8 @@ input[type='number'].price-input {
   }
 
   /* Hide action buttons */
-  button:not(.print-keep),
-  a[href^='tel:'],
-  a[href^='mailto:'] {
+  button:not(.print-keep) {
     display: none !important;
-  }
-
-  /* Ensure text is visible */
-  * {
-    color: black !important;
   }
 
   /* Keep colorful text for totals */
@@ -1335,17 +1326,12 @@ input[type='number'].price-input {
   }
 
   /* Show borders */
-  .border,
-  [class*='border-'] {
+  .border {
     border-color: #e2e8f0 !important;
   }
 
-  /* Grid adjustments */
+  /* Grid adjustments for print */
   .grid {
     display: block !important;
-  }
-
-  .lg\\:col-span-2 {
-    width: 100% !important;
   }
 }
