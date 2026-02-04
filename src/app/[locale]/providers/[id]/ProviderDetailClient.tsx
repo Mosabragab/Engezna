@@ -72,7 +72,6 @@ export type ProviderData = {
   operation_mode?: 'standard' | 'custom' | 'hybrid';
   custom_order_settings?: {
     accepts_text?: boolean;
-    accepts_voice?: boolean;
     accepts_image?: boolean;
     pricing_timeout_hours?: number;
     customer_approval_timeout_hours?: number;

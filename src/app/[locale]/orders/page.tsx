@@ -389,13 +389,9 @@ export default function OrderHistoryPage() {
                               {broadcast.original_text
                                 ? broadcast.original_text.slice(0, 60) +
                                   (broadcast.original_text.length > 60 ? '...' : '')
-                                : broadcast.original_input_type === 'voice'
-                                  ? locale === 'ar'
-                                    ? '🎤 تسجيل صوتي'
-                                    : '🎤 Voice recording'
-                                  : locale === 'ar'
-                                    ? '📷 صور'
-                                    : '📷 Images'}
+                                : locale === 'ar'
+                                  ? '📷 صور'
+                                  : '📷 Images'}
                             </p>
 
                             <div className="flex items-center justify-between">

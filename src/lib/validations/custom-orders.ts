@@ -6,9 +6,9 @@ import { uuidSchema, priceSchema, quantitySchema, addressSchema } from './common
  */
 
 /**
- * Custom order input type
+ * Custom order input type (voice removed)
  */
-export const customOrderInputTypeSchema = z.enum(['text', 'voice', 'image', 'mixed']);
+export const customOrderInputTypeSchema = z.enum(['text', 'image', 'mixed']);
 
 /**
  * Custom order item availability status
@@ -47,9 +47,8 @@ export const createBroadcastSchema = z.object({
     .max(3, 'Maximum 3 providers allowed'),
   order_type: z.enum(['delivery', 'pickup']),
   delivery_address: addressSchema.optional(),
-  // Input can be text, voice URL, or image URLs
+  // Input can be text or image URLs
   text_input: z.string().max(5000).optional(),
-  voice_url: z.string().url().optional(),
   image_urls: z.array(z.string().url()).max(5).optional(),
   notes: z.string().max(1000).optional(),
 });
@@ -149,11 +148,10 @@ export const customRequestStatusSchema = z.enum([
 ]);
 
 /**
- * Provider custom order settings schema
+ * Provider custom order settings schema (voice removed)
  */
 export const providerCustomOrderSettingsSchema = z.object({
   accepts_text: z.boolean().default(true),
-  accepts_voice: z.boolean().default(true),
   accepts_image: z.boolean().default(true),
   max_items_per_order: z.number().int().min(1).max(100).default(50),
   pricing_timeout_hours: z.number().int().min(1).max(72).default(24),

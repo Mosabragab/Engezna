@@ -5,7 +5,6 @@ import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Mic,
   Camera,
   FileText,
   Sparkles,
@@ -21,7 +20,6 @@ interface CustomOrderWelcomeBannerProps {
   providerName: string;
   settings?: {
     accepts_text?: boolean;
-    accepts_voice?: boolean;
     accepts_image?: boolean;
     welcome_banner_text_ar?: string;
     welcome_banner_text_en?: string;
@@ -64,22 +62,15 @@ export function CustomOrderWelcomeBanner({
   }
 
   const defaultTextAr =
-    'مرحباً! فعّلنا نظام الطلب الخاص 🎉 أرسل طلبك بالصوت أو الصورة أو النص وسنقوم بتسعيره فوراً';
+    'مرحباً! فعّلنا نظام الطلب الخاص 🎉 أرسل طلبك بالصورة أو النص وسنقوم بتسعيره فوراً';
   const defaultTextEn =
-    'Welcome! We enabled Custom Orders 🎉 Send your order via voice, image, or text and we will price it immediately';
+    'Welcome! We enabled Custom Orders 🎉 Send your order via image or text and we will price it immediately';
 
   const bannerText = isRTL
     ? settings?.welcome_banner_text_ar || defaultTextAr
     : settings?.welcome_banner_text_en || defaultTextEn;
 
   const inputMethods = [
-    {
-      key: 'voice',
-      icon: Mic,
-      enabled: settings?.accepts_voice !== false,
-      labelAr: 'صوتي',
-      labelEn: 'Voice',
-    },
     {
       key: 'image',
       icon: Camera,
@@ -229,8 +220,8 @@ export function CustomOrderWelcomeBanner({
                     </div>
                     <p className="text-white text-sm font-medium">
                       {isRTL
-                        ? 'أرسل طلبك بالصوت أو الصورة أو اكتبه'
-                        : 'Send your order via voice, image, or text'}
+                        ? 'أرسل طلبك بالصورة أو اكتبه'
+                        : 'Send your order via image or text'}
                     </p>
                   </div>
                   <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
@@ -327,7 +318,7 @@ export function CustomOrderFloatingButton({
 
           {/* Button */}
           <div className="relative flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-sky-400 text-white rounded-full shadow-xl">
-            <Mic className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
             <span className="font-semibold text-sm whitespace-nowrap">
               {isRTL ? 'طلب خاص' : 'Custom Order'}
             </span>
