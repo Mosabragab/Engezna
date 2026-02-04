@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   FileText,
-  Mic,
   Image as ImageIcon,
   Send,
   X,
@@ -17,7 +16,6 @@ import {
   Truck,
   Package,
   MapPin,
-  ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -25,7 +23,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 // Child components
 import { TextOrderInput } from './TextOrderInput';
-import { VoiceOrderInput } from './VoiceOrderInput';
 import { ImageOrderInput } from './ImageOrderInput';
 import { MerchantSelector } from './MerchantSelector';
 import { ActiveCartBanner, ActiveCartNotice } from './ActiveCartBanner';
@@ -53,7 +50,7 @@ interface ExtendedCustomOrderInterfaceProps extends CustomOrderInterfaceProps {
   customerId?: string;
 }
 
-type InputTab = 'text' | 'voice' | 'image';
+type InputTab = 'text' | 'image';
 
 export function CustomOrderInterface({
   provider,
@@ -72,7 +69,6 @@ export function CustomOrderInterface({
   const [orderItems, setOrderItems] = useState<OrderItem[]>([
     { id: crypto.randomUUID(), text: '' },
   ]);
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [images, setImages] = useState<File[]>([]);
   const [notes, setNotes] = useState('');
 
@@ -118,12 +114,11 @@ export function CustomOrderInterface({
     provider?.name_ar || 'General'
   );
 
-  // Determine accepted input types
+  // Determine accepted input types (voice removed)
   const acceptedTypes = useMemo(() => {
     const settings = provider?.custom_order_settings;
     return {
       text: settings?.accepts_text ?? true,
-      voice: settings?.accepts_voice ?? true,
       image: settings?.accepts_image ?? true,
     };
   }, [provider?.custom_order_settings]);
@@ -172,7 +167,7 @@ export function CustomOrderInterface({
   useEffect(() => {
     startAutoSave(() => {
       const text = itemsToText(orderItems);
-      if (!text && !voiceBlob && images.length === 0) {
+      if (!text && images.length === 0) {
         return null;
       }
 
@@ -185,7 +180,7 @@ export function CustomOrderInterface({
         notes: notes || undefined,
       };
     });
-  }, [orderItems, voiceBlob, images, notes, provider, startAutoSave]);
+  }, [orderItems, images, notes, provider, startAutoSave]);
 
   // Restore draft
   const handleRestoreDraft = () => {
@@ -208,33 +203,21 @@ export function CustomOrderInterface({
   // Determine input type based on what's filled
   const determineInputType = (): CustomOrderInputType => {
     const hasText = textInput.trim().length > 0;
-    const hasVoice = voiceBlob !== null;
     const hasImages = images.length > 0;
 
-    if (hasText && (hasVoice || hasImages)) return 'mixed';
-    if (hasVoice) return 'voice';
+    if (hasText && hasImages) return 'mixed';
     if (hasImages) return 'image';
     return 'text';
   };
 
   // Check if form has content
   const hasContent = useMemo(() => {
-    return textInput.trim().length > 0 || voiceBlob !== null || images.length > 0;
-  }, [textInput, voiceBlob, images]);
+    return textInput.trim().length > 0 || images.length > 0;
+  }, [textInput, images]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value as InputTab);
-  };
-
-  // Handle voice recording complete
-  const handleVoiceComplete = (blob: Blob) => {
-    setVoiceBlob(blob);
-  };
-
-  // Handle voice error
-  const handleVoiceError = (errorMsg: string) => {
-    setError(errorMsg);
   };
 
   // Navigate to cart
@@ -281,18 +264,7 @@ export function CustomOrderInterface({
       const supabase = createClient();
       const storageService = createCustomOrderStorageService(supabase);
 
-      let voiceUrl: string | undefined;
       let imageUrls: string[] | undefined;
-
-      // Upload voice if exists
-      if (voiceBlob) {
-        // Generate a temporary broadcast ID for storage
-        const tempId = crypto.randomUUID();
-        const result = await storageService.uploadVoice(tempId, voiceBlob);
-        if (result.url) {
-          voiceUrl = result.url;
-        }
-      }
 
       // Upload images if exist
       if (images.length > 0) {
@@ -326,7 +298,6 @@ export function CustomOrderInterface({
         providerIds: selectedProviders,
         inputType: determineInputType(),
         text: textInput || undefined,
-        voiceUrl,
         imageUrls,
         notes: notes || undefined,
         orderType,
@@ -455,23 +426,17 @@ export function CustomOrderInterface({
 
               {/* Input Tabs */}
               <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList className="w-full grid grid-cols-3">
+                <TabsList className="w-full grid grid-cols-2">
                   {acceptedTypes.text && (
                     <TabsTrigger value="text" className="gap-1.5">
                       <FileText className="w-4 h-4" />
-                      <span className="hidden sm:inline">{isRTL ? 'نص' : 'Text'}</span>
-                    </TabsTrigger>
-                  )}
-                  {acceptedTypes.voice && (
-                    <TabsTrigger value="voice" className="gap-1.5">
-                      <Mic className="w-4 h-4" />
-                      <span className="hidden sm:inline">{isRTL ? 'صوت' : 'Voice'}</span>
+                      <span>{isRTL ? 'نص' : 'Text'}</span>
                     </TabsTrigger>
                   )}
                   {acceptedTypes.image && (
                     <TabsTrigger value="image" className="gap-1.5">
                       <ImageIcon className="w-4 h-4" />
-                      <span className="hidden sm:inline">{isRTL ? 'صور' : 'Images'}</span>
+                      <span>{isRTL ? 'صور' : 'Images'}</span>
                     </TabsTrigger>
                   )}
                 </TabsList>
@@ -484,17 +449,6 @@ export function CustomOrderInterface({
                         onItemsChange={setOrderItems}
                         disabled={isSubmitting}
                         maxItems={50}
-                      />
-                    </TabsContent>
-                  )}
-
-                  {acceptedTypes.voice && (
-                    <TabsContent value="voice">
-                      <VoiceOrderInput
-                        providerId={provider?.id || 'general'}
-                        onRecordingComplete={handleVoiceComplete}
-                        onError={handleVoiceError}
-                        disabled={isSubmitting}
                       />
                     </TabsContent>
                   )}
@@ -576,28 +530,6 @@ export function CustomOrderInterface({
                       </p>
                       <div className="bg-slate-50 rounded-xl p-3">
                         <p className="text-slate-800 whitespace-pre-wrap">{textInput}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Voice Recording */}
-                  {voiceBlob && !textInput && (
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">
-                        {isRTL ? 'تسجيل صوتي:' : 'Voice recording:'}
-                      </p>
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-3">
-                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                          <Mic className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-amber-800">
-                            {isRTL ? 'تم تسجيل رسالة صوتية' : 'Voice message recorded'}
-                          </p>
-                          <p className="text-xs text-amber-600">
-                            {isRTL ? 'سيتم إرسالها للتجار' : 'Will be sent to merchants'}
-                          </p>
-                        </div>
                       </div>
                     </div>
                   )}
