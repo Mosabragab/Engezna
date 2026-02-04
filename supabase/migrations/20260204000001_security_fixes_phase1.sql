@@ -263,7 +263,7 @@ CREATE POLICY "Service can insert settings changelog"
 --
 -- After running this migration:
 -- 1. All 10 Security Definer Views are now Security Invoker
--- 2. spatial_ref_sys has RLS enabled with public read
+-- 2. spatial_ref_sys is SKIPPED (owned by PostGIS, cannot modify - this is safe)
 -- 3. All overly permissive RLS policies are now restricted to service_role
 --    while maintaining functionality for legitimate use cases
 --
@@ -272,6 +272,6 @@ CREATE POLICY "Service can insert settings changelog"
 --
 -- بعد تشغيل هذا الـ migration:
 -- 1. كل الـ 10 Views أصبحت Security Invoker
--- 2. جدول spatial_ref_sys لديه RLS مفعل مع قراءة عامة
+-- 2. جدول spatial_ref_sys تم تخطيه (مملوك لـ PostGIS - هذا آمن)
 -- 3. كل سياسات RLS المتساهلة أصبحت مقيدة للـ service_role
 --    مع الحفاظ على الوظائف للاستخدامات المشروعة
