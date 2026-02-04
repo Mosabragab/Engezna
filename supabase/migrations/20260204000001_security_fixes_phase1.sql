@@ -169,19 +169,14 @@ CREATE POLICY "Service can insert cleanup log"
   WITH CHECK (true);
 
 -- custom_order_requests - Fix the overly permissive INSERT
+-- Note: This table links to broadcasts, not directly to customers
+-- Customer creation is handled through the broadcast system
 DROP POLICY IF EXISTS "system_insert_requests" ON public.custom_order_requests;
 CREATE POLICY "Service can insert requests"
   ON public.custom_order_requests
   FOR INSERT
   TO service_role
   WITH CHECK (true);
-
--- Also allow authenticated customers to create their own requests
-CREATE POLICY "Customers can create own requests"
-  ON public.custom_order_requests
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (customer_id = auth.uid());
 
 -- customer_notifications
 DROP POLICY IF EXISTS "System can insert customer notifications" ON public.customer_notifications;
@@ -234,19 +229,14 @@ CREATE POLICY "Authenticated can be assigned to tests"
   );
 
 -- sdui_section_analytics
+-- Note: This table stores aggregated analytics data, not user-specific
+-- All inserts should go through service_role (edge functions/cron)
 DROP POLICY IF EXISTS "Anyone can insert analytics" ON public.sdui_section_analytics;
 CREATE POLICY "Service can insert analytics"
   ON public.sdui_section_analytics
   FOR INSERT
   TO service_role
   WITH CHECK (true);
-
--- Also allow authenticated users to track their own analytics
-CREATE POLICY "Authenticated can insert own analytics"
-  ON public.sdui_section_analytics
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (user_id = auth.uid() OR user_id IS NULL);
 
 -- settings_changelog
 DROP POLICY IF EXISTS "settings_changelog_insert_policy" ON public.settings_changelog;
