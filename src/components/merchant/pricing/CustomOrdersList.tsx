@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import {
   Clock,
   FileText,
-  Mic,
   Image as ImageIcon,
   ChevronRight,
   AlertTriangle,
@@ -145,16 +144,11 @@ function InputTypeBadge({ type }: { type: CustomOrderInputType }) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
-  const config = {
+  const config: Record<string, { icon: typeof FileText; label: string; className: string }> = {
     text: {
       icon: FileText,
       label: isRTL ? 'نص' : 'Text',
       className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-    },
-    voice: {
-      icon: Mic,
-      label: isRTL ? 'صوت' : 'Voice',
-      className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     },
     image: {
       icon: ImageIcon,
@@ -168,7 +162,8 @@ function InputTypeBadge({ type }: { type: CustomOrderInputType }) {
     },
   };
 
-  const { icon: Icon, label, className } = config[type];
+  // Fallback to text config if type not found (e.g., for legacy 'voice' entries)
+  const { icon: Icon, label, className } = config[type] || config.text;
 
   return (
     <span

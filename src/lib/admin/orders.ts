@@ -25,10 +25,11 @@ const ORDER_SELECT = `
   cancelled_reason, cancelled_by
 `;
 
-// Optimized order items select
+// Optimized order items select - Updated to include all necessary fields
 const ORDER_ITEMS_SELECT = `
   id, order_id, menu_item_id, variant_id, quantity,
-  unit_price, total_price, notes, addons
+  unit_price, total_price, item_name_ar, item_name_en,
+  item_price, special_instructions, customizations
 `;
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -163,7 +164,7 @@ export async function getOrderById(
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };
     }
 
-    // Fetch order items
+    // Fetch order items from regular order_items table
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
       .select(ORDER_ITEMS_SELECT)
@@ -173,11 +174,48 @@ export async function getOrderById(
       console.error('Error fetching order items:', itemsError);
     }
 
+    // If no regular items found, check custom_order_items table
+    let finalItems = items || [];
+    if (finalItems.length === 0) {
+      const { data: customItems, error: customItemsError } = await supabase
+        .from('custom_order_items')
+        .select(
+          `
+          id, order_id, quantity, unit_price, total_price,
+          item_name_ar, item_name_en, merchant_notes, display_order
+        `
+        )
+        .eq('order_id', orderId)
+        .order('display_order', { ascending: true });
+
+      if (customItemsError) {
+        console.error('Error fetching custom order items:', customItemsError);
+      }
+
+      // Map custom items to the expected OrderItem format
+      if (customItems && customItems.length > 0) {
+        finalItems = customItems.map((item) => ({
+          id: item.id,
+          order_id: item.order_id,
+          menu_item_id: null,
+          variant_id: null,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          item_name_ar: item.item_name_ar,
+          item_name_en: item.item_name_en || item.item_name_ar,
+          item_price: item.unit_price,
+          special_instructions: item.merchant_notes,
+          customizations: null,
+        }));
+      }
+    }
+
     return {
       success: true,
       data: {
         ...order,
-        items: items || [],
+        items: finalItems,
       } as AdminOrder & { items: OrderItem[] },
     };
   } catch (err) {

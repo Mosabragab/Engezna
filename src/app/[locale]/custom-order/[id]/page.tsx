@@ -23,7 +23,6 @@ import {
   XCircle,
   Store,
   FileText,
-  Mic,
   Image as ImageIcon,
   ArrowRight,
   ArrowLeft,
@@ -301,9 +300,7 @@ export default function CustomOrderReviewPage() {
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0">
-                {broadcast.original_input_type === 'voice' ? (
-                  <Mic className="w-6 h-6 text-primary" />
-                ) : broadcast.original_input_type === 'image' ? (
+                {broadcast.original_input_type === 'image' ? (
                   <ImageIcon className="w-6 h-6 text-primary" />
                 ) : (
                   <FileText className="w-6 h-6 text-primary" />
@@ -314,7 +311,7 @@ export default function CustomOrderReviewPage() {
                   {isRTL ? 'طلبك الخاص' : 'Your Custom Order'}
                 </h2>
                 <p className="text-sm text-muted-foreground line-clamp-2">
-                  {broadcast.original_text || (isRTL ? 'تسجيل صوتي / صور' : 'Voice / Images')}
+                  {broadcast.original_text || (isRTL ? 'صور' : 'Images')}
                 </p>
                 <p className="text-xs text-muted-foreground mt-2">
                   {formatDate(broadcast.created_at)}

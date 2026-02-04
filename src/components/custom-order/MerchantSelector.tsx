@@ -225,11 +225,6 @@ export function MerchantSelector({
                         📝 {isRTL ? 'نص' : 'Text'}
                       </span>
                     )}
-                    {provider.custom_order_settings.accepts_voice && (
-                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
-                        🎤 {isRTL ? 'صوت' : 'Voice'}
-                      </span>
-                    )}
                     {provider.custom_order_settings.accepts_image && (
                       <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">
                         📷 {isRTL ? 'صور' : 'Images'}

@@ -6,7 +6,6 @@ import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CustomerLayout } from '@/components/customer/layout';
 import { SearchBar, FilterChip, ProviderCard, EmptyState } from '@/components/customer/shared';
-import { ChatFAB } from '@/components/customer/voice';
 import { useFavorites } from '@/hooks/customer';
 import { useSDUI } from '@/hooks/sdui';
 import { Star, Clock, Percent, ArrowUpDown, MapPin, Navigation } from 'lucide-react';
@@ -62,7 +61,6 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   const [sortBy, setSortBy] = useState<SortOption | null>(null);
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [showOffersOnly, setShowOffersOnly] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [productMatchedProviderIds, setProductMatchedProviderIds] = useState<Set<string>>(
     new Set()
   );
@@ -559,9 +557,6 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
           </>
         )}
       </div>
-
-      {/* Chat FAB */}
-      <ChatFAB isOpen={isChatOpen} onOpenChange={setIsChatOpen} />
     </CustomerLayout>
   );
 }

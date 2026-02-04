@@ -111,8 +111,8 @@ export class BroadcastService {
     }
 
     // Validate input content
-    if (!payload.text && !payload.voiceUrl && !payload.imageUrls?.length) {
-      throw new BroadcastError('Order must have text, voice, or images', 'INVALID_INPUT');
+    if (!payload.text && !payload.imageUrls?.length) {
+      throw new BroadcastError('Order must have text or images', 'INVALID_INPUT');
     }
 
     // Validate and get provider details
@@ -176,7 +176,7 @@ export class BroadcastService {
         provider_ids: payload.providerIds,
         original_input_type: payload.inputType,
         original_text: payload.text || null,
-        voice_url: payload.voiceUrl || null,
+        voice_url: null,
         image_urls: payload.imageUrls || null,
         customer_notes: payload.notes || null,
         delivery_address_id: payload.deliveryAddressId || null,
@@ -203,7 +203,7 @@ export class BroadcastService {
       provider_id: provider.id,
       input_type: payload.inputType,
       original_text: payload.text || null,
-      voice_url: payload.voiceUrl || null,
+      voice_url: null,
       image_urls: payload.imageUrls || null,
       customer_notes: payload.notes || null,
       status: 'pending' as CustomRequestStatus,

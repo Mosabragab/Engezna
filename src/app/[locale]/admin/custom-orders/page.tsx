@@ -18,7 +18,6 @@ import {
   XCircle,
   AlertTriangle,
   FileText,
-  Mic,
   Image as ImageIcon,
   Timer,
   TrendingUp,
@@ -42,7 +41,6 @@ interface BroadcastWithDetails {
   provider_ids: string[];
   original_input_type: CustomOrderInputType;
   original_text: string | null;
-  voice_url: string | null;
   image_urls: string[] | null;
   status: BroadcastStatus;
   pricing_deadline: string;
@@ -282,8 +280,6 @@ export default function AdminCustomOrdersPage() {
   // Get input type icon
   const getInputIcon = (type: CustomOrderInputType) => {
     switch (type) {
-      case 'voice':
-        return <Mic className="w-4 h-4" />;
       case 'image':
         return <ImageIcon className="w-4 h-4" />;
       default:

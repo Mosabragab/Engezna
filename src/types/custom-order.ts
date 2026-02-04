@@ -23,9 +23,9 @@ export type OperationMode = 'standard' | 'custom' | 'hybrid';
 
 /**
  * Custom order input types
- * أنواع مدخلات الطلب المفتوح
+ * أنواع مدخلات الطلب المفتوح (voice removed)
  */
-export type CustomOrderInputType = 'text' | 'voice' | 'image' | 'mixed';
+export type CustomOrderInputType = 'text' | 'image' | 'mixed';
 
 /**
  * Custom order request status
@@ -89,11 +89,10 @@ export type ItemSource = 'menu' | 'custom';
 
 /**
  * Custom order settings stored in provider.custom_order_settings JSONB
- * إعدادات الطلب المفتوح
+ * إعدادات الطلب المفتوح (voice removed)
  */
 export interface CustomOrderSettings {
   accepts_text: boolean;
-  accepts_voice: boolean;
   accepts_image: boolean;
   max_items_per_order: number;
   pricing_timeout_hours: number;
@@ -107,7 +106,6 @@ export interface CustomOrderSettings {
  */
 export const DEFAULT_CUSTOM_ORDER_SETTINGS: CustomOrderSettings = {
   accepts_text: true,
-  accepts_voice: true,
   accepts_image: true,
   max_items_per_order: 50,
   pricing_timeout_hours: 24,
@@ -353,29 +351,16 @@ export interface PriceHistoryItem {
 
 /**
  * Custom order draft stored in localStorage
- * مسودة الطلب المحفوظة
+ * مسودة الطلب المحفوظة (voice removed)
  */
 export interface CustomOrderDraft {
   providerId: string;
   providerName: string;
   inputType: CustomOrderInputType;
   text?: string;
-  voiceCacheId?: string; // Reference to IndexedDB
   imageDataUrls?: string[]; // Base64 for small previews
   notes?: string;
   savedAt: number; // Unix timestamp
-}
-
-/**
- * Voice recording cached in IndexedDB
- */
-export interface CachedVoiceRecording {
-  id: string;
-  blob: Blob;
-  providerId: string;
-  timestamp: number;
-  status: 'pending' | 'uploaded' | 'failed';
-  retryCount: number;
 }
 
 // ============================================================================
@@ -383,13 +368,12 @@ export interface CachedVoiceRecording {
 // ============================================================================
 
 /**
- * Create broadcast request payload
+ * Create broadcast request payload (voice removed)
  */
 export interface CreateBroadcastPayload {
   providerIds: string[];
   inputType: CustomOrderInputType;
   text?: string;
-  voiceUrl?: string;
   imageUrls?: string[];
   notes?: string;
   deliveryAddressId?: string;
@@ -491,16 +475,6 @@ export interface TextOrderInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   maxLength?: number;
-  disabled?: boolean;
-}
-
-/**
- * Props for VoiceOrderInput component
- */
-export interface VoiceOrderInputProps {
-  onRecordingComplete: (blob: Blob, transcription?: string) => void;
-  onError: (error: string) => void;
-  maxDuration?: number;
   disabled?: boolean;
 }
 
@@ -720,11 +694,6 @@ export const MAX_BROADCAST_PROVIDERS = 3;
  * Maximum images per custom order
  */
 export const MAX_ORDER_IMAGES = 5;
-
-/**
- * Maximum voice recording duration (seconds)
- */
-export const MAX_VOICE_DURATION_SECONDS = 120;
 
 /**
  * Draft expiry hours

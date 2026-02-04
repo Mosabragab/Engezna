@@ -6,7 +6,6 @@ import { Heart } from 'lucide-react';
 import { useFavorites } from '@/hooks/customer';
 import { CustomerLayout } from '@/components/customer/layout';
 import { ProviderCard } from '@/components/customer/shared';
-import { VoiceOrderFAB } from '@/components/customer/voice';
 
 export default function FavoritesPage() {
   const locale = useLocale();
@@ -81,7 +80,6 @@ export default function FavoritesPage() {
             {t('browse')}
           </button>
         </div>
-        <VoiceOrderFAB />
       </CustomerLayout>
     );
   }
@@ -122,8 +120,6 @@ export default function FavoritesPage() {
           ))}
         </div>
       </div>
-
-      <VoiceOrderFAB />
     </CustomerLayout>
   );
 }

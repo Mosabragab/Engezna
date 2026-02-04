@@ -20,14 +20,10 @@ import {
   XCircle,
   AlertTriangle,
   FileText,
-  Mic,
   Image as ImageIcon,
   Timer,
   Users,
   Store,
-  Play,
-  Pause,
-  Volume2,
   Package,
   Receipt,
   Truck,
@@ -51,7 +47,6 @@ interface BroadcastDetails {
   provider_ids: string[];
   original_input_type: CustomOrderInputType;
   original_text: string | null;
-  voice_url: string | null;
   image_urls: string[] | null;
   transcribed_text: string | null;
   customer_notes: string | null;
@@ -114,7 +109,6 @@ export default function AdminCustomOrderDetailPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [broadcast, setBroadcast] = useState<BroadcastDetails | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Load broadcast data
@@ -210,8 +204,6 @@ export default function AdminCustomOrderDetailPage() {
   // Get input type icon
   const getInputIcon = (type: CustomOrderInputType) => {
     switch (type) {
-      case 'voice':
-        return <Mic className="w-5 h-5" />;
       case 'image':
         return <ImageIcon className="w-5 h-5" />;
       default:
@@ -364,17 +356,13 @@ export default function AdminCustomOrderDetailPage() {
               <div className="flex items-center gap-2 justify-end mb-2">
                 {getInputIcon(broadcast.original_input_type)}
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {broadcast.original_input_type === 'voice'
+                  {broadcast.original_input_type === 'image'
                     ? isRTL
-                      ? 'طلب صوتي'
-                      : 'Voice Order'
-                    : broadcast.original_input_type === 'image'
-                      ? isRTL
-                        ? 'طلب بالصور'
-                        : 'Image Order'
-                      : isRTL
-                        ? 'طلب نصي'
-                        : 'Text Order'}
+                      ? 'طلب بالصور'
+                      : 'Image Order'
+                    : isRTL
+                      ? 'طلب نصي'
+                      : 'Text Order'}
                 </span>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -404,40 +392,6 @@ export default function AdminCustomOrderDetailPage() {
               </div>
 
               <div className="p-4 space-y-4">
-                {/* Voice Recording */}
-                {broadcast.voice_url && (
-                  <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setIsPlaying(!isPlaying)}
-                        className="w-12 h-12 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center"
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-5 h-5" />
-                        ) : (
-                          <Play className="w-5 h-5 ms-0.5" />
-                        )}
-                      </button>
-                      <div>
-                        <p className="font-medium text-purple-700 dark:text-purple-300">
-                          {isRTL ? 'تسجيل صوتي' : 'Voice Recording'}
-                        </p>
-                        <p className="text-xs text-purple-600 dark:text-purple-400">
-                          {isRTL ? 'اضغط للاستماع' : 'Click to play'}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Hidden audio element */}
-                    <audio
-                      id="voice-player"
-                      src={broadcast.voice_url}
-                      onEnded={() => setIsPlaying(false)}
-                      className="hidden"
-                    />
-                  </div>
-                )}
-
                 {/* Images */}
                 {broadcast.image_urls && broadcast.image_urls.length > 0 && (
                   <div>

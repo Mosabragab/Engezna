@@ -23,7 +23,6 @@ export interface DraftInput {
   providerName: string;
   inputType: CustomOrderInputType;
   text?: string;
-  voiceCacheId?: string;
   imageDataUrls?: string[];
   notes?: string;
 }
@@ -38,7 +37,6 @@ export interface SavedDraftInfo {
   providerName: string;
   savedAt: Date;
   hasText: boolean;
-  hasVoice: boolean;
   hasImages: boolean;
   imageCount: number;
 }
@@ -224,7 +222,6 @@ export class DraftManager {
           providerName: draft.providerName,
           savedAt: new Date(draft.savedAt),
           hasText: !!draft.text?.trim(),
-          hasVoice: !!draft.voiceCacheId,
           hasImages: !!draft.imageDataUrls?.length,
           imageCount: draft.imageDataUrls?.length ?? 0,
         });
@@ -336,7 +333,6 @@ export class DraftManager {
   private hasMeaningfulContent(draft: DraftInput): boolean {
     return !!(
       draft.text?.trim() ||
-      draft.voiceCacheId ||
       draft.imageDataUrls?.length ||
       draft.notes?.trim()
     );

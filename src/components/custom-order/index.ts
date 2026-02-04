@@ -11,7 +11,6 @@ export { CustomOrderInterface } from './CustomOrderInterface';
 
 // Input components
 export { TextOrderInput } from './TextOrderInput';
-export { VoiceOrderInput } from './VoiceOrderInput';
 export { ImageOrderInput } from './ImageOrderInput';
 export { NotepadOrderInput, itemsToText, textToItems, type OrderItem } from './NotepadOrderInput';
 

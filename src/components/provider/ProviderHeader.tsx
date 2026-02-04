@@ -15,7 +15,6 @@ import {
   Check,
   Trash2,
   AlertTriangle,
-  Mic,
   Image as ImageIcon,
   FileText,
   DollarSign,
@@ -153,9 +152,6 @@ export function ProviderHeader({
       // Custom order notifications - UPPERCASE types
       case 'NEW_CUSTOM_ORDER':
         // Check body for input type to show appropriate icon
-        if (bodyAr?.includes('صوتي')) {
-          return <Mic className="w-5 h-5 text-emerald-600" />;
-        }
         if (bodyAr?.includes('صور')) {
           return <ImageIcon className="w-5 h-5 text-emerald-600" />;
         }

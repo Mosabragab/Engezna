@@ -8,15 +8,11 @@ import {
   Send,
   X,
   FileText,
-  Mic,
   Image as ImageIcon,
-  Play,
-  Pause,
   Clock,
   AlertTriangle,
   CheckCircle2,
   Loader2,
-  Volume2,
   Copy,
   ChevronRight,
   RotateCcw,
@@ -104,11 +100,8 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageZoom, setImageZoom] = useState(1);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get display text - check both request and broadcast for data
   const displayText =
@@ -117,7 +110,6 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
     request.transcribed_text ||
     request.broadcast?.transcribed_text ||
     '';
-  const hasVoice = !!(request.voice_url || request.broadcast?.voice_url);
   // Get image URLs from request or fall back to broadcast
   const imageUrls =
     request.image_urls && request.image_urls.length > 0
@@ -130,26 +122,6 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
     .split(/[\n,،]+/)
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
-
-  // Handle audio playback
-  const toggleAudio = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-
-  // Handle playback rate change
-  const changePlaybackRate = (rate: number) => {
-    setPlaybackRate(rate);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = rate;
-    }
-  };
 
   // Handle image zoom
   const handleZoomIn = () => setImageZoom((prev) => Math.min(prev + 0.5, 3));
@@ -173,12 +145,6 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
                 {isRTL ? 'نص' : 'Text'}
               </span>
             )}
-            {request.input_type === 'voice' && (
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full flex items-center gap-1">
-                <Mic className="w-3 h-3" />
-                {isRTL ? 'صوت' : 'Voice'}
-              </span>
-            )}
             {request.input_type === 'image' && (
               <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <ImageIcon className="w-3 h-3" />
@@ -199,56 +165,6 @@ function CustomerOrderPanel({ request, onCopyText, copiedTexts }: CustomerOrderP
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white">
-        {/* Voice Player - Enhanced with Speed Controls */}
-        {hasVoice && (
-          <div className="bg-purple-50 rounded-xl p-4 sticky top-0 z-10 shadow-sm">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={toggleAudio}
-                className="w-14 h-14 bg-purple-500 hover:bg-purple-600 text-white rounded-xl flex items-center justify-center transition-colors shadow-lg"
-              >
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ms-0.5" />}
-              </button>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Volume2 className="w-4 h-4 text-purple-600" />
-                  <span className="text-sm font-bold text-purple-700">
-                    {isRTL ? 'تسجيل صوتي' : 'Voice Recording'}
-                  </span>
-                </div>
-                {/* Speed Controls - Touch-friendly (44px minimum height) */}
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-sm text-purple-600 me-1">
-                    {isRTL ? 'السرعة:' : 'Speed:'}
-                  </span>
-                  {[1, 1.5, 2].map((rate) => (
-                    <button
-                      key={rate}
-                      type="button"
-                      onClick={() => changePlaybackRate(rate)}
-                      className={cn(
-                        'px-4 py-2.5 min-h-[44px] rounded-lg text-sm font-medium transition-all',
-                        playbackRate === rate
-                          ? 'bg-purple-500 text-white'
-                          : 'bg-purple-200 text-purple-700 hover:bg-purple-300'
-                      )}
-                    >
-                      {rate}x
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <audio
-              ref={audioRef}
-              src={request.voice_url || request.broadcast?.voice_url || ''}
-              onEnded={() => setIsPlaying(false)}
-              className="hidden"
-            />
-          </div>
-        )}
-
         {/* Images - Enhanced with Zoom Controls */}
         {hasImages && (
           <div className="space-y-3">

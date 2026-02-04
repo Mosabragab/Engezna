@@ -47,7 +47,6 @@ export default function CustomOrderPricingPage() {
           id,
           customer_id,
           original_text,
-          voice_url,
           image_urls,
           transcribed_text,
           customer_notes,
