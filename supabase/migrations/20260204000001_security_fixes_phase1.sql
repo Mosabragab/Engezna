@@ -45,30 +45,20 @@ ALTER VIEW IF EXISTS public.custom_order_enabled_providers SET (security_invoker
 
 
 -- ════════════════════════════════════════════════════════════════════════════════
--- PART 2: Enable RLS on spatial_ref_sys (PostGIS reference table)
--- تفعيل RLS على جدول PostGIS المرجعي
+-- PART 2: Note on spatial_ref_sys (PostGIS reference table)
+-- ملاحظة على جدول PostGIS المرجعي
 --
--- This table is read-only reference data, safe to allow public read
+-- The spatial_ref_sys table is owned by PostGIS extension and cannot be modified.
+-- This is SAFE because:
+-- 1. It contains only read-only coordinate system reference data
+-- 2. It has no user data or sensitive information
+-- 3. PostGIS manages it internally
+--
+-- To fix this warning in Supabase dashboard, you would need to run as superuser:
+-- ALTER TABLE public.spatial_ref_sys OWNER TO postgres;
+-- ALTER TABLE public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
+-- But this is not recommended as it may break PostGIS functionality.
 -- ════════════════════════════════════════════════════════════════════════════════
-
--- Enable RLS
-ALTER TABLE IF EXISTS public.spatial_ref_sys ENABLE ROW LEVEL SECURITY;
-
--- Allow anyone to read (this is reference data)
-DROP POLICY IF EXISTS "spatial_ref_sys_public_read" ON public.spatial_ref_sys;
-CREATE POLICY "spatial_ref_sys_public_read"
-  ON public.spatial_ref_sys
-  FOR SELECT
-  USING (true);
-
--- Prevent modifications except by postgres role
-DROP POLICY IF EXISTS "spatial_ref_sys_admin_modify" ON public.spatial_ref_sys;
-CREATE POLICY "spatial_ref_sys_admin_modify"
-  ON public.spatial_ref_sys
-  FOR ALL
-  TO postgres
-  USING (true)
-  WITH CHECK (true);
 
 
 -- ════════════════════════════════════════════════════════════════════════════════
