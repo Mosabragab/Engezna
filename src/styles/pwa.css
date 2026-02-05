@@ -203,7 +203,7 @@
 }
 
 .pwa-splash-logo {
-  font-family: 'Aref Ruqaa', serif;
+  font-family: var(--font-aref-ruqaa), 'Aref Ruqaa', serif;
   font-size: 3rem;
   font-weight: 700;
   color: #ffffff;
