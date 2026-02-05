@@ -25,7 +25,9 @@ export async function getFirebaseApp(): Promise<import('firebase/app').FirebaseA
 // Get Firebase Messaging instance (lazy loads Firebase Messaging SDK)
 let messagingInstance: import('firebase/messaging').Messaging | null = null;
 
-export async function getFirebaseMessaging(): Promise<import('firebase/messaging').Messaging | null> {
+export async function getFirebaseMessaging(): Promise<
+  import('firebase/messaging').Messaging | null
+> {
   if (typeof window === 'undefined') {
     return null;
   }

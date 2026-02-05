@@ -143,7 +143,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
-{/* Fonts are loaded via next/font/google in @/lib/fonts for better performance */}
+        {/* Fonts are loaded via next/font/google in @/lib/fonts for better performance */}
         {/* Apple Touch Icons - Required for iOS Home Screen */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
@@ -158,7 +158,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         <meta name="msapplication-TileColor" content="#0F172A" />
         <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
       </head>
-      <body className={`${notoSans.variable} ${notoSansArabic.variable} ${arefRuqaa.variable} font-sans antialiased`}>
+      <body
+        className={`${notoSans.variable} ${notoSansArabic.variable} ${arefRuqaa.variable} font-sans antialiased`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
