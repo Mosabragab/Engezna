@@ -3,17 +3,47 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { CustomerLayout } from '@/components/customer/layout';
 import {
   HeroSection,
-  CategoriesSection,
   OffersCarousel,
   ReorderSection,
   TopRatedSection,
   NearbySection,
-  DeliveryModeSelector,
 } from '@/components/customer/home';
 import { useSDUI } from '@/hooks/sdui';
+
+// Lazy load heavy components to improve FCP
+const CategoriesSection = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.CategoriesSection),
+  {
+    loading: () => (
+      <div className="mt-6 px-4">
+        <div className="h-6 w-24 bg-slate-100 rounded animate-pulse mb-4" />
+        <div className="grid grid-cols-4 gap-3">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <div className="w-16 h-16 rounded-2xl bg-slate-100 animate-pulse" />
+              <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  }
+);
+
+const DeliveryModeSelector = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.DeliveryModeSelector),
+  {
+    loading: () => (
+      <div className="mt-3 px-4">
+        <div className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+      </div>
+    ),
+  }
+);
 
 // AI Chat components disabled for initial launch - see docs/features/AI_SMART_ASSISTANT.md
 // To re-enable, uncomment the following and set NEXT_PUBLIC_AI_ASSISTANT_ENABLED=true
@@ -452,43 +482,48 @@ export default function HomePage() {
         return <DeliveryModeSelector key="delivery_mode" className="mt-3" />;
       case 'offers_carousel':
         return (
-          <OffersCarousel key="offers_carousel" onViewAll={handleViewAllOffers} className="mt-4" />
+          <div key="offers_carousel" className="min-h-[220px] md:min-h-[280px]">
+            <OffersCarousel onViewAll={handleViewAllOffers} className="mt-4" />
+          </div>
         );
       case 'categories':
         return (
-          <CategoriesSection
-            key="categories"
-            onCategoryClick={handleCategoryClick}
-            className="mt-6"
-          />
+          <div key="categories" className="min-h-[180px]">
+            <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-6" />
+          </div>
         );
       case 'reorder':
+        // Only reserve space if there's a last order
+        if (!lastOrder) return null;
         return (
-          <ReorderSection
-            key="reorder"
-            lastOrder={lastOrder}
-            onReorder={handleReorder}
-            onViewDetails={handleViewOrderDetails}
-            className="mt-2"
-          />
+          <div key="reorder" className="min-h-[100px]">
+            <ReorderSection
+              lastOrder={lastOrder}
+              onReorder={handleReorder}
+              onViewDetails={handleViewOrderDetails}
+              className="mt-2"
+            />
+          </div>
         );
       case 'top_rated':
         return (
-          <TopRatedSection
-            key="top_rated"
-            providers={topRatedProviders}
-            onViewAll={handleViewAllTopRated}
-            className="mt-2"
-          />
+          <div key="top_rated" className="min-h-[220px]">
+            <TopRatedSection
+              providers={topRatedProviders}
+              onViewAll={handleViewAllTopRated}
+              className="mt-2"
+            />
+          </div>
         );
       case 'nearby':
         return (
-          <NearbySection
-            key="nearby"
-            providers={nearbyProviders}
-            onViewAll={handleViewAllNearby}
-            className="mt-2"
-          />
+          <div key="nearby" className="min-h-[220px]">
+            <NearbySection
+              providers={nearbyProviders}
+              onViewAll={handleViewAllNearby}
+              className="mt-2"
+            />
+          </div>
         );
       default:
         return null;

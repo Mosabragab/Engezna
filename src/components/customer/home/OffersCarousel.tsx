@@ -164,6 +164,9 @@ interface OffersCarouselProps {
   className?: string;
 }
 
+// Track if this is the first OffersCarousel render (for LCP optimization)
+let isFirstRender = true;
+
 // Countdown Timer Component
 function CountdownTimer({
   endTime,
@@ -221,11 +224,13 @@ function BannerCard({
   isActive,
   locale,
   isDesktop,
+  isLCPCandidate = false,
 }: {
   banner: HomepageBanner;
   isActive: boolean;
   locale: string;
   isDesktop: boolean;
+  isLCPCandidate?: boolean;
 }) {
   const title = locale === 'ar' ? banner.title_ar : banner.title_en;
   const description = locale === 'ar' ? banner.description_ar : banner.description_en;
@@ -287,7 +292,7 @@ function BannerCard({
             fill
             className="object-cover opacity-30"
             sizes="(max-width: 768px) 85vw, 33vw"
-            priority={false}
+            priority={isLCPCandidate}
             unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -379,7 +384,7 @@ function BannerCard({
               maxWidth: imageOnCenter ? '40%' : '35%',
               minWidth: imageOnCenter ? '30%' : '25%',
             }}
-            initial={{ scale: 0.9, opacity: 0 }}
+            initial={isLCPCandidate ? false : { scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.3 }}
           >
@@ -390,7 +395,7 @@ function BannerCard({
               height={150}
               className="w-auto h-full max-w-full object-contain"
               sizes="(max-width: 768px) 25vw, 15vw"
-              priority={false}
+              priority={isLCPCandidate}
               unoptimized
               style={{
                 filter:
@@ -800,16 +805,24 @@ export function OffersCarousel({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            {banners.map((banner, index) => (
-              <div key={banner.id} data-banner-card className="flex-shrink-0 w-[85%] snap-center">
-                <BannerCard
-                  banner={banner}
-                  isActive={index === currentIndex}
-                  locale={locale}
-                  isDesktop={false}
-                />
-              </div>
-            ))}
+            {banners.map((banner, index) => {
+              // First banner on first render is LCP candidate
+              const isLCP = index === 0 && isFirstRender;
+              if (index === 0 && isFirstRender) {
+                isFirstRender = false;
+              }
+              return (
+                <div key={banner.id} data-banner-card className="flex-shrink-0 w-[85%] snap-center">
+                  <BannerCard
+                    banner={banner}
+                    isActive={index === currentIndex}
+                    locale={locale}
+                    isDesktop={false}
+                    isLCPCandidate={isLCP}
+                  />
+                </div>
+              );
+            })}
             {/* Spacer for last banner padding */}
             <div className="flex-shrink-0 w-4" aria-hidden="true" />
           </div>
@@ -819,29 +832,37 @@ export function OffersCarousel({
         {isDesktop && (
           <div className="grid grid-cols-3 gap-4">
             <AnimatePresence mode="popLayout">
-              {visibleBanners.map((banner, idx) => (
-                <motion.div
-                  key={`${banner.id}-${(banner as any)._index}`}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{
-                    opacity: 1,
-                    scale: idx === 0 ? 1 : 0.99,
-                  }}
-                  exit={{ opacity: 0, scale: 0.98 }}
-                  transition={{
-                    type: 'tween',
-                    duration: 0.6,
-                    ease: [0.25, 0.1, 0.25, 1],
-                  }}
-                >
-                  <BannerCard
-                    banner={banner}
-                    isActive={idx === 0}
-                    locale={locale}
-                    isDesktop={true}
-                  />
-                </motion.div>
-              ))}
+              {visibleBanners.map((banner, idx) => {
+                // First banner on first render is LCP candidate
+                const isLCP = idx === 0 && isFirstRender;
+                if (idx === 0 && isFirstRender) {
+                  isFirstRender = false;
+                }
+                return (
+                  <motion.div
+                    key={`${banner.id}-${(banner as any)._index}`}
+                    initial={isLCP ? false : { opacity: 0, scale: 0.98 }}
+                    animate={{
+                      opacity: 1,
+                      scale: idx === 0 ? 1 : 0.99,
+                    }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={{
+                      type: 'tween',
+                      duration: 0.6,
+                      ease: [0.25, 0.1, 0.25, 1],
+                    }}
+                  >
+                    <BannerCard
+                      banner={banner}
+                      isActive={idx === 0}
+                      locale={locale}
+                      isDesktop={true}
+                      isLCPCandidate={isLCP}
+                    />
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}
