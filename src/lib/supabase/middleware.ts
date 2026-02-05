@@ -98,6 +98,17 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
+  // Collect request context for error reporting
+  const requestContext = {
+    path: request.nextUrl.pathname,
+    method: request.method,
+    locale: request.nextUrl.pathname.match(/^\/(ar|en)/)?.[1] || 'ar',
+    userAgent: request.headers.get('user-agent') || 'unknown',
+    // Cookie names only (not values) for debugging session issues
+    cookieNames: request.cookies.getAll().map((c) => c.name),
+    hasAuthCookie: request.cookies.getAll().some((c) => c.name.includes('auth')),
+  };
+
   let user = null;
   try {
     const { data, error } = await supabase.auth.getUser();
@@ -113,7 +124,7 @@ export async function updateSession(request: NextRequest) {
         data: {
           errorCode: error.code,
           errorMessage: error.message,
-          path: request.nextUrl.pathname,
+          ...requestContext,
         },
       });
 
@@ -123,9 +134,11 @@ export async function updateSession(request: NextRequest) {
           source: 'middleware',
           errorType: 'auth_error',
           authErrorCode: error.code || 'unknown',
+          locale: requestContext.locale,
+          hasAuthCookie: String(requestContext.hasAuthCookie),
         },
         extra: {
-          path: request.nextUrl.pathname,
+          ...requestContext,
           errorCode: error.code,
           errorMessage: error.message,
         },
@@ -138,7 +151,7 @@ export async function updateSession(request: NextRequest) {
       message: 'Unexpected auth error in middleware',
       level: 'error',
       data: {
-        path: request.nextUrl.pathname,
+        ...requestContext,
         error: authError instanceof Error ? authError.message : String(authError),
       },
     });
@@ -147,9 +160,12 @@ export async function updateSession(request: NextRequest) {
       tags: {
         source: 'middleware',
         errorType: 'auth_exception',
+        locale: requestContext.locale,
+        hasAuthCookie: String(requestContext.hasAuthCookie),
       },
       extra: {
-        path: request.nextUrl.pathname,
+        ...requestContext,
+        errorName: authError instanceof Error ? authError.name : 'unknown',
       },
     });
 
