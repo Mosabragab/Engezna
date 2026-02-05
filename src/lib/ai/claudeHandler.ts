@@ -19,6 +19,9 @@ import {
   type AgentResponse,
   type ConversationTurn,
 } from './agentPrompt';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('ClaudeAgent');
 
 // =============================================================================
 // TYPES
@@ -157,7 +160,7 @@ export async function* runClaudeAgentStream(
   const seemsLikeOrdering = orderingKeywords.some((kw) => lastUserMessage.includes(kw));
 
   if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
-    console.log('[runClaudeAgentStream] No category selected - returning prompt BEFORE calling AI');
+    logger.debug('No category selected - returning prompt before calling AI');
 
     const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇';
 
@@ -188,7 +191,7 @@ export async function* runClaudeAgentStream(
   let effectiveMessages = messages;
   if (isCategorySelection) {
     const categoryCode = lastUserMessage.replace('category:', '');
-    console.log('[runClaudeAgentStream] Category selected:', categoryCode, '- transforming for AI');
+    logger.debug('Category selected - transforming for AI', { categoryCode });
 
     const categoryNames: Record<string, string> = {
       restaurant_cafe: 'مطاعم',
@@ -213,7 +216,7 @@ export async function* runClaudeAgentStream(
       ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
       : `اخترت قسم ${categoryName}. ورّيني المتاح`;
 
-    console.log('[runClaudeAgentStream] Transformed message:', transformedMessage);
+    logger.debug('Transformed message for AI', { transformedMessage, categoryName });
 
     effectiveMessages = messages.map((m, i) => {
       if (i === messages.length - 1 && m.role === 'user') {
@@ -463,7 +466,10 @@ export async function* runClaudeAgentStream(
 
       return;
     } catch (error) {
-      console.error('[Claude Agent Stream Error]:', error);
+      logger.error('Claude Agent stream error', {
+        error: error instanceof Error ? error.message : String(error),
+        iteration,
+      });
 
       yield {
         type: 'done',

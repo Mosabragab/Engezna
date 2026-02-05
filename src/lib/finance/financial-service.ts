@@ -18,10 +18,109 @@ import type {
   Settlement,
   SettlementPayment,
   FinancialFilters,
-  FinancialDateRange,
   SettlementAuditLog,
-  CreateSettlementOptions,
+  SettlementDirection,
+  SettlementStatus,
 } from '@/types/finance';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Raw Database Response Types (from SQL Views)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Raw response from admin_financial_summary SQL View
+ */
+interface AdminSummaryRaw {
+  total_providers: number;
+  total_orders: number;
+  total_revenue: number;
+  total_delivery_fees: number;
+  total_theoretical_commission: number;
+  total_actual_commission: number;
+  total_grace_period_discount: number;
+  total_refunds: number;
+  total_cod_orders: number;
+  total_cod_revenue: number;
+  total_cod_commission_owed: number;
+  total_online_orders: number;
+  total_online_revenue: number;
+  total_online_payout_owed: number;
+  total_net_balance: number;
+  providers_to_pay: number;
+  providers_to_collect: number;
+  providers_balanced: number;
+  total_eligible_orders: number;
+  total_held_orders: number;
+  total_settled_orders: number;
+}
+
+/**
+ * Raw response from financial_settlement_by_region SQL View
+ */
+interface RegionalSummaryRaw {
+  governorate_id: string;
+  governorate_name_ar: string;
+  governorate_name_en: string;
+  providers_count: number;
+  total_orders: number;
+  cod_orders: number;
+  online_orders: number;
+  gross_revenue: number;
+  total_commission: number;
+  net_balance: number;
+  providers_to_pay: number;
+  providers_to_collect: number;
+}
+
+/**
+ * Raw provider data from join query
+ */
+interface ProviderRaw {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  governorate_id: string;
+  city_id: string | null;
+}
+
+/**
+ * Raw response from settlements table with provider join
+ */
+interface SettlementRaw {
+  id: string;
+  provider_id: string;
+  provider: ProviderRaw | null;
+  period_start: string;
+  period_end: string;
+  total_orders: number;
+  gross_revenue: number;
+  platform_commission: number;
+  delivery_fees_collected: number;
+  net_amount_due: number;
+  cod_orders_count: number;
+  cod_gross_revenue: number;
+  cod_commission_owed: number;
+  online_orders_count: number;
+  online_gross_revenue: number;
+  online_platform_commission: number;
+  online_payout_owed: number;
+  net_balance: number;
+  settlement_direction: SettlementDirection;
+  status: SettlementStatus;
+  amount_paid: number;
+  payment_date: string | null;
+  payment_method: string | null;
+  payment_reference: string | null;
+  due_date: string;
+  is_overdue: boolean;
+  overdue_days: number;
+  notes: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  processed_by: string | null;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Service Configuration
@@ -47,11 +146,25 @@ export class FinancialService {
   private governorateIds?: string[];
   private isRegionalAdmin: boolean;
 
+  // Cache for provider IDs in region (reduces repeated DB queries)
+  private cachedProviderIds: string[] | null = null;
+  private cacheTimestamp: number = 0;
+  private static readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
   constructor(config: FinancialServiceConfig) {
     this.supabase = config.supabase;
     this.providerId = config.providerId;
     this.governorateIds = config.governorateIds;
     this.isRegionalAdmin = config.isRegionalAdmin ?? false;
+  }
+
+  /**
+   * Invalidate the provider IDs cache
+   * Call this when providers are added/removed from the region
+   */
+  invalidateCache(): void {
+    this.cachedProviderIds = null;
+    this.cacheTimestamp = 0;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -118,7 +231,7 @@ export class FinancialService {
       return this.getEmptyAdminSummary();
     }
 
-    return this.mapAdminSummary(data);
+    return this.mapAdminSummary(data as AdminSummaryRaw);
   }
 
   /**
@@ -164,7 +277,7 @@ export class FinancialService {
       return [];
     }
 
-    return (data || []).map(this.mapRegionalSummary);
+    return ((data || []) as RegionalSummaryRaw[]).map((item) => this.mapRegionalSummary(item));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -218,7 +331,7 @@ export class FinancialService {
       return [];
     }
 
-    return (data || []).map(this.mapSettlement);
+    return ((data || []) as SettlementRaw[]).map((item) => this.mapSettlement(item));
   }
 
   /**
@@ -241,7 +354,7 @@ export class FinancialService {
       return null;
     }
 
-    return this.mapSettlement(data);
+    return this.mapSettlement(data as SettlementRaw);
   }
 
   /**
@@ -288,10 +401,21 @@ export class FinancialService {
 
   /**
    * Get provider IDs in the regional admin's assigned region
+   * Results are cached for 5 minutes to reduce DB queries
    */
   private async getProviderIdsInRegion(): Promise<string[]> {
     if (!this.governorateIds?.length) return [];
 
+    // Check if cache is valid
+    const now = Date.now();
+    if (
+      this.cachedProviderIds !== null &&
+      now - this.cacheTimestamp < FinancialService.CACHE_TTL_MS
+    ) {
+      return this.cachedProviderIds;
+    }
+
+    // Fetch from database and update cache
     const { data, error } = await this.supabase
       .from('providers')
       .select('id')
@@ -299,10 +423,16 @@ export class FinancialService {
 
     if (error) {
       console.error('Error fetching provider IDs in region:', error);
-      return [];
+      // Return cached data if available, even if expired
+      return this.cachedProviderIds ?? [];
     }
 
-    return (data || []).map((p) => p.id);
+    // Update cache
+    const providerIds = (data || []).map((p: { id: string }) => p.id);
+    this.cachedProviderIds = providerIds;
+    this.cacheTimestamp = now;
+
+    return providerIds;
   }
 
   /**
@@ -398,108 +528,105 @@ export class FinancialService {
   /**
    * Map database admin summary to typed summary
    */
-  private mapAdminSummary(data: Record<string, unknown>): AdminFinancialSummary {
+  private mapAdminSummary(data: AdminSummaryRaw): AdminFinancialSummary {
     return {
-      totalProviders: (data.total_providers as number) || 0,
-      totalOrders: (data.total_orders as number) || 0,
-      totalRevenue: (data.total_revenue as number) || 0,
-      totalDeliveryFees: (data.total_delivery_fees as number) || 0,
-      totalTheoreticalCommission: (data.total_theoretical_commission as number) || 0,
-      totalActualCommission: (data.total_actual_commission as number) || 0,
-      totalGracePeriodDiscount: (data.total_grace_period_discount as number) || 0,
-      totalRefunds: (data.total_refunds as number) || 0,
+      totalProviders: data.total_providers || 0,
+      totalOrders: data.total_orders || 0,
+      totalRevenue: data.total_revenue || 0,
+      totalDeliveryFees: data.total_delivery_fees || 0,
+      totalTheoreticalCommission: data.total_theoretical_commission || 0,
+      totalActualCommission: data.total_actual_commission || 0,
+      totalGracePeriodDiscount: data.total_grace_period_discount || 0,
+      totalRefunds: data.total_refunds || 0,
       cod: {
-        orders: (data.total_cod_orders as number) || 0,
-        revenue: (data.total_cod_revenue as number) || 0,
-        commissionOwed: (data.total_cod_commission_owed as number) || 0,
+        orders: data.total_cod_orders || 0,
+        revenue: data.total_cod_revenue || 0,
+        commissionOwed: data.total_cod_commission_owed || 0,
       },
       online: {
-        orders: (data.total_online_orders as number) || 0,
-        revenue: (data.total_online_revenue as number) || 0,
-        payoutOwed: (data.total_online_payout_owed as number) || 0,
+        orders: data.total_online_orders || 0,
+        revenue: data.total_online_revenue || 0,
+        payoutOwed: data.total_online_payout_owed || 0,
       },
-      totalNetBalance: (data.total_net_balance as number) || 0,
-      providersToPay: (data.providers_to_pay as number) || 0,
-      providersToCollect: (data.providers_to_collect as number) || 0,
-      providersBalanced: (data.providers_balanced as number) || 0,
-      eligibleOrders: (data.total_eligible_orders as number) || 0,
-      heldOrders: (data.total_held_orders as number) || 0,
-      settledOrders: (data.total_settled_orders as number) || 0,
+      totalNetBalance: data.total_net_balance || 0,
+      providersToPay: data.providers_to_pay || 0,
+      providersToCollect: data.providers_to_collect || 0,
+      providersBalanced: data.providers_balanced || 0,
+      eligibleOrders: data.total_eligible_orders || 0,
+      heldOrders: data.total_held_orders || 0,
+      settledOrders: data.total_settled_orders || 0,
     };
   }
 
   /**
    * Map regional summary from database
    */
-  private mapRegionalSummary(data: Record<string, unknown>): RegionalFinancialSummary {
+  private mapRegionalSummary(data: RegionalSummaryRaw): RegionalFinancialSummary {
     return {
-      governorateId: data.governorate_id as string,
+      governorateId: data.governorate_id,
       governorateName: {
-        ar: data.governorate_name_ar as string,
-        en: data.governorate_name_en as string,
+        ar: data.governorate_name_ar,
+        en: data.governorate_name_en,
       },
-      providersCount: (data.providers_count as number) || 0,
-      totalOrders: (data.total_orders as number) || 0,
-      codOrders: (data.cod_orders as number) || 0,
-      onlineOrders: (data.online_orders as number) || 0,
-      grossRevenue: (data.gross_revenue as number) || 0,
-      totalCommission: (data.total_commission as number) || 0,
-      netBalance: (data.net_balance as number) || 0,
-      providersToPay: (data.providers_to_pay as number) || 0,
-      providersToCollect: (data.providers_to_collect as number) || 0,
+      providersCount: data.providers_count || 0,
+      totalOrders: data.total_orders || 0,
+      codOrders: data.cod_orders || 0,
+      onlineOrders: data.online_orders || 0,
+      grossRevenue: data.gross_revenue || 0,
+      totalCommission: data.total_commission || 0,
+      netBalance: data.net_balance || 0,
+      providersToPay: data.providers_to_pay || 0,
+      providersToCollect: data.providers_to_collect || 0,
     };
   }
 
   /**
    * Map settlement from database
    */
-  private mapSettlement(data: Record<string, unknown>): Settlement {
-    const provider = data.provider as Record<string, unknown> | null;
-
+  private mapSettlement(data: SettlementRaw): Settlement {
     return {
-      id: data.id as string,
-      providerId: data.provider_id as string,
-      providerName: provider
+      id: data.id,
+      providerId: data.provider_id,
+      providerName: data.provider
         ? {
-            ar: provider.name_ar as string,
-            en: provider.name_en as string,
+            ar: data.provider.name_ar,
+            en: data.provider.name_en,
           }
         : undefined,
-      periodStart: data.period_start as string,
-      periodEnd: data.period_end as string,
-      totalOrders: (data.total_orders as number) || 0,
-      grossRevenue: (data.gross_revenue as number) || 0,
-      platformCommission: (data.platform_commission as number) || 0,
-      deliveryFeesCollected: (data.delivery_fees_collected as number) || 0,
-      netAmountDue: (data.net_amount_due as number) || 0,
+      periodStart: data.period_start,
+      periodEnd: data.period_end,
+      totalOrders: data.total_orders || 0,
+      grossRevenue: data.gross_revenue || 0,
+      platformCommission: data.platform_commission || 0,
+      deliveryFeesCollected: data.delivery_fees_collected || 0,
+      netAmountDue: data.net_amount_due || 0,
       cod: {
-        ordersCount: (data.cod_orders_count as number) || 0,
-        grossRevenue: (data.cod_gross_revenue as number) || 0,
-        commissionOwed: (data.cod_commission_owed as number) || 0,
+        ordersCount: data.cod_orders_count || 0,
+        grossRevenue: data.cod_gross_revenue || 0,
+        commissionOwed: data.cod_commission_owed || 0,
       },
       online: {
-        ordersCount: (data.online_orders_count as number) || 0,
-        grossRevenue: (data.online_gross_revenue as number) || 0,
-        platformCommission: (data.online_platform_commission as number) || 0,
-        payoutOwed: (data.online_payout_owed as number) || 0,
+        ordersCount: data.online_orders_count || 0,
+        grossRevenue: data.online_gross_revenue || 0,
+        platformCommission: data.online_platform_commission || 0,
+        payoutOwed: data.online_payout_owed || 0,
       },
-      netBalance: (data.net_balance as number) || 0,
-      settlementDirection:
-        (data.settlement_direction as Settlement['settlementDirection']) || 'balanced',
-      status: (data.status as Settlement['status']) || 'pending',
-      amountPaid: (data.amount_paid as number) || 0,
-      paymentDate: data.payment_date as string | null,
-      paymentMethod: data.payment_method as string | null,
-      paymentReference: data.payment_reference as string | null,
-      dueDate: data.due_date as string,
-      isOverdue: (data.is_overdue as boolean) || false,
-      overdueDays: (data.overdue_days as number) || 0,
-      notes: data.notes as string | null,
-      adminNotes: data.admin_notes as string | null,
-      createdAt: data.created_at as string,
-      updatedAt: data.updated_at as string,
-      createdBy: data.created_by as string | null,
-      processedBy: data.processed_by as string | null,
+      netBalance: data.net_balance || 0,
+      settlementDirection: data.settlement_direction || 'balanced',
+      status: data.status || 'pending',
+      amountPaid: data.amount_paid || 0,
+      paymentDate: data.payment_date,
+      paymentMethod: data.payment_method,
+      paymentReference: data.payment_reference,
+      dueDate: data.due_date,
+      isOverdue: data.is_overdue || false,
+      overdueDays: data.overdue_days || 0,
+      notes: data.notes,
+      adminNotes: data.admin_notes,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+      createdBy: data.created_by,
+      processedBy: data.processed_by,
     };
   }
 
