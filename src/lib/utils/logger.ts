@@ -111,11 +111,7 @@ function sendToSentry(
 /**
  * Capture an actual Error object to Sentry with full stack trace
  */
-function captureErrorToSentry(
-  error: Error,
-  context?: LogContext,
-  source?: string
-): void {
+function captureErrorToSentry(error: Error, context?: LogContext, source?: string): void {
   if (IS_DEVELOPMENT) return;
 
   try {
@@ -139,7 +135,12 @@ function shouldLog(level: LogLevel): boolean {
   return PRODUCTION_LOG_LEVELS.includes(level);
 }
 
-function logInternal(level: LogLevel, message: string, context?: LogContext, source?: string): void {
+function logInternal(
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  source?: string
+): void {
   if (!shouldLog(level)) return;
 
   const entry: LogEntry = {
@@ -213,10 +214,12 @@ export interface Logger {
  */
 export function createLogger(source: string): Logger {
   return {
-    debug: (message: string, context?: LogContext) => logInternal('debug', message, context, source),
+    debug: (message: string, context?: LogContext) =>
+      logInternal('debug', message, context, source),
     info: (message: string, context?: LogContext) => logInternal('info', message, context, source),
     warn: (message: string, context?: LogContext) => logInternal('warn', message, context, source),
-    error: (message: string, context?: LogContext) => logInternal('error', message, context, source),
+    error: (message: string, context?: LogContext) =>
+      logInternal('error', message, context, source),
     captureException: (error: Error, context?: LogContext) => {
       // Log locally
       logInternal('error', error.message, { ...context, stack: error.stack }, source);
