@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLocale } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { PermissionsProvider } from '@/lib/permissions/use-permissions';
 import { AdminSidebarProvider, useAdminSidebar } from '@/components/admin/AdminSidebarContext';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminRegionProvider, useAdminRegion } from '@/lib/contexts/AdminRegionContext';
 import { createClient } from '@/lib/supabase/client';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AdminLayout');
 
 interface AdminLayoutInnerProps {
   children: React.ReactNode;
@@ -129,8 +131,13 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       if (!contactFormError) {
         setContactFormMessages(contactFormCount || 0);
       }
-    } catch {
-      // Silently fail for badge counts - not critical
+    } catch (error) {
+      // Log error for debugging - badge counts are not critical for UI
+      logger.warn('Failed to load badge counts', {
+        error: error instanceof Error ? error.message : String(error),
+        hasRegionFilter,
+        regionProviderCount: regionProviderIds.length,
+      });
     }
   }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds]);
 
