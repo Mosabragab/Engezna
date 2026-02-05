@@ -5,8 +5,10 @@
  * - مستويات مختلفة (debug, info, warn, error)
  * - تعطيل تلقائي في Production للـ debug logs
  * - دعم للـ structured logging
- * - سهولة الربط مع خدمات المراقبة (Sentry, LogRocket, etc.)
+ * - ربط تلقائي مع Sentry للأخطاء
  */
+
+import * as Sentry from '@sentry/nextjs';
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
@@ -32,12 +34,20 @@ const IS_SERVER = typeof window === 'undefined';
 // Log levels that are enabled in production
 const PRODUCTION_LOG_LEVELS: LogLevel[] = ['warn', 'error'];
 
+// Map our log levels to Sentry severity levels
+const SENTRY_LEVEL_MAP: Record<LogLevel, Sentry.SeverityLevel> = {
+  debug: 'debug',
+  info: 'info',
+  warn: 'warning',
+  error: 'error',
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Formatting
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function formatLogEntry(entry: LogEntry): string {
-  const { level, message, source, context } = entry;
+  const { message, source, context } = entry;
   const prefix = source ? `[${source}]` : '';
   const contextStr = context ? ` ${JSON.stringify(context)}` : '';
   return `${prefix} ${message}${contextStr}`;
@@ -55,6 +65,68 @@ function getLogColor(level: LogLevel): string {
       return '\x1b[31m'; // Red
     default:
       return '\x1b[0m'; // Reset
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sentry Integration
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function sendToSentry(
+  level: LogLevel,
+  message: string,
+  context?: LogContext,
+  source?: string
+): void {
+  // Only send warnings and errors to Sentry in production
+  if (IS_DEVELOPMENT) return;
+  if (level !== 'warn' && level !== 'error') return;
+
+  try {
+    // Add breadcrumb for context
+    Sentry.addBreadcrumb({
+      category: source || 'logger',
+      message: message,
+      level: SENTRY_LEVEL_MAP[level],
+      data: context,
+    });
+
+    // For errors, capture as an event
+    if (level === 'error') {
+      Sentry.captureMessage(message, {
+        level: SENTRY_LEVEL_MAP[level],
+        extra: context,
+        tags: {
+          source: source || 'unknown',
+          logLevel: level,
+        },
+      });
+    }
+  } catch {
+    // Silently fail if Sentry is not initialized
+    // This prevents crashes in environments without Sentry
+  }
+}
+
+/**
+ * Capture an actual Error object to Sentry with full stack trace
+ */
+function captureErrorToSentry(
+  error: Error,
+  context?: LogContext,
+  source?: string
+): void {
+  if (IS_DEVELOPMENT) return;
+
+  try {
+    Sentry.captureException(error, {
+      extra: context,
+      tags: {
+        source: source || 'unknown',
+      },
+    });
+  } catch {
+    // Silently fail if Sentry is not initialized
   }
 }
 
@@ -80,7 +152,7 @@ function logInternal(level: LogLevel, message: string, context?: LogContext, sou
 
   const formattedMessage = formatLogEntry(entry);
 
-  // Server-side logging with colors
+  // Console logging
   if (IS_SERVER) {
     const color = getLogColor(level);
     const reset = '\x1b[0m';
@@ -118,24 +190,8 @@ function logInternal(level: LogLevel, message: string, context?: LogContext, sou
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Integration point for external monitoring services
-  // Uncomment and configure as needed:
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // Sentry integration example:
-  // if (level === 'error' && !IS_DEVELOPMENT) {
-  //   Sentry.captureMessage(message, {
-  //     level: 'error',
-  //     extra: context,
-  //     tags: { source },
-  //   });
-  // }
-
-  // LogRocket integration example:
-  // if (!IS_DEVELOPMENT && typeof window !== 'undefined') {
-  //   LogRocket.log(formattedMessage);
-  // }
+  // Send to Sentry (production only, warn/error only)
+  sendToSentry(level, message, context, source);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -147,6 +203,8 @@ export interface Logger {
   info: (message: string, context?: LogContext) => void;
   warn: (message: string, context?: LogContext) => void;
   error: (message: string, context?: LogContext) => void;
+  /** Capture an Error object with full stack trace to Sentry */
+  captureException: (error: Error, context?: LogContext) => void;
 }
 
 /**
@@ -159,6 +217,12 @@ export function createLogger(source: string): Logger {
     info: (message: string, context?: LogContext) => logInternal('info', message, context, source),
     warn: (message: string, context?: LogContext) => logInternal('warn', message, context, source),
     error: (message: string, context?: LogContext) => logInternal('error', message, context, source),
+    captureException: (error: Error, context?: LogContext) => {
+      // Log locally
+      logInternal('error', error.message, { ...context, stack: error.stack }, source);
+      // Send to Sentry with full stack trace
+      captureErrorToSentry(error, context, source);
+    },
   };
 }
 
@@ -171,6 +235,10 @@ export const logger: Logger = {
   info: (message: string, context?: LogContext) => logInternal('info', message, context),
   warn: (message: string, context?: LogContext) => logInternal('warn', message, context),
   error: (message: string, context?: LogContext) => logInternal('error', message, context),
+  captureException: (error: Error, context?: LogContext) => {
+    logInternal('error', error.message, { ...context, stack: error.stack });
+    captureErrorToSentry(error, context);
+  },
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -178,7 +246,7 @@ export const logger: Logger = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Safely logs an error with stack trace
+ * Safely logs an error with stack trace and sends to Sentry
  */
 export function logError(error: unknown, message?: string, source?: string): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
@@ -194,6 +262,11 @@ export function logError(error: unknown, message?: string, source?: string): voi
     },
     source
   );
+
+  // If it's an actual Error object, capture with full stack trace
+  if (error instanceof Error) {
+    captureErrorToSentry(error, { customMessage: message }, source);
+  }
 }
 
 /**
