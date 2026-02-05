@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { type NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * User roles as defined in the database
@@ -97,9 +98,63 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getUser(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    user = data?.user ?? null;
+
+    // Capture auth errors to Sentry for monitoring
+    if (error) {
+      // Add breadcrumb for auth flow tracking
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Auth error in middleware',
+        level: 'error',
+        data: {
+          errorCode: error.code,
+          errorMessage: error.message,
+          path: request.nextUrl.pathname,
+        },
+      });
+
+      // Capture the error with context
+      Sentry.captureException(error, {
+        tags: {
+          source: 'middleware',
+          errorType: 'auth_error',
+          authErrorCode: error.code || 'unknown',
+        },
+        extra: {
+          path: request.nextUrl.pathname,
+          errorCode: error.code,
+          errorMessage: error.message,
+        },
+      });
+    }
+  } catch (authError) {
+    // Capture unexpected auth errors (network issues, etc.)
+    Sentry.addBreadcrumb({
+      category: 'auth',
+      message: 'Unexpected auth error in middleware',
+      level: 'error',
+      data: {
+        path: request.nextUrl.pathname,
+        error: authError instanceof Error ? authError.message : String(authError),
+      },
+    });
+
+    Sentry.captureException(authError, {
+      tags: {
+        source: 'middleware',
+        errorType: 'auth_exception',
+      },
+      extra: {
+        path: request.nextUrl.pathname,
+      },
+    });
+
+    // User remains null on error, allowing graceful degradation
+  }
 
   // Extract locale from pathname (e.g., /ar/admin -> ar)
   const pathname = request.nextUrl.pathname;
