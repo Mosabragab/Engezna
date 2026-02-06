@@ -57,7 +57,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -259,7 +259,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -312,7 +312,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,

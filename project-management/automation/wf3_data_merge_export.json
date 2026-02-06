@@ -11,8 +11,18 @@
     },
     {
       "parameters": {
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات الشيت - غيّر spreadsheet_id لكل مدينة\n// ====================================================\nconst config = {\n  spreadsheet_id: '1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8'\n};\n\nreturn [{ json: config }];"
+      },
+      "id": "wf3-config",
+      "name": "⚙️ Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 600]
+    },
+    {
+      "parameters": {
         "method": "GET",
-        "url": "https://sheets.googleapis.com/v4/spreadsheets/1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8?fields=sheets.properties.title%2Csheets.properties.sheetId",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}?fields=sheets.properties.title%2Csheets.properties.sheetId",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleSheetsOAuth2Api",
         "options": {
@@ -23,7 +33,7 @@
       "name": "📋 Get Sheet List",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [300, 600],
+      "position": [500, 600],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -33,13 +43,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// حل أسماء الشيتات الصحيحة من Google API\nconst sheets = $input.first().json.sheets;\nconst keys = [\n  { key: 'مطاعم', field: 'sheet_restaurants' },\n  { key: 'صيدليات', field: 'sheet_pharmacies' },\n  { key: 'سوبر ماركت', field: 'sheet_supermarkets' },\n  { key: 'حلويات', field: 'sheet_sweets' },\n  { key: 'خضار', field: 'sheet_vegetables' }\n];\n\nconst result = {};\nfor (const { key, field } of keys) {\n  const match = sheets.find(s => s.properties.title.includes(key));\n  if (match) {\n    result[field] = match.properties.title;\n  } else {\n    result[field] = key;\n  }\n}\n\nreturn [{ json: result }];"
+        "jsCode": "// حل أسماء الشيتات الصحيحة من Google API\nconst config = $('⚙️ Config').first().json;\nconst sheets = $input.first().json.sheets;\nconst keys = [\n  { key: 'مطاعم', field: 'sheet_restaurants' },\n  { key: 'صيدليات', field: 'sheet_pharmacies' },\n  { key: 'سوبر ماركت', field: 'sheet_supermarkets' },\n  { key: 'حلويات', field: 'sheet_sweets' },\n  { key: 'خضار', field: 'sheet_vegetables' }\n];\n\nconst result = { spreadsheet_id: config.spreadsheet_id };\nfor (const { key, field } of keys) {\n  const match = sheets.find(s => s.properties.title.includes(key));\n  if (match) {\n    result[field] = match.properties.title;\n  } else {\n    result[field] = key;\n  }\n}\n\nreturn [{ json: result }];"
       },
       "id": "resolve-sheets",
       "name": "🔍 Resolve Sheet Names",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [500, 600]
+      "position": [700, 600]
     },
     {
       "parameters": {
@@ -47,7 +57,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -62,7 +72,7 @@
       "name": "Read مطاعم",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 200],
+      "position": [940, 200],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -76,7 +86,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -91,7 +101,7 @@
       "name": "Read صيدليات",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 360],
+      "position": [940, 360],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -105,7 +115,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -120,7 +130,7 @@
       "name": "Read سوبرماركت",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 520],
+      "position": [940, 520],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -134,7 +144,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -149,7 +159,7 @@
       "name": "Read حلويات وكافيهات",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 680],
+      "position": [940, 680],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -163,7 +173,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -178,7 +188,7 @@
       "name": "Read خضار وفواكه",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 840],
+      "position": [940, 840],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -192,7 +202,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -205,7 +215,7 @@
       "name": "Read Enrichment Results",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 1000],
+      "position": [940, 1000],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -219,7 +229,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -232,7 +242,7 @@
       "name": "Read Discovered Merchants",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [740, 1160],
+      "position": [940, 1160],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-oauth",
@@ -306,7 +316,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -337,7 +347,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -377,7 +387,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
         },
         "sheetName": {
           "__rl": true,
@@ -404,6 +414,17 @@
   ],
   "connections": {
     "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Config": {
       "main": [
         [
           {
