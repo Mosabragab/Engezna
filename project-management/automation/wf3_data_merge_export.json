@@ -20,9 +20,11 @@
         "sheetName": {
           "__rl": true,
           "mode": "list",
-          "value": "مطاعم"
+          "value": "مطاعم 🍽️"
         },
-        "options": {}
+        "options": {
+          "range": "A3:W500"
+        }
       },
       "id": "read-restaurants",
       "name": "Read مطاعم",
@@ -47,9 +49,11 @@
         "sheetName": {
           "__rl": true,
           "mode": "list",
-          "value": "صيدليات"
+          "value": "صيدليات 💊"
         },
-        "options": {}
+        "options": {
+          "range": "A3:W500"
+        }
       },
       "id": "read-pharmacies",
       "name": "Read صيدليات",
@@ -74,9 +78,11 @@
         "sheetName": {
           "__rl": true,
           "mode": "list",
-          "value": "سوبرماركت"
+          "value": "سوبر ماركت 🛒"
         },
-        "options": {}
+        "options": {
+          "range": "A3:W500"
+        }
       },
       "id": "read-supermarkets",
       "name": "Read سوبرماركت",
@@ -101,9 +107,11 @@
         "sheetName": {
           "__rl": true,
           "mode": "list",
-          "value": "حلويات وكافيهات"
+          "value": "حلويات وكافيهات ☕"
         },
-        "options": {}
+        "options": {
+          "range": "A3:W500"
+        }
       },
       "id": "read-sweets",
       "name": "Read حلويات وكافيهات",
@@ -128,9 +136,11 @@
         "sheetName": {
           "__rl": true,
           "mode": "list",
-          "value": "خضار وفواكه"
+          "value": "خضار وفواكه 🥬"
         },
-        "options": {}
+        "options": {
+          "range": "A3:W500"
+        }
       },
       "id": "read-vegetables",
       "name": "Read خضار وفواكه",
@@ -210,7 +220,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// === Smart Merge Logic ===\n// دمج البيانات المُثراة (enrichment) مع البيانات الأصلية\nconst originals = $('Combine All Original Sheets').all();\nconst enrichments = $('Read Enrichment Results').all();\nconst discovered = $('Read Discovered Merchants').all();\n\n// إنشاء خريطة للبيانات المُثراة باسم المتجر\nconst enrichmentMap = new Map();\nfor (const e of enrichments) {\n  const name = (e.json.merchant_name || '').trim().toLowerCase();\n  if (name) enrichmentMap.set(name, e.json);\n}\n\n// === دمج البيانات الأصلية مع المُثراة ===\nconst mergedResults = [];\nconst reviewNeeded = [];\nlet updatedCount = 0;\nlet conflictCount = 0;\n\nfor (const original of originals) {\n  const o = original.json;\n  const merchantName = (o['اسم المتجر'] || o['name'] || '').trim();\n  const enriched = enrichmentMap.get(merchantName.toLowerCase());\n  \n  const merged = { ...o };\n  \n  if (enriched) {\n    // === قواعد الدمج الذكية ===\n    \n    // 1. رقم الهاتف\n    const origPhone = (o['رقم الهاتف'] || o['الهاتف'] || '').trim();\n    const enrichPhone = (enriched.enriched_phone || '').trim();\n    if (!origPhone && enrichPhone) {\n      merged['رقم الهاتف'] = enrichPhone;\n      updatedCount++;\n    } else if (origPhone && enrichPhone && origPhone !== enrichPhone) {\n      merged['رقم الهاتف'] = origPhone; // نحتفظ بالأصلي\n      reviewNeeded.push({\n        merchant: merchantName,\n        field: 'رقم الهاتف',\n        original: origPhone,\n        enriched: enrichPhone,\n        note: 'رقمين مختلفين - يحتاج مراجعة'\n      });\n      conflictCount++;\n    }\n    \n    // 2. العنوان\n    const origAddr = (o['العنوان'] || o['address'] || '').trim();\n    const enrichAddr = (enriched.enriched_address || '').trim();\n    if (!origAddr && enrichAddr) {\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    } else if (origAddr && enrichAddr && origAddr.length < enrichAddr.length * 0.5) {\n      // العنوان المُثرى أكثر تفصيلاً\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    }\n    \n    // 3. جوجل ماب\n    const origMap = (o['جوجل ماب'] || '').trim();\n    const enrichMap = (enriched.google_maps_url || '').trim();\n    if (!origMap && enrichMap) {\n      merged['جوجل ماب'] = enrichMap;\n      updatedCount++;\n    }\n    \n    // 4. بيانات إضافية (تُضاف دائماً لو موجودة)\n    if (enriched.rating) merged['التقييم'] = enriched.rating;\n    if (enriched.total_ratings) merged['عدد التقييمات'] = enriched.total_ratings;\n    if (enriched.opening_hours) merged['ساعات العمل'] = enriched.opening_hours;\n    if (enriched.website) merged['الموقع الالكتروني'] = enriched.website;\n    if (enriched.lat) merged['خط العرض'] = enriched.lat;\n    if (enriched.lng) merged['خط الطول'] = enriched.lng;\n    if (enriched.status_ar) merged['حالة المتجر'] = enriched.status_ar;\n    \n    merged['آخر تحديث'] = new Date().toISOString().split('T')[0];\n  }\n  \n  mergedResults.push({ json: merged });\n}\n\n// === إحصائيات التحديث ===\nconst stats = {\n  total_original: originals.length,\n  total_enriched: enrichments.length,\n  total_discovered: discovered.length,\n  fields_updated: updatedCount,\n  conflicts_found: conflictCount,\n  review_items: reviewNeeded.length,\n  merge_date: new Date().toISOString()\n};\n\n// أول عنصر = الإحصائيات\n// باقي العناصر = البيانات المدمجة\nreturn [{ json: { _type: 'stats', ...stats } }, ...mergedResults];"
+        "jsCode": "// === Smart Merge Logic ===\n// دمج البيانات المُثراة (enrichment) مع البيانات الأصلية\nconst originals = $('Combine All Original Sheets').all();\nconst enrichments = $('Read Enrichment Results').all();\nconst discovered = $('Read Discovered Merchants').all();\n\n// إنشاء خريطة للبيانات المُثراة باسم المتجر\nconst enrichmentMap = new Map();\nfor (const e of enrichments) {\n  const name = (e.json.merchant_name || '').trim().toLowerCase();\n  if (name) enrichmentMap.set(name, e.json);\n}\n\n// === دمج البيانات الأصلية مع المُثراة ===\nconst mergedResults = [];\nconst reviewNeeded = [];\nlet updatedCount = 0;\nlet conflictCount = 0;\n\nfor (const original of originals) {\n  const o = original.json;\n  const merchantName = (o['اسم المتجر'] || o['name'] || '').trim();\n  const enriched = enrichmentMap.get(merchantName.toLowerCase());\n  \n  const merged = { ...o };\n  \n  if (enriched) {\n    // === قواعد الدمج الذكية ===\n    \n    // 1. رقم الهاتف\n    const origPhone = (o['رقم الهاتف 1'] || o['رقم الهاتف 2'] || '').trim();\n    const enrichPhone = (enriched.enriched_phone || '').trim();\n    if (!origPhone && enrichPhone) {\n      merged['رقم الهاتف 1'] = enrichPhone;\n      updatedCount++;\n    } else if (origPhone && enrichPhone && origPhone !== enrichPhone) {\n      merged['رقم الهاتف 1'] = origPhone; // نحتفظ بالأصلي\n      reviewNeeded.push({\n        merchant: merchantName,\n        field: 'رقم الهاتف 1',\n        original: origPhone,\n        enriched: enrichPhone,\n        note: 'رقمين مختلفين - يحتاج مراجعة'\n      });\n      conflictCount++;\n    }\n    \n    // 2. العنوان\n    const origAddr = (o['العنوان'] || o['address'] || '').trim();\n    const enrichAddr = (enriched.enriched_address || '').trim();\n    if (!origAddr && enrichAddr) {\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    } else if (origAddr && enrichAddr && origAddr.length < enrichAddr.length * 0.5) {\n      // العنوان المُثرى أكثر تفصيلاً\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    }\n    \n    // 3. جوجل ماب\n    const origMap = (o['جوجل ماب'] || '').trim();\n    const enrichMap = (enriched.google_maps_url || '').trim();\n    if (!origMap && enrichMap) {\n      merged['جوجل ماب'] = enrichMap;\n      updatedCount++;\n    }\n    \n    // 4. بيانات إضافية (تُضاف دائماً لو موجودة)\n    if (enriched.rating) merged['التقييم'] = enriched.rating;\n    if (enriched.total_ratings) merged['عدد التقييمات'] = enriched.total_ratings;\n    if (enriched.opening_hours) merged['ساعات العمل'] = enriched.opening_hours;\n    if (enriched.website) merged['الموقع الالكتروني'] = enriched.website;\n    if (enriched.lat) merged['خط العرض'] = enriched.lat;\n    if (enriched.lng) merged['خط الطول'] = enriched.lng;\n    if (enriched.status_ar) merged['حالة المتجر'] = enriched.status_ar;\n    \n    merged['آخر تحديث'] = new Date().toISOString().split('T')[0];\n  }\n  \n  mergedResults.push({ json: merged });\n}\n\n// === إحصائيات التحديث ===\nconst stats = {\n  total_original: originals.length,\n  total_enriched: enrichments.length,\n  total_discovered: discovered.length,\n  fields_updated: updatedCount,\n  conflicts_found: conflictCount,\n  review_items: reviewNeeded.length,\n  merge_date: new Date().toISOString()\n};\n\n// أول عنصر = الإحصائيات\n// باقي العناصر = البيانات المدمجة\nreturn [{ json: { _type: 'stats', ...stats } }, ...mergedResults];"
       },
       "id": "smart-merge",
       "name": "Smart Merge",
@@ -240,7 +250,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// التحقق من صحة البيانات\nconst items = $input.all();\nconst validated = [];\nconst invalid = [];\n\nconst phoneRegex = /^(\\+20|0)(1[0-9]{9}|[0-9]{8,9})$/;\nconst urlRegex = /^https?:\\/\\/.+/;\n\nfor (const item of items) {\n  const d = item.json;\n  const errors = [];\n  \n  // التحقق من رقم الهاتف\n  const phone = (d['رقم الهاتف'] || d['الهاتف'] || '').replace(/[\\s-]/g, '');\n  if (phone && !phoneRegex.test(phone)) {\n    errors.push(`رقم هاتف غير صحيح: ${phone}`);\n  }\n  \n  // التحقق من رابط جوجل ماب\n  const mapUrl = d['جوجل ماب'] || '';\n  if (mapUrl && !urlRegex.test(mapUrl)) {\n    errors.push(`رابط جوجل ماب غير صحيح: ${mapUrl}`);\n  }\n  \n  // التحقق من وجود اسم المتجر\n  const name = d['اسم المتجر'] || d['name'] || '';\n  if (!name.trim()) {\n    errors.push('اسم المتجر فارغ');\n    continue; // تخطي الصفوف الفارغة\n  }\n  \n  if (errors.length > 0) {\n    invalid.push({\n      json: {\n        ...d,\n        validation_errors: errors.join(' | '),\n        needs_review: true\n      }\n    });\n  } else {\n    validated.push(item);\n  }\n}\n\n// ترجع البيانات الصحيحة فقط\n// البيانات الخاطئة هتتسجل في شيت المراجعة\nreturn validated;"
+        "jsCode": "// التحقق من صحة البيانات\nconst items = $input.all();\nconst validated = [];\nconst invalid = [];\n\nconst phoneRegex = /^(\\+20|0)(1[0-9]{9}|[0-9]{8,9})$/;\nconst urlRegex = /^https?:\\/\\/.+/;\n\nfor (const item of items) {\n  const d = item.json;\n  const errors = [];\n  \n  // التحقق من رقم الهاتف\n  const phone = (d['رقم الهاتف 1'] || d['رقم الهاتف 2'] || '').replace(/[\\s-]/g, '');\n  if (phone && !phoneRegex.test(phone)) {\n    errors.push(`رقم هاتف غير صحيح: ${phone}`);\n  }\n  \n  // التحقق من رابط جوجل ماب\n  const mapUrl = d['جوجل ماب'] || '';\n  if (mapUrl && !urlRegex.test(mapUrl)) {\n    errors.push(`رابط جوجل ماب غير صحيح: ${mapUrl}`);\n  }\n  \n  // التحقق من وجود اسم المتجر\n  const name = d['اسم المتجر'] || d['name'] || '';\n  if (!name.trim()) {\n    errors.push('اسم المتجر فارغ');\n    continue; // تخطي الصفوف الفارغة\n  }\n  \n  if (errors.length > 0) {\n    invalid.push({\n      json: {\n        ...d,\n        validation_errors: errors.join(' | '),\n        needs_review: true\n      }\n    });\n  } else {\n    validated.push(item);\n  }\n}\n\n// ترجع البيانات الصحيحة فقط\n// البيانات الخاطئة هتتسجل في شيت المراجعة\nreturn validated;"
       },
       "id": "validate-data",
       "name": "Validate Data",
