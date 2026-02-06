@@ -11,24 +11,6 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "months",
-              "monthsInterval": 1,
-              "triggerAtDayOfMonth": 1
-            }
-          ]
-        }
-      },
-      "id": "monthly-schedule",
-      "name": "Monthly Schedule (1st)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [200, 580]
-    },
-    {
-      "parameters": {
         "operation": "read",
         "documentId": {
           "__rl": true,
@@ -380,47 +362,6 @@
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [
-        [
-          {
-            "node": "Read مطاعم",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read صيدليات",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read سوبرماركت",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read حلويات وكافيهات",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read خضار وفواكه",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read Enrichment Results",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Read Discovered Merchants",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Monthly Schedule (1st)": {
       "main": [
         [
           {

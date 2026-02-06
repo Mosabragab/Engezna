@@ -11,31 +11,13 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "weeks",
-              "weeksInterval": 1,
-              "triggerAtDay": [0]
-            }
-          ]
-        }
-      },
-      "id": "schedule-trigger",
-      "name": "Weekly Schedule (Sunday)",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [200, 520]
-    },
-    {
-      "parameters": {
-        "jsCode": "// تعريف مناطق البحث في بني سويف والفئات المطلوبة\nconst searchAreas = [\n  { name: 'وسط البلد', lat: 29.0744, lng: 31.0983, radius: 3000 },\n  { name: 'شرق النيل', lat: 29.0680, lng: 31.1120, radius: 3000 },\n  { name: 'أرض الحرية', lat: 29.0830, lng: 31.0900, radius: 2000 },\n  { name: 'بني سويف الجديدة', lat: 29.0500, lng: 31.0800, radius: 3000 },\n  { name: 'الواسطى', lat: 29.3333, lng: 31.2000, radius: 5000 }\n];\n\nconst categories = [\n  { name_ar: 'مطاعم', type: 'restaurant', sheet: 'مطاعم' },\n  { name_ar: 'صيدليات', type: 'pharmacy', sheet: 'صيدليات' },\n  { name_ar: 'سوبر ماركت', type: 'supermarket', sheet: 'سوبرماركت' },\n  { name_ar: 'حلويات', type: 'bakery', sheet: 'حلويات وكافيهات' },\n  { name_ar: 'كافيهات', type: 'cafe', sheet: 'حلويات وكافيهات' },\n  { name_ar: 'خضار وفواكه', type: 'grocery_or_supermarket', sheet: 'خضار وفواكه' }\n];\n\n// إنشاء كل التوليفات (area × category)\nconst searchTasks = [];\n\nfor (const area of searchAreas) {\n  for (const category of categories) {\n    searchTasks.push({\n      json: {\n        area_name: area.name,\n        lat: area.lat,\n        lng: area.lng,\n        radius: area.radius,\n        category_name_ar: category.name_ar,\n        category_type: category.type,\n        target_sheet: category.sheet,\n        search_location: `${area.lat},${area.lng}`\n      }\n    });\n  }\n}\n\nreturn searchTasks;"
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات المدينة والمناطق - غيّر القيم هنا\n// ====================================================\n//\n// 🔄 لتغيير المدينة: غيّر searchAreas بإحداثيات المدينة الجديدة\n// 📋 لتغيير الفئات: عدّل categories حسب حاجتك\n// ====================================================\n\nconst searchAreas = [\n  // === بني سويف ===\n  { name: 'وسط البلد', lat: 29.0744, lng: 31.0983, radius: 3000 },\n  { name: 'شرق النيل', lat: 29.0680, lng: 31.1120, radius: 3000 },\n  { name: 'أرض الحرية', lat: 29.0830, lng: 31.0900, radius: 2000 },\n  { name: 'بني سويف الجديدة', lat: 29.0500, lng: 31.0800, radius: 3000 },\n  { name: 'الواسطى', lat: 29.3333, lng: 31.2000, radius: 5000 }\n  \n  // === مثال: القاهرة (شغّل اللي تحتاجه وامسح الباقي) ===\n  // { name: 'وسط القاهرة', lat: 30.0444, lng: 31.2357, radius: 5000 },\n  // { name: 'مدينة نصر', lat: 30.0511, lng: 31.3467, radius: 4000 },\n];\n\nconst categories = [\n  { name_ar: 'مطاعم', type: 'restaurant', sheet: 'مطاعم' },\n  { name_ar: 'صيدليات', type: 'pharmacy', sheet: 'صيدليات' },\n  { name_ar: 'سوبر ماركت', type: 'supermarket', sheet: 'سوبرماركت' },\n  { name_ar: 'حلويات', type: 'bakery', sheet: 'حلويات وكافيهات' },\n  { name_ar: 'كافيهات', type: 'cafe', sheet: 'حلويات وكافيهات' },\n  { name_ar: 'خضار وفواكه', type: 'grocery_or_supermarket', sheet: 'خضار وفواكه' }\n];\n\n// إنشاء كل التوليفات (area × category)\nconst searchTasks = [];\n\nfor (const area of searchAreas) {\n  for (const category of categories) {\n    searchTasks.push({\n      json: {\n        area_name: area.name,\n        lat: area.lat,\n        lng: area.lng,\n        radius: area.radius,\n        category_name_ar: category.name_ar,\n        category_type: category.type,\n        target_sheet: category.sheet,\n        search_location: `${area.lat},${area.lng}`\n      }\n    });\n  }\n}\n\nreturn searchTasks;"
       },
       "id": "generate-search-tasks",
-      "name": "Generate Search Grid",
+      "name": "⚙️ City & Categories Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [440, 420]
+      "position": [420, 340]
     },
     {
       "parameters": {
@@ -46,7 +28,7 @@
       "name": "Batch by Area",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [660, 420]
+      "position": [640, 340]
     },
     {
       "parameters": {
@@ -85,7 +67,7 @@
       "name": "Google Nearby Search",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [880, 420]
+      "position": [860, 340]
     },
     {
       "parameters": {
@@ -114,17 +96,17 @@
       "name": "Results Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1100, 420]
+      "position": [1080, 340]
     },
     {
       "parameters": {
-        "jsCode": "// استخراج بيانات كل متجر من نتائج Nearby Search\nconst response = $input.first().json;\nconst searchMeta = $('Batch by Area').first().json;\nconst results = response.results || [];\n\nconst merchants = [];\n\nfor (const place of results) {\n  // تجاهل الأماكن المغلقة نهائياً\n  if (place.business_status === 'CLOSED_PERMANENTLY') continue;\n  \n  merchants.push({\n    json: {\n      place_id: place.place_id,\n      name: place.name,\n      address: place.vicinity || place.formatted_address || '',\n      lat: place.geometry?.location?.lat || 0,\n      lng: place.geometry?.location?.lng || 0,\n      rating: place.rating || 0,\n      total_ratings: place.user_ratings_total || 0,\n      business_status: place.business_status || 'OPERATIONAL',\n      types: (place.types || []).join(', '),\n      // metadata\n      discovery_area: searchMeta.area_name,\n      category_ar: searchMeta.category_name_ar,\n      category_type: searchMeta.category_type,\n      target_sheet: searchMeta.target_sheet,\n      // أولوية الجودة\n      priority: (place.rating >= 4.0 && (place.user_ratings_total || 0) >= 20) ? 'عالية' :\n                (place.rating >= 3.5 || (place.user_ratings_total || 0) >= 10) ? 'متوسطة' : 'منخفضة'\n    }\n  });\n}\n\nif (merchants.length === 0) {\n  return [{ json: { no_results: true, area: searchMeta.area_name, category: searchMeta.category_name_ar } }];\n}\n\nreturn merchants;"
+        "jsCode": "const response = $input.first().json;\nconst searchMeta = $('Batch by Area').first().json;\nconst results = response.results || [];\n\nconst merchants = [];\n\nfor (const place of results) {\n  if (place.business_status === 'CLOSED_PERMANENTLY') continue;\n  \n  merchants.push({\n    json: {\n      place_id: place.place_id,\n      name: place.name,\n      address: place.vicinity || place.formatted_address || '',\n      lat: place.geometry?.location?.lat || 0,\n      lng: place.geometry?.location?.lng || 0,\n      rating: place.rating || 0,\n      total_ratings: place.user_ratings_total || 0,\n      business_status: place.business_status || 'OPERATIONAL',\n      types: (place.types || []).join(', '),\n      discovery_area: searchMeta.area_name,\n      category_ar: searchMeta.category_name_ar,\n      category_type: searchMeta.category_type,\n      target_sheet: searchMeta.target_sheet,\n      priority: (place.rating >= 4.0 && (place.user_ratings_total || 0) >= 20) ? 'عالية' :\n                (place.rating >= 3.5 || (place.user_ratings_total || 0) >= 10) ? 'متوسطة' : 'منخفضة'\n    }\n  });\n}\n\nif (merchants.length === 0) {\n  return [{ json: { no_results: true, area: searchMeta.area_name, category: searchMeta.category_name_ar } }];\n}\n\nreturn merchants;"
       },
       "id": "extract-places",
       "name": "Extract Places",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1320, 320]
+      "position": [1300, 240]
     },
     {
       "parameters": {
@@ -145,7 +127,7 @@
       "name": "Read Existing Merchants",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1540, 320],
+      "position": [1520, 240],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-cred",
@@ -155,13 +137,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// مقارنة المتاجر المكتشفة مع الموجودة\n// إزالة المكررات باستخدام اسم المتجر + القرب الجغرافي\nconst discovered = $('Extract Places').all();\nconst existing = $('Read Existing Merchants').all();\n\nconst existingNames = existing.map(e => {\n  const name = (e.json['اسم المتجر'] || e.json['name'] || '').trim().toLowerCase();\n  return name;\n});\n\nconst existingLocations = existing\n  .filter(e => e.json.lat && e.json.lng)\n  .map(e => ({\n    lat: parseFloat(e.json.lat),\n    lng: parseFloat(e.json.lng)\n  }));\n\n// دالة حساب المسافة (Haversine)\nfunction distance(lat1, lng1, lat2, lng2) {\n  const R = 6371000; // meters\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLng = (lng2 - lng1) * Math.PI / 180;\n  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +\n    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *\n    Math.sin(dLng/2) * Math.sin(dLng/2);\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\n// دالة تشابه النص\nfunction similarity(s1, s2) {\n  s1 = s1.toLowerCase().trim();\n  s2 = s2.toLowerCase().trim();\n  if (s1 === s2) return 1;\n  if (s1.includes(s2) || s2.includes(s1)) return 0.8;\n  // Jaccard similarity على الكلمات\n  const words1 = new Set(s1.split(/\\s+/));\n  const words2 = new Set(s2.split(/\\s+/));\n  const intersection = [...words1].filter(w => words2.has(w)).length;\n  const union = new Set([...words1, ...words2]).size;\n  return union > 0 ? intersection / union : 0;\n}\n\nconst newMerchants = [];\nconst seen = new Set();\n\nfor (const item of discovered) {\n  const d = item.json;\n  if (d.no_results) continue;\n  \n  const name = (d.name || '').trim().toLowerCase();\n  \n  // تجاهل لو شوفناه قبل كده في النتائج\n  if (seen.has(d.place_id)) continue;\n  seen.add(d.place_id);\n  \n  // فحص لو موجود بالاسم\n  const nameMatch = existingNames.some(en => similarity(en, name) > 0.6);\n  \n  // فحص لو موجود بالموقع (أقل من 100 متر)\n  const locationMatch = existingLocations.some(el => \n    distance(d.lat, d.lng, el.lat, el.lng) < 100\n  );\n  \n  if (!nameMatch && !locationMatch) {\n    newMerchants.push({\n      json: {\n        ...d,\n        is_new: true,\n        discovered_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nif (newMerchants.length === 0) {\n  return [{ json: { no_new_merchants: true, message: 'لم يتم اكتشاف متاجر جديدة' } }];\n}\n\nreturn newMerchants;"
+        "jsCode": "const discovered = $('Extract Places').all();\nconst existing = $('Read Existing Merchants').all();\n\nconst existingNames = existing.map(e => {\n  const name = (e.json['اسم المتجر'] || e.json['name'] || '').trim().toLowerCase();\n  return name;\n});\n\nconst existingLocations = existing\n  .filter(e => e.json.lat && e.json.lng)\n  .map(e => ({\n    lat: parseFloat(e.json.lat),\n    lng: parseFloat(e.json.lng)\n  }));\n\nfunction distance(lat1, lng1, lat2, lng2) {\n  const R = 6371000;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLng = (lng2 - lng1) * Math.PI / 180;\n  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +\n    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *\n    Math.sin(dLng/2) * Math.sin(dLng/2);\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\nfunction similarity(s1, s2) {\n  s1 = s1.toLowerCase().trim();\n  s2 = s2.toLowerCase().trim();\n  if (s1 === s2) return 1;\n  if (s1.includes(s2) || s2.includes(s1)) return 0.8;\n  const words1 = new Set(s1.split(/\\s+/));\n  const words2 = new Set(s2.split(/\\s+/));\n  const intersection = [...words1].filter(w => words2.has(w)).length;\n  const union = new Set([...words1, ...words2]).size;\n  return union > 0 ? intersection / union : 0;\n}\n\nconst newMerchants = [];\nconst seen = new Set();\n\nfor (const item of discovered) {\n  const d = item.json;\n  if (d.no_results) continue;\n  \n  const name = (d.name || '').trim().toLowerCase();\n  if (seen.has(d.place_id)) continue;\n  seen.add(d.place_id);\n  \n  const nameMatch = existingNames.some(en => similarity(en, name) > 0.6);\n  const locationMatch = existingLocations.some(el => \n    distance(d.lat, d.lng, el.lat, el.lng) < 100\n  );\n  \n  if (!nameMatch && !locationMatch) {\n    newMerchants.push({\n      json: {\n        ...d,\n        is_new: true,\n        discovered_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nif (newMerchants.length === 0) {\n  return [{ json: { no_new_merchants: true, message: 'لم يتم اكتشاف متاجر جديدة' } }];\n}\n\nreturn newMerchants;"
       },
       "id": "deduplicate",
       "name": "Deduplicate",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1760, 320]
+      "position": [1740, 240]
     },
     {
       "parameters": {
@@ -190,7 +172,7 @@
       "name": "New Merchants Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1980, 320]
+      "position": [1960, 240]
     },
     {
       "parameters": {
@@ -201,7 +183,7 @@
       "name": "Batch for Details",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [2200, 420]
+      "position": [2180, 340]
     },
     {
       "parameters": {
@@ -236,17 +218,17 @@
       "name": "Get New Place Details",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2420, 420]
+      "position": [2400, 340]
     },
     {
       "parameters": {
-        "jsCode": "// تحويل بيانات المتجر الجديد لصيغة الشيت\nconst details = $input.first().json.result;\nconst meta = $('Batch for Details').first().json;\n\nif (!details) {\n  return [{ json: { ...meta, details_failed: true } }];\n}\n\nlet phone = details.formatted_phone_number || details.international_phone_number || '';\nphone = phone.replace(/[^0-9+]/g, '');\n\nlet openingHours = '';\nif (details.opening_hours && details.opening_hours.weekday_text) {\n  openingHours = details.opening_hours.weekday_text.join(' | ');\n}\n\nlet statusAr = 'نشط';\nif (details.business_status === 'CLOSED_TEMPORARILY') statusAr = 'مغلق مؤقتاً';\n\nreturn [{\n  json: {\n    'اسم المتجر': details.name || meta.name,\n    'التصنيف': meta.category_ar,\n    'المنطقة': meta.discovery_area,\n    'العنوان': details.formatted_address || meta.address,\n    'رقم الهاتف': phone,\n    'جوجل ماب': details.url || '',\n    'الموقع الالكتروني': details.website || '',\n    'التقييم': details.rating || 0,\n    'عدد التقييمات': details.user_ratings_total || 0,\n    'ساعات العمل': openingHours,\n    'حالة المتجر': statusAr,\n    'الأولوية': meta.priority,\n    'خط العرض': details.geometry?.location?.lat || 0,\n    'خط الطول': details.geometry?.location?.lng || 0,\n    'تاريخ الاكتشاف': new Date().toISOString().split('T')[0],\n    'المصدر': 'Google Maps Discovery',\n    'place_id': meta.place_id\n  }\n}];"
+        "jsCode": "const details = $input.first().json.result;\nconst meta = $('Batch for Details').first().json;\n\nif (!details) {\n  return [{ json: { ...meta, details_failed: true } }];\n}\n\nlet phone = details.formatted_phone_number || details.international_phone_number || '';\nphone = phone.replace(/[^0-9+]/g, '');\n\nlet openingHours = '';\nif (details.opening_hours && details.opening_hours.weekday_text) {\n  openingHours = details.opening_hours.weekday_text.join(' | ');\n}\n\nlet statusAr = 'نشط';\nif (details.business_status === 'CLOSED_TEMPORARILY') statusAr = 'مغلق مؤقتاً';\n\nreturn [{\n  json: {\n    'اسم المتجر': details.name || meta.name,\n    'التصنيف': meta.category_ar,\n    'المنطقة': meta.discovery_area,\n    'العنوان': details.formatted_address || meta.address,\n    'رقم الهاتف': phone,\n    'جوجل ماب': details.url || '',\n    'الموقع الالكتروني': details.website || '',\n    'التقييم': details.rating || 0,\n    'عدد التقييمات': details.user_ratings_total || 0,\n    'ساعات العمل': openingHours,\n    'حالة المتجر': statusAr,\n    'الأولوية': meta.priority,\n    'خط العرض': details.geometry?.location?.lat || 0,\n    'خط الطول': details.geometry?.location?.lng || 0,\n    'تاريخ الاكتشاف': new Date().toISOString().split('T')[0],\n    'المصدر': 'Google Maps Discovery',\n    'place_id': meta.place_id\n  }\n}];"
       },
       "id": "format-new-merchant",
       "name": "Format New Merchant",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2640, 420]
+      "position": [2620, 340]
     },
     {
       "parameters": {
@@ -270,7 +252,7 @@
       "name": "Write New Merchants",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2860, 420],
+      "position": [2840, 340],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "google-sheets-cred",
@@ -287,7 +269,7 @@
       "name": "Wait (Rate Limit)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [3080, 420],
+      "position": [3060, 340],
       "webhookId": "rate-limit-2-wh"
     },
     {
@@ -299,7 +281,7 @@
       "name": "Wait Between Areas",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [1100, 580],
+      "position": [1080, 500],
       "webhookId": "area-rate-limit-wh"
     },
     {
@@ -308,7 +290,7 @@
       "name": "No Results",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1320, 520]
+      "position": [1300, 440]
     },
     {
       "parameters": {},
@@ -316,7 +298,7 @@
       "name": "No New Merchants",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [2200, 220]
+      "position": [2180, 140]
     }
   ],
   "connections": {
@@ -324,25 +306,14 @@
       "main": [
         [
           {
-            "node": "Generate Search Grid",
+            "node": "⚙️ City & Categories Config",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Weekly Schedule (Sunday)": {
-      "main": [
-        [
-          {
-            "node": "Generate Search Grid",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generate Search Grid": {
+    "⚙️ City & Categories Config": {
       "main": [
         [
           {
@@ -551,5 +522,5 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2026-02-06T00:00:00.000Z",
-  "versionId": "1"
+  "versionId": "2"
 }
