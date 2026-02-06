@@ -3,25 +3,22 @@
 
 ## نظرة عامة
 
-4 ووركفلو عملية لتجميع وتحديث بيانات المتاجر في بني سويف باستخدام Google Maps API:
+3 ووركفلو عملية لتجميع وتحديث بيانات المتاجر في بني سويف باستخدام Google Maps API:
 
 | Workflow | الملف | الوظيفة |
 |----------|-------|---------|
 | WF1 | `wf1_google_maps_enrichment.json` | إثراء بيانات المتاجر الموجودة (هاتف، عنوان، تقييم) |
 | WF2 | `wf2_new_merchant_discovery.json` | اكتشاف متاجر جديدة في 5 مناطق × 6 فئات |
 | WF3 | `wf3_data_merge_export.json` | تجميع كل النتائج + التحقق + التصدير |
-| WF4 | `wf4_merchant_update_sync.json` | مزامنة البيانات مع Supabase + إشعارات |
 
 ```
-┌──────────────────────────────────────────────────────┐
-│          ترتيب التشغيل                                │
-│                                                      │
-│  WF1 (إثراء) ──→ WF2 (اكتشاف) ──→ WF3 (تجميع)       │
-│                                     ↓                │
-│                              WF4 (مزامنة Supabase)    │
-│                                                      │
-│  Google Sheets ←── مصدر البيانات والنتائج              │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│          ترتيب التشغيل                        │
+│                                              │
+│  WF1 (إثراء) ──→ WF2 (اكتشاف) ──→ WF3 (تجميع) │
+│                                              │
+│  Google Sheets ←── مصدر البيانات والنتائج      │
+└──────────────────────────────────────────────┘
 ```
 
 ---
@@ -127,8 +124,6 @@
 ```
 GOOGLE_MAPS_API_KEY=AIza...your_key_here
 GOOGLE_SHEET_ID=1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_KEY=eyJ...your_service_key
 ```
 
 ---
@@ -234,35 +229,19 @@ SUPABASE_SERVICE_KEY=eyJ...your_service_key
 
 ---
 
-## WF4: Merchant Update Sync (جديد)
-
-### ماذا يفعل؟
-- يقرأ البيانات المدمجة من شيت `merged_final`
-- يقارن مع بيانات المتاجر في Supabase
-- يحدّث المتاجر الموجودة أو يضيف الجديدة
-- يرسل إشعار Webhook بنتائج المزامنة
-- يسجّل تقرير المزامنة
-
-### متطلبات إضافية
-- Supabase URL و Service Role Key في Environment Variables
-- جدول `providers` في Supabase لازم يكون موجود
-
----
-
 ## خطة التشغيل
 
 ### المرة الأولى
 ```
 1. إعداد Google Cloud + Service Account + API Key
 2. شير الـ Google Sheet مع إيميل الـ Service Account
-3. استيراد الـ 4 workflows في n8n
+3. استيراد الـ 3 workflows في n8n
 4. إعداد الـ credentials والـ environment variables
 5. WF1: شغّل على شيت "مطاعم" (اختبار على 5 أولاً)
 6. WF1: شغّل على باقي الشيتات واحد واحد
 7. WF2: شغّل يدوي (اكتشاف متاجر جديدة)
 8. WF3: شغّل للتجميع النهائي
-9. WF4: شغّل للمزامنة مع Supabase
-10. راجع شيت "merged_final" وصدّره كـ Excel
+9. راجع شيت "merged_final" وصدّره كـ Excel
 ```
 
 ### التحديث الدوري
@@ -270,7 +249,6 @@ SUPABASE_SERVICE_KEY=eyJ...your_service_key
 - أسبوعياً: WF2 شغّل يدوي (اكتشاف جديد)
 - شهرياً: WF3 يدوي (تجميع)
 - عند الحاجة: WF1 يدوي لإعادة إثراء بيانات محددة
-- عند الحاجة: WF4 يدوي لمزامنة Supabase
 ```
 
 ---
@@ -321,7 +299,6 @@ project-management/automation/
 ├── wf1_google_maps_enrichment.json    # إثراء البيانات
 ├── wf2_new_merchant_discovery.json    # اكتشاف متاجر جديدة
 ├── wf3_data_merge_export.json         # تجميع وتصدير
-├── wf4_merchant_update_sync.json      # مزامنة مع Supabase
 ├── n8n_workflow.json                  # Knowledge Bot (موجود سابقاً)
 ├── MERCHANT_DATA_WORKFLOWS.md         # هذا الملف
 └── TELEGRAM_BOT_SETUP.md             # إعداد بوت تيليجرام
