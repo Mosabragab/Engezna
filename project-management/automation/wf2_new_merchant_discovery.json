@@ -131,9 +131,9 @@
       "typeVersion": 4.5,
       "position": [1520, 240],
       "credentials": {
-        "googleSheetsApi": {
-          "id": "google-sheets-sa",
-          "name": "Google Sheets Service Account"
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
         }
       }
     },
@@ -256,9 +256,9 @@
       "typeVersion": 4.5,
       "position": [2840, 340],
       "credentials": {
-        "googleSheetsApi": {
-          "id": "google-sheets-sa",
-          "name": "Google Sheets Service Account"
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
         }
       }
     },
