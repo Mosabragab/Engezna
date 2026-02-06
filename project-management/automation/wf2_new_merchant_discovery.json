@@ -1,0 +1,528 @@
+{
+  "name": "Engezna - WF2: New Merchant Discovery",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات المدينة والمناطق - غيّر القيم هنا\n// ====================================================\n//\n// 🔄 لتغيير المدينة: غيّر searchAreas بإحداثيات المدينة الجديدة\n// 📋 لتغيير الفئات: عدّل categories حسب حاجتك\n// 📄 لتغيير الشيت: غيّر spreadsheet_id\n// ====================================================\n\n// معرف الـ Spreadsheet - غيّره لكل مدينة\nconst spreadsheet_id = '1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8';\n\nconst searchAreas = [\n  // === بني سويف ===\n  { name: 'وسط البلد', lat: 29.0744, lng: 31.0983, radius: 3000 },\n  { name: 'شرق النيل', lat: 29.0680, lng: 31.1120, radius: 3000 },\n  { name: 'أرض الحرية', lat: 29.0830, lng: 31.0900, radius: 2000 },\n  { name: 'بني سويف الجديدة', lat: 29.0500, lng: 31.0800, radius: 3000 },\n  { name: 'الواسطى', lat: 29.3333, lng: 31.2000, radius: 5000 }\n  \n  // === مثال: القاهرة (شغّل اللي تحتاجه وامسح الباقي) ===\n  // { name: 'وسط القاهرة', lat: 30.0444, lng: 31.2357, radius: 5000 },\n  // { name: 'مدينة نصر', lat: 30.0511, lng: 31.3467, radius: 4000 },\n];\n\nconst categories = [\n  { name_ar: 'مطاعم', type: 'restaurant', sheet: 'مطاعم 🍽️' },\n  { name_ar: 'صيدليات', type: 'pharmacy', sheet: 'صيدليات 💊' },\n  { name_ar: 'سوبر ماركت', type: 'supermarket', sheet: 'سوبر ماركت 🛒' },\n  { name_ar: 'حلويات', type: 'bakery', sheet: 'حلويات وكافيهات ☕' },\n  { name_ar: 'كافيهات', type: 'cafe', sheet: 'حلويات وكافيهات ☕' },\n  { name_ar: 'خضار وفواكه', type: 'grocery_or_supermarket', sheet: 'خضار وفواكه 🥬' }\n];\n\n// إنشاء كل التوليفات (area × category)\nconst searchTasks = [];\n\nfor (const area of searchAreas) {\n  for (const category of categories) {\n    searchTasks.push({\n      json: {\n        spreadsheet_id,\n        area_name: area.name,\n        lat: area.lat,\n        lng: area.lng,\n        radius: area.radius,\n        category_name_ar: category.name_ar,\n        category_type: category.type,\n        target_sheet: category.sheet,\n        search_location: `${area.lat},${area.lng}`\n      }\n    });\n  }\n}\n\nreturn searchTasks;"
+      },
+      "id": "generate-search-tasks",
+      "name": "⚙️ City & Categories Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [420, 340]
+    },
+    {
+      "parameters": {
+        "batchSize": 3,
+        "options": {}
+      },
+      "id": "batch-areas",
+      "name": "Batch by Area",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [640, 340]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location",
+              "value": "={{ $json.search_location }}"
+            },
+            {
+              "name": "radius",
+              "value": "={{ $json.radius }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ $json.category_type }}"
+            },
+            {
+              "name": "language",
+              "value": "ar"
+            },
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "nearby-search",
+      "name": "Google Nearby Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [860, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-status",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "OK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-nearby-results",
+      "name": "Results Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1080, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst searchMeta = $('Batch by Area').first().json;\nconst results = response.results || [];\n\nconst merchants = [];\n\nfor (const place of results) {\n  if (place.business_status === 'CLOSED_PERMANENTLY') continue;\n  \n  merchants.push({\n    json: {\n      place_id: place.place_id,\n      name: place.name,\n      address: place.vicinity || place.formatted_address || '',\n      lat: place.geometry?.location?.lat || 0,\n      lng: place.geometry?.location?.lng || 0,\n      rating: place.rating || 0,\n      total_ratings: place.user_ratings_total || 0,\n      business_status: place.business_status || 'OPERATIONAL',\n      types: (place.types || []).join(', '),\n      discovery_area: searchMeta.area_name,\n      category_ar: searchMeta.category_name_ar,\n      category_type: searchMeta.category_type,\n      target_sheet: searchMeta.target_sheet,\n      priority: (place.rating >= 4.0 && (place.user_ratings_total || 0) >= 20) ? 'عالية' :\n                (place.rating >= 3.5 || (place.user_ratings_total || 0) >= 10) ? 'متوسطة' : 'منخفضة'\n    }\n  });\n}\n\nif (merchants.length === 0) {\n  return [{ json: { no_results: true, area: searchMeta.area_name, category: searchMeta.category_name_ar } }];\n}\n\nreturn merchants;"
+      },
+      "id": "extract-places",
+      "name": "Extract Places",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 240]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ City & Categories Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "all_merchants"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-existing",
+      "name": "Read Existing Merchants",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1520, 240],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const discovered = $('Extract Places').all();\nconst existing = $('Read Existing Merchants').all();\n\nconst existingNames = existing.map(e => {\n  const name = (e.json['اسم المتجر'] || e.json['name'] || '').trim().toLowerCase();\n  return name;\n});\n\nconst existingLocations = existing\n  .filter(e => e.json.lat && e.json.lng)\n  .map(e => ({\n    lat: parseFloat(e.json.lat),\n    lng: parseFloat(e.json.lng)\n  }));\n\nfunction distance(lat1, lng1, lat2, lng2) {\n  const R = 6371000;\n  const dLat = (lat2 - lat1) * Math.PI / 180;\n  const dLng = (lng2 - lng1) * Math.PI / 180;\n  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +\n    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *\n    Math.sin(dLng/2) * Math.sin(dLng/2);\n  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));\n}\n\nfunction similarity(s1, s2) {\n  s1 = s1.toLowerCase().trim();\n  s2 = s2.toLowerCase().trim();\n  if (s1 === s2) return 1;\n  if (s1.includes(s2) || s2.includes(s1)) return 0.8;\n  const words1 = new Set(s1.split(/\\s+/));\n  const words2 = new Set(s2.split(/\\s+/));\n  const intersection = [...words1].filter(w => words2.has(w)).length;\n  const union = new Set([...words1, ...words2]).size;\n  return union > 0 ? intersection / union : 0;\n}\n\nconst newMerchants = [];\nconst seen = new Set();\n\nfor (const item of discovered) {\n  const d = item.json;\n  if (d.no_results) continue;\n  \n  const name = (d.name || '').trim().toLowerCase();\n  if (seen.has(d.place_id)) continue;\n  seen.add(d.place_id);\n  \n  const nameMatch = existingNames.some(en => similarity(en, name) > 0.6);\n  const locationMatch = existingLocations.some(el => \n    distance(d.lat, d.lng, el.lat, el.lng) < 100\n  );\n  \n  if (!nameMatch && !locationMatch) {\n    newMerchants.push({\n      json: {\n        ...d,\n        is_new: true,\n        discovered_at: new Date().toISOString()\n      }\n    });\n  }\n}\n\nif (newMerchants.length === 0) {\n  return [{ json: { no_new_merchants: true, message: 'لم يتم اكتشاف متاجر جديدة' } }];\n}\n\nreturn newMerchants;"
+      },
+      "id": "deduplicate",
+      "name": "Deduplicate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1740, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-new",
+              "leftValue": "={{ $json.no_new_merchants }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "has-new",
+      "name": "New Merchants Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1960, 240]
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "id": "batch-details",
+      "name": "Batch for Details",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [2180, 340]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://maps.googleapis.com/maps/api/place/details/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "place_id",
+              "value": "={{ $json.place_id }}"
+            },
+            {
+              "name": "fields",
+              "value": "formatted_address,formatted_phone_number,international_phone_number,geometry,rating,user_ratings_total,opening_hours,website,url,business_status,name,types"
+            },
+            {
+              "name": "language",
+              "value": "ar"
+            },
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "new-place-details",
+      "name": "Get New Place Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2400, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "const details = $input.first().json.result;\nconst meta = $('Batch for Details').first().json;\n\nif (!details) {\n  return [{ json: { ...meta, details_failed: true } }];\n}\n\nlet phone = details.formatted_phone_number || details.international_phone_number || '';\nphone = phone.replace(/[^0-9+]/g, '');\n\nlet openingHours = '';\nif (details.opening_hours && details.opening_hours.weekday_text) {\n  openingHours = details.opening_hours.weekday_text.join(' | ');\n}\n\nlet statusAr = 'نشط';\nif (details.business_status === 'CLOSED_TEMPORARILY') statusAr = 'مغلق مؤقتاً';\n\nreturn [{\n  json: {\n    'اسم المتجر': details.name || meta.name,\n    'التصنيف': meta.category_ar,\n    'المنطقة': meta.discovery_area,\n    'العنوان': details.formatted_address || meta.address,\n    'رقم الهاتف 1': phone,\n    'جوجل ماب': details.url || '',\n    'الموقع الالكتروني': details.website || '',\n    'التقييم': details.rating || 0,\n    'عدد التقييمات': details.user_ratings_total || 0,\n    'ساعات العمل': openingHours,\n    'حالة المتجر': statusAr,\n    'الأولوية': meta.priority,\n    'خط العرض': details.geometry?.location?.lat || 0,\n    'خط الطول': details.geometry?.location?.lng || 0,\n    'تاريخ الاكتشاف': new Date().toISOString().split('T')[0],\n    'المصدر': 'Google Maps Discovery',\n    'place_id': meta.place_id\n  }\n}];"
+      },
+      "id": "format-new-merchant",
+      "name": "Format New Merchant",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2620, 340]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ City & Categories Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "متاجر_مكتشفة"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "write-new-merchants",
+      "name": "Write New Merchants",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2840, 340],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "rate-limit-2",
+      "name": "Wait (Rate Limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3060, 340],
+      "webhookId": "rate-limit-2-wh"
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "seconds"
+      },
+      "id": "area-rate-limit",
+      "name": "Wait Between Areas",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1080, 500],
+      "webhookId": "area-rate-limit-wh"
+    },
+    {
+      "parameters": {},
+      "id": "no-op-no-results",
+      "name": "No Results",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1300, 440]
+    },
+    {
+      "parameters": {},
+      "id": "no-op-no-new",
+      "name": "No New Merchants",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [2180, 140]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "⚙️ City & Categories Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ City & Categories Config": {
+      "main": [
+        [
+          {
+            "node": "Batch by Area",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch by Area": {
+      "main": [
+        [
+          {
+            "node": "Google Nearby Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Nearby Search": {
+      "main": [
+        [
+          {
+            "node": "Results Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Results Found?": {
+      "main": [
+        [
+          {
+            "node": "No Results",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Places",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Results": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Areas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Places": {
+      "main": [
+        [
+          {
+            "node": "Read Existing Merchants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing Merchants": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate": {
+      "main": [
+        [
+          {
+            "node": "New Merchants Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Merchants Found?": {
+      "main": [
+        [
+          {
+            "node": "No New Merchants",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Batch for Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No New Merchants": {
+      "main": [
+        [
+          {
+            "node": "Wait Between Areas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch for Details": {
+      "main": [
+        [
+          {
+            "node": "Get New Place Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get New Place Details": {
+      "main": [
+        [
+          {
+            "node": "Format New Merchant",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format New Merchant": {
+      "main": [
+        [
+          {
+            "node": "Write New Merchants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write New Merchants": {
+      "main": [
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit)": {
+      "main": [
+        [
+          {
+            "node": "Batch for Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Between Areas": {
+      "main": [
+        [
+          {
+            "node": "Batch by Area",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "engezna",
+      "id": "1"
+    },
+    {
+      "name": "merchant-discovery",
+      "id": "3"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-06T00:00:00.000Z",
+  "versionId": "2"
+}

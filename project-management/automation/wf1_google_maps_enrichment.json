@@ -1,0 +1,570 @@
+{
+  "name": "Engezna - WF1: Google Maps Enrichment",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات المدينة - غيّر القيم هنا حسب المدينة\n// ====================================================\nconst config = {\n  // اسم المدينة (يُضاف لكل عملية بحث)\n  city_name: 'بني سويف',\n  \n  // إحداثيات مركز المدينة\n  city_lat: 29.0661,\n  city_lng: 31.0994,\n  \n  // نصف قطر البحث بالمتر (15 كم)\n  search_radius: 15000,\n  \n  // === اختر الشيت المراد تحديثه ===\n  // اكتب الاسم بالعربي بدون إيموجي:\n  // 'مطاعم' | 'صيدليات' | 'سوبر ماركت' | 'حلويات' | 'خضار'\n  sheet_key: 'مطاعم',\n  \n  // معرف الـ Spreadsheet\n  spreadsheet_id: '1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8'\n};\n\nreturn [{ json: config }];"
+      },
+      "id": "city-config",
+      "name": "⚙️ City Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 340]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}?fields=sheets.properties.title%2Csheets.properties.sheetId",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-sheet-list",
+      "name": "📋 Get Sheet List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 340],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// البحث عن اسم الشيت الصحيح من القائمة\nconst config = $('⚙️ City Config').first().json;\nconst sheets = $input.first().json.sheets;\nconst key = config.sheet_key;\n\n// البحث عن الشيت اللي اسمه يحتوي على الكلمة المفتاحية\nconst match = sheets.find(s => s.properties.title.includes(key));\n\nif (!match) {\n  const available = sheets.map(s => s.properties.title).join(', ');\n  throw new Error(`لم يتم العثور على شيت يحتوي على '${key}'. الشيتات المتاحة: ${available}`);\n}\n\nreturn [{\n  json: {\n    ...config,\n    sheet_name: match.properties.title,\n    sheet_gid: match.properties.sheetId\n  }\n}];"
+      },
+      "id": "resolve-sheet",
+      "name": "🔍 Resolve Sheet Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 340]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_name }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-merchants",
+      "name": "Read Merchants Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1000, 340],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// فلترة المتاجر اللي محتاجة تحديث\nconst items = $input.all();\nconst config = $('⚙️ City Config').first().json;\nconst needsUpdate = [];\n\nfor (const item of items) {\n  const data = item.json;\n  const merchantName = data['اسم المتجر'] || '';\n  \n  if (!merchantName || merchantName.trim() === '') continue;\n  \n  const googleMap = data['جوجل ماب'] || '';\n  const phone = data['رقم الهاتف 1'] || data['رقم الهاتف 2'] || '';\n  const address = data['العنوان'] || '';\n  const area = data['المنطقة'] || '';\n  const branch = data['الفرع الرئيسي'] || '';\n  \n  const missingFields = [];\n  if (!googleMap.trim()) missingFields.push('google_maps');\n  if (!phone.trim()) missingFields.push('phone');\n  if (!address.trim()) missingFields.push('address');\n  \n  if (missingFields.length > 0) {\n    needsUpdate.push({\n      json: {\n        merchant_name: merchantName.trim(),\n        branch: branch.trim(),\n        area: area.trim() || config.city_name,\n        existing_phone: phone.trim(),\n        existing_address: address.trim(),\n        existing_google_map: googleMap.trim(),\n        missing_fields: missingFields,\n        row_index: items.indexOf(item) + 4,\n        search_query: `${merchantName.trim()} ${branch.trim()} ${area.trim() || config.city_name}`,\n        city_lat: config.city_lat,\n        city_lng: config.city_lng,\n        search_radius: config.search_radius,\n        search_location: `${config.city_lat},${config.city_lng}`\n      }\n    });\n  }\n}\n\nif (needsUpdate.length === 0) {\n  return [{ json: { no_updates_needed: true, message: 'كل البيانات مكتملة!' } }];\n}\n\nreturn needsUpdate;"
+      },
+      "id": "filter-missing",
+      "name": "Filter Missing Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 340]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-no-updates",
+              "leftValue": "={{ $json.no_updates_needed }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-has-updates",
+      "name": "Has Updates?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1420, 340]
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "id": "batch-process",
+      "name": "Batch Processing",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [1640, 440]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://maps.googleapis.com/maps/api/place/textsearch/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.search_query }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.search_location }}"
+            },
+            {
+              "name": "radius",
+              "value": "={{ $json.search_radius }}"
+            },
+            {
+              "name": "language",
+              "value": "ar"
+            },
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "places-text-search",
+      "name": "Google Places Text Search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1860, 440]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "check-results",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "OK",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "check-results",
+      "name": "Results Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2080, 440]
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = $input.first().json.results;\nconst originalData = $('Batch Processing').first().json;\n\nif (!results || results.length === 0) {\n  return [{ json: { ...originalData, search_failed: true } }];\n}\n\nconst best = results[0];\n\nreturn [{\n  json: {\n    ...originalData,\n    place_id: best.place_id,\n    place_name: best.name,\n    place_address: best.formatted_address || '',\n    place_rating: best.rating || 0,\n    place_total_ratings: best.user_ratings_total || 0,\n    place_lat: best.geometry?.location?.lat || 0,\n    place_lng: best.geometry?.location?.lng || 0,\n    business_status: best.business_status || 'UNKNOWN',\n    search_failed: false\n  }\n}];"
+      },
+      "id": "extract-best-result",
+      "name": "Extract Best Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2300, 340]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://maps.googleapis.com/maps/api/place/details/json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "place_id",
+              "value": "={{ $json.place_id }}"
+            },
+            {
+              "name": "fields",
+              "value": "formatted_address,formatted_phone_number,international_phone_number,geometry,rating,user_ratings_total,opening_hours,website,url,business_status,name,types"
+            },
+            {
+              "name": "language",
+              "value": "ar"
+            },
+            {
+              "name": "key",
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "place-details",
+      "name": "Get Place Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [2520, 340]
+    },
+    {
+      "parameters": {
+        "jsCode": "const details = $input.first().json.result;\nconst originalData = $('Extract Best Result').first().json;\n\nif (!details) {\n  return [{ json: { ...originalData, enrichment_failed: true } }];\n}\n\nlet openingHours = '';\nif (details.opening_hours && details.opening_hours.weekday_text) {\n  openingHours = details.opening_hours.weekday_text.join(' | ');\n}\n\nlet phone = details.formatted_phone_number || details.international_phone_number || '';\nphone = phone.replace(/[^0-9+]/g, '');\n\nlet statusAr = 'نشط';\nif (details.business_status === 'CLOSED_TEMPORARILY') statusAr = 'مغلق مؤقتاً';\nif (details.business_status === 'CLOSED_PERMANENTLY') statusAr = 'مغلق نهائياً';\n\nreturn [{\n  json: {\n    merchant_name: originalData.merchant_name,\n    row_index: originalData.row_index,\n    enriched_name: details.name || originalData.merchant_name,\n    enriched_address: details.formatted_address || originalData.existing_address,\n    enriched_phone: phone || originalData.existing_phone,\n    google_maps_url: details.url || '',\n    website: details.website || '',\n    rating: details.rating || 0,\n    total_ratings: details.user_ratings_total || 0,\n    opening_hours: openingHours,\n    business_status: details.business_status || 'OPERATIONAL',\n    status_ar: statusAr,\n    lat: details.geometry?.location?.lat || 0,\n    lng: details.geometry?.location?.lng || 0,\n    original_phone: originalData.existing_phone,\n    original_address: originalData.existing_address,\n    original_google_map: originalData.existing_google_map,\n    enriched_at: new Date().toISOString(),\n    source: 'google_maps_api'\n  }\n}];"
+      },
+      "id": "map-to-excel",
+      "name": "Map to Excel Format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2740, 340]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "enrichment_results"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": ["merchant_name"]
+        },
+        "options": {}
+      },
+      "id": "write-results",
+      "name": "Write Enrichment Results",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2960, 340],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "seconds"
+      },
+      "id": "rate-limit",
+      "name": "Wait (Rate Limit)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [3180, 340],
+      "webhookId": "rate-limit-wh"
+    },
+    {
+      "parameters": {
+        "jsCode": "const originalData = $('Batch Processing').first().json;\n\nreturn [{\n  json: {\n    merchant_name: originalData.merchant_name,\n    area: originalData.area,\n    status: 'NOT_FOUND_ON_MAPS',\n    note: 'لم يتم العثور على هذا المتجر على جوجل ماب - يحتاج بحث يدوي أو زيارة ميدانية',\n    logged_at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "log-not-found",
+      "name": "Log Not Found",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2300, 560]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('🔍 Resolve Sheet Name').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "not_found_log"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "write-not-found",
+      "name": "Write Not Found Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2520, 560],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "no-op-done",
+      "name": "All Done - No Updates",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1640, 240]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "⚙️ City Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ City Config": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Sheet List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Sheet List": {
+      "main": [
+        [
+          {
+            "node": "🔍 Resolve Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Resolve Sheet Name": {
+      "main": [
+        [
+          {
+            "node": "Read Merchants Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Merchants Sheet": {
+      "main": [
+        [
+          {
+            "node": "Filter Missing Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Missing Data": {
+      "main": [
+        [
+          {
+            "node": "Has Updates?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Updates?": {
+      "main": [
+        [
+          {
+            "node": "All Done - No Updates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Batch Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batch Processing": {
+      "main": [
+        [
+          {
+            "node": "Google Places Text Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Places Text Search": {
+      "main": [
+        [
+          {
+            "node": "Results Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Results Found?": {
+      "main": [
+        [
+          {
+            "node": "Log Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract Best Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Best Result": {
+      "main": [
+        [
+          {
+            "node": "Get Place Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Place Details": {
+      "main": [
+        [
+          {
+            "node": "Map to Excel Format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Map to Excel Format": {
+      "main": [
+        [
+          {
+            "node": "Write Enrichment Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Enrichment Results": {
+      "main": [
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Rate Limit)": {
+      "main": [
+        [
+          {
+            "node": "Batch Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Not Found": {
+      "main": [
+        [
+          {
+            "node": "Write Not Found Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Not Found Log": {
+      "main": [
+        [
+          {
+            "node": "Wait (Rate Limit)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "engezna",
+      "id": "1"
+    },
+    {
+      "name": "merchant-data",
+      "id": "2"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-06T00:00:00.000Z",
+  "versionId": "3"
+}

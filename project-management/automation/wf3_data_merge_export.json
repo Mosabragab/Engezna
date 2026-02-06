@@ -1,0 +1,680 @@
+{
+  "name": "Engezna - WF3: Data Merge & Export",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [100, 600]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات الشيت - غيّر spreadsheet_id لكل مدينة\n// ====================================================\nconst config = {\n  spreadsheet_id: '1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8'\n};\n\nreturn [{ json: config }];"
+      },
+      "id": "wf3-config",
+      "name": "⚙️ Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 600]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}?fields=sheets.properties.title%2Csheets.properties.sheetId",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-sheet-list",
+      "name": "📋 Get Sheet List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 600],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// حل أسماء الشيتات الصحيحة من Google API\nconst config = $('⚙️ Config').first().json;\nconst sheets = $input.first().json.sheets;\nconst keys = [\n  { key: 'مطاعم', field: 'sheet_restaurants' },\n  { key: 'صيدليات', field: 'sheet_pharmacies' },\n  { key: 'سوبر ماركت', field: 'sheet_supermarkets' },\n  { key: 'حلويات', field: 'sheet_sweets' },\n  { key: 'خضار', field: 'sheet_vegetables' }\n];\n\nconst result = { spreadsheet_id: config.spreadsheet_id };\nfor (const { key, field } of keys) {\n  const match = sheets.find(s => s.properties.title.includes(key));\n  if (match) {\n    result[field] = match.properties.title;\n  } else {\n    result[field] = key;\n  }\n}\n\nreturn [{ json: result }];"
+      },
+      "id": "resolve-sheets",
+      "name": "🔍 Resolve Sheet Names",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 600]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_restaurants }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-restaurants",
+      "name": "Read مطاعم",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 200],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_pharmacies }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-pharmacies",
+      "name": "Read صيدليات",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 360],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_supermarkets }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-supermarkets",
+      "name": "Read سوبرماركت",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 520],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_sweets }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-sweets",
+      "name": "Read حلويات وكافيهات",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 680],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{ $json.sheet_vegetables }}"
+        },
+        "options": {
+          "range": "A3:W500"
+        }
+      },
+      "id": "read-vegetables",
+      "name": "Read خضار وفواكه",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 840],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "enrichment_results"
+        },
+        "options": {}
+      },
+      "id": "read-enrichment",
+      "name": "Read Enrichment Results",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 1000],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "متاجر_مكتشفة"
+        },
+        "options": {}
+      },
+      "id": "read-discovered",
+      "name": "Read Discovered Merchants",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [940, 1160],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// تجميع كل الشيتات الأصلية في مصفوفة واحدة مع تحديد التصنيف\nconst restaurants = $('Read مطاعم').all().map(i => ({ ...i.json, _category: 'مطاعم', _sheet: 'مطاعم' }));\nconst pharmacies = $('Read صيدليات').all().map(i => ({ ...i.json, _category: 'صيدليات', _sheet: 'صيدليات' }));\nconst supermarkets = $('Read سوبرماركت').all().map(i => ({ ...i.json, _category: 'سوبر ماركت', _sheet: 'سوبرماركت' }));\nconst sweets = $('Read حلويات وكافيهات').all().map(i => ({ ...i.json, _category: 'حلويات وكافيهات', _sheet: 'حلويات وكافيهات' }));\nconst vegetables = $('Read خضار وفواكه').all().map(i => ({ ...i.json, _category: 'خضار وفواكه', _sheet: 'خضار وفواكه' }));\n\nconst allOriginal = [...restaurants, ...pharmacies, ...supermarkets, ...sweets, ...vegetables];\n\nreturn allOriginal.map(m => ({ json: m }));"
+      },
+      "id": "combine-originals",
+      "name": "Combine All Original Sheets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1020, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// === Smart Merge Logic ===\n// دمج البيانات المُثراة (enrichment) مع البيانات الأصلية\nconst originals = $('Combine All Original Sheets').all();\nconst enrichments = $('Read Enrichment Results').all();\nconst discovered = $('Read Discovered Merchants').all();\n\n// إنشاء خريطة للبيانات المُثراة باسم المتجر\nconst enrichmentMap = new Map();\nfor (const e of enrichments) {\n  const name = (e.json.merchant_name || '').trim().toLowerCase();\n  if (name) enrichmentMap.set(name, e.json);\n}\n\n// === دمج البيانات الأصلية مع المُثراة ===\nconst mergedResults = [];\nconst reviewNeeded = [];\nlet updatedCount = 0;\nlet conflictCount = 0;\n\nfor (const original of originals) {\n  const o = original.json;\n  const merchantName = (o['اسم المتجر'] || o['name'] || '').trim();\n  const enriched = enrichmentMap.get(merchantName.toLowerCase());\n  \n  const merged = { ...o };\n  \n  if (enriched) {\n    // === قواعد الدمج الذكية ===\n    \n    // 1. رقم الهاتف\n    const origPhone = (o['رقم الهاتف 1'] || o['رقم الهاتف 2'] || '').trim();\n    const enrichPhone = (enriched.enriched_phone || '').trim();\n    if (!origPhone && enrichPhone) {\n      merged['رقم الهاتف 1'] = enrichPhone;\n      updatedCount++;\n    } else if (origPhone && enrichPhone && origPhone !== enrichPhone) {\n      merged['رقم الهاتف 1'] = origPhone; // نحتفظ بالأصلي\n      reviewNeeded.push({\n        merchant: merchantName,\n        field: 'رقم الهاتف 1',\n        original: origPhone,\n        enriched: enrichPhone,\n        note: 'رقمين مختلفين - يحتاج مراجعة'\n      });\n      conflictCount++;\n    }\n    \n    // 2. العنوان\n    const origAddr = (o['العنوان'] || o['address'] || '').trim();\n    const enrichAddr = (enriched.enriched_address || '').trim();\n    if (!origAddr && enrichAddr) {\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    } else if (origAddr && enrichAddr && origAddr.length < enrichAddr.length * 0.5) {\n      merged['العنوان'] = enrichAddr;\n      updatedCount++;\n    }\n    \n    // 3. جوجل ماب\n    const origMap = (o['جوجل ماب'] || '').trim();\n    const enrichMap = (enriched.google_maps_url || '').trim();\n    if (!origMap && enrichMap) {\n      merged['جوجل ماب'] = enrichMap;\n      updatedCount++;\n    }\n    \n    // 4. بيانات إضافية (تُضاف دائماً لو موجودة)\n    if (enriched.rating) merged['التقييم'] = enriched.rating;\n    if (enriched.total_ratings) merged['عدد التقييمات'] = enriched.total_ratings;\n    if (enriched.opening_hours) merged['ساعات العمل'] = enriched.opening_hours;\n    if (enriched.website) merged['الموقع الالكتروني'] = enriched.website;\n    if (enriched.lat) merged['خط العرض'] = enriched.lat;\n    if (enriched.lng) merged['خط الطول'] = enriched.lng;\n    if (enriched.status_ar) merged['حالة المتجر'] = enriched.status_ar;\n    \n    merged['آخر تحديث'] = new Date().toISOString().split('T')[0];\n  }\n  \n  mergedResults.push({ json: merged });\n}\n\nconst stats = {\n  total_original: originals.length,\n  total_enriched: enrichments.length,\n  total_discovered: discovered.length,\n  fields_updated: updatedCount,\n  conflicts_found: conflictCount,\n  review_items: reviewNeeded.length,\n  merge_date: new Date().toISOString()\n};\n\nreturn [{ json: { _type: 'stats', ...stats } }, ...mergedResults];"
+      },
+      "id": "smart-merge",
+      "name": "Smart Merge",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1280, 680]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst data = items.filter(i => i.json._type !== 'stats');\nreturn data;"
+      },
+      "id": "separate-data",
+      "name": "Extract Merged Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $('Smart Merge').all();\nconst stats = items.find(i => i.json._type === 'stats');\nif (!stats) return [{ json: { message: 'لا توجد إحصائيات' } }];\nreturn [stats];"
+      },
+      "id": "extract-stats",
+      "name": "Extract Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 800]
+    },
+    {
+      "parameters": {
+        "jsCode": "// التحقق من صحة البيانات\nconst items = $input.all();\nconst validated = [];\n\nconst phoneRegex = /^(\\+20|0)(1[0-9]{9}|[0-9]{8,9})$/;\nconst urlRegex = /^https?:\\/\\/.+/;\n\nfor (const item of items) {\n  const d = item.json;\n  const errors = [];\n  \n  const phone = (d['رقم الهاتف 1'] || d['رقم الهاتف 2'] || '').replace(/[\\s-]/g, '');\n  if (phone && !phoneRegex.test(phone)) {\n    errors.push(`رقم هاتف غير صحيح: ${phone}`);\n  }\n  \n  const mapUrl = d['جوجل ماب'] || '';\n  if (mapUrl && !urlRegex.test(mapUrl)) {\n    errors.push(`رابط جوجل ماب غير صحيح: ${mapUrl}`);\n  }\n  \n  const name = d['اسم المتجر'] || d['name'] || '';\n  if (!name.trim()) continue;\n  \n  validated.push(item);\n}\n\nreturn validated;"
+      },
+      "id": "validate-data",
+      "name": "Validate Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nreturn items.map(i => {\n  const clean = { ...i.json };\n  delete clean._category;\n  delete clean._sheet;\n  delete clean._type;\n  return { json: clean };\n});"
+      },
+      "id": "prepare-export",
+      "name": "Prepare for Export",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 580]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "merged_final"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": ["اسم المتجر"]
+        },
+        "options": {}
+      },
+      "id": "write-merged",
+      "name": "Write Merged Results",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2200, 580],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "تقرير_التحديث"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "write-stats",
+      "name": "Write Update Report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1760, 800],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $('Extract Stats').first().json;\nconst summary = `تقرير تحديث بيانات إنجزنا\\n━━━━━━━━━━━━━━━━━━━━━━\\nالتاريخ: ${new Date().toLocaleDateString('ar-EG')}\\n\\nالإحصائيات:\\n• المتاجر الأصلية: ${stats.total_original || 0}\\n• البيانات المُثراة: ${stats.total_enriched || 0}\\n• متاجر مكتشفة جديدة: ${stats.total_discovered || 0}\\n• حقول تم تحديثها: ${stats.fields_updated || 0}\\n• تعارضات تحتاج مراجعة: ${stats.conflicts_found || 0}\\n━━━━━━━━━━━━━━━━━━━━━━`;\nreturn [{ json: { summary, ...stats } }];"
+      },
+      "id": "generate-summary",
+      "name": "Generate Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2420, 580]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('⚙️ Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "سجل_التحديثات"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData"
+        },
+        "options": {}
+      },
+      "id": "write-log",
+      "name": "Write Update Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2640, 580],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "⚙️ Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ Config": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Sheet List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Sheet List": {
+      "main": [
+        [
+          {
+            "node": "🔍 Resolve Sheet Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Resolve Sheet Names": {
+      "main": [
+        [
+          {
+            "node": "Read مطاعم",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read صيدليات",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read سوبرماركت",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read حلويات وكافيهات",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read خضار وفواكه",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Enrichment Results",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Read Discovered Merchants",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read مطاعم": {
+      "main": [
+        [
+          {
+            "node": "Combine All Original Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read صيدليات": {
+      "main": [
+        [
+          {
+            "node": "Combine All Original Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read سوبرماركت": {
+      "main": [
+        [
+          {
+            "node": "Combine All Original Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read حلويات وكافيهات": {
+      "main": [
+        [
+          {
+            "node": "Combine All Original Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read خضار وفواكه": {
+      "main": [
+        [
+          {
+            "node": "Combine All Original Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Enrichment Results": {
+      "main": [
+        [
+          {
+            "node": "Smart Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Discovered Merchants": {
+      "main": [
+        [
+          {
+            "node": "Smart Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Original Sheets": {
+      "main": [
+        [
+          {
+            "node": "Smart Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Merge": {
+      "main": [
+        [
+          {
+            "node": "Extract Merged Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Merged Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Stats": {
+      "main": [
+        [
+          {
+            "node": "Write Update Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare for Export",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare for Export": {
+      "main": [
+        [
+          {
+            "node": "Write Merged Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Merged Results": {
+      "main": [
+        [
+          {
+            "node": "Generate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Summary": {
+      "main": [
+        [
+          {
+            "node": "Write Update Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "engezna",
+      "id": "1"
+    },
+    {
+      "name": "data-merge",
+      "id": "4"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-06T00:00:00.000Z",
+  "versionId": "2"
+}
