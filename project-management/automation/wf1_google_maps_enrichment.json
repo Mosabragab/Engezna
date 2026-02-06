@@ -11,13 +11,45 @@
     },
     {
       "parameters": {
-        "jsCode": "// ====================================================\n// ⚙️ إعدادات المدينة - غيّر القيم هنا حسب المدينة\n// ====================================================\nconst config = {\n  // اسم المدينة (يُضاف لكل عملية بحث)\n  city_name: 'بني سويف',\n  \n  // إحداثيات مركز المدينة\n  city_lat: 29.0661,\n  city_lng: 31.0994,\n  \n  // نصف قطر البحث بالمتر (15 كم)\n  search_radius: 15000,\n  \n  // اسم الشيت المراد تحديثه - غيّره لكل فئة:\n  // 'مطاعم 🍽️' | 'صيدليات 💊' | 'سوبر ماركت 🛒' | 'حلويات وكافيهات ☕' | 'خضار وفواكه 🥬'\n  sheet_name: 'مطاعم 🍽️'\n};\n\nreturn [{ json: config }];"
+        "jsCode": "// ====================================================\n// ⚙️ إعدادات المدينة - غيّر القيم هنا حسب المدينة\n// ====================================================\nconst config = {\n  // اسم المدينة (يُضاف لكل عملية بحث)\n  city_name: 'بني سويف',\n  \n  // إحداثيات مركز المدينة\n  city_lat: 29.0661,\n  city_lng: 31.0994,\n  \n  // نصف قطر البحث بالمتر (15 كم)\n  search_radius: 15000,\n  \n  // === اختر الشيت المراد تحديثه ===\n  // اكتب الاسم بالعربي بدون إيموجي:\n  // 'مطاعم' | 'صيدليات' | 'سوبر ماركت' | 'حلويات' | 'خضار'\n  sheet_key: 'مطاعم',\n  \n  // معرف الـ Spreadsheet\n  spreadsheet_id: '1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8'\n};\n\nreturn [{ json: config }];"
       },
       "id": "city-config",
       "name": "⚙️ City Config",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [400, 340]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://sheets.googleapis.com/v4/spreadsheets/{{ $json.spreadsheet_id }}?fields=sheets.properties.title%2Csheets.properties.sheetId",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleSheetsOAuth2Api",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "get-sheet-list",
+      "name": "📋 Get Sheet List",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [600, 340],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// البحث عن اسم الشيت الصحيح من القائمة\nconst config = $('⚙️ City Config').first().json;\nconst sheets = $input.first().json.sheets;\nconst key = config.sheet_key;\n\n// البحث عن الشيت اللي اسمه يحتوي على الكلمة المفتاحية\nconst match = sheets.find(s => s.properties.title.includes(key));\n\nif (!match) {\n  const available = sheets.map(s => s.properties.title).join(', ');\n  throw new Error(`لم يتم العثور على شيت يحتوي على '${key}'. الشيتات المتاحة: ${available}`);\n}\n\nreturn [{\n  json: {\n    ...config,\n    sheet_name: match.properties.title,\n    sheet_gid: match.properties.sheetId\n  }\n}];"
+      },
+      "id": "resolve-sheet",
+      "name": "🔍 Resolve Sheet Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 340]
     },
     {
       "parameters": {
@@ -40,11 +72,11 @@
       "name": "Read Merchants Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [620, 340],
+      "position": [1000, 340],
       "credentials": {
-        "googleSheetsApi": {
-          "id": "google-sheets-sa",
-          "name": "Google Sheets Service Account"
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
         }
       }
     },
@@ -56,7 +88,7 @@
       "name": "Filter Missing Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [840, 340]
+      "position": [1200, 340]
     },
     {
       "parameters": {
@@ -85,7 +117,7 @@
       "name": "Has Updates?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1060, 340]
+      "position": [1420, 340]
     },
     {
       "parameters": {
@@ -96,7 +128,7 @@
       "name": "Batch Processing",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [1280, 440]
+      "position": [1640, 440]
     },
     {
       "parameters": {
@@ -135,7 +167,7 @@
       "name": "Google Places Text Search",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [1500, 440]
+      "position": [1860, 440]
     },
     {
       "parameters": {
@@ -164,7 +196,7 @@
       "name": "Results Found?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [1720, 440]
+      "position": [2080, 440]
     },
     {
       "parameters": {
@@ -174,7 +206,7 @@
       "name": "Extract Best Result",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1940, 340]
+      "position": [2300, 340]
     },
     {
       "parameters": {
@@ -209,7 +241,7 @@
       "name": "Get Place Details",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.1,
-      "position": [2160, 340]
+      "position": [2520, 340]
     },
     {
       "parameters": {
@@ -219,7 +251,7 @@
       "name": "Map to Excel Format",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2380, 340]
+      "position": [2740, 340]
     },
     {
       "parameters": {
@@ -244,11 +276,11 @@
       "name": "Write Enrichment Results",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2600, 340],
+      "position": [2960, 340],
       "credentials": {
-        "googleSheetsApi": {
-          "id": "google-sheets-sa",
-          "name": "Google Sheets Service Account"
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
         }
       }
     },
@@ -261,7 +293,7 @@
       "name": "Wait (Rate Limit)",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2820, 340],
+      "position": [3180, 340],
       "webhookId": "rate-limit-wh"
     },
     {
@@ -272,7 +304,7 @@
       "name": "Log Not Found",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1940, 560]
+      "position": [2300, 560]
     },
     {
       "parameters": {
@@ -296,11 +328,11 @@
       "name": "Write Not Found Log",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [2160, 560],
+      "position": [2520, 560],
       "credentials": {
-        "googleSheetsApi": {
-          "id": "google-sheets-sa",
-          "name": "Google Sheets Service Account"
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets-oauth",
+          "name": "Google Sheets account"
         }
       }
     },
@@ -310,7 +342,7 @@
       "name": "All Done - No Updates",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1280, 240]
+      "position": [1640, 240]
     }
   ],
   "connections": {
@@ -326,6 +358,28 @@
       ]
     },
     "⚙️ City Config": {
+      "main": [
+        [
+          {
+            "node": "📋 Get Sheet List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Get Sheet List": {
+      "main": [
+        [
+          {
+            "node": "🔍 Resolve Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Resolve Sheet Name": {
       "main": [
         [
           {
@@ -512,5 +566,5 @@
   ],
   "triggerCount": 0,
   "updatedAt": "2026-02-06T00:00:00.000Z",
-  "versionId": "2"
+  "versionId": "3"
 }
