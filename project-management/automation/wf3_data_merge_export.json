@@ -30,9 +30,9 @@
       "typeVersion": 4.5,
       "position": [480, 200],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -57,9 +57,9 @@
       "typeVersion": 4.5,
       "position": [480, 360],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -84,9 +84,9 @@
       "typeVersion": 4.5,
       "position": [480, 520],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -111,9 +111,9 @@
       "typeVersion": 4.5,
       "position": [480, 680],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -138,9 +138,9 @@
       "typeVersion": 4.5,
       "position": [480, 840],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -165,9 +165,9 @@
       "typeVersion": 4.5,
       "position": [480, 1000],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -192,9 +192,9 @@
       "typeVersion": 4.5,
       "position": [480, 1160],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -283,9 +283,9 @@
       "typeVersion": 4.5,
       "position": [1940, 480],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -313,9 +313,9 @@
       "typeVersion": 4.5,
       "position": [1500, 700],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -353,9 +353,9 @@
       "typeVersion": 4.5,
       "position": [2380, 480],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     }

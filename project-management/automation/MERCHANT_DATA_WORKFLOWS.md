@@ -3,22 +3,25 @@
 
 ## نظرة عامة
 
-3 ووركفلو عملية لتجميع وتحديث بيانات المتاجر في بني سويف باستخدام Google Maps API:
+4 ووركفلو عملية لتجميع وتحديث بيانات المتاجر في بني سويف باستخدام Google Maps API:
 
 | Workflow | الملف | الوظيفة |
 |----------|-------|---------|
 | WF1 | `wf1_google_maps_enrichment.json` | إثراء بيانات المتاجر الموجودة (هاتف، عنوان، تقييم) |
 | WF2 | `wf2_new_merchant_discovery.json` | اكتشاف متاجر جديدة في 5 مناطق × 6 فئات |
 | WF3 | `wf3_data_merge_export.json` | تجميع كل النتائج + التحقق + التصدير |
+| WF4 | `wf4_merchant_update_sync.json` | مزامنة البيانات مع Supabase + إشعارات |
 
 ```
-┌──────────────────────────────────────────────┐
-│          ترتيب التشغيل                        │
-│                                              │
-│  WF1 (إثراء) ──→ WF2 (اكتشاف) ──→ WF3 (تجميع) │
-│                                              │
-│  Google Sheets ←── مصدر البيانات والنتائج      │
-└──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│          ترتيب التشغيل                                │
+│                                                      │
+│  WF1 (إثراء) ──→ WF2 (اكتشاف) ──→ WF3 (تجميع)       │
+│                                     ↓                │
+│                              WF4 (مزامنة Supabase)    │
+│                                                      │
+│  Google Sheets ←── مصدر البيانات والنتائج              │
+└──────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -29,17 +32,73 @@
 
 ```
 1. اذهب إلى https://console.cloud.google.com
-2. أنشئ مشروع جديد: "Engezna-Data"
+2. افتح المشروع: "Engezna" (engezna-6edd0)
 3. فعّل الـ APIs:
    ✅ Places API
    ✅ Geocoding API
-4. أنشئ API Key من Credentials
+   ✅ Google Sheets API
+   ✅ Google Drive API
+4. أنشئ API Key من Credentials (لـ Google Maps)
 5. قيّد الـ API Key على Places API و Geocoding API فقط
 ```
 
 > Google Maps يعطيك $200 رصيد مجاني شهرياً - كافي لـ 93 متجر + اكتشاف.
 
-### 2. Google Sheets
+### 2. إعداد Google Sheets Credentials (Service Account - الطريقة المُوصى بها)
+
+> ⚠️ **مهم**: استخدم Service Account بدل OAuth2 - أسهل ولا يحتاج callback URL
+
+```
+الخطوات:
+1. اذهب إلى Google Cloud Console → IAM & Admin → Service Accounts
+2. اضغط "Create Service Account"
+3. الاسم: "n8n-sheets-access"
+4. الوصف: "Service account for n8n Google Sheets access"
+5. اضغط "Create and Continue"
+6. في الـ Role اختر: "Editor" (أو "Google Sheets API" specific)
+7. اضغط "Done"
+8. اضغط على الـ Service Account اللي أنشأته
+9. اذهب لتاب "Keys"
+10. اضغط "Add Key" → "Create New Key" → "JSON"
+11. هينزل ملف JSON - ده مفتاحك
+12. ⚠️ مهم: افتح Google Sheet وشير مع إيميل الـ Service Account
+    (هيكون شكله: n8n-sheets-access@engezna-6edd0.iam.gserviceaccount.com)
+```
+
+#### إعداد الـ Credential في n8n:
+```
+1. في n8n اذهب إلى Credentials → Add Credential
+2. ابحث عن "Google Sheets API"
+3. اختر "Service Account"
+4. الصق محتوى ملف JSON اللي نزلته
+5. اضغط "Save"
+6. سمّيه: "Google Sheets Service Account"
+```
+
+### 2b. إصلاح OAuth2 (لو عايز تستخدم OAuth بدل Service Account)
+
+> الخطأ: "Client authentication failed" - ده بيحصل لأن إعدادات OAuth Client مش صح
+
+```
+لإصلاح الخطأ:
+1. اذهب إلى Google Cloud Console → APIs & Services → Credentials
+2. تأكد إن الـ OAuth Client ID نوعه "Web application" (مش Desktop!)
+3. في "Authorized redirect URIs" أضف:
+   http://localhost:5678/rest/oauth2-credential/callback
+4. لو n8n على domain خارجي أضف كمان:
+   https://your-domain.com/rest/oauth2-credential/callback
+5. احفظ واستنى دقيقة
+6. انسخ Client ID و Client Secret الجديدين
+7. في n8n: Credentials → Google Sheets OAuth2
+8. الصق الـ Client ID والـ Client Secret
+9. اضغط "Connect" وسجل دخول بحساب Google
+
+⚠️ تأكد إن حسابك مضاف كـ Test User في:
+   Google Cloud Console → OAuth Consent Screen → Test Users
+   (mosab.7ai@gmail.com ✅ مضاف)
+```
+
+### 3. Google Sheets
 
 ```
 1. ارفع ملف Excel المتاجر على Google Sheets
@@ -58,23 +117,19 @@
    - سجل_التحديثات
    - all_merchants (انسخ فيه كل المتاجر من كل الشيتات)
 4. سجّل الـ Sheet ID (من الـ URL)
+5. ⚠️ لو Service Account: شير الـ Sheet مع إيميل الـ SA
 ```
 
-### 3. n8n Environment Variables
+### 4. n8n Environment Variables
 
-أضف هذه المتغيرات في إعدادات n8n:
+أضف هذه المتغيرات في إعدادات n8n (Settings → Environment Variables):
 
 ```
 GOOGLE_MAPS_API_KEY=AIza...your_key_here
-GOOGLE_SHEET_ID=1abc...your_sheet_id_here
+GOOGLE_SHEET_ID=1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_KEY=eyJ...your_service_key
 ```
-
-### 4. n8n Credentials
-
-أنشئ credential جديد في n8n:
-- **Type**: Google Sheets OAuth2
-- **Name**: `Google Sheets`
-- اتبع خطوات الربط مع Google
 
 ---
 
@@ -84,8 +139,11 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 1. افتح n8n
 2. اضغط "Import from file"
 3. اختر الملف JSON
-4. عدّل الـ credentials والـ environment variables
-5. اضغط "Save"
+4. عدّل الـ credentials:
+   - لكل Google Sheets node: اختر "Google Sheets Service Account"
+   - أو "Google Sheets OAuth2" لو صلحت الـ OAuth
+5. تأكد إن Environment Variables مضافة
+6. اضغط "Save"
 ```
 
 ---
@@ -116,7 +174,7 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 ### ملاحظات
 - **Batch size**: 5 متاجر في الدفعة الواحدة
 - **Rate limit**: 2 ثواني بين كل دفعة
-- **شغّله على شيت واحد في المرة** (عدّل اسم الشيت في node "Read Merchants Sheet")
+- **شغّله على شيت واحد في المرة** (عدّل اسم الشيت في node "⚙️ City Config")
 - ابدأ بـ 5 متاجر للاختبار قبل تشغيل الكل
 
 ---
@@ -145,7 +203,6 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 
 ### الجدولة
 - **يدوي**: في أي وقت
-- **تلقائي**: كل أحد أسبوعياً
 
 ### معايير الأولوية
 - **عالية**: تقييم ≥ 4.0 + مراجعات ≥ 20
@@ -169,7 +226,6 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 
 ### الجدولة
 - **يدوي**: بعد تشغيل WF1 + WF2
-- **تلقائي**: أول كل شهر
 
 ### قواعد التحقق
 - **الهاتف**: صيغة مصرية (01xxxxxxxxx أو 08xxxxxxx)
@@ -178,25 +234,43 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 
 ---
 
+## WF4: Merchant Update Sync (جديد)
+
+### ماذا يفعل؟
+- يقرأ البيانات المدمجة من شيت `merged_final`
+- يقارن مع بيانات المتاجر في Supabase
+- يحدّث المتاجر الموجودة أو يضيف الجديدة
+- يرسل إشعار Webhook بنتائج المزامنة
+- يسجّل تقرير المزامنة
+
+### متطلبات إضافية
+- Supabase URL و Service Role Key في Environment Variables
+- جدول `providers` في Supabase لازم يكون موجود
+
+---
+
 ## خطة التشغيل
 
 ### المرة الأولى
 ```
-1. إعداد Google Cloud + API Key + Google Sheets
-2. استيراد الـ 3 workflows في n8n
-3. إعداد الـ credentials والـ environment variables
-4. WF1: شغّل على شيت "مطاعم" (اختبار على 5 أولاً)
-5. WF1: شغّل على باقي الشيتات واحد واحد
-6. WF2: شغّل يدوي (اكتشاف متاجر جديدة)
-7. WF3: شغّل للتجميع النهائي
-8. راجع شيت "merged_final" وصدّره كـ Excel
+1. إعداد Google Cloud + Service Account + API Key
+2. شير الـ Google Sheet مع إيميل الـ Service Account
+3. استيراد الـ 4 workflows في n8n
+4. إعداد الـ credentials والـ environment variables
+5. WF1: شغّل على شيت "مطاعم" (اختبار على 5 أولاً)
+6. WF1: شغّل على باقي الشيتات واحد واحد
+7. WF2: شغّل يدوي (اكتشاف متاجر جديدة)
+8. WF3: شغّل للتجميع النهائي
+9. WF4: شغّل للمزامنة مع Supabase
+10. راجع شيت "merged_final" وصدّره كـ Excel
 ```
 
 ### التحديث الدوري
 ```
-- أسبوعياً: WF2 يشتغل تلقائي (كل أحد)
-- شهرياً: WF3 يشتغل تلقائي (أول الشهر)
+- أسبوعياً: WF2 شغّل يدوي (اكتشاف جديد)
+- شهرياً: WF3 يدوي (تجميع)
 - عند الحاجة: WF1 يدوي لإعادة إثراء بيانات محددة
+- عند الحاجة: WF4 يدوي لمزامنة Supabase
 ```
 
 ---
@@ -214,6 +288,13 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 
 ## استكشاف الأخطاء
 
+### "Client authentication failed" (OAuth2)
+- **السبب**: إعدادات OAuth Client غير صحيحة
+- **الحل**:
+  1. تأكد إن نوع الـ Client هو "Web application" (مش Desktop)
+  2. أضف `http://localhost:5678/rest/oauth2-credential/callback` في Authorized Redirect URIs
+  3. أو **استخدم Service Account** بدل OAuth2 (أسهل وأثبت)
+
 ### "OVER_QUERY_LIMIT"
 - وصلت لحد الاستخدام → انتظر ساعة أو زوّد الـ Wait بين الـ batches
 
@@ -224,7 +305,12 @@ GOOGLE_SHEET_ID=1abc...your_sheet_id_here
 - المتجر مش على جوجل ماب → هيتسجل في `not_found_log` ويحتاج بحث يدوي
 
 ### Google Sheets "Permission denied"
-- الـ OAuth credential محتاج تجديد → اعمل re-authenticate في n8n
+- **Service Account**: تأكد إنك شيرت الـ Sheet مع إيميل الـ SA
+- **OAuth**: الـ credential محتاج تجديد → اعمل re-authenticate في n8n
+
+### "Google hasn't verified this app"
+- عادي لو الـ app في Testing mode - اضغط "Continue"
+- تأكد إن حسابك مضاف كـ Test User في OAuth consent screen
 
 ---
 
@@ -235,6 +321,7 @@ project-management/automation/
 ├── wf1_google_maps_enrichment.json    # إثراء البيانات
 ├── wf2_new_merchant_discovery.json    # اكتشاف متاجر جديدة
 ├── wf3_data_merge_export.json         # تجميع وتصدير
+├── wf4_merchant_update_sync.json      # مزامنة مع Supabase
 ├── n8n_workflow.json                  # Knowledge Bot (موجود سابقاً)
 ├── MERCHANT_DATA_WORKFLOWS.md         # هذا الملف
 └── TELEGRAM_BOT_SETUP.md             # إعداد بوت تيليجرام

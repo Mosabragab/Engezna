@@ -55,7 +55,7 @@
             },
             {
               "name": "key",
-              "value": "AIzaSyBPg7O_058B3uosXp1rUoNjxSSFpbTMZLI"
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
             }
           ]
         },
@@ -129,9 +129,9 @@
       "typeVersion": 4.5,
       "position": [1520, 240],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
@@ -206,7 +206,7 @@
             },
             {
               "name": "key",
-              "value": "AIzaSyBPg7O_058B3uosXp1rUoNjxSSFpbTMZLI"
+              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
             }
           ]
         },
@@ -254,9 +254,9 @@
       "typeVersion": 4.5,
       "position": [2840, 340],
       "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "google-sheets-cred",
-          "name": "Google Sheets"
+        "googleSheetsApi": {
+          "id": "google-sheets-sa",
+          "name": "Google Sheets Service Account"
         }
       }
     },
