@@ -40,7 +40,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "merchant:setup": "tsx scripts/merchant-database-setup.ts"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -92,6 +93,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.7.0",
     "framer-motion": "^12.23.26",
+    "googleapis": "^171.4.0",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
