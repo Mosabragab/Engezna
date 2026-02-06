@@ -73,7 +73,7 @@
             },
             {
               "name": "key",
-              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+              "value": "AIzaSyBPg7O_058B3uosXp1rUoNjxSSFpbTMZLI"
             }
           ]
         },
@@ -132,7 +132,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEET_ID }}"
+          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
         },
         "sheetName": {
           "__rl": true,
@@ -224,7 +224,7 @@
             },
             {
               "name": "key",
-              "value": "={{ $env.GOOGLE_MAPS_API_KEY }}"
+              "value": "AIzaSyBPg7O_058B3uosXp1rUoNjxSSFpbTMZLI"
             }
           ]
         },
@@ -254,7 +254,7 @@
         "documentId": {
           "__rl": true,
           "mode": "id",
-          "value": "={{ $env.GOOGLE_SHEET_ID }}"
+          "value": "1HTjVdxyh8Uhz1lMbe6CEvdSHXfzgwmlo96Cz6ZPrHU8"
         },
         "sheetName": {
           "__rl": true,
