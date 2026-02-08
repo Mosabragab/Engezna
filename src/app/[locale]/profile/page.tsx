@@ -24,6 +24,7 @@ import {
   Shield,
   Info,
   MessageSquare,
+  Bell,
 } from 'lucide-react';
 
 interface UserProfile {
@@ -127,6 +128,11 @@ export default function SettingsPage() {
       icon: Globe,
       label: t('menu.language'),
       href: `/${locale}/profile/language`,
+    },
+    {
+      icon: Bell,
+      label: isRTL ? 'إعدادات الإشعارات' : 'Notification Settings',
+      href: `/${locale}/profile/notifications`,
     },
     {
       icon: Info,

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Volume2, Bell, ShoppingBag, Tag } from 'lucide-react';
+import { getAudioManager } from '@/lib/audio/audio-manager';
+import type { SoundType } from '@/lib/audio/audio-manager';
 
 /**
  * Debug component for testing sound notifications
@@ -16,37 +18,14 @@ export function SoundTestDebug() {
     return null;
   }
 
-  const playSound = (soundFile: string, label: string) => {
-    console.log(`[SoundTestDebug] Playing sound: ${soundFile}`);
-
-    try {
-      const audio = new Audio(`/sounds/${soundFile}`);
-      audio.volume = 1.0;
-
-      audio.onloadeddata = () => {
-        console.log(`[SoundTestDebug] Sound loaded successfully: ${soundFile}`);
-      };
-
-      audio.onplay = () => {
-        console.log(`[SoundTestDebug] Sound started playing: ${soundFile}`);
-        setLastPlayed(label);
-      };
-
-      audio.onended = () => {
-        console.log(`[SoundTestDebug] Sound finished: ${soundFile}`);
-      };
-
-      audio.onerror = (e) => {
-        console.error(`[SoundTestDebug] Error playing sound: ${soundFile}`, e);
-      };
-
-      audio.play().catch((err) => {
-        console.error(`[SoundTestDebug] Play failed for ${soundFile}:`, err);
-      });
-    } catch (error) {
-      console.error(`[SoundTestDebug] Exception when playing ${soundFile}:`, error);
-    }
+  const playSound = (type: SoundType, label: string) => {
+    const audioManager = getAudioManager();
+    audioManager.init();
+    audioManager.play(type);
+    setLastPlayed(label);
   };
+
+  const audioManager = getAudioManager();
 
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-yellow-100 border-2 border-yellow-400 rounded-lg p-4 shadow-lg max-w-xs">
@@ -60,7 +39,7 @@ export function SoundTestDebug() {
           variant="outline"
           size="sm"
           className="w-full justify-start gap-2 border-green-300 hover:bg-green-50"
-          onClick={() => playSound('new-order.mp3', 'New Order')}
+          onClick={() => playSound('new-order', 'New Order')}
         >
           <ShoppingBag className="w-4 h-4 text-green-600" />
           <span>Test New Order</span>
@@ -70,7 +49,7 @@ export function SoundTestDebug() {
           variant="outline"
           size="sm"
           className="w-full justify-start gap-2 border-blue-300 hover:bg-blue-50"
-          onClick={() => playSound('notification.mp3', 'General Alert')}
+          onClick={() => playSound('notification', 'General Alert')}
         >
           <Bell className="w-4 h-4 text-blue-600" />
           <span>Test General Alert</span>
@@ -80,7 +59,7 @@ export function SoundTestDebug() {
           variant="outline"
           size="sm"
           className="w-full justify-start gap-2 border-purple-300 hover:bg-purple-50"
-          onClick={() => playSound('custom-order.mp3', 'Custom Pricing')}
+          onClick={() => playSound('custom-order', 'Custom Pricing')}
         >
           <Tag className="w-4 h-4 text-purple-600" />
           <span>Test Custom Pricing</span>
@@ -94,7 +73,8 @@ export function SoundTestDebug() {
       )}
 
       <div className="mt-2 text-[10px] text-yellow-600 opacity-70">
-        Check browser console for logs
+        Unlocked: {audioManager.isUnlocked() ? 'Yes' : 'No'} | Enabled:{' '}
+        {audioManager.isEnabled() ? 'Yes' : 'No'}
       </div>
     </div>
   );

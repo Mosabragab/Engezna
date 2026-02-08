@@ -32,6 +32,7 @@ import {
   Layout,
   FlaskConical,
   FileText,
+  Bell,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -130,6 +131,12 @@ export function AdminSidebar({
           ? (openTickets + contactFormMessages).toString()
           : undefined,
       resource: 'support',
+    },
+    {
+      icon: Bell,
+      label: { ar: 'الإشعارات', en: 'Notifications' },
+      path: `/${locale}/admin/notifications`,
+      resource: 'dashboard',
     },
   ];
 

@@ -4,32 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { setAppBadge, clearAppBadge } from '@/hooks/useBadge';
+import { getAudioManager } from '@/lib/audio/audio-manager';
 import type { User, RealtimeChannel } from '@supabase/supabase-js';
 
-// Shared audio instance to prevent memory leaks
-let notificationAudio: HTMLAudioElement | null = null;
-let newOrderAudio: HTMLAudioElement | null = null;
-
 const playNotificationSound = (type: 'notification' | 'new-order' = 'notification') => {
-  try {
-    if (type === 'new-order') {
-      if (!newOrderAudio) {
-        newOrderAudio = new Audio('/sounds/new-order.mp3');
-        newOrderAudio.volume = 0.7;
-      }
-      newOrderAudio.currentTime = 0;
-      newOrderAudio.play().catch(() => {});
-    } else {
-      if (!notificationAudio) {
-        notificationAudio = new Audio('/sounds/notification.mp3');
-        notificationAudio.volume = 0.5;
-      }
-      notificationAudio.currentTime = 0;
-      notificationAudio.play().catch(() => {});
-    }
-  } catch {
-    // Sound not available
-  }
+  getAudioManager().play(type);
 };
 
 interface Notification {
