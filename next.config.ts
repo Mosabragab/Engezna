@@ -2,6 +2,10 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import withSerwistInit from '@serwist/next';
 import { withSentryConfig } from '@sentry/nextjs';
+import { generateFirebaseMessagingSW } from './src/lib/firebase/generate-sw';
+
+// Generate firebase-messaging-sw.js from env vars at build time
+generateFirebaseMessagingSW();
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 

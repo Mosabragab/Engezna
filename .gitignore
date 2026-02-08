@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Playwright auth storage
 e2e/.auth/
+
+# Generated Firebase Messaging Service Worker (built from env vars)
+public/firebase-messaging-sw.js
