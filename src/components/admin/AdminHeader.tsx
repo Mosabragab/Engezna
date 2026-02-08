@@ -477,10 +477,10 @@ export function AdminHeader({
                         {locale === 'ar' ? 'إغلاق' : 'Close'}
                       </button>
                       <Link
-                        href={`/${locale}/admin/orders`}
+                        href={`/${locale}/admin/notifications`}
                         className="text-xs text-primary hover:text-primary/80"
                       >
-                        {locale === 'ar' ? 'عرض الطلبات' : 'View Orders'}
+                        {locale === 'ar' ? 'عرض كل الإشعارات' : 'View All Notifications'}
                       </Link>
                     </div>
                   )}
