@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { setAppBadge, clearAppBadge } from '@/hooks/useBadge';
+import { getAudioManager } from '@/lib/audio/audio-manager';
 import { Button } from '@/components/ui/button';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { ProviderSidebar } from './ProviderSidebar';
@@ -264,12 +265,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         },
         () => {
           setUnreadCount((prev) => prev + 1);
-          // Play notification sound
-          try {
-            const audio = new Audio('/sounds/notification.mp3');
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
-          } catch {}
+          // Play notification sound via AudioManager
+          getAudioManager().play('notification');
         }
       )
       .on(
@@ -404,12 +401,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const newRequest = payload.new as { status: string };
           if (newRequest.status === 'pending' || newRequest.status === 'priced') {
             setPendingCustomOrders((prev) => prev + 1);
-            // Play DISTINCT notification sound for custom orders
-            try {
-              const audio = new Audio('/sounds/custom-order.mp3');
-              audio.volume = 0.7;
-              audio.play().catch(() => {});
-            } catch {}
+            // Play DISTINCT notification sound for custom orders via AudioManager
+            getAudioManager().play('custom-order');
           }
         }
       )
@@ -471,8 +464,31 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     const supabase = createClient();
     const providerId = provider.id;
 
-    // Function to fetch non-critical badge counts
+    // Function to fetch badge counts (including pending orders as realtime fallback)
     const fetchBadgeCounts = async () => {
+      // Fetch pending orders count (fallback for realtime)
+      // IMPORTANT: Match the same filter as orders page
+      const { data: pendingOrdersData } = await supabase
+        .from('orders')
+        .select('id, payment_method, payment_status')
+        .eq('provider_id', providerId)
+        .eq('status', 'pending')
+        .or('order_flow.is.null,order_flow.eq.standard');
+
+      const visiblePendingOrders = (pendingOrdersData || []).filter((order) => {
+        if (order.payment_method === 'cash') return true;
+        return order.payment_status === 'paid' || order.payment_status === 'completed';
+      });
+      setPendingOrders(visiblePendingOrders.length);
+
+      // Fetch pending custom orders count (fallback for realtime)
+      const { count: customOrdersCount } = await supabase
+        .from('custom_order_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .in('status', ['pending', 'priced']);
+      setPendingCustomOrders(customOrdersCount || 0);
+
       // Fetch pending refunds count
       const { count: refundsCount } = await supabase
         .from('refunds')

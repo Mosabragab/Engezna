@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { getAudioManager } from '@/lib/audio/audio-manager';
 import { useAuth } from '@/lib/auth';
 import { CustomerLayout } from '@/components/customer/layout';
 import { BroadcastComparison } from '@/components/custom-order';
@@ -135,14 +136,8 @@ export default function CustomOrderReviewPage() {
         },
         () => {
           loadBroadcast();
-          // Play notification sound for new pricing
-          try {
-            const audio = new Audio('/sounds/notification.mp3');
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
-          } catch {
-            // Sound not available
-          }
+          // Play notification sound for new pricing via AudioManager
+          getAudioManager().play('notification');
         }
       )
       .subscribe();
