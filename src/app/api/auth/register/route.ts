@@ -31,10 +31,16 @@ interface RegisterRequest {
 }
 
 /**
- * Check if email is a test account that should bypass email verification
+ * Check if email is a test account that should bypass email verification.
+ * ONLY active in development/test environments - disabled in production.
  * Test accounts: test@engezna.com, demo@*, *+test@*, testuser*@*
  */
 function isTestAccount(email: string): boolean {
+  // Never bypass email verification in production
+  if (process.env.NODE_ENV === 'production') {
+    return false;
+  }
+
   const testPatterns = [
     /^test@engezna\.com$/i,
     /^demo@/i,

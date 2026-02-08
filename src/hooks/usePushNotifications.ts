@@ -68,7 +68,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
         scope: '/',
       });
-      console.log('Service Worker registered:', registration);
       return registration;
     } catch (error) {
       console.error('Service Worker registration failed:', error);
@@ -97,8 +96,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           console.error('Error saving FCM token:', error);
           throw error;
         }
-
-        console.log('FCM token saved to database');
       } catch (error) {
         console.error('Failed to save FCM token:', error);
         throw error;
@@ -117,8 +114,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           console.error('Error removing FCM token:', error);
           throw error;
         }
-
-        console.log('FCM token removed from database');
       } catch (error) {
         console.error('Failed to remove FCM token:', error);
       }
@@ -153,7 +148,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
       });
 
       if (token) {
-        console.log('FCM token obtained:', token.substring(0, 20) + '...');
         return token;
       }
 
@@ -272,8 +266,6 @@ export function usePushNotifications(): UsePushNotificationsReturn {
           // Dynamic import onMessage to avoid loading Firebase on initial page load
           const { onMessage } = await import('firebase/messaging');
           unsubscribe = onMessage(messaging, (payload: MessagePayload) => {
-            console.log('Foreground message received:', payload);
-
             const notificationPayload: NotificationPayload = {
               title: payload.notification?.title || payload.data?.title || 'Engezna',
               body: payload.notification?.body || payload.data?.body || '',
