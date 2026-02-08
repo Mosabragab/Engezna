@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState } from 'react';
 import { usePushNotifications, NotificationPayload } from '@/hooks/usePushNotifications';
 import { usePathname } from 'next/navigation';
 import { Bell, X } from 'lucide-react';
+import { getAudioManager } from '@/lib/audio/audio-manager';
 
 interface ToastNotification extends NotificationPayload {
   id: string;
@@ -16,6 +17,12 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
   const pathname = usePathname();
   const [showPrompt, setShowPrompt] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
+
+  // Initialize Audio Manager on mount
+  useEffect(() => {
+    const audioManager = getAudioManager();
+    audioManager.init();
+  }, []);
 
   // Determine if we should show the notification prompt
   // Only show on authenticated pages (provider, admin, customer areas)
@@ -81,16 +88,8 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
         setToasts((prev) => prev.filter((t) => t.id !== toast.id));
       }, 5000);
 
-      // Play notification sound
-      try {
-        const audio = new Audio('/sounds/notification.mp3');
-        audio.volume = 0.5;
-        audio.play().catch(() => {
-          // Audio play failed, likely due to autoplay policy
-        });
-      } catch {
-        // Audio not supported
-      }
+      // Play notification sound via centralized AudioManager
+      getAudioManager().play('notification');
     });
 
     return unsubscribe;
