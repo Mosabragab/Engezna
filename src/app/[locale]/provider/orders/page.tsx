@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
+import { getAudioManager } from '@/lib/audio/audio-manager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProviderLayout } from '@/components/provider';
@@ -326,14 +327,8 @@ export default function ProviderOrdersPage() {
           // Reload orders when new order comes in
           await loadOrders(providerId);
           setLastRefresh(new Date());
-          // Play notification sound
-          try {
-            const audio = new Audio('/sounds/new-order.mp3');
-            audio.volume = 0.7;
-            audio.play().catch(() => {});
-          } catch {
-            // Sound not available
-          }
+          // Play notification sound via AudioManager
+          getAudioManager().play('new-order');
         }
       )
       .on(
