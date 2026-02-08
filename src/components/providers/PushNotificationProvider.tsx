@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { usePushNotifications, NotificationPayload } from '@/hooks/usePushNotifications';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Bell, X } from 'lucide-react';
 import { getAudioManager } from '@/lib/audio/audio-manager';
 
@@ -15,6 +15,7 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
     usePushNotifications();
 
   const pathname = usePathname();
+  const router = useRouter();
   const [showPrompt, setShowPrompt] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
@@ -95,6 +96,22 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
     return unsubscribe;
   }, [permission, onForegroundMessage]);
 
+  // Handle NOTIFICATION_CLICK messages from service worker
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const handleSWMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'NOTIFICATION_CLICK' && event.data?.targetUrl) {
+        router.push(event.data.targetUrl);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSWMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSWMessage);
+    };
+  }, [router]);
+
   // Remove a toast
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -105,12 +122,12 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
     (toast: ToastNotification) => {
       removeToast(toast.id);
 
-      // Navigate based on notification data
+      // Navigate based on notification data using Next.js router
       if (toast.data?.click_action) {
-        window.location.href = toast.data.click_action;
+        router.push(toast.data.click_action);
       }
     },
-    [removeToast]
+    [removeToast, router]
   );
 
   // Get locale from pathname

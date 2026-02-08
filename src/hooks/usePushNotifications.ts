@@ -124,6 +124,11 @@ export function usePushNotifications(): UsePushNotificationsReturn {
   // Get FCM token
   const getFcmToken = useCallback(async (): Promise<string | null> => {
     try {
+      if (!VAPID_KEY) {
+        console.warn('VAPID key not configured. Set NEXT_PUBLIC_FIREBASE_VAPID_KEY env variable.');
+        return null;
+      }
+
       const messaging = await getFirebaseMessaging();
       if (!messaging) {
         console.warn('Firebase Messaging not available');
