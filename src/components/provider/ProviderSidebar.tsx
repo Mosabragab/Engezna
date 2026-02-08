@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Users,
   ClipboardList,
+  Bell,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 
@@ -242,6 +243,11 @@ export function ProviderSidebar({
         icon: Settings,
         label: { ar: 'إعدادات المتجر', en: 'Store Settings' },
         path: `/${locale}/provider/settings`,
+      },
+      {
+        icon: Bell,
+        label: { ar: 'إعدادات الإشعارات', en: 'Notification Settings' },
+        path: `/${locale}/provider/notifications`,
       },
     ];
 
