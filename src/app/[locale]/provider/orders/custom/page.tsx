@@ -19,7 +19,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Loader2,
-  RefreshCw,
   User,
   Phone,
   DollarSign,
@@ -36,7 +35,13 @@ type CustomOrderRequest = {
   original_text: string | null;
   image_urls: string[] | null;
   customer_notes: string | null;
-  status: 'pending' | 'priced' | 'approved' | 'rejected' | 'expired' | 'cancelled';
+  status:
+    | 'pending'
+    | 'priced'
+    | 'customer_approved'
+    | 'customer_rejected'
+    | 'expired'
+    | 'cancelled';
   items_count: number;
   subtotal: number;
   delivery_fee: number;
@@ -80,14 +85,14 @@ const STATUS_CONFIG: Record<
     label_ar: 'تم التسعير',
     label_en: 'Priced',
   },
-  approved: {
+  customer_approved: {
     icon: CheckCircle2,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     label_ar: 'موافق عليه',
     label_en: 'Approved',
   },
-  rejected: {
+  customer_rejected: {
     icon: XCircle,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
@@ -283,12 +288,13 @@ export default function CustomOrdersListPage() {
     init();
   }, [locale, router, loadRequests]);
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates + polling fallback
   useEffect(() => {
     if (!providerId) return;
 
     const supabase = createClient();
 
+    // Realtime subscription for instant updates
     const channel = supabase
       .channel(`custom-orders-provider-${providerId}`)
       .on(
@@ -300,14 +306,19 @@ export default function CustomOrdersListPage() {
           filter: `provider_id=eq.${providerId}`,
         },
         () => {
-          // Reload requests on any change
           loadRequests(providerId);
         }
       )
       .subscribe();
 
+    // Polling fallback every 15 seconds (Realtime can miss events)
+    const pollInterval = setInterval(() => {
+      loadRequests(providerId);
+    }, 15000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, [providerId, loadRequests]);
 
@@ -317,13 +328,16 @@ export default function CustomOrdersListPage() {
     if (filter === 'pending') return req.status === 'pending';
     if (filter === 'priced') return req.status === 'priced';
     if (filter === 'completed')
-      return ['approved', 'rejected', 'expired', 'cancelled'].includes(req.status);
+      return ['customer_approved', 'customer_rejected', 'expired', 'cancelled'].includes(
+        req.status
+      );
     return true;
   });
 
   // Counts
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const pricedCount = requests.filter((r) => r.status === 'priced').length;
+  const approvedCount = requests.filter((r) => r.status === 'customer_approved').length;
 
   // Format time
   const formatTime = (dateStr: string) => {
@@ -434,9 +448,7 @@ export default function CustomOrdersListPage() {
                 <CheckCircle2 className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-green-700">
-                  {requests.filter((r) => r.status === 'approved').length}
-                </p>
+                <p className="text-2xl font-bold text-green-700">{approvedCount}</p>
                 <p className="text-xs text-green-600">{isRTL ? 'موافق عليها' : 'Approved'}</p>
               </div>
             </div>
@@ -495,19 +507,6 @@ export default function CustomOrdersListPage() {
           onClick={() => setFilter('completed')}
         >
           {isRTL ? 'مكتمل' : 'Completed'}
-        </Button>
-      </div>
-
-      {/* Refresh Button */}
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => providerId && loadRequests(providerId)}
-          className="gap-2"
-        >
-          <RefreshCw className="w-4 h-4" />
-          {isRTL ? 'تحديث' : 'Refresh'}
         </Button>
       </div>
 
@@ -663,7 +662,7 @@ export default function CustomOrdersListPage() {
                         {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
                       </div>
                     )}
-                    {request.status === 'approved' && request.order && (
+                    {request.status === 'customer_approved' && request.order && (
                       <div className="space-y-3">
                         {/* Order Execution Status */}
                         {(() => {
