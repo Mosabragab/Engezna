@@ -223,7 +223,7 @@
 
 - Migration: `20260209200000_fix_custom_order_auto_archive.sql` - trigger + cron + admin function
 - Migration: `20260209200001_fix_custom_order_requests_insert_rls.sql` - broadcast owner INSERT policy
-- **مهم:** يجب تطبيق الـ migrations على قاعدة البيانات عبر SQL Editor
+- ✅ تم تطبيق الـ migrations على قاعدة البيانات (تم التحقق 2/9)
 
 ### 1.10 تناسق تصميم كروت الطلبات الخاصة مع العادية (Provider)
 
@@ -523,7 +523,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | حالة الطلب لا تتحدث على كارت التاجر  | auto-polling 15s + إصلاح اسم الحالة              | ✅ تم   |
 | أصناف الطلب الخاص مفقودة من التفاصيل | جلب من `custom_order_items` بدل `order_items`     | ✅ تم   |
 | نافذة الإشعارات تظهر بشكل متكرر     | فحص localStorage داخل timer effect                | ✅ تم   |
-| migrations غير مطبقة على الإنتاج     | يجب تطبيقها يدوياً عبر SQL Editor                 | ⚠️ معلق |
+| migrations غير مطبقة على الإنتاج     | تم تطبيقها عبر SQL Editor (2/9)                   | ✅ تم   |
 | SMS/WhatsApp notifications           | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة | ⬜      |
 
 ### ملفات مرجعية
