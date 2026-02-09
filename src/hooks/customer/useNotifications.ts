@@ -24,8 +24,13 @@ function getSoundForNotificationType(type: string): SoundType {
     return 'order-update';
   }
 
-  // Custom order notifications
-  if (type === 'CUSTOM_ORDER_PRICED' || type === 'custom_order_priced') {
+  // Custom order notifications (priced or expired)
+  if (
+    type === 'CUSTOM_ORDER_PRICED' ||
+    type === 'custom_order_priced' ||
+    type === 'CUSTOM_ORDER_EXPIRED' ||
+    type === 'custom_order_expired'
+  ) {
     return 'custom-order';
   }
 

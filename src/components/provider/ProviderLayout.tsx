@@ -125,14 +125,15 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
 
     setOnHoldOrders(onHoldCount || 0);
 
-    // Get active custom orders count (طلبات تحتاج متابعة)
+    // Get active custom orders count using live view (طلبات تحتاج متابعة)
+    // Uses custom_order_requests_live view to exclude expired-but-not-yet-updated requests
     // - 'pending' = بانتظار التسعير (يحتاج التاجر يسعّر)
-    // - 'priced' = بانتظار موافقة العميل (يحتاج متابعة)
+    // - 'priced' = بانتظار موافقة العميل (يحتاج متابعة) - NOT expired per live_status
     const { count: customOrdersCount } = await supabase
-      .from('custom_order_requests')
+      .from('custom_order_requests_live')
       .select('*', { count: 'exact', head: true })
       .eq('provider_id', providerId)
-      .in('status', ['pending', 'priced']);
+      .in('live_status', ['pending', 'priced']);
 
     setPendingCustomOrders(customOrdersCount || 0);
   }, []);
@@ -498,12 +499,12 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       });
       setPendingOrders(visiblePendingOrders.length);
 
-      // Fetch pending custom orders count (fallback for realtime)
+      // Fetch pending custom orders count using live view (excludes expired-but-not-updated)
       const { count: customOrdersCount } = await supabase
-        .from('custom_order_requests')
+        .from('custom_order_requests_live')
         .select('*', { count: 'exact', head: true })
         .eq('provider_id', providerId)
-        .in('status', ['pending', 'priced']);
+        .in('live_status', ['pending', 'priced']);
       setPendingCustomOrders(customOrdersCount || 0);
 
       // Fetch pending refunds count
@@ -538,8 +539,20 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     // Poll every 30 seconds for non-critical updates
     const pollingInterval = setInterval(fetchBadgeCounts, 30000);
 
+    // Fast notification count sync every 5 seconds
+    // Catches missed Realtime events (Supabase can miss rapid INSERTs)
+    const notifSyncInterval = setInterval(async () => {
+      const { count } = await supabase
+        .from('provider_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .eq('is_read', false);
+      setUnreadCount(count || 0);
+    }, 5000);
+
     return () => {
       clearInterval(pollingInterval);
+      clearInterval(notifSyncInterval);
     };
   }, [provider?.id]);
 

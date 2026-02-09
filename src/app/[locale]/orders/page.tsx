@@ -23,6 +23,7 @@ import {
   ChevronLeft,
   FileText,
   Send,
+  DollarSign,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,6 +45,13 @@ type Order = {
   };
 };
 
+type CustomOrderRequest = {
+  id: string;
+  status: string;
+  pricing_expires_at: string | null;
+  priced_at: string | null;
+};
+
 type CustomOrderBroadcast = {
   id: string;
   status: 'active' | 'expired' | 'completed' | 'cancelled';
@@ -54,9 +62,61 @@ type CustomOrderBroadcast = {
   // Calculated from requests relation
   requests_count: number;
   priced_count: number;
+  active_priced_count: number; // Priced and NOT expired
+  pending_count: number;
+  // Computed live status
+  live_status: 'waiting_pricing' | 'has_quotes' | 'all_expired';
   // Raw requests data from DB
-  requests?: { id: string; status: string }[];
+  requests?: CustomOrderRequest[];
 };
+
+/**
+ * Compute live status for a broadcast based on its requests.
+ * Checks pricing_expires_at in real-time (client-side) to avoid
+ * depending on the 30-minute cron job.
+ */
+function computeBroadcastLiveStatus(
+  requests: CustomOrderRequest[],
+  pricingDeadline: string
+): {
+  live_status: 'waiting_pricing' | 'has_quotes' | 'all_expired';
+  active_priced_count: number;
+  pending_count: number;
+} {
+  const now = new Date();
+  let activePriced = 0;
+  let pending = 0;
+
+  for (const req of requests) {
+    if (req.status === 'pending') {
+      // Check if pricing deadline hasn't passed
+      if (new Date(pricingDeadline) > now) {
+        pending++;
+      }
+    } else if (req.status === 'priced') {
+      // Check if pricing_expires_at hasn't passed
+      const expiresAt = req.pricing_expires_at
+        ? new Date(req.pricing_expires_at)
+        : req.priced_at
+          ? new Date(new Date(req.priced_at).getTime() + 24 * 60 * 60 * 1000) // fallback: 24h from priced_at
+          : null;
+      if (expiresAt && expiresAt > now) {
+        activePriced++;
+      }
+    }
+  }
+
+  let live_status: 'waiting_pricing' | 'has_quotes' | 'all_expired';
+  if (activePriced > 0) {
+    live_status = 'has_quotes';
+  } else if (pending > 0) {
+    live_status = 'waiting_pricing';
+  } else {
+    live_status = 'all_expired';
+  }
+
+  return { live_status, active_priced_count: activePriced, pending_count: pending };
+}
 
 const STATUS_CONFIG: Record<
   string,
@@ -169,7 +229,7 @@ export default function OrderHistoryPage() {
       setOrders(transformedOrders);
     }
 
-    // Fetch pending custom order broadcasts with related requests
+    // Fetch active custom order broadcasts with related requests (including expiry info)
     const { data: broadcastsData, error: broadcastsError } = await supabase
       .from('custom_order_broadcasts')
       .select(
@@ -180,7 +240,7 @@ export default function OrderHistoryPage() {
         original_text,
         created_at,
         pricing_deadline,
-        requests:custom_order_requests(id, status)
+        requests:custom_order_requests(id, status, pricing_expires_at, priced_at)
       `
       )
       .eq('customer_id', user?.id)
@@ -192,13 +252,25 @@ export default function OrderHistoryPage() {
     }
 
     if (broadcastsData) {
-      // Transform to include calculated counts
-      const transformedBroadcasts = broadcastsData.map((broadcast) => ({
-        ...broadcast,
-        requests_count: broadcast.requests?.length || 0,
-        priced_count:
-          broadcast.requests?.filter((r: { status: string }) => r.status === 'priced').length || 0,
-      }));
+      // Transform to include calculated counts with live expiration check
+      const transformedBroadcasts = broadcastsData
+        .map((broadcast) => {
+          const requests = (broadcast.requests || []) as CustomOrderRequest[];
+          const { live_status, active_priced_count, pending_count } = computeBroadcastLiveStatus(
+            requests,
+            broadcast.pricing_deadline
+          );
+          return {
+            ...broadcast,
+            requests_count: requests.length,
+            priced_count: requests.filter((r) => r.status === 'priced').length,
+            active_priced_count,
+            pending_count,
+            live_status,
+          };
+        })
+        // Filter out broadcasts where everything is expired (nothing actionable)
+        .filter((b) => b.live_status !== 'all_expired');
       setCustomBroadcasts(transformedBroadcasts as CustomOrderBroadcast[]);
     }
 
@@ -350,19 +422,25 @@ export default function OrderHistoryPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-slate-800">
-                    {locale === 'ar' ? 'طلبات خاصة قيد التسعير' : 'Custom Orders Awaiting Pricing'}
+                    {locale === 'ar' ? 'طلبات خاصة نشطة' : 'Active Custom Orders'}
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     {locale === 'ar'
-                      ? `${customBroadcasts.length} طلب في انتظار عروض الأسعار`
-                      : `${customBroadcasts.length} order${customBroadcasts.length > 1 ? 's' : ''} waiting for price quotes`}
+                      ? `${customBroadcasts.length} طلب يحتاج متابعتك`
+                      : `${customBroadcasts.length} order${customBroadcasts.length > 1 ? 's' : ''} need your attention`}
                   </p>
                 </div>
               </div>
               <div className="space-y-3">
                 {customBroadcasts.map((broadcast) => (
                   <Link key={broadcast.id} href={`/${locale}/custom-order/${broadcast.id}`}>
-                    <Card className="hover:shadow-lg transition-all cursor-pointer border-2 border-primary/20 hover:border-primary/40 bg-primary/5">
+                    <Card
+                      className={`hover:shadow-lg transition-all cursor-pointer border-2 ${
+                        broadcast.live_status === 'has_quotes'
+                          ? 'border-green-300 hover:border-green-400 bg-green-50'
+                          : 'border-primary/20 hover:border-primary/40 bg-primary/5'
+                      }`}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start gap-4">
                           {/* Icon */}
@@ -376,9 +454,15 @@ export default function OrderHistoryPage() {
                               <h3 className="font-bold text-lg truncate">
                                 {locale === 'ar' ? 'طلب خاص' : 'Custom Order'}
                               </h3>
-                              <span className="text-sm text-primary font-medium whitespace-nowrap">
-                                {broadcast.priced_count > 0
-                                  ? `${broadcast.priced_count}/${broadcast.requests_count} ${locale === 'ar' ? 'عروض' : 'quotes'}`
+                              <span
+                                className={`text-sm font-medium whitespace-nowrap ${
+                                  broadcast.live_status === 'has_quotes'
+                                    ? 'text-green-600'
+                                    : 'text-primary'
+                                }`}
+                              >
+                                {broadcast.active_priced_count > 0
+                                  ? `${broadcast.active_priced_count}/${broadcast.requests_count} ${locale === 'ar' ? 'عروض' : 'quotes'}`
                                   : locale === 'ar'
                                     ? 'في الانتظار'
                                     : 'Waiting'}
@@ -395,11 +479,18 @@ export default function OrderHistoryPage() {
                             </p>
 
                             <div className="flex items-center justify-between">
-                              {/* Status Badge */}
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                                <Clock className="w-3.5 h-3.5" />
-                                {locale === 'ar' ? 'قيد التسعير' : 'Awaiting Pricing'}
-                              </div>
+                              {/* Status Badge - different for waiting vs has quotes */}
+                              {broadcast.live_status === 'has_quotes' ? (
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                  <DollarSign className="w-3.5 h-3.5" />
+                                  {locale === 'ar' ? 'عروض أسعار جاهزة!' : 'Quotes ready!'}
+                                </div>
+                              ) : (
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  {locale === 'ar' ? 'بانتظار التسعير' : 'Awaiting Pricing'}
+                                </div>
+                              )}
 
                               {/* Arrow */}
                               <div className="text-primary">
