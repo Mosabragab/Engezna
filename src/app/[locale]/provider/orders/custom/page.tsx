@@ -234,6 +234,14 @@ export default function CustomOrdersListPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'priced' | 'completed'>('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Payment confirmation dialog state
+  const [paymentConfirmDialog, setPaymentConfirmDialog] = useState<{
+    show: boolean;
+    orderId: string | null;
+    orderNumber: string | null;
+    orderTotal: number;
+  }>({ show: false, orderId: null, orderNumber: null, orderTotal: 0 });
+
   // Check for success message
   const successMessage = searchParams.get('success');
 
@@ -417,6 +425,45 @@ export default function CustomOrdersListPage() {
     if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString();
 
     const { error } = await supabase.from('orders').update(updateData).eq('id', orderId);
+
+    if (!error && providerId) {
+      await loadRequests(providerId);
+    }
+    setActionLoading(null);
+  };
+
+  // Show payment confirmation dialog
+  const showPaymentConfirmation = (order: { id: string; order_number: string; total: number }) => {
+    setPaymentConfirmDialog({
+      show: true,
+      orderId: order.id,
+      orderNumber: order.order_number || order.id.slice(0, 8).toUpperCase(),
+      orderTotal: order.total,
+    });
+  };
+
+  // Cancel payment confirmation
+  const cancelPaymentConfirmation = () => {
+    setPaymentConfirmDialog({ show: false, orderId: null, orderNumber: null, orderTotal: 0 });
+  };
+
+  // Confirm payment received
+  const handleConfirmPayment = async () => {
+    const orderId = paymentConfirmDialog.orderId;
+    if (!orderId) return;
+
+    setActionLoading(orderId);
+    cancelPaymentConfirmation();
+
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        payment_status: 'completed',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderId);
 
     if (!error && providerId) {
       await loadRequests(providerId);
@@ -836,15 +883,34 @@ export default function CustomOrdersListPage() {
                           {order.total.toFixed(2)}{' '}
                           <span className="text-sm">{isRTL ? 'ج.م' : 'EGP'}</span>
                         </p>
-                        <p className="text-xs text-slate-500">
-                          {order.payment_method === 'cash'
-                            ? isRTL
-                              ? 'الدفع عند الاستلام'
-                              : 'Cash on Delivery'
-                            : isRTL
-                              ? 'دفع إلكتروني'
-                              : 'Online Payment'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-slate-500">
+                            {order.payment_method === 'cash'
+                              ? isRTL
+                                ? 'الدفع عند الاستلام'
+                                : 'Cash on Delivery'
+                              : isRTL
+                                ? 'دفع إلكتروني'
+                                : 'Online Payment'}
+                          </p>
+                          {order.status === 'delivered' && (
+                            <span
+                              className={`text-xs px-1.5 py-0.5 rounded ${
+                                order.payment_status === 'completed'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}
+                            >
+                              {order.payment_status === 'completed'
+                                ? isRTL
+                                  ? 'تم الدفع'
+                                  : 'Paid'
+                                : isRTL
+                                  ? 'معلق'
+                                  : 'Pending'}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Action Buttons */}
@@ -868,6 +934,21 @@ export default function CustomOrdersListPage() {
                               )}
                             </Button>
                           )}
+                        {order.status === 'delivered' && order.payment_status !== 'completed' && (
+                          <Button
+                            size="sm"
+                            onClick={() => showPaymentConfirmation(order)}
+                            disabled={isLoading}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {isLoading ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-4 h-4 me-1" />
+                            )}
+                            {isRTL ? 'تم استلام المبلغ' : 'Payment Received'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -1023,6 +1104,64 @@ export default function CustomOrdersListPage() {
             }
             return <div key={request.id}>{cardContent}</div>;
           })}
+        </div>
+      )}
+      {/* Payment Confirmation Dialog */}
+      {paymentConfirmDialog.show && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                {isRTL ? 'تأكيد استلام الدفع' : 'Confirm Payment Receipt'}
+              </h3>
+              <p className="text-slate-600 text-sm">
+                {isRTL
+                  ? 'هل أنت متأكد من استلام المبلغ لهذا الطلب؟'
+                  : 'Are you sure you received payment for this order?'}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-lg p-4 mb-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-slate-500 text-sm">
+                  {isRTL ? 'رقم الطلب' : 'Order Number'}
+                </span>
+                <span className="font-mono font-bold text-primary">
+                  #{paymentConfirmDialog.orderNumber}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 text-sm">{isRTL ? 'المبلغ' : 'Amount'}</span>
+                <span className="font-bold text-lg text-slate-900">
+                  {paymentConfirmDialog.orderTotal.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+              <p className="text-xs text-amber-800">
+                {isRTL
+                  ? 'تحذير: بتأكيد استلام الدفع، أنت تقر بأنك استلمت المبلغ المذكور من العميل. هذا الإجراء لا يمكن التراجع عنه.'
+                  : 'Warning: By confirming payment, you acknowledge that you have received the amount from the customer. This action cannot be undone.'}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={cancelPaymentConfirmation}>
+                {isRTL ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={handleConfirmPayment}
+              >
+                <CheckCircle2 className="w-4 h-4 me-2" />
+                {isRTL ? 'تأكيد الاستلام' : 'Confirm Receipt'}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </ProviderLayout>
