@@ -538,8 +538,20 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     // Poll every 30 seconds for non-critical updates
     const pollingInterval = setInterval(fetchBadgeCounts, 30000);
 
+    // Fast notification count sync every 5 seconds
+    // Catches missed Realtime events (Supabase can miss rapid INSERTs)
+    const notifSyncInterval = setInterval(async () => {
+      const { count } = await supabase
+        .from('provider_notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('provider_id', providerId)
+        .eq('is_read', false);
+      setUnreadCount(count || 0);
+    }, 5000);
+
     return () => {
       clearInterval(pollingInterval);
+      clearInterval(notifSyncInterval);
     };
   }, [provider?.id]);
 
