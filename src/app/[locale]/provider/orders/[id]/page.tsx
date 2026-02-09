@@ -205,13 +205,31 @@ export default function ProviderOrderDetailPage() {
 
     setOrder(orderData);
 
-    // Fetch order items
-    const { data: itemsData } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', orderId);
+    // Fetch order items (standard orders from order_items, custom orders from custom_order_items)
+    if (orderData.order_flow === 'custom') {
+      const { data: customItemsData } = await supabase
+        .from('custom_order_items')
+        .select('*')
+        .eq('order_id', orderId);
 
-    setOrderItems(itemsData || []);
+      setOrderItems(
+        (customItemsData || []).map((item: Record<string, unknown>) => ({
+          id: item.id as string,
+          item_name_ar: item.item_name_ar as string,
+          item_name_en: (item.item_name_en as string) || (item.item_name_ar as string),
+          quantity: item.quantity as number,
+          unit_price: item.unit_price as number,
+          total_price: item.total_price as number,
+        }))
+      );
+    } else {
+      const { data: itemsData } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      setOrderItems(itemsData || []);
+    }
 
     // Fetch customer
     if (orderData.customer_id) {

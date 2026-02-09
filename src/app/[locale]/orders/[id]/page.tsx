@@ -336,14 +336,38 @@ export default function OrderTrackingPage() {
 
     setOrder(orderData);
 
-    // Fetch order items
-    const { data: itemsData, error: itemsError } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', orderId);
+    // Fetch order items (standard orders from order_items, custom orders from custom_order_items)
+    if (orderData.order_flow === 'custom') {
+      const { data: customItemsData, error: customItemsError } = await supabase
+        .from('custom_order_items')
+        .select('*')
+        .eq('order_id', orderId);
 
-    if (!itemsError) {
-      setOrderItems(itemsData || []);
+      if (!customItemsError && customItemsData) {
+        // Map custom_order_items to OrderItem shape for display compatibility
+        setOrderItems(
+          customItemsData.map((item: Record<string, unknown>) => ({
+            id: item.id as string,
+            order_id: item.order_id as string,
+            menu_item_id: '',
+            item_name_ar: item.item_name_ar as string,
+            item_name_en: (item.item_name_en as string) || (item.item_name_ar as string),
+            item_price: item.unit_price as number,
+            quantity: item.quantity as number,
+            unit_price: item.unit_price as number,
+            total_price: item.total_price as number,
+          }))
+        );
+      }
+    } else {
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (!itemsError) {
+        setOrderItems(itemsData || []);
+      }
     }
 
     // Fetch provider
