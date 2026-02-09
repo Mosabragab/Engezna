@@ -132,6 +132,7 @@ class NotificationAudioManager {
 
   /**
    * Play a notification sound.
+   * Handles rapid successive calls by properly resetting the audio element.
    * Falls back to vibration if sound playback fails.
    */
   play(type: SoundType = 'notification'): void {
@@ -140,12 +141,21 @@ class NotificationAudioManager {
     const audio = this.audioElements.get(type);
     if (!audio) return;
 
-    // Reset to beginning if already playing
+    // Properly handle rapid successive plays:
+    // 1. Pause any current playback first
+    // 2. Reset to beginning
+    // 3. Then play
+    if (!audio.paused) {
+      audio.pause();
+    }
     audio.currentTime = 0;
 
-    audio.play().catch(() => {
-      // Sound failed - use vibration as fallback
-      this.vibrate(type);
+    // Use a microtask to ensure the pause/reset takes effect before playing
+    Promise.resolve().then(() => {
+      audio.play().catch(() => {
+        // Sound failed - use vibration as fallback
+        this.vibrate(type);
+      });
     });
   }
 
