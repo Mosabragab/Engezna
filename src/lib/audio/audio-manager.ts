@@ -10,7 +10,7 @@
  * 4. Providing vibration fallback when sound fails
  */
 
-type SoundType = 'notification' | 'new-order' | 'custom-order';
+type SoundType = 'notification' | 'new-order' | 'custom-order' | 'order-update';
 
 interface SoundConfig {
   src: string;
@@ -21,6 +21,7 @@ const SOUNDS: Record<SoundType, SoundConfig> = {
   notification: { src: '/sounds/notification.mp3', volume: 0.5 },
   'new-order': { src: '/sounds/new-order.mp3', volume: 0.7 },
   'custom-order': { src: '/sounds/custom-order.mp3', volume: 0.6 },
+  'order-update': { src: '/sounds/new-order.mp3', volume: 0.65 },
 };
 
 class NotificationAudioManager {
@@ -158,6 +159,7 @@ class NotificationAudioManager {
       notification: [200, 100, 200],
       'new-order': [300, 100, 300, 100, 300],
       'custom-order': [200, 100, 200, 100, 200],
+      'order-update': [200, 100, 300, 100, 200],
     };
 
     navigator.vibrate(patterns[type] || [200, 100, 200]);
