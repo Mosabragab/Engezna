@@ -103,34 +103,9 @@ export function OrderChat({
       setMessages((prev) => [...prev, data]);
       setNewMessage('');
       setTimeout(scrollToBottom, 100);
-
-      // If provider is sending, create notification for customer
-      if (userType === 'provider') {
-        // Get order details to find customer_id and order_number
-        const { data: orderData } = await supabase
-          .from('orders')
-          .select('customer_id, order_number')
-          .eq('id', orderId)
-          .single();
-
-        if (orderData?.customer_id) {
-          // Create customer notification with actual store name
-          const storeName = providerName || 'المتجر';
-          const storeNameEn = providerName || 'Store';
-          const messagePreview =
-            data.message.length > 50 ? data.message.slice(0, 50) + '...' : data.message;
-
-          await supabase.from('customer_notifications').insert({
-            customer_id: orderData.customer_id,
-            type: 'order_message',
-            title_ar: `رسالة جديدة من ${storeName}`,
-            title_en: `New Message from ${storeNameEn}`,
-            body_ar: `${storeName}: ${messagePreview}`,
-            body_en: `${storeNameEn}: ${messagePreview}`,
-            related_order_id: orderId,
-          });
-        }
-      }
+      // Customer notification is now handled by database trigger
+      // (notify_customer_new_message) which runs as SECURITY DEFINER,
+      // bypassing the service_role-only INSERT RLS policy.
     }
     setSending(false);
   };
