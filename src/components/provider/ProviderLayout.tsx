@@ -238,6 +238,18 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     return () => subscription.unsubscribe();
   }, [checkAuth]);
 
+  // Debounced sync of unread notification count from DB
+  // Corrects any drift caused by missed Realtime events
+  const syncUnreadCount = useCallback(async (providerId: string) => {
+    const supabase = createClient();
+    const { count } = await supabase
+      .from('provider_notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', providerId)
+      .eq('is_read', false);
+    setUnreadCount(count || 0);
+  }, []);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // OPTIMIZED: Single unified Realtime channel for critical updates
   // Merged: notifications + orders + custom_orders (3 tables, 1 channel)
@@ -254,6 +266,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       .channel(`provider-unified-${providerId}`)
       // ─────────────────────────────────────────────────────────────────────────
       // NOTIFICATIONS: Real-time updates for notification bell
+      // After INSERT, re-fetch actual count from DB to correct drift
+      // (Supabase Realtime can miss events when multiple INSERTs happen rapidly)
       // ─────────────────────────────────────────────────────────────────────────
       .on(
         'postgres_changes',
@@ -264,9 +278,12 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           filter: `provider_id=eq.${providerId}`,
         },
         () => {
+          // Optimistic increment for instant UI feedback
           setUnreadCount((prev) => prev + 1);
           // Play notification sound via AudioManager
           getAudioManager().play('notification');
+          // Re-fetch actual count from DB after a short delay to correct drift
+          setTimeout(() => syncUnreadCount(providerId), 500);
         }
       )
       .on(
