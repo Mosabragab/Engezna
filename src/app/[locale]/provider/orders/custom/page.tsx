@@ -674,12 +674,8 @@ export default function CustomOrdersListPage() {
                           </span>
                         </div>
                         <div className="text-end">
-                          <p className="text-sm text-slate-500">
-                            {formatTime(request.created_at)}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {formatDate(request.created_at)}
-                          </p>
+                          <p className="text-sm text-slate-500">{formatTime(request.created_at)}</p>
+                          <p className="text-xs text-slate-400">{formatDate(request.created_at)}</p>
                         </div>
                       </div>
 
@@ -691,15 +687,13 @@ export default function CustomOrdersListPage() {
                             request.broadcast?.customer?.full_name ||
                             'N/A'}
                         </div>
-                        {(order.delivery_address?.phone ||
-                          request.broadcast?.customer?.phone) && (
+                        {(order.delivery_address?.phone || request.broadcast?.customer?.phone) && (
                           <a
                             href={`tel:${order.delivery_address?.phone || request.broadcast?.customer?.phone}`}
                             className="flex items-center gap-1.5 hover:text-primary"
                           >
                             <Phone className="w-4 h-4 text-slate-500" />
-                            {order.delivery_address?.phone ||
-                              request.broadcast?.customer?.phone}
+                            {order.delivery_address?.phone || request.broadcast?.customer?.phone}
                           </a>
                         )}
                       </div>
@@ -712,9 +706,7 @@ export default function CustomOrdersListPage() {
                           <div key={item.id} className="flex justify-between text-sm">
                             <span className="text-slate-600">
                               {item.quantity}x{' '}
-                              {isRTL
-                                ? item.item_name_ar
-                                : item.item_name_en || item.item_name_ar}
+                              {isRTL ? item.item_name_ar : item.item_name_en || item.item_name_ar}
                             </span>
                             <span className="text-slate-500">
                               {item.total_price.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
@@ -723,21 +715,20 @@ export default function CustomOrdersListPage() {
                         ))}
                         {items.length > 3 && (
                           <p className="text-xs text-slate-500">
-                            +{items.length - 3}{' '}
-                            {isRTL ? 'منتجات أخرى' : 'more items'}
+                            +{items.length - 3} {isRTL ? 'منتجات أخرى' : 'more items'}
                           </p>
                         )}
                         {items.length === 0 && (
                           <p className="text-sm text-slate-400 italic">
-                            {isRTL ? `${request.items_count} أصناف` : `${request.items_count} items`}
+                            {isRTL
+                              ? `${request.items_count} أصناف`
+                              : `${request.items_count} items`}
                           </p>
                         )}
                       </div>
                       {order.customer_notes && (
                         <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
-                          <span className="text-slate-500">
-                            {isRTL ? 'ملاحظات:' : 'Notes:'}
-                          </span>{' '}
+                          <span className="text-slate-500">{isRTL ? 'ملاحظات:' : 'Notes:'}</span>{' '}
                           <span className="text-slate-600">{order.customer_notes}</span>
                         </div>
                       )}
@@ -791,25 +782,21 @@ export default function CustomOrdersListPage() {
                               <p className="text-slate-600 text-xs">
                                 {order.delivery_address.building && (
                                   <span>
-                                    {isRTL ? 'مبنى' : 'Bldg'}{' '}
-                                    {order.delivery_address.building}
+                                    {isRTL ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
                                   </span>
                                 )}
                                 {order.delivery_address.floor && (
                                   <span>
                                     {order.delivery_address.building ? ' - ' : ''}
-                                    {isRTL ? 'طابق' : 'Floor'}{' '}
-                                    {order.delivery_address.floor}
+                                    {isRTL ? 'طابق' : 'Floor'} {order.delivery_address.floor}
                                   </span>
                                 )}
                                 {order.delivery_address.apartment && (
                                   <span>
-                                    {order.delivery_address.building ||
-                                    order.delivery_address.floor
+                                    {order.delivery_address.building || order.delivery_address.floor
                                       ? ' - '
                                       : ''}
-                                    {isRTL ? 'شقة' : 'Apt'}{' '}
-                                    {order.delivery_address.apartment}
+                                    {isRTL ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
                                   </span>
                                 )}
                               </p>
@@ -828,11 +815,7 @@ export default function CustomOrdersListPage() {
                         {/* Delivery Instructions */}
                         {order.delivery_address.delivery_instructions && (
                           <div className="mt-2 mx-6 p-2 bg-amber-50 rounded text-xs text-amber-800">
-                            <strong>
-                              {isRTL
-                                ? 'تعليمات التوصيل:'
-                                : 'Delivery Instructions:'}
-                            </strong>{' '}
+                            <strong>{isRTL ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong>{' '}
                             {order.delivery_address.delivery_instructions}
                           </div>
                         )}
@@ -866,26 +849,16 @@ export default function CustomOrdersListPage() {
 
                       {/* Action Buttons */}
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/${locale}/provider/orders/${order.id}?from=custom`}
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-slate-300"
-                          >
+                        <Link href={`/${locale}/provider/orders/${order.id}?from=custom`}>
+                          <Button variant="outline" size="sm" className="border-slate-300">
                             {isRTL ? 'تفاصيل' : 'Details'}
                           </Button>
                         </Link>
                         {nextStatusLabel &&
-                          !['delivered', 'cancelled', 'rejected'].includes(
-                            order.status
-                          ) && (
+                          !['delivered', 'cancelled', 'rejected'].includes(order.status) && (
                             <Button
                               size="sm"
-                              onClick={() =>
-                                handleUpdateStatus(order.id, order.status)
-                              }
+                              onClick={() => handleUpdateStatus(order.id, order.status)}
                               disabled={isLoading}
                             >
                               {isLoading ? (
@@ -903,14 +876,11 @@ export default function CustomOrdersListPage() {
             }
 
             // Non-approved cards: pending, priced, rejected, expired, cancelled
-            const displayStatusConfig =
-              STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
+            const displayStatusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
             const DisplayStatusIcon = displayStatusConfig.icon;
             const InputIcon = INPUT_TYPE_ICONS[request.input_type] || FileText;
             const timeRemaining =
-              request.status === 'pending'
-                ? getTimeRemaining(request.pricing_expires_at)
-                : null;
+              request.status === 'pending' ? getTimeRemaining(request.pricing_expires_at) : null;
 
             // Determine card link destination
             const cardHref =
@@ -932,17 +902,13 @@ export default function CustomOrdersListPage() {
                         <div
                           className={`w-8 h-8 rounded-lg flex items-center justify-center ${displayStatusConfig.bgColor}`}
                         >
-                          <InputIcon
-                            className={`w-4 h-4 ${displayStatusConfig.color}`}
-                          />
+                          <InputIcon className={`w-4 h-4 ${displayStatusConfig.color}`} />
                         </div>
                         <div
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${displayStatusConfig.color} ${displayStatusConfig.bgColor}`}
                         >
                           <DisplayStatusIcon className="w-3.5 h-3.5" />
-                          {isRTL
-                            ? displayStatusConfig.label_ar
-                            : displayStatusConfig.label_en}
+                          {isRTL ? displayStatusConfig.label_ar : displayStatusConfig.label_en}
                         </div>
                         {timeRemaining && (
                           <span
@@ -953,12 +919,8 @@ export default function CustomOrdersListPage() {
                         )}
                       </div>
                       <div className="text-end">
-                        <p className="text-sm text-slate-500">
-                          {formatTime(request.created_at)}
-                        </p>
-                        <p className="text-xs text-slate-400">
-                          {formatDate(request.created_at)}
-                        </p>
+                        <p className="text-sm text-slate-500">{formatTime(request.created_at)}</p>
+                        <p className="text-xs text-slate-400">{formatDate(request.created_at)}</p>
                       </div>
                     </div>
 
@@ -966,8 +928,7 @@ export default function CustomOrdersListPage() {
                     <div className="flex items-center gap-4 text-sm text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <User className="w-4 h-4 text-slate-400" />
-                        {request.broadcast?.customer?.full_name ||
-                          (isRTL ? 'عميل' : 'Customer')}
+                        {request.broadcast?.customer?.full_name || (isRTL ? 'عميل' : 'Customer')}
                       </div>
                       {request.broadcast?.customer?.phone && (
                         <a
@@ -1002,12 +963,8 @@ export default function CustomOrdersListPage() {
                     {request.status !== 'pending' && request.total > 0 && (
                       <div className="bg-slate-50 rounded-lg p-3 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">
-                            {isRTL ? 'عدد الأصناف' : 'Items'}
-                          </span>
-                          <span className="text-slate-700">
-                            {request.items_count}
-                          </span>
+                          <span className="text-slate-500">{isRTL ? 'عدد الأصناف' : 'Items'}</span>
+                          <span className="text-slate-700">{request.items_count}</span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
                           <span className="text-slate-500">
@@ -1018,9 +975,7 @@ export default function CustomOrdersListPage() {
                           </span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
-                          <span className="text-slate-500">
-                            {isRTL ? 'التوصيل' : 'Delivery'}
-                          </span>
+                          <span className="text-slate-500">{isRTL ? 'التوصيل' : 'Delivery'}</span>
                           <span className="text-slate-700">
                             {request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
                           </span>
@@ -1036,9 +991,7 @@ export default function CustomOrdersListPage() {
 
                     {/* Action Button */}
                     {request.status === 'pending' && (
-                      <Link
-                        href={`/${locale}/provider/orders/custom/${request.id}`}
-                      >
+                      <Link href={`/${locale}/provider/orders/custom/${request.id}`}>
                         <Button className="w-full gap-2">
                           <DollarSign className="w-4 h-4" />
                           {isRTL ? 'تسعير الطلب' : 'Price Order'}
@@ -1052,9 +1005,7 @@ export default function CustomOrdersListPage() {
                     )}
                     {request.status === 'priced' && (
                       <div className="text-center py-2 text-blue-600 text-sm">
-                        {isRTL
-                          ? 'بانتظار موافقة العميل...'
-                          : 'Waiting for customer approval...'}
+                        {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
                       </div>
                     )}
                   </div>
