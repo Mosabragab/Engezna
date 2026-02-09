@@ -25,7 +25,37 @@ import {
   Package,
   Truck,
   ChefHat,
+  MapPin,
+  RefreshCw,
 } from 'lucide-react';
+
+type CustomOrderItem = {
+  id: string;
+  item_name_ar: string;
+  item_name_en: string | null;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+};
+
+type DeliveryAddress = {
+  governorate_ar?: string;
+  governorate_en?: string;
+  city_ar?: string;
+  city_en?: string;
+  district_ar?: string;
+  district_en?: string;
+  address?: string;
+  address_line1?: string;
+  building?: string;
+  floor?: string;
+  apartment?: string;
+  landmark?: string;
+  phone?: string;
+  full_name?: string;
+  notes?: string;
+  delivery_instructions?: string;
+};
 
 type CustomOrderRequest = {
   id: string;
@@ -58,6 +88,11 @@ type CustomOrderRequest = {
     id: string;
     order_number: string;
     status: string;
+    payment_method: string;
+    payment_status: string;
+    total: number;
+    delivery_address: DeliveryAddress | null;
+    customer_notes: string | null;
   } | null;
 };
 
@@ -178,6 +213,14 @@ const ORDER_STATUS_CONFIG: Record<
   },
 };
 
+// Status flow for order execution
+const NEXT_STATUS: Record<string, string> = {
+  accepted: 'preparing',
+  preparing: 'ready',
+  ready: 'out_for_delivery',
+  out_for_delivery: 'delivered',
+};
+
 export default function CustomOrdersListPage() {
   const locale = useLocale();
   const router = useRouter();
@@ -186,8 +229,10 @@ export default function CustomOrdersListPage() {
 
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<CustomOrderRequest[]>([]);
+  const [orderItems, setOrderItems] = useState<Record<string, CustomOrderItem[]>>({});
   const [providerId, setProviderId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'priced' | 'completed'>('all');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Check for success message
   const successMessage = searchParams.get('success');
@@ -214,7 +259,12 @@ export default function CustomOrdersListPage() {
         order:orders(
           id,
           order_number,
-          status
+          status,
+          payment_method,
+          payment_status,
+          total,
+          delivery_address,
+          customer_notes
         )
       `
       )
@@ -243,6 +293,29 @@ export default function CustomOrdersListPage() {
         order: Array.isArray(req.order) ? req.order[0] : req.order,
       }));
       setRequests(transformed as CustomOrderRequest[]);
+
+      // Fetch items for approved orders with linked orders
+      const approvedOrderIds = transformed
+        .filter((r: any) => r.status === 'approved' && r.order?.id)
+        .map((r: any) => r.order.id);
+
+      if (approvedOrderIds.length > 0) {
+        const { data: itemsData } = await supabase
+          .from('custom_order_items')
+          .select('id, order_id, item_name_ar, item_name_en, quantity, unit_price, total_price')
+          .in('order_id', approvedOrderIds);
+
+        if (itemsData) {
+          const itemsByOrder: Record<string, CustomOrderItem[]> = {};
+          itemsData.forEach((item: any) => {
+            if (!itemsByOrder[item.order_id]) {
+              itemsByOrder[item.order_id] = [];
+            }
+            itemsByOrder[item.order_id].push(item);
+          });
+          setOrderItems(itemsByOrder);
+        }
+      }
     }
   }, []);
 
@@ -315,6 +388,41 @@ export default function CustomOrdersListPage() {
       clearInterval(pollInterval);
     };
   }, [providerId, loadRequests]);
+
+  // Get next status label for action button
+  const getNextStatusLabel = (status: string) => {
+    const next = NEXT_STATUS[status];
+    if (!next) return null;
+    const config = ORDER_STATUS_CONFIG[next];
+    return isRTL ? config.label_ar : config.label_en;
+  };
+
+  // Handle status update for order execution
+  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
+    const nextStatus = NEXT_STATUS[currentStatus];
+    if (!nextStatus) return;
+
+    setActionLoading(orderId);
+    const supabase = createClient();
+
+    const updateData: Record<string, any> = {
+      status: nextStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (nextStatus === 'preparing') updateData.preparing_at = new Date().toISOString();
+    if (nextStatus === 'ready') updateData.ready_at = new Date().toISOString();
+    if (nextStatus === 'out_for_delivery')
+      updateData.out_for_delivery_at = new Date().toISOString();
+    if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString();
+
+    const { error } = await supabase.from('orders').update(updateData).eq('id', orderId);
+
+    if (!error && providerId) {
+      await loadRequests(providerId);
+    }
+    setActionLoading(null);
+  };
 
   // Filter requests
   const filteredRequests = requests.filter((req) => {
@@ -530,20 +638,283 @@ export default function CustomOrdersListPage() {
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((request) => {
-            // For approved orders with linked order, show the ORDER status (preparing, out_for_delivery, etc)
+            // For approved orders with linked order, render order-style card
             const isApprovedWithOrder = request.status === 'approved' && request.order;
-            const displayStatusConfig = isApprovedWithOrder
-              ? ORDER_STATUS_CONFIG[request.order!.status] || ORDER_STATUS_CONFIG.pending
-              : STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
+
+            if (isApprovedWithOrder) {
+              const order = request.order!;
+              const orderStatusConfig =
+                ORDER_STATUS_CONFIG[order.status] || ORDER_STATUS_CONFIG.pending;
+              const OrderStatusIcon = orderStatusConfig.icon;
+              const items = orderItems[order.id] || [];
+              const isLoading = actionLoading === order.id;
+              const nextStatusLabel = getNextStatusLabel(order.status);
+
+              return (
+                <Card
+                  key={request.id}
+                  className="bg-white border-slate-100 overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-300 rounded-2xl"
+                >
+                  <CardContent className="p-0">
+                    {/* Order Header - matches regular order card */}
+                    <div className="p-4 border-b border-slate-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-mono font-bold text-primary text-lg">
+                            #{order.order_number || order.id.slice(0, 8).toUpperCase()}
+                          </span>
+                          <div
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${orderStatusConfig.color} ${orderStatusConfig.bgColor}`}
+                          >
+                            <OrderStatusIcon className="w-3.5 h-3.5" />
+                            {isRTL ? orderStatusConfig.label_ar : orderStatusConfig.label_en}
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded bg-purple-50 text-purple-600">
+                            {isRTL ? 'طلب خاص' : 'Custom'}
+                          </span>
+                        </div>
+                        <div className="text-end">
+                          <p className="text-sm text-slate-500">
+                            {formatTime(request.created_at)}
+                          </p>
+                          <p className="text-xs text-slate-400">
+                            {formatDate(request.created_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Customer Info */}
+                      <div className="flex items-center gap-4 text-sm text-slate-600">
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-slate-500" />
+                          {order.delivery_address?.full_name ||
+                            request.broadcast?.customer?.full_name ||
+                            'N/A'}
+                        </div>
+                        {(order.delivery_address?.phone ||
+                          request.broadcast?.customer?.phone) && (
+                          <a
+                            href={`tel:${order.delivery_address?.phone || request.broadcast?.customer?.phone}`}
+                            className="flex items-center gap-1.5 hover:text-primary"
+                          >
+                            <Phone className="w-4 h-4 text-slate-500" />
+                            {order.delivery_address?.phone ||
+                              request.broadcast?.customer?.phone}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    <div className="p-4 border-b border-slate-100">
+                      <div className="space-y-2">
+                        {items.slice(0, 3).map((item) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-slate-600">
+                              {item.quantity}x{' '}
+                              {isRTL
+                                ? item.item_name_ar
+                                : item.item_name_en || item.item_name_ar}
+                            </span>
+                            <span className="text-slate-500">
+                              {item.total_price.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                            </span>
+                          </div>
+                        ))}
+                        {items.length > 3 && (
+                          <p className="text-xs text-slate-500">
+                            +{items.length - 3}{' '}
+                            {isRTL ? 'منتجات أخرى' : 'more items'}
+                          </p>
+                        )}
+                        {items.length === 0 && (
+                          <p className="text-sm text-slate-400 italic">
+                            {isRTL ? `${request.items_count} أصناف` : `${request.items_count} items`}
+                          </p>
+                        )}
+                      </div>
+                      {order.customer_notes && (
+                        <div className="mt-3 p-2 bg-slate-50 rounded text-sm">
+                          <span className="text-slate-500">
+                            {isRTL ? 'ملاحظات:' : 'Notes:'}
+                          </span>{' '}
+                          <span className="text-slate-600">{order.customer_notes}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Delivery Address */}
+                    {order.delivery_address && (
+                      <div className="p-4 border-b border-slate-100 bg-slate-50/30">
+                        <div className="flex items-start gap-2 text-sm">
+                          <MapPin className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 space-y-1">
+                            {/* Geographic Tags */}
+                            {(order.delivery_address.governorate_ar ||
+                              order.delivery_address.city_ar ||
+                              order.delivery_address.district_ar) && (
+                              <div className="flex flex-wrap gap-1.5 mb-2">
+                                {order.delivery_address.governorate_ar && (
+                                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                    {isRTL
+                                      ? order.delivery_address.governorate_ar
+                                      : order.delivery_address.governorate_en}
+                                  </span>
+                                )}
+                                {order.delivery_address.city_ar && (
+                                  <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                                    {isRTL
+                                      ? order.delivery_address.city_ar
+                                      : order.delivery_address.city_en}
+                                  </span>
+                                )}
+                                {order.delivery_address.district_ar && (
+                                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                                    {isRTL
+                                      ? order.delivery_address.district_ar
+                                      : order.delivery_address.district_en}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Street Address */}
+                            <p className="text-slate-700 font-medium">
+                              {order.delivery_address.address ||
+                                order.delivery_address.address_line1}
+                            </p>
+
+                            {/* Building Details */}
+                            {(order.delivery_address.building ||
+                              order.delivery_address.floor ||
+                              order.delivery_address.apartment) && (
+                              <p className="text-slate-600 text-xs">
+                                {order.delivery_address.building && (
+                                  <span>
+                                    {isRTL ? 'مبنى' : 'Bldg'}{' '}
+                                    {order.delivery_address.building}
+                                  </span>
+                                )}
+                                {order.delivery_address.floor && (
+                                  <span>
+                                    {order.delivery_address.building ? ' - ' : ''}
+                                    {isRTL ? 'طابق' : 'Floor'}{' '}
+                                    {order.delivery_address.floor}
+                                  </span>
+                                )}
+                                {order.delivery_address.apartment && (
+                                  <span>
+                                    {order.delivery_address.building ||
+                                    order.delivery_address.floor
+                                      ? ' - '
+                                      : ''}
+                                    {isRTL ? 'شقة' : 'Apt'}{' '}
+                                    {order.delivery_address.apartment}
+                                  </span>
+                                )}
+                              </p>
+                            )}
+
+                            {/* Landmark */}
+                            {order.delivery_address.landmark && (
+                              <p className="text-slate-500 text-xs">
+                                {isRTL ? 'علامة مميزة:' : 'Landmark:'}{' '}
+                                {order.delivery_address.landmark}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Delivery Instructions */}
+                        {order.delivery_address.delivery_instructions && (
+                          <div className="mt-2 mx-6 p-2 bg-amber-50 rounded text-xs text-amber-800">
+                            <strong>
+                              {isRTL
+                                ? 'تعليمات التوصيل:'
+                                : 'Delivery Instructions:'}
+                            </strong>{' '}
+                            {order.delivery_address.delivery_instructions}
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {order.delivery_address.notes && (
+                          <p className="text-xs text-slate-500 mt-1 mx-6 italic">
+                            {order.delivery_address.notes}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Order Footer - Total + Actions */}
+                    <div className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-primary">
+                          {order.total.toFixed(2)}{' '}
+                          <span className="text-sm">{isRTL ? 'ج.م' : 'EGP'}</span>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {order.payment_method === 'cash'
+                            ? isRTL
+                              ? 'الدفع عند الاستلام'
+                              : 'Cash on Delivery'
+                            : isRTL
+                              ? 'دفع إلكتروني'
+                              : 'Online Payment'}
+                        </p>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/${locale}/provider/orders/${order.id}?from=custom`}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-slate-300"
+                          >
+                            {isRTL ? 'تفاصيل' : 'Details'}
+                          </Button>
+                        </Link>
+                        {nextStatusLabel &&
+                          !['delivered', 'cancelled', 'rejected'].includes(
+                            order.status
+                          ) && (
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                handleUpdateStatus(order.id, order.status)
+                              }
+                              disabled={isLoading}
+                            >
+                              {isLoading ? (
+                                <RefreshCw className="w-4 h-4 animate-spin" />
+                              ) : (
+                                nextStatusLabel
+                              )}
+                            </Button>
+                          )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            }
+
+            // Non-approved cards: pending, priced, rejected, expired, cancelled
+            const displayStatusConfig =
+              STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
             const DisplayStatusIcon = displayStatusConfig.icon;
             const InputIcon = INPUT_TYPE_ICONS[request.input_type] || FileText;
             const timeRemaining =
-              request.status === 'pending' ? getTimeRemaining(request.pricing_expires_at) : null;
+              request.status === 'pending'
+                ? getTimeRemaining(request.pricing_expires_at)
+                : null;
 
             // Determine card link destination
-            const cardHref = isApprovedWithOrder
-              ? `/${locale}/provider/orders/${request.order!.id}?from=custom`
-              : request.status === 'pending'
+            const cardHref =
+              request.status === 'pending'
                 ? `/${locale}/provider/orders/custom/${request.id}`
                 : null;
 
@@ -561,13 +932,17 @@ export default function CustomOrdersListPage() {
                         <div
                           className={`w-8 h-8 rounded-lg flex items-center justify-center ${displayStatusConfig.bgColor}`}
                         >
-                          <InputIcon className={`w-4 h-4 ${displayStatusConfig.color}`} />
+                          <InputIcon
+                            className={`w-4 h-4 ${displayStatusConfig.color}`}
+                          />
                         </div>
                         <div
                           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${displayStatusConfig.color} ${displayStatusConfig.bgColor}`}
                         >
                           <DisplayStatusIcon className="w-3.5 h-3.5" />
-                          {isRTL ? displayStatusConfig.label_ar : displayStatusConfig.label_en}
+                          {isRTL
+                            ? displayStatusConfig.label_ar
+                            : displayStatusConfig.label_en}
                         </div>
                         {timeRemaining && (
                           <span
@@ -578,8 +953,12 @@ export default function CustomOrdersListPage() {
                         )}
                       </div>
                       <div className="text-end">
-                        <p className="text-sm text-slate-500">{formatTime(request.created_at)}</p>
-                        <p className="text-xs text-slate-400">{formatDate(request.created_at)}</p>
+                        <p className="text-sm text-slate-500">
+                          {formatTime(request.created_at)}
+                        </p>
+                        <p className="text-xs text-slate-400">
+                          {formatDate(request.created_at)}
+                        </p>
                       </div>
                     </div>
 
@@ -587,7 +966,8 @@ export default function CustomOrdersListPage() {
                     <div className="flex items-center gap-4 text-sm text-slate-600">
                       <div className="flex items-center gap-1.5">
                         <User className="w-4 h-4 text-slate-400" />
-                        {request.broadcast?.customer?.full_name || (isRTL ? 'عميل' : 'Customer')}
+                        {request.broadcast?.customer?.full_name ||
+                          (isRTL ? 'عميل' : 'Customer')}
                       </div>
                       {request.broadcast?.customer?.phone && (
                         <a
@@ -622,8 +1002,12 @@ export default function CustomOrdersListPage() {
                     {request.status !== 'pending' && request.total > 0 && (
                       <div className="bg-slate-50 rounded-lg p-3 mb-4">
                         <div className="flex justify-between text-sm">
-                          <span className="text-slate-500">{isRTL ? 'عدد الأصناف' : 'Items'}</span>
-                          <span className="text-slate-700">{request.items_count}</span>
+                          <span className="text-slate-500">
+                            {isRTL ? 'عدد الأصناف' : 'Items'}
+                          </span>
+                          <span className="text-slate-700">
+                            {request.items_count}
+                          </span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
                           <span className="text-slate-500">
@@ -634,7 +1018,9 @@ export default function CustomOrdersListPage() {
                           </span>
                         </div>
                         <div className="flex justify-between text-sm mt-1">
-                          <span className="text-slate-500">{isRTL ? 'التوصيل' : 'Delivery'}</span>
+                          <span className="text-slate-500">
+                            {isRTL ? 'التوصيل' : 'Delivery'}
+                          </span>
                           <span className="text-slate-700">
                             {request.delivery_fee.toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
                           </span>
@@ -650,7 +1036,9 @@ export default function CustomOrdersListPage() {
 
                     {/* Action Button */}
                     {request.status === 'pending' && (
-                      <Link href={`/${locale}/provider/orders/custom/${request.id}`}>
+                      <Link
+                        href={`/${locale}/provider/orders/custom/${request.id}`}
+                      >
                         <Button className="w-full gap-2">
                           <DollarSign className="w-4 h-4" />
                           {isRTL ? 'تسعير الطلب' : 'Price Order'}
@@ -664,56 +1052,9 @@ export default function CustomOrdersListPage() {
                     )}
                     {request.status === 'priced' && (
                       <div className="text-center py-2 text-blue-600 text-sm">
-                        {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
-                      </div>
-                    )}
-                    {request.status === 'approved' && request.order && (
-                      <div className="space-y-3">
-                        {/* Order Execution Status */}
-                        {(() => {
-                          const orderStatusConfig =
-                            ORDER_STATUS_CONFIG[request.order.status] ||
-                            ORDER_STATUS_CONFIG.pending;
-                          const OrderStatusIcon = orderStatusConfig.icon;
-                          return (
-                            <div
-                              className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}
-                            >
-                              <div className="flex items-center gap-2">
-                                <OrderStatusIcon className={`w-4 h-4 ${orderStatusConfig.color}`} />
-                                <span className={`text-sm font-medium ${orderStatusConfig.color}`}>
-                                  {isRTL ? orderStatusConfig.label_ar : orderStatusConfig.label_en}
-                                </span>
-                              </div>
-                              <span className="text-xs text-slate-500">
-                                #
-                                {request.order.order_number ||
-                                  request.order.id.slice(0, 8).toUpperCase()}
-                              </span>
-                            </div>
-                          );
-                        })()}
-                        {/* Manage Order Button */}
-                        {!['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
-                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
-                            <Button variant="outline" className="w-full gap-2">
-                              {isRTL ? 'إدارة الطلب' : 'Manage Order'}
-                              {isRTL ? (
-                                <ArrowLeft className="w-4 h-4" />
-                              ) : (
-                                <ArrowRight className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </Link>
-                        )}
-                        {/* View Details for completed */}
-                        {['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
-                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
-                            <Button variant="ghost" size="sm" className="w-full text-slate-500">
-                              {isRTL ? 'عرض التفاصيل' : 'View Details'}
-                            </Button>
-                          </Link>
-                        )}
+                        {isRTL
+                          ? 'بانتظار موافقة العميل...'
+                          : 'Waiting for customer approval...'}
                       </div>
                     )}
                   </div>
