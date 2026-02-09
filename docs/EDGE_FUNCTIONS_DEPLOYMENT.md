@@ -3,16 +3,19 @@
 ## المتطلبات (Prerequisites)
 
 ### 1. تثبيت Supabase CLI
+
 ```bash
 npm install -g supabase
 ```
 
 ### 2. تسجيل الدخول
+
 ```bash
 supabase login
 ```
 
 ### 3. ربط المشروع
+
 ```bash
 supabase link --project-ref cmxpvzqrmptfnuymhxmr
 ```
@@ -34,6 +37,7 @@ supabase secrets set FIREBASE_SERVICE_ACCOUNT='{ "type": "service_account", "pro
 ```
 
 **كيفية الحصول على Firebase Service Account:**
+
 1. اذهب إلى [Firebase Console](https://console.firebase.google.com)
 2. Project Settings → Service Accounts
 3. Generate New Private Key
@@ -59,6 +63,7 @@ supabase db push
 ```
 
 هذا سينشئ:
+
 - Trigger على `customer_notifications` → يرسل FCM push عند إنشاء إشعار جديد
 - Trigger على `provider_notifications` → يرسل FCM push عند إنشاء إشعار جديد
 
@@ -123,12 +128,14 @@ ORDER BY event_object_table;
 ## استكشاف الأخطاء (Troubleshooting)
 
 ### الإشعارات لا تصل:
+
 1. تأكد من نشر Edge Functions: `supabase functions list`
 2. تأكد من إعداد `FIREBASE_SERVICE_ACCOUNT`: `supabase secrets list`
 3. تحقق من logs: `supabase functions logs handle-notification-trigger`
 4. تحقق من وجود FCM tokens نشطة: `SELECT * FROM fcm_tokens WHERE is_active = true`
 
 ### الصوت لا يعمل:
+
 1. تأكد من أن المستخدم ضغط على الشاشة مرة واحدة (browser autoplay policy)
 2. تأكد من أن الصوت مفعل في إعدادات الإشعارات
 3. افتح DevTools → Console وابحث عن أخطاء audio

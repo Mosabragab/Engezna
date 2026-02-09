@@ -183,19 +183,20 @@
 | [ ] اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ⬜     |         |
 
 **تفاصيل (2/9):**
+
 - تم إنشاء migration لربط `customer_notifications` و `provider_notifications` بالـ webhook
 - كل INSERT في جداول الإشعارات يُطلق webhook تلقائياً لإرسال FCM push
 - راجع `docs/EDGE_FUNCTIONS_DEPLOYMENT.md` لخطوات النشر الكاملة
 
 ### 1.8 إصلاح صوت إشعارات حالة الطلب للعميل
 
-| المهمة                                                                    | الحالة | التاريخ |
-| ------------------------------------------------------------------------- | ------ | ------- |
-| [x] إضافة صوت مخصص `order-update` لتغييرات حالة الطلب                     | ✅     | 2/9     |
+| المهمة                                                                   | الحالة | التاريخ |
+| ------------------------------------------------------------------------ | ------ | ------- |
+| [x] إضافة صوت مخصص `order-update` لتغييرات حالة الطلب                    | ✅     | 2/9     |
 | [x] ربط نوع الإشعار بالصوت المناسب (order_accepted → order-update sound) | ✅     | 2/9     |
 | [x] إصلاح Polling fallback ليشغل صوت عند وصول إشعار جديد                 | ✅     | 2/9     |
-| [x] إزالة Double Polling الزائد (كان يستهلك موارد بلا فائدة)              | ✅     | 2/9     |
-| [x] إصلاح memory leak: استخدام useRef بدل useState للـ channel            | ✅     | 2/9     |
+| [x] إزالة Double Polling الزائد (كان يستهلك موارد بلا فائدة)             | ✅     | 2/9     |
+| [x] إصلاح memory leak: استخدام useRef بدل useState للـ channel           | ✅     | 2/9     |
 | [x] تحديث PushNotificationProvider للأصوات حسب نوع الإشعار               | ✅     | 2/9     |
 | [x] تحديث SoundTestDebug لاختبار صوت order-update                        | ✅     | 2/9     |
 
@@ -465,14 +466,14 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ### مشاكل يجب مراقبتها بعد النشر
 
-| المشكلة                              | الحل المقترح                                      | الحالة |
-| ------------------------------------ | ------------------------------------------------- | ------ |
-| Double polling في الإشعارات          | إزالة الـ polling الزائد في `useNotifications.ts` | ✅ تم  |
-| Supabase client creation متكرر       | استخدام singleton pattern                         | ⬜     |
-| Memory leak محتمل في channel cleanup | استخدام useRef بدل state للـ channel              | ✅ تم  |
+| المشكلة                              | الحل المقترح                                      | الحالة  |
+| ------------------------------------ | ------------------------------------------------- | ------- |
+| Double polling في الإشعارات          | إزالة الـ polling الزائد في `useNotifications.ts` | ✅ تم   |
+| Supabase client creation متكرر       | استخدام singleton pattern                         | ⬜      |
+| Memory leak محتمل في channel cleanup | استخدام useRef بدل state للـ channel              | ✅ تم   |
 | Edge Functions غير منشورة            | نشرها وربطها بـ database webhooks                 | ⚠️ جزئي |
-| لا صوت عند تغيير حالة الطلب          | إضافة صوت order-update + إصلاح polling            | ✅ تم  |
-| SMS/WhatsApp notifications           | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة | ⬜     |
+| لا صوت عند تغيير حالة الطلب          | إضافة صوت order-update + إصلاح polling            | ✅ تم   |
+| SMS/WhatsApp notifications           | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة | ⬜      |
 
 ### ملفات مرجعية
 
@@ -494,4 +495,4 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | 2026-02-08 | اعتماد الخطة + إضافة ملاحظات المراجعة (Screenshots, Data Safety)             | Owner  |
 | 2026-02-08 | تنفيذ المرحلة 0 بالكامل (أمان Firebase, jspdf, test accounts, RBAC)          | Claude |
 | 2026-02-08 | تنفيذ المرحلة 1 بالكامل (AudioManager, VAPID, notifications, preferences UI) | Claude |
-| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync | Claude |
+| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync           | Claude |

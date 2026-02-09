@@ -109,9 +109,12 @@ export function useNotifications() {
         ) {
           // Find all new notifications that arrived since last poll
           const newNotifications = newData.filter(
-            (n) => !n.is_read && new Date(n.created_at) > new Date(
-              newData.find((x) => x.id === latestNotificationIdRef.current)?.created_at || 0
-            )
+            (n) =>
+              !n.is_read &&
+              new Date(n.created_at) >
+                new Date(
+                  newData.find((x) => x.id === latestNotificationIdRef.current)?.created_at || 0
+                )
           );
 
           if (newNotifications.length > 0) {
