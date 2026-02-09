@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Volume2, Bell, ShoppingBag, Tag } from 'lucide-react';
+import { Volume2, Bell, ShoppingBag, Tag, Package } from 'lucide-react';
 import { getAudioManager } from '@/lib/audio/audio-manager';
 import type { SoundType } from '@/lib/audio/audio-manager';
 
@@ -53,6 +53,16 @@ export function SoundTestDebug() {
         >
           <Bell className="w-4 h-4 text-blue-600" />
           <span>Test General Alert</span>
+        </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full justify-start gap-2 border-orange-300 hover:bg-orange-50"
+          onClick={() => playSound('order-update', 'Order Status Update')}
+        >
+          <Package className="w-4 h-4 text-orange-600" />
+          <span>Test Order Update</span>
         </Button>
 
         <Button

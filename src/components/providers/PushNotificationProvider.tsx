@@ -89,8 +89,17 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
         setToasts((prev) => prev.filter((t) => t.id !== toast.id));
       }, 5000);
 
-      // Play notification sound via centralized AudioManager
-      getAudioManager().play('notification');
+      // Play the appropriate sound based on FCM notification type
+      const notifType = payload.data?.type || '';
+      if (notifType === 'new_order') {
+        getAudioManager().play('new-order');
+      } else if (notifType === 'order_update') {
+        getAudioManager().play('order-update');
+      } else if (notifType === 'custom_order' || notifType === 'CUSTOM_ORDER_PRICED') {
+        getAudioManager().play('custom-order');
+      } else {
+        getAudioManager().play('notification');
+      }
     });
 
     return unsubscribe;

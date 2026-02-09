@@ -4,10 +4,36 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { setAppBadge, clearAppBadge } from '@/hooks/useBadge';
-import { getAudioManager } from '@/lib/audio/audio-manager';
+import { getAudioManager, type SoundType } from '@/lib/audio/audio-manager';
 import type { User, RealtimeChannel } from '@supabase/supabase-js';
 
-const playNotificationSound = (type: 'notification' | 'new-order' = 'notification') => {
+/**
+ * Determine the appropriate sound to play based on notification type.
+ * Order status changes get 'order-update' sound, custom orders get 'custom-order',
+ * and everything else gets the default 'notification' sound.
+ */
+function getSoundForNotificationType(type: string): SoundType {
+  // Order status change notifications (from DB trigger: 'order_' + status)
+  if (
+    type === 'order_accepted' ||
+    type === 'order_preparing' ||
+    type === 'order_ready' ||
+    type === 'order_out_for_delivery' ||
+    type === 'order_delivered'
+  ) {
+    return 'order-update';
+  }
+
+  // Custom order notifications
+  if (type === 'CUSTOM_ORDER_PRICED' || type === 'custom_order_priced') {
+    return 'custom-order';
+  }
+
+  // Default notification sound for everything else
+  return 'notification';
+}
+
+const playNotificationSound = (type: SoundType = 'notification') => {
   getAudioManager().play(type);
 };
 
@@ -43,10 +69,20 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
-  const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
-  // Load initial notifications
-  const loadNotifications = useCallback(async (userId: string) => {
+  // Use refs to avoid stale closures and memory leaks
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  // Track the latest notification ID to detect new ones during polling
+  const latestNotificationIdRef = useRef<string | null>(null);
+  // Track if initial load is done (don't play sound on first load)
+  const initialLoadDoneRef = useRef(false);
+
+  /**
+   * Load notifications from the database.
+   * If detectNew is true, compares with current latest ID and plays sound for new notifications.
+   */
+  const loadNotifications = useCallback(async (userId: string, detectNew = false) => {
     const supabase = createClient();
 
     try {
@@ -58,25 +94,59 @@ export function useNotifications() {
         .limit(50);
 
       if (error) {
-        console.error('Error loading notifications:', error);
+        console.error('[Notifications] Error loading:', error);
         return;
       }
 
-      setNotifications(data || []);
-      setUnreadCount(data?.filter((n) => !n.is_read).length || 0);
+      const newData = data || [];
+
+      // Detect new notifications during polling and play sound
+      if (detectNew && initialLoadDoneRef.current && newData.length > 0) {
+        const latestFromServer = newData[0];
+        if (
+          latestNotificationIdRef.current &&
+          latestFromServer.id !== latestNotificationIdRef.current
+        ) {
+          // Find all new notifications that arrived since last poll
+          const newNotifications = newData.filter(
+            (n) => !n.is_read && new Date(n.created_at) > new Date(
+              newData.find((x) => x.id === latestNotificationIdRef.current)?.created_at || 0
+            )
+          );
+
+          if (newNotifications.length > 0) {
+            // Play the most appropriate sound for the newest notification
+            const soundType = getSoundForNotificationType(newNotifications[0].type);
+            playNotificationSound(soundType);
+          }
+        }
+      }
+
+      // Update the latest notification ID reference
+      if (newData.length > 0) {
+        latestNotificationIdRef.current = newData[0].id;
+      }
+
+      setNotifications(newData);
+      setUnreadCount(newData.filter((n) => !n.is_read).length);
     } catch (error) {
-      console.error('Error:', error);
+      console.error('[Notifications] Error:', error);
     }
   }, []);
 
   // Subscribe to real-time notifications with error handling
   const subscribeToNotifications = useCallback(
-    async (userId: string) => {
+    (userId: string) => {
       const supabase = createClient();
 
       // Clean up existing subscription
-      if (channel) {
-        supabase.removeChannel(channel);
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
 
       // Create new subscription channel
@@ -95,8 +165,12 @@ export function useNotifications() {
             setNotifications((prev) => [newNotification, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
-            // Play notification sound
-            playNotificationSound('notification');
+            // Update latest notification ID
+            latestNotificationIdRef.current = newNotification.id;
+
+            // Play the appropriate sound based on notification type
+            const soundType = getSoundForNotificationType(newNotification.type);
+            playNotificationSound(soundType);
           }
         )
         .on(
@@ -109,13 +183,12 @@ export function useNotifications() {
           },
           (payload) => {
             const updatedNotification = payload.new as Notification;
-            setNotifications((prev) =>
-              prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
-            );
-            // Recalculate unread count
-            setNotifications((current) => {
-              setUnreadCount(current.filter((n) => !n.is_read).length);
-              return current;
+            setNotifications((prev) => {
+              const updated = prev.map((n) =>
+                n.id === updatedNotification.id ? updatedNotification : n
+              );
+              setUnreadCount(updated.filter((n) => !n.is_read).length);
+              return updated;
             });
           }
         )
@@ -129,15 +202,16 @@ export function useNotifications() {
           },
           (payload) => {
             const deletedId = (payload.old as { id: string }).id;
-            setNotifications((prev) => prev.filter((n) => n.id !== deletedId));
-            setNotifications((current) => {
-              setUnreadCount(current.filter((n) => !n.is_read).length);
-              return current;
+            setNotifications((prev) => {
+              const filtered = prev.filter((n) => n.id !== deletedId);
+              setUnreadCount(filtered.filter((n) => !n.is_read).length);
+              return filtered;
             });
           }
         );
 
       // Subscribe with error handling and polling fallback
+      // The polling fallback uses detectNew=true to play sounds for new notifications
       const unsubscribe = subscribeWithErrorHandling(supabase, newChannel, {
         channelName: `customer-notifications-${userId}`,
         onStatusChange: (status) => {
@@ -147,7 +221,7 @@ export function useNotifications() {
         },
         pollingFallback: {
           callback: async () => {
-            await loadNotifications(userId);
+            await loadNotifications(userId, true);
           },
           intervalMs: 10000, // Poll every 10 seconds when realtime fails
         },
@@ -155,18 +229,14 @@ export function useNotifications() {
         retryDelayMs: 2000,
       });
 
-      setChannel(newChannel);
-
-      return unsubscribe;
+      channelRef.current = newChannel;
+      unsubscribeRef.current = unsubscribe;
     },
-    [channel, loadNotifications]
+    [loadNotifications]
   );
 
-  // Initialize
+  // Initialize - NO double polling, rely on realtime + subscribeWithErrorHandling fallback
   useEffect(() => {
-    let pollingInterval: NodeJS.Timeout | null = null;
-    let currentUserId: string | null = null;
-
     const init = async () => {
       setIsLoading(true);
       const supabase = createClient();
@@ -176,16 +246,10 @@ export function useNotifications() {
 
       if (user) {
         setUser(user);
-        currentUserId = user.id;
-        await loadNotifications(user.id);
+        // Initial load (no sound detection on first load)
+        await loadNotifications(user.id, false);
+        initialLoadDoneRef.current = true;
         subscribeToNotifications(user.id);
-
-        // Add polling fallback every 10 seconds for realtime reliability
-        pollingInterval = setInterval(() => {
-          if (currentUserId) {
-            loadNotifications(currentUserId);
-          }
-        }, 10000);
       }
 
       setIsLoading(false);
@@ -195,12 +259,14 @@ export function useNotifications() {
 
     // Cleanup on unmount
     return () => {
-      if (channel) {
-        const supabase = createClient();
-        supabase.removeChannel(channel);
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
+      if (channelRef.current) {
+        const supabase = createClient();
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -278,7 +344,7 @@ export function useNotifications() {
   // Refresh notifications
   const refresh = async () => {
     if (user) {
-      await loadNotifications(user.id);
+      await loadNotifications(user.id, false);
     }
   };
 
