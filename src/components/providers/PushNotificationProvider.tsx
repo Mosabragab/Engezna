@@ -95,7 +95,15 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
         getAudioManager().play('new-order');
       } else if (notifType === 'order_update') {
         getAudioManager().play('order-update');
-      } else if (notifType === 'custom_order' || notifType === 'CUSTOM_ORDER_PRICED') {
+      } else if (
+        notifType === 'custom_order' ||
+        notifType === 'new_custom_order' ||
+        notifType === 'custom_order_approved' ||
+        notifType === 'custom_order_rejected' ||
+        notifType === 'CUSTOM_ORDER_PRICED' ||
+        notifType === 'CUSTOM_ORDER_EXPIRED' ||
+        notifType === 'CUSTOM_ORDER_PRICING_EXPIRED'
+      ) {
         getAudioManager().play('custom-order');
       } else {
         getAudioManager().play('notification');
