@@ -1,16 +1,9 @@
--- Fix: Customer chat message notification via database trigger
+-- Fix: Use correct column names (name_ar/name_en) instead of non-existent store_name
 --
--- Problem: After security fixes (20260204000001), the INSERT policy on
--- customer_notifications was restricted to service_role only.
--- The OrderChat component was doing a client-side INSERT which is now
--- blocked by RLS. This caused provider->customer message notifications
--- to silently fail.
---
--- Solution: Create a database trigger (SECURITY DEFINER) that automatically
--- inserts a customer notification when a provider sends a message,
--- mirroring the existing notify_provider_new_message() trigger.
+-- The previous migration used p.store_name which doesn't exist in the providers table.
+-- This caused the trigger to fail, which rolled back the entire INSERT transaction,
+-- preventing providers from sending any chat messages.
 
--- Function to create customer notification when provider sends a message
 CREATE OR REPLACE FUNCTION notify_customer_new_message()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -55,10 +48,3 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Create trigger on order_messages table
-DROP TRIGGER IF EXISTS trigger_notify_customer_new_message ON order_messages;
-CREATE TRIGGER trigger_notify_customer_new_message
-  AFTER INSERT ON order_messages
-  FOR EACH ROW
-  EXECUTE FUNCTION notify_customer_new_message();
