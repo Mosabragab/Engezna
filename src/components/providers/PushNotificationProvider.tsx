@@ -33,10 +33,20 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
     pathname?.includes('/orders') ||
     pathname?.includes('/profile');
 
-  // Show prompt after a delay on authenticated pages
+  // Show prompt after a delay on authenticated pages (respects dismissal)
   useEffect(() => {
     if (!isAuthenticatedPage || !isSupported || isLoading) return;
     if (permission !== 'default') return;
+
+    // Check if prompt was recently dismissed before showing
+    const dismissed = localStorage.getItem('notification_prompt_dismissed');
+    if (dismissed) {
+      const dismissedAt = parseInt(dismissed);
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - dismissedAt < sevenDays) {
+        return; // Don't show prompt - was dismissed within 7 days
+      }
+    }
 
     // Show prompt after 5 seconds on authenticated pages
     const timer = setTimeout(() => {

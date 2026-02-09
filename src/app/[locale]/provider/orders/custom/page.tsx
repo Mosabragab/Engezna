@@ -35,13 +35,7 @@ type CustomOrderRequest = {
   original_text: string | null;
   image_urls: string[] | null;
   customer_notes: string | null;
-  status:
-    | 'pending'
-    | 'priced'
-    | 'customer_approved'
-    | 'customer_rejected'
-    | 'expired'
-    | 'cancelled';
+  status: 'pending' | 'priced' | 'approved' | 'rejected' | 'expired' | 'cancelled';
   items_count: number;
   subtotal: number;
   delivery_fee: number;
@@ -85,14 +79,14 @@ const STATUS_CONFIG: Record<
     label_ar: 'تم التسعير',
     label_en: 'Priced',
   },
-  customer_approved: {
+  approved: {
     icon: CheckCircle2,
     color: 'text-green-600',
     bgColor: 'bg-green-50',
     label_ar: 'موافق عليه',
     label_en: 'Approved',
   },
-  customer_rejected: {
+  rejected: {
     icon: XCircle,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
@@ -328,16 +322,14 @@ export default function CustomOrdersListPage() {
     if (filter === 'pending') return req.status === 'pending';
     if (filter === 'priced') return req.status === 'priced';
     if (filter === 'completed')
-      return ['customer_approved', 'customer_rejected', 'expired', 'cancelled'].includes(
-        req.status
-      );
+      return ['approved', 'rejected', 'expired', 'cancelled'].includes(req.status);
     return true;
   });
 
   // Counts
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const pricedCount = requests.filter((r) => r.status === 'priced').length;
-  const approvedCount = requests.filter((r) => r.status === 'customer_approved').length;
+  const approvedCount = requests.filter((r) => r.status === 'approved').length;
 
   // Format time
   const formatTime = (dateStr: string) => {
@@ -538,14 +530,27 @@ export default function CustomOrdersListPage() {
       ) : (
         <div className="space-y-4">
           {filteredRequests.map((request) => {
-            const statusConfig = STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
-            const StatusIcon = statusConfig.icon;
+            // For approved orders with linked order, show the ORDER status (preparing, out_for_delivery, etc)
+            const isApprovedWithOrder = request.status === 'approved' && request.order;
+            const displayStatusConfig = isApprovedWithOrder
+              ? ORDER_STATUS_CONFIG[request.order!.status] || ORDER_STATUS_CONFIG.pending
+              : STATUS_CONFIG[request.status] || STATUS_CONFIG.pending;
+            const DisplayStatusIcon = displayStatusConfig.icon;
             const InputIcon = INPUT_TYPE_ICONS[request.input_type] || FileText;
             const timeRemaining =
               request.status === 'pending' ? getTimeRemaining(request.pricing_expires_at) : null;
 
-            return (
-              <Card key={request.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            // Determine card link destination
+            const cardHref = isApprovedWithOrder
+              ? `/${locale}/provider/orders/${request.order!.id}?from=custom`
+              : request.status === 'pending'
+                ? `/${locale}/provider/orders/custom/${request.id}`
+                : null;
+
+            const cardContent = (
+              <Card
+                className={`overflow-hidden hover:shadow-lg transition-shadow ${cardHref ? 'cursor-pointer' : ''}`}
+              >
                 <CardContent className="p-0">
                   {/* Header */}
                   <div
@@ -554,15 +559,15 @@ export default function CustomOrdersListPage() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${statusConfig.bgColor}`}
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center ${displayStatusConfig.bgColor}`}
                         >
-                          <InputIcon className={`w-4 h-4 ${statusConfig.color}`} />
+                          <InputIcon className={`w-4 h-4 ${displayStatusConfig.color}`} />
                         </div>
                         <div
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.color} ${statusConfig.bgColor}`}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${displayStatusConfig.color} ${displayStatusConfig.bgColor}`}
                         >
-                          <StatusIcon className="w-3.5 h-3.5" />
-                          {isRTL ? statusConfig.label_ar : statusConfig.label_en}
+                          <DisplayStatusIcon className="w-3.5 h-3.5" />
+                          {isRTL ? displayStatusConfig.label_ar : displayStatusConfig.label_en}
                         </div>
                         {timeRemaining && (
                           <span
@@ -662,7 +667,7 @@ export default function CustomOrdersListPage() {
                         {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
                       </div>
                     )}
-                    {request.status === 'customer_approved' && request.order && (
+                    {request.status === 'approved' && request.order && (
                       <div className="space-y-3">
                         {/* Order Execution Status */}
                         {(() => {
@@ -715,6 +720,16 @@ export default function CustomOrdersListPage() {
                 </CardContent>
               </Card>
             );
+
+            // Wrap card in Link if clickable
+            if (cardHref) {
+              return (
+                <Link key={request.id} href={cardHref}>
+                  {cardContent}
+                </Link>
+              );
+            }
+            return <div key={request.id}>{cardContent}</div>;
           })}
         </div>
       )}
