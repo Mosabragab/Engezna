@@ -92,23 +92,7 @@ const STATUS_CONFIG: Record<
     label_ar: 'موافق عليه',
     label_en: 'Approved',
   },
-  // Legacy alias (some old records may still have 'approved')
-  approved: {
-    icon: CheckCircle2,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    label_ar: 'موافق عليه',
-    label_en: 'Approved',
-  },
   customer_rejected: {
-    icon: XCircle,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    label_ar: 'مرفوض',
-    label_en: 'Rejected',
-  },
-  // Legacy alias
-  rejected: {
     icon: XCircle,
     color: 'text-red-600',
     bgColor: 'bg-red-50',
@@ -344,23 +328,16 @@ export default function CustomOrdersListPage() {
     if (filter === 'pending') return req.status === 'pending';
     if (filter === 'priced') return req.status === 'priced';
     if (filter === 'completed')
-      return [
-        'customer_approved',
-        'approved',
-        'customer_rejected',
-        'rejected',
-        'expired',
-        'cancelled',
-      ].includes(req.status);
+      return ['customer_approved', 'customer_rejected', 'expired', 'cancelled'].includes(
+        req.status
+      );
     return true;
   });
 
   // Counts
   const pendingCount = requests.filter((r) => r.status === 'pending').length;
   const pricedCount = requests.filter((r) => r.status === 'priced').length;
-  const approvedCount = requests.filter(
-    (r) => r.status === 'customer_approved' || r.status === 'approved'
-  ).length;
+  const approvedCount = requests.filter((r) => r.status === 'customer_approved').length;
 
   // Format time
   const formatTime = (dateStr: string) => {
@@ -685,70 +662,55 @@ export default function CustomOrdersListPage() {
                         {isRTL ? 'بانتظار موافقة العميل...' : 'Waiting for customer approval...'}
                       </div>
                     )}
-                    {(request.status === 'customer_approved' || request.status === 'approved') &&
-                      request.order && (
-                        <div className="space-y-3">
-                          {/* Order Execution Status */}
-                          {(() => {
-                            const orderStatusConfig =
-                              ORDER_STATUS_CONFIG[request.order.status] ||
-                              ORDER_STATUS_CONFIG.pending;
-                            const OrderStatusIcon = orderStatusConfig.icon;
-                            return (
-                              <div
-                                className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <OrderStatusIcon
-                                    className={`w-4 h-4 ${orderStatusConfig.color}`}
-                                  />
-                                  <span
-                                    className={`text-sm font-medium ${orderStatusConfig.color}`}
-                                  >
-                                    {isRTL
-                                      ? orderStatusConfig.label_ar
-                                      : orderStatusConfig.label_en}
-                                  </span>
-                                </div>
-                                <span className="text-xs text-slate-500">
-                                  #
-                                  {request.order.order_number ||
-                                    request.order.id.slice(0, 8).toUpperCase()}
+                    {request.status === 'customer_approved' && request.order && (
+                      <div className="space-y-3">
+                        {/* Order Execution Status */}
+                        {(() => {
+                          const orderStatusConfig =
+                            ORDER_STATUS_CONFIG[request.order.status] ||
+                            ORDER_STATUS_CONFIG.pending;
+                          const OrderStatusIcon = orderStatusConfig.icon;
+                          return (
+                            <div
+                              className={`flex items-center justify-between p-3 rounded-lg ${orderStatusConfig.bgColor}`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <OrderStatusIcon className={`w-4 h-4 ${orderStatusConfig.color}`} />
+                                <span className={`text-sm font-medium ${orderStatusConfig.color}`}>
+                                  {isRTL ? orderStatusConfig.label_ar : orderStatusConfig.label_en}
                                 </span>
                               </div>
-                            );
-                          })()}
-                          {/* Manage Order Button */}
-                          {!['delivered', 'cancelled', 'rejected'].includes(
-                            request.order.status
-                          ) && (
-                            <Link
-                              href={`/${locale}/provider/orders/${request.order.id}?from=custom`}
-                            >
-                              <Button variant="outline" className="w-full gap-2">
-                                {isRTL ? 'إدارة الطلب' : 'Manage Order'}
-                                {isRTL ? (
-                                  <ArrowLeft className="w-4 h-4" />
-                                ) : (
-                                  <ArrowRight className="w-4 h-4" />
-                                )}
-                              </Button>
-                            </Link>
-                          )}
-                          {/* View Details for completed */}
-                          {['delivered', 'cancelled', 'rejected'].includes(
-                            request.order.status
-                          ) && (
-                            <Link
-                              href={`/${locale}/provider/orders/${request.order.id}?from=custom`}
-                            >
-                              <Button variant="ghost" size="sm" className="w-full text-slate-500">
-                                {isRTL ? 'عرض التفاصيل' : 'View Details'}
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      )}
+                              <span className="text-xs text-slate-500">
+                                #
+                                {request.order.order_number ||
+                                  request.order.id.slice(0, 8).toUpperCase()}
+                              </span>
+                            </div>
+                          );
+                        })()}
+                        {/* Manage Order Button */}
+                        {!['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
+                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
+                            <Button variant="outline" className="w-full gap-2">
+                              {isRTL ? 'إدارة الطلب' : 'Manage Order'}
+                              {isRTL ? (
+                                <ArrowLeft className="w-4 h-4" />
+                              ) : (
+                                <ArrowRight className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </Link>
+                        )}
+                        {/* View Details for completed */}
+                        {['delivered', 'cancelled', 'rejected'].includes(request.order.status) && (
+                          <Link href={`/${locale}/provider/orders/${request.order.id}?from=custom`}>
+                            <Button variant="ghost" size="sm" className="w-full text-slate-500">
+                              {isRTL ? 'عرض التفاصيل' : 'View Details'}
+                            </Button>
+                          </Link>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
