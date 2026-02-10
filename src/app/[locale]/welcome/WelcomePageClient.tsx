@@ -103,20 +103,20 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
       color: 'bg-blue-50 text-blue-600',
     },
     {
-      icon: Star,
-      title_ar: 'تقييمات حقيقية',
-      title_en: 'Real Reviews',
-      description_ar: 'شوف تقييمات العملاء الحقيقية قبل ما تطلب',
-      description_en: 'See real customer reviews before you order',
-      color: 'bg-yellow-50 text-yellow-600',
-    },
-    {
       icon: ShieldCheck,
       title_ar: 'بدون رسوم خدمة',
       title_en: 'No Service Fees',
       description_ar: '0% رسوم خدمة على طلباتك - ادفع فقط ثمن الطلب والتوصيل',
       description_en: '0% service fees on your orders - pay only for your order and delivery',
       color: 'bg-green-50 text-green-600',
+    },
+    {
+      icon: Star,
+      title_ar: 'تقييمات حقيقية',
+      title_en: 'Real Reviews',
+      description_ar: 'شوف تقييمات العملاء الحقيقية قبل ما تطلب',
+      description_en: 'See real customer reviews before you order',
+      color: 'bg-yellow-50 text-yellow-600',
     },
     {
       icon: Truck,
