@@ -39,6 +39,8 @@ import {
   Download,
   Banknote,
   Gift,
+  Mail,
+  Loader2,
 } from 'lucide-react';
 
 interface Settlement {
@@ -154,6 +156,10 @@ export default function SettlementDetailPage() {
     method: 'cash',
     reference: '',
   });
+
+  // Email sending
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -392,6 +398,50 @@ export default function SettlementDetailPage() {
           : 'Settlement deleted successfully and orders reset to eligible'
       );
       router.push(`/${locale}/admin/settlements`);
+    }
+  }
+
+  async function handleSendEmail() {
+    if (!settlement) return;
+
+    setIsSendingEmail(true);
+    setEmailSentSuccess(false);
+
+    try {
+      const response = await fetch('/api/emails/settlement', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settlementId: settlement.id,
+          storeId: settlement.provider_id,
+          amount: settlement.net_balance || settlement.platform_commission || 0,
+          ordersCount: settlement.total_orders,
+          period: `${formatDate(settlement.period_start, locale)} - ${formatDate(settlement.period_end, locale)}`,
+          settlementDate: settlement.created_at,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setEmailSentSuccess(true);
+        alert(locale === 'ar' ? 'تم إرسال البريد الإلكتروني بنجاح' : 'Email sent successfully');
+        setTimeout(() => setEmailSentSuccess(false), 5000);
+      } else {
+        alert(
+          locale === 'ar'
+            ? `فشل إرسال البريد: ${result.error || 'خطأ غير معروف'}`
+            : `Failed to send email: ${result.error || 'Unknown error'}`
+        );
+      }
+    } catch {
+      alert(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء إرسال البريد الإلكتروني'
+          : 'Error sending email'
+      );
+    } finally {
+      setIsSendingEmail(false);
     }
   }
 
@@ -683,10 +733,37 @@ export default function SettlementDetailPage() {
             {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
             <span>{locale === 'ar' ? 'العودة للقائمة' : 'Back to List'}</span>
           </Link>
-          <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            {locale === 'ar' ? 'تصدير PDF' : 'Export PDF'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={handleSendEmail}
+              disabled={isSendingEmail}
+              className={`flex items-center gap-2 ${emailSentSuccess ? 'border-green-300 text-green-600' : ''}`}
+            >
+              {isSendingEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : emailSentSuccess ? (
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              ) : (
+                <Mail className="w-4 h-4" />
+              )}
+              {isSendingEmail
+                ? locale === 'ar'
+                  ? 'جاري الإرسال...'
+                  : 'Sending...'
+                : emailSentSuccess
+                  ? locale === 'ar'
+                    ? 'تم الإرسال'
+                    : 'Sent!'
+                  : locale === 'ar'
+                    ? 'إرسال إيميل للتاجر'
+                    : 'Email Provider'}
+            </Button>
+            <Button variant="outline" onClick={handleExportPDF} className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              {locale === 'ar' ? 'تصدير PDF' : 'Export PDF'}
+            </Button>
+          </div>
         </div>
 
         {/* Settlement Header */}
