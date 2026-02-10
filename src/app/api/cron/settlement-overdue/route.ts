@@ -131,9 +131,7 @@ async function processOverdueSettlements(): Promise<OverdueResult> {
       try {
         // Calculate overdue days
         const periodEnd = new Date(settlement.period_end);
-        const overdueDays = Math.ceil(
-          (Date.now() - periodEnd.getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const overdueDays = Math.ceil((Date.now() - periodEnd.getTime()) / (1000 * 60 * 60 * 24));
 
         // Skip if less than 1 day overdue (grace window)
         if (overdueDays < 1) continue;

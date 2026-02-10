@@ -300,10 +300,7 @@ async function processDailySettlements(): Promise<CronJobResult> {
             console.log(`[Cron] Settlement email sent to ${data.providerEmail} for ${providerId}`);
           } catch (emailErr) {
             // Email failure should not block settlement creation
-            console.error(
-              `[Cron] Failed to send settlement email for ${providerId}:`,
-              emailErr
-            );
+            console.error(`[Cron] Failed to send settlement email for ${providerId}:`, emailErr);
           }
         }
       } catch (err) {
