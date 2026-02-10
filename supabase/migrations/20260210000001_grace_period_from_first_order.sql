@@ -5,62 +5,64 @@
 -- Date: 2026-02-10
 -- Purpose: Change grace period to start from the date of the provider's first
 --          delivered order instead of from provider creation/registration date.
---          Also standardize grace period to 90 days (3 months).
+--          Grace period duration: 90 days (read from commission_settings table).
+-- ============================================================================
+-- TABLES USED:
+--   commission_settings (EXISTS) - stores default_grace_period_days
+--   providers (EXISTS) - grace_period_start, grace_period_end, commission_status
+--   orders (EXISTS) - trigger fires on status change
+--   settlement_audit_log (EXISTS) - audit trail
 -- ============================================================================
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
--- ║ STEP 1: Update platform_settings to 90 days                              ║
+-- ║ STEP 1: Ensure commission_settings has 90 days (should already be set)    ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
-UPDATE platform_settings
-SET value = jsonb_set(
-    jsonb_set(value, '{grace_period_days}', '90'),
-    '{description}', '"3 months (90 days) grace period starting from first order"'
-),
-    updated_at = NOW()
-WHERE key = 'commission';
+UPDATE commission_settings
+SET default_grace_period_days = 90
+WHERE default_grace_period_days != 90;
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
--- ║ STEP 2: Replace the provider creation trigger                             ║
--- ║ New providers are created with commission_status = 'pending_first_order'   ║
--- ║ Grace period starts only when their first order is delivered               ║
+-- ║ STEP 2: Clear grace_period_start/end for providers who haven't had any    ║
+-- ║ delivered orders yet (so the new trigger can set them correctly)           ║
+-- ║ تصفير تواريخ فترة السماح للتجار الذين لم يحصلوا على أي طلب مسلّم بعد     ║
 -- ╚═══════════════════════════════════════════════════════════════════════════╝
 
--- Update the commission_status check constraint to allow 'pending_first_order'
--- First check if the constraint exists and handle accordingly
-DO $$
-BEGIN
-    -- Try to add the new value; if it fails, it's fine (TEXT type has no enum restriction)
-    -- The commission_status is stored as TEXT, so we just need to handle it in code
-    NULL;
-END $$;
+-- Only reset providers who:
+--   1. Are still in grace period
+--   2. Have NO delivered orders at all
+UPDATE providers p
+SET
+    grace_period_start = NULL,
+    grace_period_end = NULL
+WHERE p.commission_status = 'in_grace_period'
+  AND NOT EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.provider_id = p.id
+      AND o.status = 'delivered'
+  );
 
-CREATE OR REPLACE FUNCTION initialize_provider_grace_period()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_settings JSONB;
-BEGIN
-    -- Get platform settings
-    SELECT value INTO v_settings
-    FROM platform_settings
-    WHERE key = 'commission';
-
-    -- Only set if not already set and grace period is enabled
-    IF NEW.grace_period_start IS NULL
-       AND COALESCE((v_settings->>'grace_period_enabled')::boolean, true) THEN
-        -- Do NOT set grace_period_start/end yet - it will be set on first order
-        NEW.commission_status := 'in_grace_period';
-        NEW.commission_rate := 0.00;
-        -- grace_period_start and grace_period_end remain NULL
-        -- They will be set by start_grace_period_on_first_order() trigger
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
+-- For providers who ARE in grace period AND HAVE delivered orders,
+-- reset their grace period to start from their first delivered order
+UPDATE providers p
+SET
+    grace_period_start = first_order.first_delivered_at,
+    grace_period_end = first_order.first_delivered_at + (
+        COALESCE(
+            (SELECT default_grace_period_days FROM commission_settings LIMIT 1),
+            90
+        ) || ' days'
+    )::INTERVAL
+FROM (
+    SELECT
+        o.provider_id,
+        MIN(COALESCE(o.delivered_at, o.updated_at, o.created_at)) AS first_delivered_at
+    FROM orders o
+    WHERE o.status = 'delivered'
+    GROUP BY o.provider_id
+) first_order
+WHERE p.id = first_order.provider_id
+  AND p.commission_status = 'in_grace_period';
 
 -- ╔═══════════════════════════════════════════════════════════════════════════╗
 -- ║ STEP 3: Create trigger to start grace period on first delivered order     ║
@@ -74,7 +76,6 @@ SECURITY DEFINER
 AS $$
 DECLARE
     v_provider RECORD;
-    v_settings JSONB;
     v_grace_days INTEGER;
     v_first_order_date TIMESTAMPTZ;
 BEGIN
@@ -108,12 +109,16 @@ BEGIN
     END IF;
 
     -- This is the first delivered order! Start the grace period now.
-    -- Get grace period duration from platform settings
-    SELECT value INTO v_settings
-    FROM platform_settings
-    WHERE key = 'commission';
+    -- Get grace period duration from commission_settings table
+    SELECT COALESCE(default_grace_period_days, 90)
+    INTO v_grace_days
+    FROM commission_settings
+    LIMIT 1;
 
-    v_grace_days := COALESCE((v_settings->>'grace_period_days')::INTEGER, 90);
+    -- Fallback if no settings row exists
+    IF v_grace_days IS NULL THEN
+        v_grace_days := 90;
+    END IF;
 
     -- Use the delivery date (now) as the start of grace period
     v_first_order_date := COALESCE(NEW.delivered_at, NOW());
@@ -125,7 +130,7 @@ BEGIN
         grace_period_end = v_first_order_date + (v_grace_days || ' days')::INTERVAL
     WHERE id = NEW.provider_id;
 
-    -- Log this event in the audit trail
+    -- Log this event
     INSERT INTO settlement_audit_log (
         order_id, action, admin_name,
         reason, new_value
@@ -271,7 +276,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Recreate the trigger (ensure it fires correctly)
+-- Recreate the trigger
 DROP TRIGGER IF EXISTS trigger_calculate_order_commission ON orders;
 CREATE TRIGGER trigger_calculate_order_commission
     BEFORE INSERT OR UPDATE OF status, subtotal, discount, provider_id, settlement_adjusted
@@ -285,13 +290,13 @@ CREATE TRIGGER trigger_calculate_order_commission
 
 COMMENT ON FUNCTION start_grace_period_on_first_order() IS
 'Starts the grace period when a provider receives their first delivered order.
-Grace period duration is read from platform_settings (default: 90 days).
+Grace period duration is read from commission_settings.default_grace_period_days (default: 90).
 This ensures providers are not penalized during the time before they receive orders.
 
 FLOW:
-1. Provider is created → commission_status = "in_grace_period", grace_period_start = NULL
+1. Provider is created → commission_status = in_grace_period, grace_period_start = NULL
 2. First order is delivered → grace_period_start = NOW(), grace_period_end = NOW() + 90 days
-3. After 90 days → commission_status changes to "active" via update_expired_grace_periods()';
+3. After 90 days → commission_status changes to active via update_expired_grace_periods()';
 
 COMMENT ON FUNCTION calculate_order_commission() IS
 'HYBRID TRIGGER v4: Grace Period Commission Visibility (First Order Based)
@@ -301,13 +306,13 @@ PURPOSE:
 - Store BOTH theoretical and actual commission
 - Allow grace period merchants to see what commission would be
 - Track grace period discount separately
-- Handle providers who havent had their first order yet
+- Handle providers who have not had their first order yet
 
 GRACE PERIOD LOGIC:
-- If commission_status = "in_grace_period" AND grace_period_start IS NULL:
-  → Provider hasnt had first order yet, still in grace period (commission = 0)
-- If commission_status = "in_grace_period" AND order_date < grace_period_end:
-  → Within grace period window (commission = 0)
+- If commission_status = in_grace_period AND grace_period_start IS NULL:
+  Provider has not had first order yet, still in grace period (commission = 0)
+- If commission_status = in_grace_period AND order_date < grace_period_end:
+  Within grace period window (commission = 0)
 - Otherwise: normal commission applies
 
 COLUMNS SET:
