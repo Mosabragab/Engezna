@@ -435,11 +435,7 @@ export default function SettlementDetailPage() {
         );
       }
     } catch {
-      alert(
-        locale === 'ar'
-          ? 'حدث خطأ أثناء إرسال البريد الإلكتروني'
-          : 'Error sending email'
-      );
+      alert(locale === 'ar' ? 'حدث خطأ أثناء إرسال البريد الإلكتروني' : 'Error sending email');
     } finally {
       setIsSendingEmail(false);
     }
