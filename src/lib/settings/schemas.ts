@@ -22,7 +22,7 @@ export const CommissionSettingsSchema = z.object({
     .transform((val) => (typeof val === 'string' ? parseFloat(val) : val))
     .pipe(z.number().min(0).max(100))
     .default(0),
-  default_grace_period_days: z.number().int().min(0).max(365).default(180),
+  default_grace_period_days: z.number().int().min(0).max(365).default(90),
   max_commission_rate: z
     .union([z.number(), z.string()])
     .transform((val) => (typeof val === 'string' ? parseFloat(val) : val))

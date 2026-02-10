@@ -26,7 +26,7 @@ import type {
 export const DEFAULT_COMMISSION_SETTINGS: Omit<CommissionSettings, 'id'> = {
   commission_enabled: false,
   default_commission_rate: 0,
-  default_grace_period_days: 180,
+  default_grace_period_days: 90,
   max_commission_rate: 7,
   service_fee_enabled: false,
   service_fee_amount: 0,

@@ -44,7 +44,7 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
     commission_enabled: false,
     default_commission_rate: 0,
     max_commission_rate: 7,
-    default_grace_period_days: 180,
+    default_grace_period_days: 90,
     service_fee_enabled: false,
     service_fee_amount: 0,
   });
@@ -207,8 +207,8 @@ export function CommissionSettingsTab({ isRTL }: CommissionSettingsTabProps) {
               />
               <p className="text-xs text-gray-500">
                 {isRTL
-                  ? 'الفترة التي لا تُطبق فيها عمولة على التجار الجدد'
-                  : 'Period with no commission for new providers'}
+                  ? 'الفترة التي لا تُطبق فيها عمولة على التجار الجدد (تبدأ من تاريخ أول طلب)'
+                  : 'Period with no commission for new providers (starts from first order date)'}
               </p>
             </div>
 
