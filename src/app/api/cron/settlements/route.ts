@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendSettlementCreatedEmail } from '@/lib/email/resend';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -145,7 +146,8 @@ async function processDailySettlements(): Promise<CronJobResult> {
         providers!inner (
           id,
           name_ar,
-          name_en
+          name_en,
+          email
         )
       `
       )
@@ -186,6 +188,7 @@ async function processDailySettlements(): Promise<CronJobResult> {
       string,
       {
         providerName: string;
+        providerEmail: string | null;
         orders: typeof unsettledOrders;
       }
     >();
@@ -198,6 +201,7 @@ async function processDailySettlements(): Promise<CronJobResult> {
       if (!providerOrders.has(providerId)) {
         providerOrders.set(providerId, {
           providerName: providerData?.name_ar ?? 'Unknown Provider',
+          providerEmail: providerData?.email ?? null,
           orders: [],
         });
       }
@@ -270,6 +274,38 @@ async function processDailySettlements(): Promise<CronJobResult> {
         });
 
         settlementsCreated++;
+
+        // Send settlement created email (non-blocking)
+        if (data.providerEmail && settlement?.id) {
+          try {
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com';
+            const periodStr = `${new Date(periodStart).toLocaleDateString('ar-EG')} - ${new Date(periodEnd).toLocaleDateString('ar-EG')}`;
+            const direction =
+              platformCommission > 0 ? 'provider_pays_platform' : ('balanced' as const);
+
+            await sendSettlementCreatedEmail({
+              to: data.providerEmail,
+              merchantName: data.providerName,
+              storeName: data.providerName,
+              settlementId: settlement.id,
+              period: periodStr,
+              ordersCount: totalOrders,
+              grossRevenue,
+              commission: platformCommission,
+              netBalance: netAmountDue,
+              direction,
+              periodEnd,
+              dashboardUrl: `${siteUrl}/ar/provider/dashboard/settlements`,
+            });
+            console.log(`[Cron] Settlement email sent to ${data.providerEmail} for ${providerId}`);
+          } catch (emailErr) {
+            // Email failure should not block settlement creation
+            console.error(
+              `[Cron] Failed to send settlement email for ${providerId}:`,
+              emailErr
+            );
+          }
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         errors.push(`Error processing provider ${providerId}: ${message}`);

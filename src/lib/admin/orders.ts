@@ -4,6 +4,12 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logAuditAction, logActivity, AUDIT_ACTIONS } from './audit';
+import {
+  sendCustomerOrderShippedEmail,
+  sendCustomerOrderDeliveredEmail,
+  sendCustomerOrderCancelledEmail,
+  sendOrderReceivedEmail,
+} from '@/lib/email/resend';
 import type {
   AdminOrder,
   OrderFilters,
@@ -284,8 +290,8 @@ export async function cancelOrder(
       .select(
         `
         *,
-        customer:profiles(id, full_name, phone),
-        provider:providers(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone, email),
+        provider:providers(id, name_ar, name_en, email, phone)
       `
       )
       .single();
@@ -311,6 +317,11 @@ export async function cancelOrder(
       'order_cancelled',
       `تم إلغاء الطلب #${current.order_number} - السبب: ${reason}`,
       { orderId, orderNumber: current.order_number, reason }
+    );
+
+    // Send cancellation email (non-blocking)
+    sendOrderStatusEmail(updated, 'cancelled').catch((err) =>
+      console.error(`[Orders] Failed to send cancellation email for ${orderId}:`, err)
     );
 
     return { success: true, data: updated as AdminOrder };
@@ -513,8 +524,8 @@ export async function updateOrderStatus(
       .select(
         `
         *,
-        customer:profiles(id, full_name, phone),
-        provider:providers(id, name_ar, name_en)
+        customer:profiles(id, full_name, phone, email),
+        provider:providers(id, name_ar, name_en, email, phone)
       `
       )
       .single();
@@ -533,6 +544,11 @@ export async function updateOrderStatus(
       newData: { status: newStatus },
       reason: note,
     });
+
+    // Send email notifications (non-blocking)
+    sendOrderStatusEmail(updated, newStatus).catch((err) =>
+      console.error(`[Orders] Failed to send status email for ${orderId}:`, err)
+    );
 
     return { success: true, data: updated as AdminOrder };
   } catch (err) {
@@ -618,6 +634,102 @@ export async function getOrderStats(): Promise<
       error: err instanceof Error ? err.message : 'Unknown error',
       errorCode: 'DATABASE_ERROR',
     };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// إرسال إيميلات حالة الطلب - Order Status Email Sending
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Send email notification based on order status change
+ * This is called as a non-blocking fire-and-forget operation
+ */
+async function sendOrderStatusEmail(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  order: any,
+  newStatus: string
+): Promise<void> {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com';
+  const customerEmail = order.customer?.email;
+  const providerEmail = order.provider?.email;
+  const customerName = order.customer?.full_name || 'العميل';
+  const storeName = order.provider?.name_ar || 'المتجر';
+  const orderNumber = order.order_number || order.id;
+
+  switch (newStatus) {
+    case 'confirmed': {
+      // Send "order received" notification to merchant
+      if (providerEmail) {
+        await sendOrderReceivedEmail({
+          to: providerEmail,
+          merchantName: storeName,
+          storeName,
+          orderNumber,
+          customerName,
+          itemsCount: 0, // Not available in this context
+          totalAmount: order.total || 0,
+          deliveryAddress: order.delivery_address || '',
+          orderUrl: `${siteUrl}/ar/provider/dashboard/orders/${order.id}`,
+        });
+        console.log(`[Orders] Order received email sent to merchant ${providerEmail}`);
+      }
+      break;
+    }
+
+    case 'delivering': {
+      // Send "shipped / out for delivery" notification to customer
+      if (customerEmail) {
+        await sendCustomerOrderShippedEmail({
+          to: customerEmail,
+          customerName,
+          orderNumber,
+          storeName,
+          driverName: '',
+          driverPhone: '',
+          estimatedArrival: '',
+          trackingUrl: `${siteUrl}/ar/orders/${order.id}`,
+        });
+        console.log(`[Orders] Shipped email sent to customer ${customerEmail}`);
+      }
+      break;
+    }
+
+    case 'delivered': {
+      // Send "delivered" notification to customer
+      if (customerEmail) {
+        await sendCustomerOrderDeliveredEmail({
+          to: customerEmail,
+          customerName,
+          orderNumber,
+          storeName,
+          deliveryTime: new Date().toLocaleString('ar-EG'),
+          reviewUrl: `${siteUrl}/ar/orders/${order.id}/review`,
+        });
+        console.log(`[Orders] Delivered email sent to customer ${customerEmail}`);
+      }
+      break;
+    }
+
+    case 'cancelled': {
+      // Send "cancelled" notification to customer
+      if (customerEmail) {
+        await sendCustomerOrderCancelledEmail({
+          to: customerEmail,
+          customerName,
+          orderNumber,
+          storeName,
+          cancellationReason: order.cancelled_reason || 'تم إلغاء الطلب',
+          refundMessage:
+            order.payment_method === 'cash'
+              ? 'لا يوجد مبلغ مسترد - الطلب كان عند الاستلام'
+              : 'سيتم مراجعة عملية الاسترداد',
+          reorderUrl: `${siteUrl}/ar/store/${order.provider_id}`,
+        });
+        console.log(`[Orders] Cancellation email sent to customer ${customerEmail}`);
+      }
+      break;
+    }
   }
 }
 
