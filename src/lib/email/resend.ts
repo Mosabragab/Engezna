@@ -23,11 +23,18 @@ const SUPPORT_EMAIL = 'support@engezna.com';
 // Types
 // ============================================================================
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+}
+
 export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -90,6 +97,32 @@ export interface SettlementData {
   settlementId: string;
   settlementDate: string;
   ordersCount: number;
+  period: string;
+  dashboardUrl: string;
+}
+
+export interface SettlementCreatedData {
+  to: string;
+  merchantName: string;
+  storeName: string;
+  settlementId: string;
+  period: string;
+  ordersCount: number;
+  grossRevenue: number;
+  commission: number;
+  netBalance: number;
+  direction: 'platform_pays_provider' | 'provider_pays_platform' | 'balanced';
+  periodEnd: string;
+  dashboardUrl: string;
+}
+
+export interface SettlementOverdueData {
+  to: string;
+  merchantName: string;
+  storeName: string;
+  settlementId: string;
+  amountDue: number;
+  overdueDays: number;
   period: string;
   dashboardUrl: string;
 }
@@ -451,6 +484,7 @@ export async function sendEmail({
   subject,
   html,
   replyTo,
+  attachments,
 }: SendEmailOptions): Promise<SendEmailResult> {
   try {
     const resend = getResendClient();
@@ -460,6 +494,7 @@ export async function sendEmail({
       subject,
       html,
       replyTo: replyTo || SUPPORT_EMAIL,
+      ...(attachments?.length ? { attachments } : {}),
     });
 
     if (error) {
@@ -605,6 +640,64 @@ export async function sendSettlementEmail(data: SettlementData): Promise<SendEma
   };
 
   return sendTemplateEmail('settlement', data.to, variables, `تسوية جديدة: ${formattedAmount}`);
+}
+
+/**
+ * Send settlement created notification to merchant (when a new settlement is generated)
+ */
+export async function sendSettlementCreatedEmail(
+  data: SettlementCreatedData
+): Promise<SendEmailResult> {
+  const directionLabels: Record<string, string> = {
+    platform_pays_provider: 'المنصة تدفع لك',
+    provider_pays_platform: 'مستحقات للمنصة',
+    balanced: 'متوازن',
+  };
+
+  const variables = {
+    merchantName: data.merchantName,
+    storeName: data.storeName,
+    settlementId: data.settlementId,
+    period: data.period,
+    ordersCount: data.ordersCount,
+    grossRevenue: formatCurrency(data.grossRevenue),
+    commission: formatCurrency(data.commission),
+    netBalance: formatCurrency(data.netBalance),
+    direction: directionLabels[data.direction] || data.direction,
+    periodEnd: formatDate(data.periodEnd),
+    dashboardUrl: data.dashboardUrl,
+  };
+
+  return sendTemplateEmail(
+    'settlement-created',
+    data.to,
+    variables,
+    `تسوية جديدة #${data.settlementId} - ${formatCurrency(data.netBalance)}`
+  );
+}
+
+/**
+ * Send settlement overdue reminder to merchant
+ */
+export async function sendSettlementOverdueEmail(
+  data: SettlementOverdueData
+): Promise<SendEmailResult> {
+  const variables = {
+    merchantName: data.merchantName,
+    storeName: data.storeName,
+    settlementId: data.settlementId,
+    amountDue: formatCurrency(data.amountDue),
+    overdueDays: data.overdueDays,
+    period: data.period,
+    dashboardUrl: data.dashboardUrl,
+  };
+
+  return sendTemplateEmail(
+    'settlement-overdue',
+    data.to,
+    variables,
+    `⚠️ تسوية متأخرة #${data.settlementId} - ${formatCurrency(data.amountDue)}`
+  );
 }
 
 /**

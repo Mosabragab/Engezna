@@ -2,7 +2,7 @@
  * Commission Calculation Utility
  *
  * Business Model:
- * - 0% commission for first 3 months (grace period)
+ * - 0% commission for first 3 months (grace period, starts from first order)
  * - Maximum 7% commission after grace period
  * - Governorate-specific rates may apply
  */
@@ -80,24 +80,29 @@ export function calculateCommissionRate(
 
 /**
  * Check if a provider is in their grace period
+ * Grace period starts from the date of the first delivered order.
+ * If grace_period_start is null and status is 'in_grace_period',
+ * the provider hasn't had their first order yet (still in grace period).
  * @param provider - The provider object
  * @returns true if in grace period
  */
 export function isInGracePeriod(provider: Provider): boolean {
   if (provider.commission_status === 'in_grace_period') {
-    return true;
+    // If grace period hasn't started yet (no first order), still in grace period
+    if (!provider.grace_period_start) {
+      return true;
+    }
+
+    // If grace period has started, check if it's still active
+    const now = new Date();
+    const gracePeriodEnd = provider.grace_period_end
+      ? new Date(provider.grace_period_end)
+      : calculateGracePeriodEnd(new Date(provider.grace_period_start));
+
+    return now < gracePeriodEnd;
   }
 
-  if (!provider.grace_period_start) {
-    return false;
-  }
-
-  const now = new Date();
-  const gracePeriodEnd = provider.grace_period_end
-    ? new Date(provider.grace_period_end)
-    : calculateGracePeriodEnd(new Date(provider.grace_period_start));
-
-  return now < gracePeriodEnd;
+  return false;
 }
 
 /**
@@ -114,17 +119,23 @@ export function calculateGracePeriodEnd(startDate: Date): Date {
 /**
  * Get days remaining in grace period
  * @param provider - The provider object
- * @returns Number of days remaining, or null if not in grace period
+ * @returns Number of days remaining, or null if not in grace period.
+ *          Returns GRACE_PERIOD_DAYS if grace period hasn't started yet (no first order).
  */
 export function getGracePeriodDaysRemaining(provider: Provider): number | null {
   if (!isInGracePeriod(provider)) {
     return null;
   }
 
+  // If grace period hasn't started yet (no first order), return full duration
+  if (!provider.grace_period_start) {
+    return COMMISSION_CONFIG.GRACE_PERIOD_DAYS;
+  }
+
   const now = new Date();
   const gracePeriodEnd = provider.grace_period_end
     ? new Date(provider.grace_period_end)
-    : calculateGracePeriodEnd(new Date(provider.grace_period_start!));
+    : calculateGracePeriodEnd(new Date(provider.grace_period_start));
 
   const diffTime = gracePeriodEnd.getTime() - now.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
