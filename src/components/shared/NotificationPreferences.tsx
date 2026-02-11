@@ -207,19 +207,13 @@ export function NotificationPreferences({ role }: NotificationPreferencesProps) 
               </div>
               <button
                 onClick={() => togglePreference(item.key)}
-                className={`relative w-11 h-6 rounded-full transition-colors ${
+                className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
                   preferences[item.key] ? 'bg-primary' : 'bg-slate-300'
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    preferences[item.key]
-                      ? isRTL
-                        ? 'translate-x-[-1.25rem]'
-                        : 'translate-x-[1.25rem]'
-                      : isRTL
-                        ? 'translate-x-[-0.125rem]'
-                        : 'translate-x-[0.125rem]'
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${isRTL ? 'right-0.5' : 'left-0.5'} ${
+                    preferences[item.key] ? (isRTL ? '-translate-x-5' : 'translate-x-5') : ''
                   }`}
                 />
               </button>
@@ -249,19 +243,13 @@ export function NotificationPreferences({ role }: NotificationPreferencesProps) 
           </div>
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${
+            className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
               soundEnabled ? 'bg-primary' : 'bg-slate-300'
             }`}
           >
             <span
-              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                soundEnabled
-                  ? isRTL
-                    ? 'translate-x-[-1.25rem]'
-                    : 'translate-x-[1.25rem]'
-                  : isRTL
-                    ? 'translate-x-[-0.125rem]'
-                    : 'translate-x-[0.125rem]'
+              className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${isRTL ? 'right-0.5' : 'left-0.5'} ${
+                soundEnabled ? (isRTL ? '-translate-x-5' : 'translate-x-5') : ''
               }`}
             />
           </button>
@@ -290,19 +278,13 @@ export function NotificationPreferences({ role }: NotificationPreferencesProps) 
             </div>
             <button
               onClick={() => setQuietHoursEnabled(!quietHoursEnabled)}
-              className={`relative w-11 h-6 rounded-full transition-colors ${
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
                 quietHoursEnabled ? 'bg-primary' : 'bg-slate-300'
               }`}
             >
               <span
-                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  quietHoursEnabled
-                    ? isRTL
-                      ? 'translate-x-[-1.25rem]'
-                      : 'translate-x-[1.25rem]'
-                    : isRTL
-                      ? 'translate-x-[-0.125rem]'
-                      : 'translate-x-[0.125rem]'
+                className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-200 ${isRTL ? 'right-0.5' : 'left-0.5'} ${
+                  quietHoursEnabled ? (isRTL ? '-translate-x-5' : 'translate-x-5') : ''
                 }`}
               />
             </button>
