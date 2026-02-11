@@ -489,35 +489,186 @@ ce5fa31 docs(legal): Add company information to legal pages
 
 ---
 
-## [Earlier Sessions]
+## [Session 15] - 2025-12-07
 
-See `/archive/sessions/SESSION_LOG.md` for detailed logs of Sessions 10-16.
+### Part 1: AI Chat to Order (Ahmad Smart Assistant)
+
+- Notification badge pulse fix (removed animate-pulse)
+- AI Smart Assistant (Ahmad) — GPT-4o-mini + Function Calling (22 tools)
+- ChatFAB for quick access, streaming SSE responses
+- Arabic normalization + synonym expansion for search
+
+### Part 2: Dynamic Footer & Governorate Analytics
+
+- Footer fetches active governorates from Supabase dynamically
+- Expansion analytics tab for super admins (readiness score 0-100%)
+- Smart expansion recommendations per governorate
+
+### Part 3: Settlements System
+
+- Admin settlements page with period selector (daily/3-day/weekly)
+- Provider settlements page with expandable cards
+- CRITICAL: Only includes orders where `status='delivered'` AND `payment_status='completed'`
+
+### Part 4: Smart COD vs Online Settlements
+
+- COD orders: Provider collects cash → owes commission
+- Online orders: Engezna collects → owes payout to provider
+- Net balance calculation with direction indicator
+
+### Part 5: In-App Chat & Notifications
+
+- Provider notifications table with triggers for order events
+- Polling fallback (10s interval) for realtime reliability
+- RTL chat alignment fix (own messages RIGHT, received LEFT)
 
 ---
 
-## Technical Notes
+## [Session 14] - 2025-12-06
 
-### Supabase JOIN Gotcha
+### Financial UX & Security Updates
 
-**NEVER use `!foreign_key` syntax for nullable relations!**
+- Security: Patched CVE-2025-55182 & CVE-2025-66478 (React/Next.js RCE)
+- Finance page: Aligned colors with brand identity
+- Orders page: Added filter counts + direct payment confirmation button
 
-```typescript
-// BAD - Creates INNER JOIN
-.select(`*, category:provider_categories!category_id (...)`)
+---
 
-// GOOD - Separate queries
-const products = await supabase.from('menu_items').select('*')
-const categories = await supabase.from('provider_categories').select('*')
-```
+## [Session 13] - 2025-12-05
 
-### Provider Status Values
+### Notifications & Reviews Fix
 
-- `open` - Store is open
-- `closed` - Store is closed
-- `temporarily_paused` - Temporarily unavailable
-- `on_vacation` - On vacation
-- `incomplete` - Registration incomplete
+- Customer notifications table + automatic triggers on order status change
+- Admin notifications (cancellation, new provider, support ticket, approval request)
+- pg_cron for delayed order checks (every 30 min)
+- Mobile promo code cache fix (hydration tracking for Zustand)
 
-### Order Status Values
+---
 
-`pending`, `accepted`, `preparing`, `ready`, `out_for_delivery`, `delivered`, `cancelled`, `rejected`
+## [Session 12] - 2025-12-05
+
+### Complete Customer Feature Set
+
+- Order cancellation for pending/confirmed/accepted orders
+- Reviews & ratings (customer submission + provider page display + provider management)
+- Favorites feature
+- Real-time notifications (Supabase Realtime + polling fallback)
+- Promo codes (validation, checkout integration, usage tracking)
+
+---
+
+## [Session 11] - 2025-12-04
+
+### Auth, Footer, Partner & Logo Updates
+
+- Reset password page, Provider login page
+- Footer component (4-column layout)
+- Partner landing page with hero section
+- EngeznaLogo unification across all pages (customer/provider/admin)
+
+---
+
+## [Session 10] - 2025-12-03
+
+### Analytics Geographic Filtering Fix
+
+- Fixed admin analytics showing zeros when filtering by governorate
+- Hybrid filtering: match by geographic ID first, fallback to name matching
+
+---
+
+## [Session 9] - 2025-12-03
+
+### Admin Dashboard Zeros Fix
+
+- Fixed provider status values (was using non-existent `pending_review` instead of `pending_approval`)
+- Updated types, statistics, providers, hooks, and pages
+
+---
+
+## [Session 8] - 2025-12-03
+
+### Admin Backend Integration Phase 0
+
+- Admin module types, audit logging, provider/user management functions
+- API routes for providers, users, statistics
+- Provider detail page with approve/reject/suspend actions
+
+---
+
+## [Session 7] - 2025-12-03
+
+### Animated Logo & Documentation
+
+- EngeznaLogo component with RTL reveal animation (Aref Ruqaa font)
+- SplashScreen component
+- Logo text color: #0F172A (Charcoal, NOT brand blue)
+
+---
+
+## [Session 6] - 2025-12-02
+
+### UI Consistency & Offers Carousel
+
+- Unified all settings pages with CustomerLayout
+- Offers carousel rewrite: CSS transform for RTL, auto-scroll every 4s
+
+---
+
+## [Session 5] - 2025-12-02
+
+### City-Based Filtering & AI Assistant
+
+- Provider filtering by customer's selected city
+- AI Smart Assistant (Ahmad) initial implementation
+
+---
+
+## [Session 4] - 2025-12-01
+
+### TypeScript Fixes & Homepage Updates
+
+- Fixed demoOffers field names, Provider interface types
+- Build verification passed
+
+---
+
+## [Session 3] - 2025-12-01
+
+### Customer Journey + PWA Components
+
+- PWA manifest, InstallPrompt component
+- CustomerLayout, CustomerHeader, BottomNavigation
+- 13 shared components (ProviderCard, ProductCard, SearchBar, etc.)
+- Favorites table + hooks
+
+---
+
+## [Session 2] - 2025-12-01
+
+### Advanced Permissions & Storage Bucket
+
+- Supabase Storage bucket (2MB limit, image MIME types)
+- Advanced RBAC + ABAC permission system with escalation rules
+
+---
+
+## [Session 1] - 2025-12-01
+
+### Roles Page Fixes & Documentation Sync
+
+- Fixed permissions not showing in view modal
+- Enabled editing for all roles (including system roles)
+
+---
+
+## [Pre-Session] - 2025-11-25 to 2025-11-30
+
+### Foundation (Weeks 0-4)
+
+- Next.js + Supabase setup, bilingual AR/EN, RTL support
+- Provider browsing, cart, checkout, orders
+- Partner registration, menu management, store hours
+- Admin dashboard, supervisor system, approvals, messaging
+- Brand refresh: Orange → Engezna Blue #009DE0
+- Admin invitation system with token-based auth
