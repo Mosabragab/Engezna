@@ -43,6 +43,8 @@ import {
   X,
   Tag,
   Building2,
+  Landmark,
+  CheckCircle2,
 } from 'lucide-react';
 import { BUSINESS_CATEGORIES } from '@/lib/constants/categories';
 import type { ProviderCategory } from '@/types/database';
@@ -123,6 +125,7 @@ export default function ProviderSettingsPage() {
     | 'custom-orders'
     | 'status'
     | 'team'
+    | 'bank'
     | 'account'
   >('store');
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -147,6 +150,26 @@ export default function ProviderSettingsPage() {
   const [deleteMessage, setDeleteMessage] = useState<{
     type: 'success' | 'error';
     text: string;
+  } | null>(null);
+
+  // Bank details states
+  const [bankName, setBankName] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [iban, setIban] = useState('');
+  const [savingBank, setSavingBank] = useState(false);
+  const [bankMessage, setBankMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
+  // Platform bank details (read-only, from app_settings)
+  const [platformBank, setPlatformBank] = useState<{
+    platform_bank_name?: string;
+    platform_account_holder?: string;
+    platform_account_number?: string;
+    platform_iban?: string;
+    platform_instapay?: string;
+    platform_vodafone_cash?: string;
   } | null>(null);
 
   // Form states
@@ -274,6 +297,30 @@ export default function ProviderSettingsPage() {
       ...DEFAULT_CUSTOM_ORDER_SETTINGS,
       ...(providerData.custom_order_settings || {}),
     });
+
+    // Load bank details
+    setBankName(providerData.bank_name || '');
+    setAccountHolderName(providerData.account_holder_name || '');
+    setAccountNumber(providerData.account_number || '');
+    setIban(providerData.iban || '');
+
+    // Load platform bank details from app_settings
+    const { data: platformInfoSetting } = await supabase
+      .from('app_settings')
+      .select('setting_value')
+      .eq('setting_key', 'platform_info')
+      .single();
+    if (platformInfoSetting?.setting_value) {
+      const info = platformInfoSetting.setting_value as Record<string, string>;
+      setPlatformBank({
+        platform_bank_name: info.platform_bank_name,
+        platform_account_holder: info.platform_account_holder,
+        platform_account_number: info.platform_account_number,
+        platform_iban: info.platform_iban,
+        platform_instapay: info.platform_instapay,
+        platform_vodafone_cash: info.platform_vodafone_cash,
+      });
+    }
 
     setLoading(false);
   }, [locale, router]);
@@ -511,6 +558,51 @@ export default function ProviderSettingsPage() {
     setSavingCustomOrders(false);
   };
 
+  const handleSaveBank = async () => {
+    if (!provider) return;
+
+    setSavingBank(true);
+    setBankMessage(null);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('providers')
+      .update({
+        bank_name: bankName || null,
+        account_holder_name: accountHolderName || null,
+        account_number: accountNumber || null,
+        iban: iban || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', provider.id);
+
+    if (error) {
+      setBankMessage({
+        type: 'error',
+        text: locale === 'ar' ? 'فشل في حفظ البيانات البنكية' : 'Failed to save bank details',
+      });
+    } else {
+      setBankMessage({
+        type: 'success',
+        text: locale === 'ar' ? 'تم حفظ البيانات البنكية بنجاح' : 'Bank details saved successfully',
+      });
+      setTimeout(() => setBankMessage(null), 3000);
+      setProvider((prev) =>
+        prev
+          ? {
+              ...prev,
+              bank_name: bankName || null,
+              account_holder_name: accountHolderName || null,
+              account_number: accountNumber || null,
+              iban: iban || null,
+            }
+          : null
+      );
+    }
+
+    setSavingBank(false);
+  };
+
   const handleToggleStatus = async (newStatus: 'open' | 'closed' | 'temporarily_paused') => {
     if (!provider) return;
 
@@ -669,6 +761,7 @@ export default function ProviderSettingsPage() {
       icon: ClipboardList,
     },
     { key: 'status', label_ar: 'حالة المتجر', label_en: 'Store Status', icon: Power },
+    { key: 'bank', label_ar: 'البيانات البنكية', label_en: 'Bank Details', icon: Landmark },
     { key: 'team', label_ar: 'إدارة الفريق', label_en: 'Team', icon: Users },
     { key: 'account', label_ar: 'الحساب', label_en: 'Account', icon: User },
   ];
@@ -2245,6 +2338,187 @@ export default function ProviderSettingsPage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Bank Details Tab */}
+          {activeTab === 'bank' && (
+            <>
+              {/* Provider Bank Details (editable) */}
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 flex items-center gap-2">
+                    <Landmark className="w-5 h-5" />
+                    {locale === 'ar' ? 'بياناتك البنكية' : 'Your Bank Details'}
+                  </CardTitle>
+                  <p className="text-sm text-slate-500">
+                    {locale === 'ar'
+                      ? 'أضف بياناتك البنكية لاستلام التحويلات المالية من المنصة (طلبات الدفع الإلكتروني)'
+                      : 'Add your bank details to receive transfers from the platform (online payment orders)'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{locale === 'ar' ? 'اسم البنك' : 'Bank Name'}</Label>
+                      <Input
+                        value={bankName}
+                        onChange={(e) => setBankName(e.target.value)}
+                        placeholder={
+                          locale === 'ar'
+                            ? 'مثال: البنك الأهلي المصري'
+                            : 'e.g. National Bank of Egypt'
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{locale === 'ar' ? 'اسم صاحب الحساب' : 'Account Holder Name'}</Label>
+                      <Input
+                        value={accountHolderName}
+                        onChange={(e) => setAccountHolderName(e.target.value)}
+                        placeholder={
+                          locale === 'ar' ? 'الاسم كما في البنك' : 'Name as on bank account'
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{locale === 'ar' ? 'رقم الحساب' : 'Account Number'}</Label>
+                      <Input
+                        value={accountNumber}
+                        onChange={(e) => setAccountNumber(e.target.value)}
+                        dir="ltr"
+                        placeholder="1234567890"
+                        className="font-mono"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>IBAN</Label>
+                      <Input
+                        value={iban}
+                        onChange={(e) => setIban(e.target.value)}
+                        dir="ltr"
+                        placeholder="EG380019000500000002631180002"
+                        className="font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {bankMessage && (
+                    <div
+                      className={`flex items-center gap-2 p-3 rounded-lg ${
+                        bankMessage.type === 'success'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-red-50 text-red-700'
+                      }`}
+                    >
+                      {bankMessage.type === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4" />
+                      )}
+                      <span className="text-sm">{bankMessage.text}</span>
+                    </div>
+                  )}
+
+                  <Button className="w-full" onClick={handleSaveBank} disabled={savingBank}>
+                    {savingBank ? (
+                      <Loader2 className="w-4 h-4 animate-spin me-2" />
+                    ) : (
+                      <Save className="w-4 h-4 me-2" />
+                    )}
+                    {locale === 'ar' ? 'حفظ البيانات البنكية' : 'Save Bank Details'}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Platform Bank Details (read-only) */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader>
+                  <CardTitle className="text-blue-900 flex items-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    {locale === 'ar' ? 'بيانات حساب المنصة' : 'Platform Account Details'}
+                  </CardTitle>
+                  <p className="text-sm text-blue-700">
+                    {locale === 'ar'
+                      ? 'قم بتحويل عمولة المنصة من طلبات الكاش إلى أحد الحسابات التالية'
+                      : 'Transfer platform commission from COD orders to one of these accounts'}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {platformBank &&
+                  (platformBank.platform_bank_name ||
+                    platformBank.platform_instapay ||
+                    platformBank.platform_vodafone_cash) ? (
+                    <div className="space-y-3">
+                      {platformBank.platform_bank_name && (
+                        <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                          <span className="text-sm text-blue-700">
+                            {locale === 'ar' ? 'البنك' : 'Bank'}
+                          </span>
+                          <span className="text-sm font-medium text-blue-900">
+                            {platformBank.platform_bank_name}
+                          </span>
+                        </div>
+                      )}
+                      {platformBank.platform_account_holder && (
+                        <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                          <span className="text-sm text-blue-700">
+                            {locale === 'ar' ? 'صاحب الحساب' : 'Account Holder'}
+                          </span>
+                          <span className="text-sm font-medium text-blue-900">
+                            {platformBank.platform_account_holder}
+                          </span>
+                        </div>
+                      )}
+                      {platformBank.platform_account_number && (
+                        <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                          <span className="text-sm text-blue-700">
+                            {locale === 'ar' ? 'رقم الحساب' : 'Account No.'}
+                          </span>
+                          <span className="text-sm font-mono font-medium text-blue-900">
+                            {platformBank.platform_account_number}
+                          </span>
+                        </div>
+                      )}
+                      {platformBank.platform_iban && (
+                        <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                          <span className="text-sm text-blue-700">IBAN</span>
+                          <span className="text-sm font-mono font-medium text-blue-900">
+                            {platformBank.platform_iban}
+                          </span>
+                        </div>
+                      )}
+                      {platformBank.platform_instapay && (
+                        <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                          <span className="text-sm text-blue-700">InstaPay</span>
+                          <span className="text-sm font-mono font-medium text-blue-900">
+                            {platformBank.platform_instapay}
+                          </span>
+                        </div>
+                      )}
+                      {platformBank.platform_vodafone_cash && (
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-blue-700">
+                            {locale === 'ar' ? 'فودافون كاش' : 'Vodafone Cash'}
+                          </span>
+                          <span className="text-sm font-mono font-medium text-blue-900">
+                            {platformBank.platform_vodafone_cash}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4">
+                      <Landmark className="w-10 h-10 mx-auto mb-2 text-blue-300" />
+                      <p className="text-sm text-blue-600">
+                        {locale === 'ar'
+                          ? 'لم يتم إضافة بيانات حساب المنصة بعد'
+                          : 'Platform account details not available yet'}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
 
           {/* Team Management Tab */}

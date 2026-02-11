@@ -65,6 +65,13 @@ export const DEFAULT_PLATFORM_INFO: PlatformInfo = {
   default_currency: 'EGP',
   default_language: 'ar',
   timezone: 'Africa/Cairo',
+  // Platform bank details (admin fills these)
+  platform_bank_name: '',
+  platform_account_holder: '',
+  platform_account_number: '',
+  platform_iban: '',
+  platform_instapay: '',
+  platform_vodafone_cash: '',
 };
 
 // ============================================================================
