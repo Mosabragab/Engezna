@@ -240,9 +240,9 @@ export async function approveProvider(
       };
     }
 
-    // Update provider
+    // Update provider — set to 'open' so provider is visible to customers
     const updateData: Partial<AdminProvider> = {
-      status: 'approved' as ProviderStatus,
+      status: 'open' as ProviderStatus,
       rejection_reason: null,
       updated_at: new Date().toISOString(),
     };
@@ -275,7 +275,7 @@ export async function approveProvider(
       resourceId: providerId,
       resourceName: current.name_ar,
       oldData: { status: current.status, commission_rate: current.commission_rate },
-      newData: { status: 'approved', commission_rate: updateData.commission_rate },
+      newData: { status: 'open', commission_rate: updateData.commission_rate },
     });
 
     // Log activity
@@ -494,8 +494,8 @@ export async function reactivateProvider(
       return { success: false, error: 'Provider not found', errorCode: 'NOT_FOUND' };
     }
 
-    // Can only reactivate suspended or temporarily paused providers
-    const reactivatableStatuses = ['suspended', 'temporarily_paused'];
+    // Can only reactivate temporarily paused providers
+    const reactivatableStatuses = ['temporarily_paused'];
     if (!reactivatableStatuses.includes(current.status)) {
       return {
         success: false,
@@ -568,11 +568,11 @@ export async function updateProviderCommission(
   commissionRate: number
 ): Promise<OperationResult<AdminProvider>> {
   try {
-    // Validate commission rate
-    if (commissionRate < 0 || commissionRate > 100) {
+    // Validate commission rate (max 7% per business rules)
+    if (commissionRate < 0 || commissionRate > 7) {
       return {
         success: false,
-        error: 'Commission rate must be between 0 and 100',
+        error: 'Commission rate must be between 0 and 7',
         errorCode: 'VALIDATION_ERROR',
       };
     }

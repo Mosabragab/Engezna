@@ -36,7 +36,11 @@ import {
   AlertTriangle,
   AlertCircle,
   BadgeCheck,
+  Landmark,
+  Truck,
+  Timer,
 } from 'lucide-react';
+import { BUSINESS_CATEGORIES } from '@/lib/constants/categories';
 
 // Business hours structure (JSONB in database)
 interface BusinessHours {
@@ -80,6 +84,20 @@ interface Provider {
   updated_at: string;
   governorate?: { id: string; name_ar: string; name_en: string } | null;
   city?: { id: string; name_ar: string; name_en: string } | null;
+  // Grace period & commission
+  commission_status: string | null;
+  grace_period_start: string | null;
+  grace_period_end: string | null;
+  // Bank details
+  bank_name: string | null;
+  account_holder_name: string | null;
+  account_number: string | null;
+  iban: string | null;
+  // Delivery & pickup
+  supports_pickup: boolean;
+  pickup_instructions_ar: string | null;
+  pickup_instructions_en: string | null;
+  operation_mode: string | null;
 }
 
 interface Order {
@@ -111,6 +129,8 @@ export default function ProviderDetailPage() {
     totalCommission: 0,
     completedOrders: 0,
     pendingOrders: 0,
+    liveRating: 0,
+    totalReviews: 0,
   });
 
   // Modal states
@@ -130,10 +150,18 @@ export default function ProviderDetailPage() {
   // Define loadProviderStats first (called by loadProvider)
   const loadProviderStats = useCallback(async () => {
     const supabase = createClient();
-    const { data: orders } = await supabase
-      .from('orders')
-      .select('status, total, platform_commission')
-      .eq('provider_id', providerId);
+
+    // Fetch orders and reviews in parallel
+    const [ordersResult, reviewsResult] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('status, total, platform_commission')
+        .eq('provider_id', providerId),
+      supabase.from('reviews').select('rating').eq('provider_id', providerId),
+    ]);
+
+    const orders = ordersResult.data;
+    const reviews = reviewsResult.data;
 
     if (orders) {
       const completed = orders.filter((o) => o.status === 'delivered');
@@ -141,11 +169,22 @@ export default function ProviderDetailPage() {
         ['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(o.status)
       );
 
+      // Calculate live rating from reviews
+      let liveRating = 0;
+      const totalReviews = reviews?.length || 0;
+      if (reviews && totalReviews > 0) {
+        liveRating =
+          Math.round((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalReviews) * 10) /
+          10;
+      }
+
       setStats({
         totalRevenue: completed.reduce((sum, o) => sum + (o.total || 0), 0),
         totalCommission: completed.reduce((sum, o) => sum + (o.platform_commission || 0), 0),
         completedOrders: completed.length,
         pendingOrders: pending.length,
+        liveRating,
+        totalReviews,
       });
     }
   }, [providerId]);
@@ -153,24 +192,41 @@ export default function ProviderDetailPage() {
   // Define loadRecentOrders second (called by loadProvider)
   const loadRecentOrders = useCallback(async () => {
     const supabase = createClient();
+
+    // Query orders without JOIN (customer_id is nullable — separate query per project rules)
     const { data: orders } = await supabase
       .from('orders')
-      .select(
-        `
-        id,
-        order_number,
-        status,
-        total,
-        created_at,
-        customer:users!customer_id(full_name)
-      `
-      )
+      .select('id, order_number, status, total, created_at, customer_id')
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false })
       .limit(5);
 
-    if (orders) {
-      setRecentOrders(orders as unknown as Order[]);
+    if (orders && orders.length > 0) {
+      // Fetch customer names separately from profiles
+      const customerIds = [...new Set(orders.map((o) => o.customer_id).filter(Boolean))];
+      let profileMap = new Map<string, string>();
+
+      if (customerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', customerIds);
+
+        profileMap = new Map(profiles?.map((p) => [p.id, p.full_name]) || []);
+      }
+
+      setRecentOrders(
+        orders.map((o) => ({
+          id: o.id,
+          order_number: o.order_number,
+          status: o.status,
+          total: o.total,
+          created_at: o.created_at,
+          customer: o.customer_id ? { full_name: profileMap.get(o.customer_id) || '' } : undefined,
+        }))
+      );
+    } else {
+      setRecentOrders([]);
     }
   }, [providerId]);
 
@@ -362,8 +418,6 @@ export default function ProviderDetailPage() {
         return 'bg-yellow-100 text-yellow-700';
       case 'on_vacation':
         return 'bg-blue-100 text-blue-700';
-      case 'suspended':
-        return 'bg-red-100 text-red-700';
       case 'rejected':
         return 'bg-red-100 text-red-700';
       default:
@@ -379,20 +433,17 @@ export default function ProviderDetailPage() {
       incomplete: { ar: 'غير مكتمل', en: 'Incomplete' },
       temporarily_paused: { ar: 'متوقف مؤقتاً', en: 'Paused' },
       on_vacation: { ar: 'في إجازة', en: 'On Vacation' },
-      suspended: { ar: 'موقوف', en: 'Suspended' },
       rejected: { ar: 'مرفوض', en: 'Rejected' },
     };
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
   };
 
   const getCategoryLabel = (category: string) => {
-    const labels: Record<string, { ar: string; en: string }> = {
-      restaurant: { ar: 'مطعم', en: 'Restaurant' },
-      coffee_shop: { ar: 'كافيه', en: 'Coffee Shop' },
-      grocery: { ar: 'بقالة', en: 'Grocery' },
-      vegetables_fruits: { ar: 'خضار وفواكه', en: 'Vegetables & Fruits' },
-    };
-    return labels[category]?.[locale === 'ar' ? 'ar' : 'en'] || category;
+    const cat = BUSINESS_CATEGORIES[category as keyof typeof BUSINESS_CATEGORIES];
+    if (cat) {
+      return locale === 'ar' ? cat.name_ar : cat.name_en;
+    }
+    return category;
   };
 
   const getOrderStatusColor = (status: string) => {
@@ -630,7 +681,7 @@ export default function ProviderDetailPage() {
                   <PauseCircle className="w-4 h-4 me-2" />
                   {locale === 'ar' ? 'إيقاف مؤقت' : 'Suspend'}
                 </Button>
-              ) : provider.status === 'temporarily_paused' || provider.status === 'suspended' ? (
+              ) : provider.status === 'temporarily_paused' ? (
                 <Button
                   onClick={() => openActionModal('reactivate')}
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -719,9 +770,9 @@ export default function ProviderDetailPage() {
               </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
-              {formatNumber(provider.rating || 0, locale)}
+              {formatNumber(stats.liveRating, locale)}
               <span className="text-sm text-slate-400 font-normal ms-1">
-                ({formatNumber(provider.total_reviews || 0, locale)})
+                ({formatNumber(stats.totalReviews, locale)} {locale === 'ar' ? 'تقييم' : 'reviews'})
               </span>
             </p>
           </div>
@@ -734,7 +785,7 @@ export default function ProviderDetailPage() {
               </span>
             </div>
             <p className="text-2xl font-bold text-slate-900">
-              {formatNumber(provider.total_orders || 0, locale)}
+              {formatNumber(stats.completedOrders, locale)}
             </p>
             <p className="text-xs text-slate-500">
               {formatNumber(stats.pendingOrders, locale)}{' '}
@@ -898,6 +949,201 @@ export default function ProviderDetailPage() {
             )}
           </div>
         </div>
+
+        {/* Grace Period & Commission Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Timer className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-slate-900">
+                {locale === 'ar' ? 'فترة السماح والعمولة' : 'Grace Period & Commission'}
+              </h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'حالة العمولة' : 'Commission Status'}
+                </span>
+                <span
+                  className={`text-sm px-3 py-1 rounded-full ${
+                    provider.commission_status === 'in_grace_period'
+                      ? 'bg-green-100 text-green-700'
+                      : provider.commission_status === 'active'
+                        ? 'bg-blue-100 text-blue-700'
+                        : provider.commission_status === 'exempt'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {provider.commission_status === 'in_grace_period'
+                    ? locale === 'ar'
+                      ? 'في فترة السماح'
+                      : 'In Grace Period'
+                    : provider.commission_status === 'active'
+                      ? locale === 'ar'
+                        ? 'نشط'
+                        : 'Active'
+                      : provider.commission_status === 'exempt'
+                        ? locale === 'ar'
+                          ? 'معفي'
+                          : 'Exempt'
+                        : locale === 'ar'
+                          ? 'غير محدد'
+                          : 'Not Set'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'بداية فترة السماح' : 'Grace Period Start'}
+                </span>
+                <span className="text-sm text-slate-700">
+                  {provider.grace_period_start
+                    ? formatDate(provider.grace_period_start, locale)
+                    : locale === 'ar'
+                      ? 'لم تبدأ بعد'
+                      : 'Not started'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'نهاية فترة السماح' : 'Grace Period End'}
+                </span>
+                <span className="text-sm text-slate-700">
+                  {provider.grace_period_end
+                    ? formatDate(provider.grace_period_end, locale)
+                    : locale === 'ar'
+                      ? 'غير محدد'
+                      : 'Not set'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center py-2">
+                <span className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'نسبة العمولة' : 'Commission Rate'}
+                </span>
+                <span className="text-sm font-medium text-slate-700">
+                  {provider.commission_rate}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Bank Details */}
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Landmark className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-slate-900">
+                {locale === 'ar' ? 'البيانات البنكية' : 'Bank Details'}
+              </h2>
+            </div>
+            {provider.bank_name || provider.iban || provider.account_number ? (
+              <div className="space-y-3">
+                {provider.bank_name && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span className="text-sm text-slate-500">
+                      {locale === 'ar' ? 'اسم البنك' : 'Bank Name'}
+                    </span>
+                    <span className="text-sm text-slate-700">{provider.bank_name}</span>
+                  </div>
+                )}
+                {provider.account_holder_name && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span className="text-sm text-slate-500">
+                      {locale === 'ar' ? 'اسم صاحب الحساب' : 'Account Holder'}
+                    </span>
+                    <span className="text-sm text-slate-700">{provider.account_holder_name}</span>
+                  </div>
+                )}
+                {provider.account_number && (
+                  <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span className="text-sm text-slate-500">
+                      {locale === 'ar' ? 'رقم الحساب' : 'Account Number'}
+                    </span>
+                    <span className="text-sm text-slate-700 font-mono">
+                      {provider.account_number}
+                    </span>
+                  </div>
+                )}
+                {provider.iban && (
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-slate-500">IBAN</span>
+                    <span className="text-sm text-slate-700 font-mono">{provider.iban}</span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Landmark className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm text-slate-500">
+                  {locale === 'ar' ? 'لم يتم إضافة بيانات بنكية' : 'No bank details added'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Delivery & Pickup Settings */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Truck className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-slate-900">
+              {locale === 'ar' ? 'إعدادات التوصيل والاستلام' : 'Delivery & Pickup Settings'}
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">
+                {locale === 'ar' ? 'وضع التشغيل' : 'Operation Mode'}
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {provider.operation_mode === 'menu'
+                  ? locale === 'ar'
+                    ? 'قائمة طعام'
+                    : 'Menu'
+                  : provider.operation_mode === 'custom_order'
+                    ? locale === 'ar'
+                      ? 'طلبات مخصصة'
+                      : 'Custom Order'
+                    : provider.operation_mode === 'both'
+                      ? locale === 'ar'
+                        ? 'كلاهما'
+                        : 'Both'
+                      : locale === 'ar'
+                        ? 'غير محدد'
+                        : 'Not set'}
+              </p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">
+                {locale === 'ar' ? 'الاستلام من المتجر' : 'Pickup Available'}
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {provider.supports_pickup
+                  ? locale === 'ar'
+                    ? 'متاح'
+                    : 'Yes'
+                  : locale === 'ar'
+                    ? 'غير متاح'
+                    : 'No'}
+              </p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">
+                {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {formatCurrency(provider.delivery_fee, locale)}
+              </p>
+            </div>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 mb-1">
+                {locale === 'ar' ? 'الحد الأدنى للطلب' : 'Min Order'}
+              </p>
+              <p className="text-sm font-medium text-slate-700">
+                {formatCurrency(provider.min_order_amount, locale)}
+              </p>
+            </div>
+          </div>
+        </div>
       </main>
 
       {/* Action Modal */}
@@ -1002,7 +1248,7 @@ export default function ProviderDetailPage() {
                 value={newCommissionRate}
                 onChange={(e) => setNewCommissionRate(Number(e.target.value))}
                 min={0}
-                max={100}
+                max={7}
                 step={0.5}
                 className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
               />
