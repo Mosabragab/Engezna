@@ -75,6 +75,13 @@ export const PlatformInfoSchema = z.object({
   default_currency: z.enum(['EGP', 'USD']).default('EGP'),
   default_language: z.enum(['ar', 'en']).default('ar'),
   timezone: z.string().default('Africa/Cairo'),
+  // Platform bank details (for COD commission transfers from providers)
+  platform_bank_name: z.string().optional(),
+  platform_account_holder: z.string().optional(),
+  platform_account_number: z.string().optional(),
+  platform_iban: z.string().optional(),
+  platform_instapay: z.string().optional(),
+  platform_vodafone_cash: z.string().optional(),
 });
 
 export type PlatformInfo = z.infer<typeof PlatformInfoSchema>;

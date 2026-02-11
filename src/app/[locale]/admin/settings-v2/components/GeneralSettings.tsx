@@ -23,6 +23,9 @@ import {
   AlertCircle,
   CheckCircle2,
   MessageCircle,
+  Landmark,
+  CreditCard,
+  Smartphone,
 } from 'lucide-react';
 import { usePlatformInfo, useUpdateAppSetting, useAppSettingsChangelog } from '@/hooks/useSettings';
 import { SETTING_KEYS, type PlatformInfo } from '@/lib/settings';
@@ -51,6 +54,12 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
     default_currency: 'EGP',
     default_language: 'ar',
     timezone: 'Africa/Cairo',
+    platform_bank_name: '',
+    platform_account_holder: '',
+    platform_account_number: '',
+    platform_iban: '',
+    platform_instapay: '',
+    platform_vodafone_cash: '',
   });
 
   // Sync form data with fetched settings
@@ -245,6 +254,106 @@ export function GeneralSettingsTab({ isRTL }: GeneralSettingsTabProps) {
                 <option value="Asia/Dubai">Asia/Dubai (GMT+4)</option>
                 <option value="Europe/London">Europe/London (GMT+0)</option>
               </select>
+            </div>
+          </div>
+
+          {/* Platform Bank Details */}
+          <div className="pt-4 border-t">
+            <h3
+              className={`text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}
+            >
+              <Landmark className="w-5 h-5 text-primary" />
+              {isRTL ? 'البيانات البنكية للمنصة' : 'Platform Bank Details'}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {isRTL
+                ? 'بيانات الحساب البنكي للمنصة التي سيحول عليها التجار عمولة طلبات الكاش'
+                : 'Platform bank account where providers transfer COD commission payments'}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="platform_bank_name" className="flex items-center gap-2">
+                  <Landmark className="w-4 h-4 text-gray-500" />
+                  {isRTL ? 'اسم البنك' : 'Bank Name'}
+                </Label>
+                <Input
+                  id="platform_bank_name"
+                  value={formData.platform_bank_name || ''}
+                  onChange={(e) => handleChange('platform_bank_name', e.target.value)}
+                  placeholder={isRTL ? 'مثال: البنك الأهلي المصري' : 'e.g. National Bank of Egypt'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="platform_account_holder" className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-gray-500" />
+                  {isRTL ? 'اسم صاحب الحساب' : 'Account Holder Name'}
+                </Label>
+                <Input
+                  id="platform_account_holder"
+                  value={formData.platform_account_holder || ''}
+                  onChange={(e) => handleChange('platform_account_holder', e.target.value)}
+                  placeholder={
+                    isRTL ? 'اسم الشركة أو صاحب الحساب' : 'Company or account holder name'
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="platform_account_number" className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-gray-500" />
+                  {isRTL ? 'رقم الحساب' : 'Account Number'}
+                </Label>
+                <Input
+                  id="platform_account_number"
+                  value={formData.platform_account_number || ''}
+                  onChange={(e) => handleChange('platform_account_number', e.target.value)}
+                  dir="ltr"
+                  placeholder="1234567890"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="platform_iban" className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-gray-500" />
+                  IBAN
+                </Label>
+                <Input
+                  id="platform_iban"
+                  value={formData.platform_iban || ''}
+                  onChange={(e) => handleChange('platform_iban', e.target.value)}
+                  dir="ltr"
+                  placeholder="EG380019000500000002631180002"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="platform_instapay" className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-gray-500" />
+                  InstaPay
+                </Label>
+                <Input
+                  id="platform_instapay"
+                  value={formData.platform_instapay || ''}
+                  onChange={(e) => handleChange('platform_instapay', e.target.value)}
+                  dir="ltr"
+                  placeholder={isRTL ? 'اسم المستخدم أو رقم الهاتف' : 'Username or phone number'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="platform_vodafone_cash" className="flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-gray-500" />
+                  {isRTL ? 'فودافون كاش' : 'Vodafone Cash'}
+                </Label>
+                <Input
+                  id="platform_vodafone_cash"
+                  value={formData.platform_vodafone_cash || ''}
+                  onChange={(e) => handleChange('platform_vodafone_cash', e.target.value)}
+                  dir="ltr"
+                  placeholder="01XXXXXXXXX"
+                />
+              </div>
             </div>
           </div>
 
