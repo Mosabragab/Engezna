@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { getBusinessCategories, type BusinessCategory } from '@/lib/supabase/business-categories';
 import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters';
@@ -62,15 +63,7 @@ interface ProviderOption {
   category: string | null;
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'restaurant', label_ar: 'مطاعم', label_en: 'Restaurants' },
-  { value: 'coffee_shop', label_ar: 'كافيهات', label_en: 'Coffee Shops' },
-  { value: 'grocery', label_ar: 'بقالة', label_en: 'Grocery' },
-  { value: 'pharmacy', label_ar: 'صيدليات', label_en: 'Pharmacy' },
-  { value: 'bakery', label_ar: 'مخبوزات', label_en: 'Bakery' },
-  { value: 'sweets', label_ar: 'حلويات', label_en: 'Sweets' },
-  { value: 'other', label_ar: 'أخرى', label_en: 'Other' },
-];
+// Categories loaded dynamically from business_categories table
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'expired';
 
@@ -92,7 +85,8 @@ export default function AdminPromotionsPage() {
   // P2: Edit state
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
 
-  // P4: Providers list for applicable_providers
+  // P4: Categories from database + Providers list for applicable_providers
+  const [categories, setCategories] = useState<BusinessCategory[]>([]);
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [providerSearch, setProviderSearch] = useState('');
 
@@ -150,7 +144,12 @@ export default function AdminPromotionsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true);
-        await Promise.all([loadPromoCodes(), loadProviders()]);
+        const [, , cats] = await Promise.all([
+          loadPromoCodes(),
+          loadProviders(),
+          getBusinessCategories(),
+        ]);
+        setCategories(cats);
       }
     }
 
@@ -1077,18 +1076,18 @@ export default function AdminPromotionsPage() {
                   </span>
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORY_OPTIONS.map((cat) => (
+                  {categories.map((cat) => (
                     <button
-                      key={cat.value}
+                      key={cat.code}
                       type="button"
-                      onClick={() => toggleCategory(cat.value)}
+                      onClick={() => toggleCategory(cat.code)}
                       className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                        formData.applicable_categories.includes(cat.value)
+                        formData.applicable_categories.includes(cat.code)
                           ? 'bg-primary text-white border-primary'
                           : 'bg-white text-slate-600 border-slate-200 hover:border-primary'
                       }`}
                     >
-                      {locale === 'ar' ? cat.label_ar : cat.label_en}
+                      {cat.icon} {locale === 'ar' ? cat.name_ar : cat.name_en}
                     </button>
                   ))}
                 </div>
