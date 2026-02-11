@@ -191,16 +191,26 @@ export default function AdminPromotionsPage() {
     }
   }
 
-  // P4: Load providers for applicable_providers multi-select
-  const loadProviders = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('providers')
-      .select('id, name_ar, name_en, category')
-      .eq('status', 'open')
-      .order('name_ar');
-    setProviders(data || []);
-  }, []);
+  // P4: Load providers for applicable_providers multi-select (filtered by geo)
+  const loadProviders = useCallback(
+    async (governorateId?: string | null, cityId?: string | null) => {
+      const supabase = createClient();
+      let query = supabase
+        .from('providers')
+        .select('id, name_ar, name_en, category')
+        .eq('status', 'open');
+
+      if (cityId) {
+        query = query.eq('city_id', cityId);
+      } else if (governorateId) {
+        query = query.eq('governorate_id', governorateId);
+      }
+
+      const { data } = await query.order('name_ar');
+      setProviders(data || []);
+    },
+    []
+  );
 
   function filterPromoCodes() {
     let filtered = [...promoCodes];
@@ -326,6 +336,8 @@ export default function AdminPromotionsPage() {
     });
     setEditingPromoId(promo.id);
     setShowCreateModal(true);
+    // Reload providers filtered by this promo's geo-targeting
+    loadProviders(promo.governorate_id, promo.city_id);
   }
 
   async function handleToggleActive(promo: PromoCode) {
@@ -390,6 +402,8 @@ export default function AdminPromotionsPage() {
       applicable_providers: [],
     });
     setEditingPromoId(null);
+    setProviderSearch('');
+    loadProviders(); // Reset to all providers
   }
 
   function generateCode() {
@@ -405,13 +419,16 @@ export default function AdminPromotionsPage() {
     navigator.clipboard.writeText(code);
   }
 
-  // P1: Geo filter change handler
+  // P1: Geo filter change handler — also reloads providers for selected location
   function handleGeoChange(geo: GeoFilterValue) {
     setFormData({
       ...formData,
       governorate_id: geo.governorate_id,
       city_id: geo.city_id,
+      applicable_providers: [], // Reset selected providers when location changes
     });
+    setProviderSearch('');
+    loadProviders(geo.governorate_id, geo.city_id);
   }
 
   // P4: Toggle category in applicable_categories
