@@ -103,6 +103,8 @@ interface PromoCode {
   applicable_categories: string[] | null;
   applicable_providers: string[] | null;
   first_order_only: boolean;
+  governorate_id: string | null;
+  city_id: string | null;
 }
 
 // Extended provider interface with pickup settings
@@ -614,6 +616,41 @@ export default function CheckoutPage() {
         }
       }
 
+      // Check geo-targeting (P1: governorate/city restriction)
+      if (promoCode.governorate_id) {
+        // Get customer's delivery governorate
+        let customerGovId: string | null = null;
+        let customerCityId: string | null = null;
+
+        if (addressMode === 'saved') {
+          const addr = getSelectedAddress();
+          customerGovId = addr?.governorate_id || null;
+          customerCityId = addr?.city_id || null;
+        } else {
+          customerGovId = selectedGovernorateId || null;
+          customerCityId = selectedCityId || null;
+        }
+
+        if (customerGovId !== promoCode.governorate_id) {
+          setPromoCodeError(
+            locale === 'ar'
+              ? 'هذا الكود غير متاح في منطقتك'
+              : 'This code is not available in your area'
+          );
+          return;
+        }
+
+        // If promo targets a specific city, check city too
+        if (promoCode.city_id && customerCityId !== promoCode.city_id) {
+          setPromoCodeError(
+            locale === 'ar'
+              ? 'هذا الكود غير متاح في مدينتك'
+              : 'This code is not available in your city'
+          );
+          return;
+        }
+      }
+
       // Calculate discount
       let discount = 0;
       if (promoCode.discount_type === 'percentage') {
@@ -879,6 +916,43 @@ export default function CheckoutPage() {
       // CASH (COD) FLOW: Create order immediately, clear cart
       // ============================================================
       if (paymentMethod === 'cash') {
+        // P6: Record promo usage BEFORE order creation for transaction safety
+        let promoUsageId: string | null = null;
+        if (appliedPromoCode) {
+          // Atomically increment usage count first (prevents race conditions)
+          const { error: countError } = await supabase
+            .from('promo_codes')
+            .update({ usage_count: appliedPromoCode.usage_count + 1 })
+            .eq('id', appliedPromoCode.id)
+            .eq('usage_count', appliedPromoCode.usage_count); // Optimistic lock
+
+          if (countError) {
+            throw new Error('Promo code was just used by someone else. Please try again.');
+          }
+
+          // Record usage (order_id will be updated after order creation)
+          const { data: usageRecord, error: usageError } = await supabase
+            .from('promo_code_usage')
+            .insert({
+              promo_code_id: appliedPromoCode.id,
+              user_id: user.id,
+              order_id: null,
+              discount_amount: discountAmount,
+            })
+            .select('id')
+            .single();
+
+          if (usageError) {
+            // Rollback usage count
+            await supabase
+              .from('promo_codes')
+              .update({ usage_count: appliedPromoCode.usage_count })
+              .eq('id', appliedPromoCode.id);
+            throw new Error('Failed to record promo code usage.');
+          }
+          promoUsageId = usageRecord?.id || null;
+        }
+
         // Create order with status 'pending'
         const { data: order, error: orderError } = await supabase
           .from('orders')
@@ -892,7 +966,6 @@ export default function CheckoutPage() {
             total: finalTotal,
             payment_method: paymentMethod,
             payment_status: 'pending',
-            // New fields: order type, timing, scheduled time
             order_type: orderType,
             delivery_timing: deliveryTiming,
             scheduled_time: scheduledTimeValue,
@@ -906,22 +979,25 @@ export default function CheckoutPage() {
 
         if (orderError) {
           console.error('Order creation error:', orderError);
+          // P6: Rollback promo usage on order creation failure
+          if (appliedPromoCode) {
+            if (promoUsageId) {
+              await supabase.from('promo_code_usage').delete().eq('id', promoUsageId);
+            }
+            await supabase
+              .from('promo_codes')
+              .update({ usage_count: appliedPromoCode.usage_count })
+              .eq('id', appliedPromoCode.id);
+          }
           throw new Error(`Order creation failed: ${orderError.message}`);
         }
 
-        // Record promo code usage if applied
-        if (appliedPromoCode) {
-          await supabase.from('promo_code_usage').insert({
-            promo_code_id: appliedPromoCode.id,
-            user_id: user.id,
-            order_id: order.id,
-            discount_amount: discountAmount,
-          });
-
+        // P6: Link the promo usage record to the created order
+        if (appliedPromoCode && promoUsageId && order?.id) {
           await supabase
-            .from('promo_codes')
-            .update({ usage_count: appliedPromoCode.usage_count + 1 })
-            .eq('id', appliedPromoCode.id);
+            .from('promo_code_usage')
+            .update({ order_id: order.id })
+            .eq('id', promoUsageId);
         }
 
         // Create order items

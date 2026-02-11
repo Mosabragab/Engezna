@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
@@ -25,7 +25,12 @@ import {
   Eye,
   EyeOff,
   Gift,
+  MapPin,
+  Store,
+  Users,
+  ShoppingBag,
 } from 'lucide-react';
+import { GeoFilter, type GeoFilterValue } from '@/components/admin/GeoFilter';
 
 interface PromoCode {
   id: string;
@@ -45,8 +50,27 @@ interface PromoCode {
   applicable_categories: string[] | null;
   applicable_providers: string[] | null;
   first_order_only: boolean;
+  governorate_id: string | null;
+  city_id: string | null;
   created_at: string;
 }
+
+interface ProviderOption {
+  id: string;
+  name_ar: string;
+  name_en: string;
+  category: string | null;
+}
+
+const CATEGORY_OPTIONS = [
+  { value: 'restaurant', label_ar: 'مطاعم', label_en: 'Restaurants' },
+  { value: 'coffee_shop', label_ar: 'كافيهات', label_en: 'Coffee Shops' },
+  { value: 'grocery', label_ar: 'بقالة', label_en: 'Grocery' },
+  { value: 'pharmacy', label_ar: 'صيدليات', label_en: 'Pharmacy' },
+  { value: 'bakery', label_ar: 'مخبوزات', label_en: 'Bakery' },
+  { value: 'sweets', label_ar: 'حلويات', label_en: 'Sweets' },
+  { value: 'other', label_ar: 'أخرى', label_en: 'Other' },
+];
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'expired';
 
@@ -65,7 +89,14 @@ export default function AdminPromotionsPage() {
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Form state for create/edit
+  // P2: Edit state
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+
+  // P4: Providers list for applicable_providers
+  const [providers, setProviders] = useState<ProviderOption[]>([]);
+  const [providerSearch, setProviderSearch] = useState('');
+
+  // Form state for create/edit (P1 + P4: expanded with new fields)
   const [formData, setFormData] = useState({
     code: '',
     description_ar: '',
@@ -78,6 +109,14 @@ export default function AdminPromotionsPage() {
     valid_until: '',
     usage_limit: 0,
     is_active: true,
+    // P1: Geo-targeting
+    governorate_id: null as string | null,
+    city_id: null as string | null,
+    // P4: Hidden fields
+    first_order_only: false,
+    per_user_limit: 1,
+    applicable_categories: [] as string[],
+    applicable_providers: [] as string[],
   });
 
   const [stats, setStats] = useState({
@@ -111,7 +150,7 @@ export default function AdminPromotionsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true);
-        await loadPromoCodes();
+        await Promise.all([loadPromoCodes(), loadProviders()]);
       }
     }
 
@@ -128,7 +167,6 @@ export default function AdminPromotionsPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        // Table might not exist, show empty state
         setPromoCodes([]);
         return;
       }
@@ -153,6 +191,17 @@ export default function AdminPromotionsPage() {
       setPromoCodes([]);
     }
   }
+
+  // P4: Load providers for applicable_providers multi-select
+  const loadProviders = useCallback(async () => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('providers')
+      .select('id, name_ar, name_en, category')
+      .eq('status', 'open')
+      .order('name_ar');
+    setProviders(data || []);
+  }, []);
 
   function filterPromoCodes() {
     let filtered = [...promoCodes];
@@ -183,18 +232,18 @@ export default function AdminPromotionsPage() {
     setFilteredPromoCodes(filtered);
   }
 
-  async function handleCreatePromo() {
+  // P2: Combined create/update handler
+  async function handleSavePromo() {
     const supabase = createClient();
 
     try {
-      // Convert dates to ISO format with timezone
       const validFromDate = new Date(formData.valid_from);
       validFromDate.setHours(0, 0, 0, 0);
 
       const validUntilDate = new Date(formData.valid_until);
       validUntilDate.setHours(23, 59, 59, 999);
 
-      const { error } = await supabase.from('promo_codes').insert({
+      const promoData = {
         code: formData.code.toUpperCase(),
         description_ar: formData.description_ar || null,
         description_en: formData.description_en || null,
@@ -205,22 +254,79 @@ export default function AdminPromotionsPage() {
         valid_from: validFromDate.toISOString(),
         valid_until: validUntilDate.toISOString(),
         usage_limit: formData.usage_limit || null,
-        usage_count: 0,
-        per_user_limit: 1,
         is_active: formData.is_active,
-        applicable_categories: null,
-        applicable_providers: null,
-        first_order_only: false,
-      });
+        // P1: Geo-targeting
+        governorate_id: formData.governorate_id || null,
+        city_id: formData.city_id || null,
+        // P4: Hidden fields
+        first_order_only: formData.first_order_only,
+        per_user_limit: formData.per_user_limit || 1,
+        applicable_categories:
+          formData.applicable_categories.length > 0 ? formData.applicable_categories : null,
+        applicable_providers:
+          formData.applicable_providers.length > 0 ? formData.applicable_providers : null,
+      };
 
-      if (error) throw error;
+      if (editingPromoId) {
+        // Update existing promo
+        const { error } = await supabase
+          .from('promo_codes')
+          .update(promoData)
+          .eq('id', editingPromoId);
+
+        if (error) throw error;
+      } else {
+        // Create new promo
+        const { error } = await supabase.from('promo_codes').insert({
+          ...promoData,
+          usage_count: 0,
+        });
+
+        if (error) throw error;
+      }
 
       setShowCreateModal(false);
+      setEditingPromoId(null);
       resetForm();
       await loadPromoCodes();
     } catch {
-      alert(locale === 'ar' ? 'حدث خطأ أثناء إنشاء كود الخصم' : 'Error creating promo code');
+      alert(
+        locale === 'ar'
+          ? editingPromoId
+            ? 'حدث خطأ أثناء تحديث كود الخصم'
+            : 'حدث خطأ أثناء إنشاء كود الخصم'
+          : editingPromoId
+            ? 'Error updating promo code'
+            : 'Error creating promo code'
+      );
     }
+  }
+
+  // P2: Edit promo - populate form with existing data
+  function handleEditPromo(promo: PromoCode) {
+    setFormData({
+      code: promo.code,
+      description_ar: promo.description_ar || '',
+      description_en: promo.description_en || '',
+      discount_type: promo.discount_type,
+      discount_value: promo.discount_value,
+      min_order_amount: promo.min_order_amount,
+      max_discount_amount: promo.max_discount_amount || 0,
+      valid_from: promo.valid_from.split('T')[0],
+      valid_until: promo.valid_until.split('T')[0],
+      usage_limit: promo.usage_limit || 0,
+      is_active: promo.is_active,
+      // P1: Geo-targeting
+      governorate_id: promo.governorate_id,
+      city_id: promo.city_id,
+      // P4: Hidden fields
+      first_order_only: promo.first_order_only || false,
+      per_user_limit: promo.per_user_limit || 1,
+      applicable_categories: promo.applicable_categories || [],
+      applicable_providers: promo.applicable_providers || [],
+    });
+    setEditingPromoId(promo.id);
+    setShowCreateModal(true);
   }
 
   async function handleToggleActive(promo: PromoCode) {
@@ -277,7 +383,14 @@ export default function AdminPromotionsPage() {
       valid_until: '',
       usage_limit: 0,
       is_active: true,
+      governorate_id: null,
+      city_id: null,
+      first_order_only: false,
+      per_user_limit: 1,
+      applicable_categories: [],
+      applicable_providers: [],
     });
+    setEditingPromoId(null);
   }
 
   function generateCode() {
@@ -292,6 +405,44 @@ export default function AdminPromotionsPage() {
   function copyToClipboard(code: string) {
     navigator.clipboard.writeText(code);
   }
+
+  // P1: Geo filter change handler
+  function handleGeoChange(geo: GeoFilterValue) {
+    setFormData({
+      ...formData,
+      governorate_id: geo.governorate_id,
+      city_id: geo.city_id,
+    });
+  }
+
+  // P4: Toggle category in applicable_categories
+  function toggleCategory(category: string) {
+    setFormData((prev) => {
+      const cats = prev.applicable_categories.includes(category)
+        ? prev.applicable_categories.filter((c) => c !== category)
+        : [...prev.applicable_categories, category];
+      return { ...prev, applicable_categories: cats };
+    });
+  }
+
+  // P4: Toggle provider in applicable_providers
+  function toggleProvider(providerId: string) {
+    setFormData((prev) => {
+      const provs = prev.applicable_providers.includes(providerId)
+        ? prev.applicable_providers.filter((p) => p !== providerId)
+        : [...prev.applicable_providers, providerId];
+      return { ...prev, applicable_providers: provs };
+    });
+  }
+
+  // P4: Filtered providers for search
+  const filteredProviders = providerSearch
+    ? providers.filter(
+        (p) =>
+          p.name_ar.toLowerCase().includes(providerSearch.toLowerCase()) ||
+          p.name_en.toLowerCase().includes(providerSearch.toLowerCase())
+      )
+    : providers;
 
   const getStatusBadge = (promo: PromoCode) => {
     const now = new Date();
@@ -455,7 +606,10 @@ export default function AdminPromotionsPage() {
             </Button>
 
             <Button
-              onClick={() => setShowCreateModal(true)}
+              onClick={() => {
+                resetForm();
+                setShowCreateModal(true);
+              }}
               className="bg-primary hover:bg-primary/90 flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
@@ -490,6 +644,9 @@ export default function AdminPromotionsPage() {
                   </th>
                   <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
                     {locale === 'ar' ? 'الحالة' : 'Status'}
+                  </th>
+                  <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                    {locale === 'ar' ? 'القيود' : 'Targeting'}
                   </th>
                   <th className="text-center px-4 py-3 text-sm font-medium text-slate-600">
                     {locale === 'ar' ? 'إجراءات' : 'Actions'}
@@ -555,7 +712,52 @@ export default function AdminPromotionsPage() {
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(promo)}</td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
+                        <div className="flex flex-wrap gap-1">
+                          {promo.governorate_id && (
+                            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                              <MapPin className="w-3 h-3" />
+                              {locale === 'ar' ? 'جغرافي' : 'Geo'}
+                            </span>
+                          )}
+                          {promo.first_order_only && (
+                            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">
+                              <Users className="w-3 h-3" />
+                              {locale === 'ar' ? 'أول طلب' : '1st Order'}
+                            </span>
+                          )}
+                          {promo.applicable_categories &&
+                            promo.applicable_categories.length > 0 && (
+                              <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-purple-50 text-purple-700">
+                                <ShoppingBag className="w-3 h-3" />
+                                {promo.applicable_categories.length}
+                              </span>
+                            )}
+                          {promo.applicable_providers && promo.applicable_providers.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-teal-50 text-teal-700">
+                              <Store className="w-3 h-3" />
+                              {promo.applicable_providers.length}
+                            </span>
+                          )}
+                          {!promo.governorate_id &&
+                            !promo.first_order_only &&
+                            !promo.applicable_categories?.length &&
+                            !promo.applicable_providers?.length && (
+                              <span className="text-xs text-slate-400">
+                                {locale === 'ar' ? 'بدون قيود' : 'None'}
+                              </span>
+                            )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          {/* P2: Edit button */}
+                          <button
+                            onClick={() => handleEditPromo(promo)}
+                            className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title={locale === 'ar' ? 'تعديل' : 'Edit'}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => handleToggleActive(promo)}
                             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
@@ -588,13 +790,16 @@ export default function AdminPromotionsPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center">
+                    <td colSpan={9} className="px-4 py-12 text-center">
                       <Tag className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                       <p className="text-slate-500">
                         {locale === 'ar' ? 'لا توجد أكواد خصم' : 'No promo codes found'}
                       </p>
                       <Button
-                        onClick={() => setShowCreateModal(true)}
+                        onClick={() => {
+                          resetForm();
+                          setShowCreateModal(true);
+                        }}
                         className="mt-4"
                         variant="outline"
                       >
@@ -610,13 +815,19 @@ export default function AdminPromotionsPage() {
         </div>
       </main>
 
-      {/* Create Modal */}
+      {/* Create/Edit Modal (P1 + P2 + P4) */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-xl font-bold text-slate-900">
-                {locale === 'ar' ? 'إنشاء كود خصم جديد' : 'Create New Promo Code'}
+                {editingPromoId
+                  ? locale === 'ar'
+                    ? 'تعديل كود الخصم'
+                    : 'Edit Promo Code'
+                  : locale === 'ar'
+                    ? 'إنشاء كود خصم جديد'
+                    : 'Create New Promo Code'}
               </h2>
             </div>
             <div className="p-6 space-y-4">
@@ -771,36 +982,186 @@ export default function AdminPromotionsPage() {
                 </div>
               </div>
 
-              {/* Usage Limit */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  {locale === 'ar'
-                    ? 'الحد الأقصى للاستخدام (0 = غير محدود)'
-                    : 'Usage Limit (0 = unlimited)'}
-                </label>
-                <input
-                  type="number"
-                  value={formData.usage_limit}
-                  onChange={(e) =>
-                    setFormData({ ...formData, usage_limit: parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
-                  min="0"
+              {/* Usage Limit & Per User Limit (P4) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {locale === 'ar'
+                      ? 'الحد الأقصى للاستخدام (0 = غير محدود)'
+                      : 'Usage Limit (0 = unlimited)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.usage_limit}
+                    onChange={(e) =>
+                      setFormData({ ...formData, usage_limit: parseInt(e.target.value) || 0 })
+                    }
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {locale === 'ar' ? 'الحد لكل مستخدم' : 'Per User Limit'}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.per_user_limit}
+                    onChange={(e) =>
+                      setFormData({ ...formData, per_user_limit: parseInt(e.target.value) || 1 })
+                    }
+                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
+                    min="1"
+                  />
+                </div>
+              </div>
+
+              {/* Toggles: Is Active + First Order Only (P4) */}
+              <div className="flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                  />
+                  <label htmlFor="is_active" className="text-sm text-slate-700">
+                    {locale === 'ar' ? 'تفعيل الكود' : 'Active'}
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="first_order_only"
+                    checked={formData.first_order_only}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_order_only: e.target.checked })
+                    }
+                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                  />
+                  <label htmlFor="first_order_only" className="text-sm text-slate-700">
+                    {locale === 'ar' ? 'للطلب الأول فقط' : 'First order only'}
+                  </label>
+                </div>
+              </div>
+
+              {/* P1: Geo-Targeting */}
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  {locale === 'ar' ? 'الاستهداف الجغرافي' : 'Geo-Targeting'}
+                  <span className="text-xs font-normal text-slate-400">
+                    ({locale === 'ar' ? 'اختياري' : 'optional'})
+                  </span>
+                </h3>
+                <GeoFilter
+                  value={{
+                    governorate_id: formData.governorate_id,
+                    city_id: formData.city_id,
+                    district_id: null,
+                  }}
+                  onChange={handleGeoChange}
+                  inline={false}
+                  showClearButton={true}
                 />
               </div>
 
-              {/* Is Active */}
-              <div className="flex items-center gap-2">
+              {/* P4: Applicable Categories */}
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  {locale === 'ar' ? 'الفئات المستهدفة' : 'Applicable Categories'}
+                  <span className="text-xs font-normal text-slate-400">
+                    ({locale === 'ar' ? 'اترك فارغاً للكل' : 'leave empty for all'})
+                  </span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      onClick={() => toggleCategory(cat.value)}
+                      className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
+                        formData.applicable_categories.includes(cat.value)
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-slate-600 border-slate-200 hover:border-primary'
+                      }`}
+                    >
+                      {locale === 'ar' ? cat.label_ar : cat.label_en}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* P4: Applicable Providers */}
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Store className="w-4 h-4" />
+                  {locale === 'ar' ? 'متاجر محددة' : 'Specific Providers'}
+                  <span className="text-xs font-normal text-slate-400">
+                    ({locale === 'ar' ? 'اترك فارغاً للكل' : 'leave empty for all'})
+                  </span>
+                </h3>
+                {formData.applicable_providers.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {formData.applicable_providers.map((pid) => {
+                      const prov = providers.find((p) => p.id === pid);
+                      return (
+                        <span
+                          key={pid}
+                          className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200"
+                        >
+                          {prov ? (locale === 'ar' ? prov.name_ar : prov.name_en) : pid.slice(0, 8)}
+                          <button
+                            type="button"
+                            onClick={() => toggleProvider(pid)}
+                            className="hover:text-red-500"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
                 <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                  type="text"
+                  value={providerSearch}
+                  onChange={(e) => setProviderSearch(e.target.value)}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary text-sm mb-2"
+                  placeholder={locale === 'ar' ? 'ابحث عن متجر...' : 'Search providers...'}
                 />
-                <label htmlFor="is_active" className="text-sm text-slate-700">
-                  {locale === 'ar' ? 'تفعيل الكود فوراً' : 'Activate immediately'}
-                </label>
+                {providerSearch && (
+                  <div className="max-h-40 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
+                    {filteredProviders.length > 0 ? (
+                      filteredProviders.slice(0, 20).map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            toggleProvider(p.id);
+                            setProviderSearch('');
+                          }}
+                          className={`w-full text-start px-3 py-2 text-sm hover:bg-slate-50 ${
+                            formData.applicable_providers.includes(p.id)
+                              ? 'bg-teal-50 text-teal-700'
+                              : 'text-slate-700'
+                          }`}
+                        >
+                          {locale === 'ar' ? p.name_ar : p.name_en}
+                          {p.category && (
+                            <span className="text-xs text-slate-400 ms-2">({p.category})</span>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-sm text-slate-400">
+                        {locale === 'ar' ? 'لا توجد نتائج' : 'No results'}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <div className="p-6 border-t border-slate-200 flex gap-3 justify-end">
@@ -814,11 +1175,17 @@ export default function AdminPromotionsPage() {
                 {locale === 'ar' ? 'إلغاء' : 'Cancel'}
               </Button>
               <Button
-                onClick={handleCreatePromo}
+                onClick={handleSavePromo}
                 disabled={!formData.code || !formData.valid_until}
                 className="bg-primary hover:bg-primary/90"
               >
-                {locale === 'ar' ? 'إنشاء' : 'Create'}
+                {editingPromoId
+                  ? locale === 'ar'
+                    ? 'تحديث'
+                    : 'Update'
+                  : locale === 'ar'
+                    ? 'إنشاء'
+                    : 'Create'}
               </Button>
             </div>
           </div>
