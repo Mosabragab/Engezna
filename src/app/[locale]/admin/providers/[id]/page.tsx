@@ -741,6 +741,16 @@ export default function ProviderDetailPage() {
                     ? 'توثيق المتجر'
                     : 'Verify Provider'}
               </Button>
+
+              <Link href={`/${locale}/admin/providers/${providerId}/products`}>
+                <Button
+                  variant="outline"
+                  className="w-full border-primary text-primary hover:bg-primary/10"
+                >
+                  <Package className="w-4 h-4 me-2" />
+                  {locale === 'ar' ? 'إدارة المنتجات' : 'Manage Products'}
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -853,22 +863,6 @@ export default function ProviderDetailPage() {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm text-slate-500 block mb-1">
-                    {locale === 'ar' ? 'رسوم التوصيل' : 'Delivery Fee'}
-                  </label>
-                  <p className="text-slate-700">{formatCurrency(provider.delivery_fee, locale)}</p>
-                </div>
-
-                <div>
-                  <label className="text-sm text-slate-500 block mb-1">
-                    {locale === 'ar' ? 'الحد الأدنى للطلب' : 'Min Order'}
-                  </label>
-                  <p className="text-slate-700">
-                    {formatCurrency(provider.min_order_amount, locale)}
-                  </p>
-                </div>
-
                 <div>
                   <label className="text-sm text-slate-500 block mb-1">
                     {locale === 'ar' ? 'وقت التوصيل المتوقع' : 'Est. Delivery Time'}
