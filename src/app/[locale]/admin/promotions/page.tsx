@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { getBusinessCategories, type BusinessCategory } from '@/lib/supabase/business-categories';
 import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters';
@@ -62,15 +63,7 @@ interface ProviderOption {
   category: string | null;
 }
 
-const CATEGORY_OPTIONS = [
-  { value: 'restaurant', label_ar: 'مطاعم', label_en: 'Restaurants' },
-  { value: 'coffee_shop', label_ar: 'كافيهات', label_en: 'Coffee Shops' },
-  { value: 'grocery', label_ar: 'بقالة', label_en: 'Grocery' },
-  { value: 'pharmacy', label_ar: 'صيدليات', label_en: 'Pharmacy' },
-  { value: 'bakery', label_ar: 'مخبوزات', label_en: 'Bakery' },
-  { value: 'sweets', label_ar: 'حلويات', label_en: 'Sweets' },
-  { value: 'other', label_ar: 'أخرى', label_en: 'Other' },
-];
+// Categories loaded dynamically from business_categories table
 
 type FilterStatus = 'all' | 'active' | 'inactive' | 'expired';
 
@@ -92,7 +85,8 @@ export default function AdminPromotionsPage() {
   // P2: Edit state
   const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
 
-  // P4: Providers list for applicable_providers
+  // P4: Categories from database + Providers list for applicable_providers
+  const [categories, setCategories] = useState<BusinessCategory[]>([]);
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [providerSearch, setProviderSearch] = useState('');
 
@@ -150,7 +144,12 @@ export default function AdminPromotionsPage() {
 
       if (profile?.role === 'admin') {
         setIsAdmin(true);
-        await Promise.all([loadPromoCodes(), loadProviders()]);
+        const [, , cats] = await Promise.all([
+          loadPromoCodes(),
+          loadProviders(),
+          getBusinessCategories(),
+        ]);
+        setCategories(cats);
       }
     }
 
@@ -192,16 +191,26 @@ export default function AdminPromotionsPage() {
     }
   }
 
-  // P4: Load providers for applicable_providers multi-select
-  const loadProviders = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('providers')
-      .select('id, name_ar, name_en, category')
-      .eq('status', 'open')
-      .order('name_ar');
-    setProviders(data || []);
-  }, []);
+  // P4: Load providers for applicable_providers multi-select (filtered by geo)
+  const loadProviders = useCallback(
+    async (governorateId?: string | null, cityId?: string | null) => {
+      const supabase = createClient();
+      let query = supabase
+        .from('providers')
+        .select('id, name_ar, name_en, category')
+        .eq('status', 'open');
+
+      if (cityId) {
+        query = query.eq('city_id', cityId);
+      } else if (governorateId) {
+        query = query.eq('governorate_id', governorateId);
+      }
+
+      const { data } = await query.order('name_ar');
+      setProviders(data || []);
+    },
+    []
+  );
 
   function filterPromoCodes() {
     let filtered = [...promoCodes];
@@ -327,6 +336,8 @@ export default function AdminPromotionsPage() {
     });
     setEditingPromoId(promo.id);
     setShowCreateModal(true);
+    // Reload providers filtered by this promo's geo-targeting
+    loadProviders(promo.governorate_id, promo.city_id);
   }
 
   async function handleToggleActive(promo: PromoCode) {
@@ -391,6 +402,8 @@ export default function AdminPromotionsPage() {
       applicable_providers: [],
     });
     setEditingPromoId(null);
+    setProviderSearch('');
+    loadProviders(); // Reset to all providers
   }
 
   function generateCode() {
@@ -406,13 +419,16 @@ export default function AdminPromotionsPage() {
     navigator.clipboard.writeText(code);
   }
 
-  // P1: Geo filter change handler
+  // P1: Geo filter change handler — also reloads providers for selected location
   function handleGeoChange(geo: GeoFilterValue) {
     setFormData({
       ...formData,
       governorate_id: geo.governorate_id,
       city_id: geo.city_id,
+      applicable_providers: [], // Reset selected providers when location changes
     });
+    setProviderSearch('');
+    loadProviders(geo.governorate_id, geo.city_id);
   }
 
   // P4: Toggle category in applicable_categories
@@ -1077,18 +1093,18 @@ export default function AdminPromotionsPage() {
                   </span>
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {CATEGORY_OPTIONS.map((cat) => (
+                  {categories.map((cat) => (
                     <button
-                      key={cat.value}
+                      key={cat.code}
                       type="button"
-                      onClick={() => toggleCategory(cat.value)}
+                      onClick={() => toggleCategory(cat.code)}
                       className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
-                        formData.applicable_categories.includes(cat.value)
+                        formData.applicable_categories.includes(cat.code)
                           ? 'bg-primary text-white border-primary'
                           : 'bg-white text-slate-600 border-slate-200 hover:border-primary'
                       }`}
                     >
-                      {locale === 'ar' ? cat.label_ar : cat.label_en}
+                      {cat.icon} {locale === 'ar' ? cat.name_ar : cat.name_en}
                     </button>
                   ))}
                 </div>
