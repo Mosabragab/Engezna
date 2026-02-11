@@ -8,7 +8,6 @@ export type ProviderStatus =
   | 'incomplete'
   | 'approved'
   | 'rejected'
-  | 'suspended'
   | 'open'
   | 'closed'
   | 'temporarily_paused'
@@ -197,7 +196,6 @@ export interface DashboardStats {
     pending: number;
     approved: number;
     rejected: number;
-    suspended: number;
     newThisMonth: number;
     changePercent: number;
   };
@@ -353,7 +351,6 @@ export const PROVIDER_STATUS_LABELS: Record<ProviderStatus, { ar: string; en: st
   incomplete: { ar: 'غير مكتمل', en: 'Incomplete' },
   approved: { ar: 'معتمد', en: 'Approved' },
   rejected: { ar: 'مرفوض', en: 'Rejected' },
-  suspended: { ar: 'موقوف', en: 'Suspended' },
   open: { ar: 'مفتوح', en: 'Open' },
   closed: { ar: 'مغلق', en: 'Closed' },
   temporarily_paused: { ar: 'متوقف مؤقتاً', en: 'Temporarily Paused' },

@@ -214,7 +214,7 @@ export function useAdminProviders(options: UseAdminProvidersOptions = {}): UseAd
             setProviders((prev) =>
               prev.map((p) =>
                 p.id === providerId
-                  ? { ...p, status: 'approved' as ProviderStatus, rejection_reason: null }
+                  ? { ...p, status: 'open' as ProviderStatus, rejection_reason: null }
                   : p
               )
             );
@@ -270,7 +270,11 @@ export function useAdminProviders(options: UseAdminProvidersOptions = {}): UseAd
             setProviders((prev) =>
               prev.map((p) =>
                 p.id === providerId
-                  ? { ...p, status: 'suspended' as ProviderStatus, rejection_reason: reason }
+                  ? {
+                      ...p,
+                      status: 'temporarily_paused' as ProviderStatus,
+                      rejection_reason: reason,
+                    }
                   : p
               )
             );
