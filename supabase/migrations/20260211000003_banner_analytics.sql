@@ -21,22 +21,36 @@ CREATE INDEX IF NOT EXISTS idx_banner_analytics_created ON public.banner_analyti
 ALTER TABLE public.banner_analytics ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can insert analytics (including anonymous)
-CREATE POLICY IF NOT EXISTS "Anyone can track banner events"
-  ON public.banner_analytics
-  FOR INSERT
-  WITH CHECK (true);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Anyone can track banner events' AND tablename = 'banner_analytics'
+  ) THEN
+    CREATE POLICY "Anyone can track banner events"
+      ON public.banner_analytics
+      FOR INSERT
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Only admins can read analytics
-CREATE POLICY IF NOT EXISTS "Admins can read banner analytics"
-  ON public.banner_analytics
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role = 'admin'
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Admins can read banner analytics' AND tablename = 'banner_analytics'
+  ) THEN
+    CREATE POLICY "Admins can read banner analytics"
+      ON public.banner_analytics
+      FOR SELECT
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.profiles
+          WHERE profiles.id = auth.uid()
+          AND profiles.role = 'admin'
+        )
+      );
+  END IF;
+END $$;
 
 -- Step 4: Documentation
 COMMENT ON TABLE public.banner_analytics IS 'Tracks banner impressions and clicks for performance analytics';
