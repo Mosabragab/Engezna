@@ -382,6 +382,10 @@ export default function AdminBannersPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
 
+  // P10: Pagination state
+  const PAGE_SIZE = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+
   // Location targeting state
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -393,6 +397,11 @@ export default function AdminBannersPage() {
     scheduled: 0,
     expired: 0,
   });
+
+  // P7: Banner analytics data
+  const [bannerAnalytics, setBannerAnalytics] = useState<
+    Record<string, { impressions: number; clicks: number }>
+  >({});
 
   useEffect(() => {
     checkAuth();
@@ -495,6 +504,30 @@ export default function AdminBannersPage() {
         scheduled,
         expired,
       });
+
+      // P7: Load banner analytics (impressions/clicks counts)
+      if (data && data.length > 0) {
+        const bannerIds = data.map((b) => b.id);
+        const { data: analyticsData } = await supabase
+          .from('banner_analytics')
+          .select('banner_id, event_type')
+          .in('banner_id', bannerIds);
+
+        if (analyticsData) {
+          const analyticsMap: Record<string, { impressions: number; clicks: number }> = {};
+          for (const event of analyticsData) {
+            if (!analyticsMap[event.banner_id]) {
+              analyticsMap[event.banner_id] = { impressions: 0, clicks: 0 };
+            }
+            if (event.event_type === 'impression') {
+              analyticsMap[event.banner_id].impressions++;
+            } else if (event.event_type === 'click') {
+              analyticsMap[event.banner_id].clicks++;
+            }
+          }
+          setBannerAnalytics(analyticsMap);
+        }
+      }
     } catch {
       setBanners([]);
     }
@@ -546,7 +579,16 @@ export default function AdminBannersPage() {
     }
 
     setFilteredBanners(filtered);
+    // P10: Reset to page 1 when filters change
+    setCurrentPage(1);
   }
+
+  // P10: Paginated banners
+  const totalPages = Math.ceil(filteredBanners.length / PAGE_SIZE);
+  const paginatedBanners = filteredBanners.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE
+  );
 
   async function handleSaveBanner() {
     setIsSaving(true);
@@ -657,6 +699,22 @@ export default function AdminBannersPage() {
     const supabase = createClient();
 
     try {
+      // P8: Clean up image from storage before deleting record
+      const banner = banners.find((b) => b.id === bannerId);
+      if (banner?.image_url) {
+        try {
+          // Extract storage path from URL (format: .../public-assets/banners/filename.ext)
+          const url = new URL(banner.image_url);
+          const pathMatch = url.pathname.match(/\/public-assets\/(.+)$/);
+          if (pathMatch) {
+            await supabase.storage.from('public-assets').remove([pathMatch[1]]);
+          }
+        } catch {
+          // Image cleanup failure should not block banner deletion
+          console.warn('Failed to clean up banner image from storage');
+        }
+      }
+
       const { error } = await supabase.from('homepage_banners').delete().eq('id', bannerId);
 
       if (error) throw error;
@@ -1114,14 +1172,14 @@ export default function AdminBannersPage() {
             </p>
           </div>
 
-          {filteredBanners.length > 0 ? (
+          {paginatedBanners.length > 0 ? (
             <Reorder.Group
               axis="y"
-              values={filteredBanners}
+              values={paginatedBanners}
               onReorder={handleReorder}
               className="divide-y divide-slate-100"
             >
-              {filteredBanners.map((banner) => (
+              {paginatedBanners.map((banner) => (
                 <Reorder.Item
                   key={banner.id}
                   value={banner}
@@ -1157,6 +1215,33 @@ export default function AdminBannersPage() {
 
                   {/* Status */}
                   <div className="flex-shrink-0">{getStatusBadge(banner)}</div>
+
+                  {/* P7: Analytics (Impressions/Clicks/CTR) */}
+                  <div className="flex-shrink-0 text-center min-w-[100px]">
+                    {bannerAnalytics[banner.id] ? (
+                      <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <div title={locale === 'ar' ? 'المشاهدات' : 'Impressions'}>
+                          <Eye className="w-3 h-3 inline mb-0.5" />{' '}
+                          {bannerAnalytics[banner.id].impressions}
+                        </div>
+                        <div title={locale === 'ar' ? 'النقرات' : 'Clicks'}>
+                          <LinkIcon className="w-3 h-3 inline mb-0.5" />{' '}
+                          {bannerAnalytics[banner.id].clicks}
+                        </div>
+                        <div title="CTR" className="font-medium text-primary">
+                          {bannerAnalytics[banner.id].impressions > 0
+                            ? (
+                                (bannerAnalytics[banner.id].clicks /
+                                  bannerAnalytics[banner.id].impressions) *
+                                100
+                              ).toFixed(1) + '%'
+                            : '0%'}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-300">-</span>
+                    )}
+                  </div>
 
                   {/* Actions */}
                   <div className="flex items-center gap-2 flex-shrink-0">
@@ -1215,6 +1300,38 @@ export default function AdminBannersPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 {locale === 'ar' ? 'إنشاء بانر جديد' : 'Create New Banner'}
               </Button>
+            </div>
+          )}
+
+          {/* P10: Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="p-4 border-t border-slate-200 flex items-center justify-between">
+              <p className="text-sm text-slate-500">
+                {locale === 'ar'
+                  ? `عرض ${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredBanners.length)} من ${filteredBanners.length}`
+                  : `Showing ${(currentPage - 1) * PAGE_SIZE + 1}-${Math.min(currentPage * PAGE_SIZE, filteredBanners.length)} of ${filteredBanners.length}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                >
+                  {locale === 'ar' ? 'السابق' : 'Previous'}
+                </Button>
+                <span className="text-sm text-slate-600">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                >
+                  {locale === 'ar' ? 'التالي' : 'Next'}
+                </Button>
+              </div>
             </div>
           )}
         </div>

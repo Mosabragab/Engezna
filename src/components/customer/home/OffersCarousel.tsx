@@ -218,6 +218,19 @@ function CountdownTimer({
   );
 }
 
+// P7: Fire-and-forget banner event tracking
+function trackBannerEvent(bannerId: string, eventType: 'impression' | 'click') {
+  // Skip tracking for fallback/demo banners (numeric IDs)
+  if (/^\d+$/.test(bannerId)) return;
+  fetch('/api/banners/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ banner_id: bannerId, event_type: eventType }),
+  }).catch(() => {
+    // Silently ignore tracking failures
+  });
+}
+
 // Single Banner Card Component
 function BannerCard({
   banner,
@@ -236,6 +249,15 @@ function BannerCard({
   const description = locale === 'ar' ? banner.description_ar : banner.description_en;
   const badgeText = locale === 'ar' ? banner.badge_text_ar : banner.badge_text_en;
   const ctaText = locale === 'ar' ? banner.cta_text_ar : banner.cta_text_en;
+
+  // P7: Track impression when banner becomes active
+  const impressionTracked = useRef(false);
+  useEffect(() => {
+    if (isActive && !impressionTracked.current) {
+      impressionTracked.current = true;
+      trackBannerEvent(banner.id, 'impression');
+    }
+  }, [isActive, banner.id]);
 
   const gradientStart = banner.gradient_start || '#009DE0';
   const gradientEnd = banner.gradient_end || '#0077B6';
@@ -411,7 +433,11 @@ function BannerCard({
   // Wrap with Link if link_url exists
   if (banner.link_url) {
     return (
-      <Link href={`/${locale}${banner.link_url}`} className="block">
+      <Link
+        href={`/${locale}${banner.link_url}`}
+        className="block"
+        onClick={() => trackBannerEvent(banner.id, 'click')}
+      >
         {CardContent}
       </Link>
     );

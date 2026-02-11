@@ -67,6 +67,21 @@ const DURATION_LABELS: Record<DurationType, { ar: string; en: string }> = {
   '1_month': { ar: 'شهر', en: '1 Month' },
 };
 
+// P11: Rejection reason templates
+const REJECTION_TEMPLATES = [
+  {
+    ar: 'المحتوى غير مناسب أو يحتوي على معلومات مضللة',
+    en: 'Content is inappropriate or contains misleading information',
+  },
+  { ar: 'جودة الصورة منخفضة أو غير واضحة', en: 'Image quality is low or unclear' },
+  { ar: 'يرجى تعديل النص ليكون أوضح', en: 'Please revise the text to be clearer' },
+  {
+    ar: 'العرض لا يتوافق مع سياسات المنصة',
+    en: 'The offer does not comply with platform policies',
+  },
+  { ar: 'التواريخ المحددة غير صحيحة', en: 'The specified dates are incorrect' },
+];
+
 export default function AdminBannerApprovalsPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -83,6 +98,13 @@ export default function AdminBannerApprovalsPage() {
   const [cancelReason, setCancelReason] = useState('');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [expandedBanner, setExpandedBanner] = useState<string | null>(null);
+
+  // P11: Search by provider name
+  const [searchQuery, setSearchQuery] = useState('');
+  // P11: Bulk selection
+  const [selectedBanners, setSelectedBanners] = useState<Set<string>>(new Set());
+  // P11: Bulk action loading
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -123,6 +145,110 @@ export default function AdminBannerApprovalsPage() {
     }
 
     setPendingBanners(data || []);
+  }
+
+  // P11: Filter banners by provider name
+  const filteredPendingBanners = searchQuery
+    ? pendingBanners.filter(
+        (b) =>
+          b.provider_name_ar?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.provider_name_en?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.title_ar?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.title_en?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : pendingBanners;
+
+  // P11: Toggle banner selection
+  function toggleBannerSelection(bannerId: string) {
+    setSelectedBanners((prev) => {
+      const next = new Set(prev);
+      if (next.has(bannerId)) {
+        next.delete(bannerId);
+      } else {
+        next.add(bannerId);
+      }
+      return next;
+    });
+  }
+
+  // P11: Select/deselect all
+  function toggleSelectAll() {
+    if (selectedBanners.size === filteredPendingBanners.length) {
+      setSelectedBanners(new Set());
+    } else {
+      setSelectedBanners(new Set(filteredPendingBanners.map((b) => b.id)));
+    }
+  }
+
+  // P11: Bulk approve
+  async function handleBulkApprove() {
+    if (selectedBanners.size === 0) return;
+    setBulkLoading(true);
+    const supabase = createClient();
+
+    try {
+      const ids = Array.from(selectedBanners);
+      const { error } = await supabase
+        .from('homepage_banners')
+        .update({
+          approval_status: 'approved',
+          is_active: true,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id,
+        })
+        .in('id', ids);
+
+      if (error) throw error;
+
+      setSuccessMessage(
+        locale === 'ar'
+          ? `تم قبول ${ids.length} بانر بنجاح`
+          : `${ids.length} banners approved successfully`
+      );
+      setSelectedBanners(new Set());
+      await loadPendingBanners();
+    } catch {
+      alert(locale === 'ar' ? 'حدث خطأ أثناء القبول الجماعي' : 'Error in bulk approval');
+    } finally {
+      setBulkLoading(false);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  }
+
+  // P11: Bulk reject
+  async function handleBulkReject() {
+    if (selectedBanners.size === 0 || !rejectReason.trim()) return;
+    setBulkLoading(true);
+    const supabase = createClient();
+
+    try {
+      const ids = Array.from(selectedBanners);
+      const { error } = await supabase
+        .from('homepage_banners')
+        .update({
+          approval_status: 'rejected',
+          is_active: false,
+          rejection_reason: rejectReason,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: user?.id,
+        })
+        .in('id', ids);
+
+      if (error) throw error;
+
+      setSuccessMessage(
+        locale === 'ar' ? `تم رفض ${ids.length} بانر` : `${ids.length} banners rejected`
+      );
+      setSelectedBanners(new Set());
+      setShowRejectModal(null);
+      setRejectReason('');
+      await loadPendingBanners();
+    } catch {
+      alert(locale === 'ar' ? 'حدث خطأ أثناء الرفض الجماعي' : 'Error in bulk rejection');
+    } finally {
+      setBulkLoading(false);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
   }
 
   async function handleApprove(bannerId: string) {
@@ -353,8 +479,68 @@ export default function AdminBannerApprovalsPage() {
           </Button>
         </div>
 
+        {/* P11: Search & Bulk Actions */}
+        {pendingBanners.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 p-4 mb-4 flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder={
+                  locale === 'ar'
+                    ? 'بحث باسم المتجر أو العنوان...'
+                    : 'Search by provider name or title...'
+                }
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary text-sm`}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedBanners.size === filteredPendingBanners.length &&
+                    filteredPendingBanners.length > 0
+                  }
+                  onChange={toggleSelectAll}
+                  className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary"
+                />
+                {locale === 'ar' ? 'تحديد الكل' : 'Select All'}
+              </label>
+              {selectedBanners.size > 0 && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={handleBulkApprove}
+                    disabled={bulkLoading}
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs"
+                  >
+                    <Check className="w-3 h-3 me-1" />
+                    {locale === 'ar'
+                      ? `قبول (${selectedBanners.size})`
+                      : `Approve (${selectedBanners.size})`}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowRejectModal('bulk')}
+                    disabled={bulkLoading}
+                    className="text-red-600 border-red-200 hover:bg-red-50 text-xs"
+                  >
+                    <X className="w-3 h-3 me-1" />
+                    {locale === 'ar'
+                      ? `رفض (${selectedBanners.size})`
+                      : `Reject (${selectedBanners.size})`}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Pending Banners List */}
-        {pendingBanners.length === 0 ? (
+        {filteredPendingBanners.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
@@ -370,7 +556,7 @@ export default function AdminBannerApprovalsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {pendingBanners.map((banner) => (
+            {filteredPendingBanners.map((banner) => (
               <div
                 key={banner.id}
                 className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"
@@ -378,8 +564,14 @@ export default function AdminBannerApprovalsPage() {
                 {/* Banner Header */}
                 <div className="p-4 border-b border-slate-100">
                   <div className="flex items-start justify-between">
-                    {/* Provider Info */}
+                    {/* P11: Checkbox + Provider Info */}
                     <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedBanners.has(banner.id)}
+                        onChange={() => toggleBannerSelection(banner.id)}
+                        className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary flex-shrink-0"
+                      />
                       {banner.provider_logo ? (
                         <img
                           src={banner.provider_logo}
@@ -603,6 +795,24 @@ export default function AdminBannerApprovalsPage() {
                 </h2>
               </div>
               <div className="p-6 space-y-4">
+                {/* P11: Rejection reason templates */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    {locale === 'ar' ? 'قوالب جاهزة' : 'Quick Templates'}
+                  </label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {REJECTION_TEMPLATES.map((tpl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setRejectReason(locale === 'ar' ? tpl.ar : tpl.en)}
+                        className="text-xs px-2.5 py-1 rounded-full border border-slate-200 text-slate-600 hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors"
+                      >
+                        {locale === 'ar' ? tpl.ar : tpl.en}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
                     {locale === 'ar' ? 'سبب الرفض *' : 'Rejection Reason *'}
@@ -620,8 +830,16 @@ export default function AdminBannerApprovalsPage() {
                 </div>
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => handleReject(showRejectModal)}
-                    disabled={actionLoading === showRejectModal || !rejectReason.trim()}
+                    onClick={() =>
+                      showRejectModal === 'bulk'
+                        ? handleBulkReject()
+                        : handleReject(showRejectModal)
+                    }
+                    disabled={
+                      (showRejectModal !== 'bulk' && actionLoading === showRejectModal) ||
+                      bulkLoading ||
+                      !rejectReason.trim()
+                    }
                     className="flex-1 bg-red-600 hover:bg-red-700"
                   >
                     {actionLoading === showRejectModal ? (

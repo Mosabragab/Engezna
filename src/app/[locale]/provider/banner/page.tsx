@@ -177,10 +177,39 @@ export default function ProviderBannerPage() {
   const [dateWarning, setDateWarning] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
+  const [hasDraft, setHasDraft] = useState(false);
+
+  const DRAFT_KEY = 'engezna_banner_draft';
 
   useEffect(() => {
     checkAuthAndLoad();
+    // P9: Restore draft from localStorage
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const draft = JSON.parse(saved);
+        if (draft && draft.title_ar) {
+          setFormData(draft);
+          setHasDraft(true);
+          setShowForm(true);
+        }
+      }
+    } catch {
+      // Ignore invalid draft data
+    }
   }, []);
+
+  // P9: Auto-save draft to localStorage when form changes
+  useEffect(() => {
+    if (showForm && !isEditing && formData.title_ar) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+        setHasDraft(true);
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }, [formData, showForm, isEditing]);
 
   useEffect(() => {
     // Check if start date is less than 3 days from now
@@ -400,6 +429,9 @@ export default function ProviderBannerPage() {
       setFormData(defaultFormData);
       setIsEditing(false);
       setEditingBannerId(null);
+      // P9: Clear draft on successful submission
+      localStorage.removeItem(DRAFT_KEY);
+      setHasDraft(false);
     } catch (error) {
       console.error('Save error:', error);
       alert(locale === 'ar' ? 'حدث خطأ أثناء حفظ البانر' : 'Error saving banner');
