@@ -79,6 +79,62 @@
 
 ## القسم الأول: مشاكل حرجة يجب حلها فوراً (Priority: CRITICAL)
 
+### 1.0 🔴🔴 تسريب Service Role Key في Triggers (الأعلى خطورة - مؤكد من SQL حقيقي)
+
+**المصدر:** نتائج SQL مباشرة من قاعدة الإنتاج (2026-02-12)
+**الحالة:** مؤكد 100% - ليس افتراضاً
+
+**المشكلة:** 7 triggers في قاعدة البيانات الحية تحتوي على **Service Role JWT مكتوب حرفياً** داخل `action_statement`:
+
+| Trigger                        | الجدول          | النوع         |
+| ------------------------------ | --------------- | ------------- |
+| `new_review_notification`      | reviews         | INSERT        |
+| `support_tickets_notification` | support_tickets | INSERT/UPDATE |
+| `ticket_messages_notification` | ticket_messages | INSERT        |
+| `new_order_notification`       | orders          | INSERT        |
+| `refunds_notification`         | refunds         | INSERT/UPDATE |
+| `order_status_notification`    | orders          | UPDATE        |
+| `new_message_notification`     | chat_messages   | INSERT        |
+
+كل هذه الـ triggers تستخدم `supabase_functions.http_request()` مع Bearer token حرفي يمثل الـ Service Role Key.
+
+**السبب:** أُنشئت عبر **Supabase Dashboard → Database Webhooks** الذي يضع الـ JWT كـ literal بدل استخدام `current_setting()`. ملفات الـ migrations في الكود تستخدم النمط الآمن `current_setting('supabase.service_role_key', true)` لكن الـ Dashboard تجاوز ذلك.
+
+**الخطر:**
+
+- الـ Service Role Key يتخطى **كل سياسات RLS** ويعطي صلاحيات كاملة
+- أي شخص يستطيع قراءة `pg_trigger` (حسب صلاحيات DB) يحصل على المفتاح
+- المفتاح يسمح بقراءة/كتابة/حذف **أي بيانات** في كل الجداول
+
+**ملاحظة مهمة:** هناك أيضاً **triggers مكررة الوظيفة** - مثلاً:
+
+- `new_order_notification` (غير آمن، webhook) + `on_new_order_notification` (آمن، PL/pgSQL function)
+- كلاهما يعملان على نفس الحدث → تكرار في الإشعارات + مخاطر أمنية
+
+**الإجراء المطلوب (بالترتيب):**
+
+1. **فوري:** حذف الـ 7 triggers غير الآمنة:
+
+```sql
+DROP TRIGGER IF EXISTS new_review_notification ON public.reviews;
+DROP TRIGGER IF EXISTS support_tickets_notification ON public.support_tickets;
+DROP TRIGGER IF EXISTS ticket_messages_notification ON public.ticket_messages;
+DROP TRIGGER IF EXISTS new_order_notification ON public.orders;
+DROP TRIGGER IF EXISTS refunds_notification ON public.refunds;
+DROP TRIGGER IF EXISTS order_status_notification ON public.orders;
+DROP TRIGGER IF EXISTS new_message_notification ON public.chat_messages;
+```
+
+2. **فوري بعد الحذف:** عمل Rotate للـ Service Role Key من Supabase Dashboard:
+   - Settings → API → Service Role Key → Rotate
+   - تحديث كل البيئات التي تستخدم المفتاح القديم (Vercel env vars, .env.local, etc.)
+
+3. **تحقق:** التأكد أن الـ triggers الآمنة (المبدوءة بـ `on_`) تعمل بشكل صحيح وتغطي كل الحالات
+
+4. **منع التكرار:** عدم استخدام Database Webhooks من الـ Dashboard مستقبلاً - استخدام migrations فقط
+
+---
+
 ### 1.1 🔴 خطر الطلبات الوهمية (Phantom Orders) - الدفع الإلكتروني
 
 **الموقع:** `src/app/[locale]/checkout/page.tsx` (سطر 1016-1018)
@@ -154,6 +210,48 @@
 
 ---
 
+### 1.5 🔴 Kashier Webhook يقبل Payload بدون Signature إلزامية (مؤكد - من تقرير Codex + تحقق)
+
+**الموقع:** `src/app/api/payment/kashier/webhook/route.ts` (سطر 31-38)
+
+**المشكلة:** التحقق من التوقيع **اختياري** - إذا لم يرسل المهاجم حقل signature أصلاً، يقبل الـ webhook أي بيانات:
+
+```typescript
+if (signature) {
+  // ← المشكلة: التحقق فقط إذا signature موجودة!
+  const isValid = validateKashierSignature(body, signature);
+  if (!isValid) {
+    return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });
+  }
+}
+// إذا لم ترسل signature أصلاً → يمر بدون تحقق!
+```
+
+**الخطر:** أي شخص يعرف URL الـ webhook يستطيع إرسال طلبات مزيفة لتغيير حالة الدفع
+
+**الحل:** تحويل الشرط لإلزامي - رفض أي request بدون signature صالحة
+
+---
+
+### 1.6 🔴 Promo Validation يثق بـ user_id من العميل (مؤكد - من تقرير Codex + تحقق)
+
+**الموقع:** `src/app/api/promo/validate/route.ts`
+
+**المشكلة:** الـ endpoint يقرأ `user_id` من body الطلب مباشرة ويستخدمه مع Service Role Key (الذي يتخطى RLS):
+
+```typescript
+const { code, user_id, provider_id, ... } = body;  // user_id من العميل
+const supabase = createClient(supabaseUrl, supabaseServiceKey, ...);  // service role
+// ... يستعلم بـ user_id بدون أي تحقق من هوية المتصل
+.eq('user_id', user_id);
+```
+
+**الخطر:** مهاجم يرسل user_id مختلف → يستخدم أكواد خصم خاصة بمستخدم آخر أو يتخطى حدود الاستخدام
+
+**الحل:** استخدام `getUser()` من Supabase Auth لجلب الهوية الفعلية بدل الاعتماد على body
+
+---
+
 ## القسم الثاني: مشاكل أمنية تحتاج إصلاح (Priority: HIGH)
 
 ### 2.1 ⚠️ حماية CSRF مبنية لكن غير مفعلة
@@ -203,6 +301,35 @@
 **المشكلة:** لا يوجد cron job يحول الطلبات ذات `payment_status='pending'` لـ `failed` بعد فترة
 **الخطر:** العميل يرى "قيد الانتظار" للأبد إذا فشل الـ webhook بصمت
 **الحل:** إنشاء cron job يعالج الطلبات المعلقة بعد 30 دقيقة
+
+### 2.5 ⚠️ لا يوجد Content-Security-Policy (CSP) header (مؤكد - من تقرير Codex)
+
+**الموقع:** `next.config.ts` (سطر 48-85)
+
+**المشكلة:** يوجد headers أمنية جيدة (HSTS, X-Frame-Options, etc.) لكن **لا يوجد CSP**. هذا يترك التطبيق عرضة لـ:
+
+- حقن scripts خارجية
+- تحميل موارد من مصادر غير موثوقة
+
+**الحل:** إضافة CSP header بنمط report-only أولاً ثم enforce بعد التأكد من التوافق مع Supabase/Kashier/Firebase/HERE Maps
+
+---
+
+### 2.6 ⚠️ سياسات RLS SELECT واسعة جداً (مؤكد - من تقرير Codex + SQL)
+
+**المشكلة:** عدة جداول تسمح بالقراءة العامة بدون أي شرط:
+
+| الجدول        | السياسة        | الخطر                           |
+| ------------- | -------------- | ------------------------------- |
+| `promo_codes` | `using (true)` | أي شخص يرى كل أكواد الخصم       |
+| `profiles`    | `using (true)` | بيانات المستخدمين مكشوفة للجميع |
+| `reviews`     | `using (true)` | مقبول (عرض عام طبيعي)           |
+| `categories`  | `using (true)` | مقبول (بيانات عامة)             |
+
+**الحل:**
+
+- `promo_codes`: تضييق لـ `active = true AND valid_from <= now() AND valid_until >= now()`
+- `profiles`: إخفاء الأعمدة الحساسة (phone, email) عبر view أو تضييق الـ policy
 
 ---
 

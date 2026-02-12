@@ -256,6 +256,18 @@
 > **⚠️ تنبيه Supabase:** كل مهمة تخص قاعدة البيانات يجب أن تبدأ باستعلامات فحص ينفذها المالك على SQL Editor
 > ويشارك نتائجها قبل كتابة أي migration أو تعديل. **ممنوع الافتراض - اليقين فقط.**
 
+### 1.5.0 حذف Service Role Key المكشوف من Triggers (الأعلى خطورة - مؤكد)
+
+> **مؤكد من SQL مباشر على قاعدة الإنتاج (2/12)**
+
+| المهمة                                                                             | الحالة | التاريخ |
+| ---------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] حذف 7 triggers تحتوي JWT حرفي (new_review/support_tickets/ticket_messages/...) | ⬜     |         |
+| [ ] عمل Rotate للـ Service Role Key من Supabase Dashboard                          | ⬜     |         |
+| [ ] تحديث المفتاح الجديد في Vercel env vars وكل البيئات                            | ⬜     |         |
+| [ ] التأكد أن triggers الآمنة (on\_\*) تغطي كل الحالات                             | ⬜     |         |
+| [ ] حذف Database Webhooks من Dashboard لمنع التكرار                                | ⬜     |         |
+
 ### 1.5.1 إصلاح خطر الطلبات الوهمية (Phantom Orders)
 
 | المهمة                                                                     | الحالة | التاريخ |
@@ -305,6 +317,36 @@
 | ---------------------------------------------------------------------- | ------ | ------- |
 | [ ] إنشاء cron job لتحويل طلبات `payment_status='pending'` لـ `failed` | ⬜     |         |
 | [ ] إضافة إشعار للعميل عند فشل/انتهاء صلاحية الدفع                     | ⬜     |         |
+
+### 1.5.7 إلزام Kashier Webhook Signature (من تقرير Codex)
+
+| المهمة                                                        | الحالة | التاريخ |
+| ------------------------------------------------------------- | ------ | ------- |
+| [ ] جعل signature إلزامية في webhook handler (رفض بدون توقيع) | ⬜     |         |
+| [ ] إضافة logging لمحاولات webhook بدون signature             | ⬜     |         |
+
+### 1.5.8 إصلاح Promo Validation Identity Spoofing (من تقرير Codex)
+
+| المهمة                                                                        | الحالة | التاريخ |
+| ----------------------------------------------------------------------------- | ------ | ------- |
+| [ ] ربط promo validation بـ session المستخدم الفعلية بدل body user_id         | ⬜     |         |
+| [ ] استخدام `getUser()` من Supabase Auth بدل قبول user_id من الـ request body | ⬜     |         |
+
+### 1.5.9 إضافة Content-Security-Policy (من تقرير Codex)
+
+| المهمة                                                       | الحالة | التاريخ |
+| ------------------------------------------------------------ | ------ | ------- |
+| [ ] إضافة CSP header في next.config.ts (report-only أولاً)   | ⬜     |         |
+| [ ] اختبار التوافق مع Supabase, Kashier, Firebase, HERE Maps | ⬜     |         |
+| [ ] التحويل من report-only لـ enforce بعد التأكد             | ⬜     |         |
+
+### 1.5.10 تضييق RLS Policies المفتوحة (من تقرير Codex)
+
+| المهمة                                                       | الحالة | التاريخ |
+| ------------------------------------------------------------ | ------ | ------- |
+| [ ] تضييق SELECT على promo_codes (active + valid date فقط)   | ⬜     |         |
+| [ ] مراجعة SELECT policies على profiles (إخفاء بيانات حساسة) | ⬜     |         |
+| [ ] تنظيف السياسات المتكررة/المتداخلة على الجداول            | ⬜     |         |
 
 ---
 
@@ -572,27 +614,32 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ### مشاكل يجب مراقبتها بعد النشر
 
-| المشكلة                              | الحل المقترح                                      | الحالة  |
-| ------------------------------------ | ------------------------------------------------- | ------- |
-| Double polling في الإشعارات          | إزالة الـ polling الزائد في `useNotifications.ts` | ✅ تم   |
-| Supabase client creation متكرر       | استخدام singleton pattern                         | ⬜      |
-| Memory leak محتمل في channel cleanup | استخدام useRef بدل state للـ channel              | ✅ تم   |
-| Edge Functions غير منشورة            | نشرها وربطها بـ database webhooks                 | ⚠️ جزئي |
-| لا صوت عند تغيير حالة الطلب          | إضافة صوت order-update + إصلاح polling            | ✅ تم   |
-| RLS يحظر إنشاء طلبات خاصة            | إضافة سياسة INSERT مرتبطة بمالك البث              | ✅ تم   |
-| طلبات خاصة منتهية تظهر للعميل        | فلترة client-side + trigger + cron                | ✅ تم   |
-| حالة الطلب لا تتحدث على كارت التاجر  | auto-polling 15s + إصلاح اسم الحالة               | ✅ تم   |
-| أصناف الطلب الخاص مفقودة من التفاصيل | جلب من `custom_order_items` بدل `order_items`     | ✅ تم   |
-| نافذة الإشعارات تظهر بشكل متكرر      | فحص localStorage داخل timer effect                | ✅ تم   |
-| migrations غير مطبقة على الإنتاج     | تم تطبيقها عبر SQL Editor (2/9)                   | ✅ تم   |
-| SMS/WhatsApp notifications           | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة | ⬜      |
-| طلبات وهمية (Phantom Orders)         | إنشاء الطلب قبل التوجيه لـ Kashier (المرحلة 1.5)  | ⬜      |
-| Kashier Refund API مفقود             | إنشاء endpoint للاسترجاع الفعلي (المرحلة 1.5)     | ⬜      |
-| Webhook duplicate processing         | إضافة idempotency check (المرحلة 1.5)             | ⬜      |
-| CSRF middleware غير مفعل             | تطبيق withCsrf على API routes (المرحلة 1.5)       | ⬜      |
-| ~80+ console.log في الإنتاج          | استبدال بـ logger utility (المرحلة 1.5)           | ⬜      |
-| طلبات معلقة بالدفع للأبد             | cron job لتنظيف pending_payment (المرحلة 1.5)     | ⬜      |
-| ملفات كبيرة (>2000 سطر)              | تقسيم تدريجي - ليس حاجزاً للنشر                   | ⬜      |
+| المشكلة                                  | الحل المقترح                                        | الحالة     |
+| ---------------------------------------- | --------------------------------------------------- | ---------- |
+| Double polling في الإشعارات              | إزالة الـ polling الزائد في `useNotifications.ts`   | ✅ تم      |
+| Supabase client creation متكرر           | استخدام singleton pattern                           | ⬜         |
+| Memory leak محتمل في channel cleanup     | استخدام useRef بدل state للـ channel                | ✅ تم      |
+| Edge Functions غير منشورة                | نشرها وربطها بـ database webhooks                   | ⚠️ جزئي    |
+| لا صوت عند تغيير حالة الطلب              | إضافة صوت order-update + إصلاح polling              | ✅ تم      |
+| RLS يحظر إنشاء طلبات خاصة                | إضافة سياسة INSERT مرتبطة بمالك البث                | ✅ تم      |
+| طلبات خاصة منتهية تظهر للعميل            | فلترة client-side + trigger + cron                  | ✅ تم      |
+| حالة الطلب لا تتحدث على كارت التاجر      | auto-polling 15s + إصلاح اسم الحالة                 | ✅ تم      |
+| أصناف الطلب الخاص مفقودة من التفاصيل     | جلب من `custom_order_items` بدل `order_items`       | ✅ تم      |
+| نافذة الإشعارات تظهر بشكل متكرر          | فحص localStorage داخل timer effect                  | ✅ تم      |
+| migrations غير مطبقة على الإنتاج         | تم تطبيقها عبر SQL Editor (2/9)                     | ✅ تم      |
+| SMS/WhatsApp notifications               | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة   | ⬜         |
+| **Service Role JWT مكشوف في 7 triggers** | **حذف + rotate فوري (المرحلة 1.5.0) - مؤكد من SQL** | **⬜ حرج** |
+| Kashier webhook بدون signature إلزامية   | إلزام التوقيع ورفض بدونه (مؤكد من Codex)            | ⬜         |
+| Promo validation يثق بـ user_id من body  | ربط بـ session الفعلية (مؤكد من Codex)              | ⬜         |
+| لا يوجد CSP header                       | إضافة Content-Security-Policy تدريجياً (Codex)      | ⬜         |
+| سياسات SELECT واسعة (promo, profiles)    | تضييق RLS policies المفتوحة                         | ⬜         |
+| طلبات وهمية (Phantom Orders)             | إنشاء الطلب قبل التوجيه لـ Kashier (المرحلة 1.5)    | ⬜         |
+| Kashier Refund API مفقود                 | إنشاء endpoint للاسترجاع الفعلي (المرحلة 1.5)       | ⬜         |
+| Webhook duplicate processing             | إضافة idempotency check (المرحلة 1.5)               | ⬜         |
+| CSRF middleware غير مفعل                 | تطبيق withCsrf على API routes (المرحلة 1.5)         | ⬜         |
+| ~80+ console.log في الإنتاج              | استبدال بـ logger utility (المرحلة 1.5)             | ⬜         |
+| طلبات معلقة بالدفع للأبد                 | cron job لتنظيف pending_payment (المرحلة 1.5)       | ⬜         |
+| ملفات كبيرة (>2000 سطر)                  | تقسيم تدريجي - ليس حاجزاً للنشر                     | ⬜         |
 
 ### ملفات مرجعية
 
@@ -609,14 +656,15 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ## سجل التحديثات
 
-| التاريخ    | التحديث                                                                      | بواسطة |
-| ---------- | ---------------------------------------------------------------------------- | ------ |
-| 2026-02-08 | إنشاء الخطة الشاملة                                                          | Claude |
-| 2026-02-08 | اعتماد الخطة + إضافة ملاحظات المراجعة (Screenshots, Data Safety)             | Owner  |
-| 2026-02-08 | تنفيذ المرحلة 0 بالكامل (أمان Firebase, jspdf, test accounts, RBAC)          | Claude |
-| 2026-02-08 | تنفيذ المرحلة 1 بالكامل (AudioManager, VAPID, notifications, preferences UI) | Claude |
-| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync           | Claude |
-| 2026-02-09 | إصلاح نظام الطلبات الخاصة: auto-archive, RLS, حالات, أصناف, إشعارات (1.9)    | Claude |
-| 2026-02-09 | تناسق تصميم كروت الطلبات الخاصة + زر تأكيد الدفع على الكارت (1.10)           | Claude |
-| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor               | Claude |
-| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md  | Claude |
+| التاريخ    | التحديث                                                                        | بواسطة |
+| ---------- | ------------------------------------------------------------------------------ | ------ |
+| 2026-02-08 | إنشاء الخطة الشاملة                                                            | Claude |
+| 2026-02-08 | اعتماد الخطة + إضافة ملاحظات المراجعة (Screenshots, Data Safety)               | Owner  |
+| 2026-02-08 | تنفيذ المرحلة 0 بالكامل (أمان Firebase, jspdf, test accounts, RBAC)            | Claude |
+| 2026-02-08 | تنفيذ المرحلة 1 بالكامل (AudioManager, VAPID, notifications, preferences UI)   | Claude |
+| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync             | Claude |
+| 2026-02-09 | إصلاح نظام الطلبات الخاصة: auto-archive, RLS, حالات, أصناف, إشعارات (1.9)      | Claude |
+| 2026-02-09 | تناسق تصميم كروت الطلبات الخاصة + زر تأكيد الدفع على الكارت (1.10)             | Claude |
+| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor                 | Claude |
+| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md    | Claude |
+| 2026-02-12 | تأكيد تسريب Service Role JWT في 7 triggers (من SQL حقيقي) + دمج اكتشافات Codex | Claude |
