@@ -258,53 +258,53 @@
 
 ### 1.5.1 إصلاح خطر الطلبات الوهمية (Phantom Orders)
 
-| المهمة                                                                          | الحالة | التاريخ |
-| ------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إنشاء الطلب بحالة `pending_payment` **قبل** توجيه المستخدم لـ Kashier        | ⬜     |         |
-| [ ] إزالة اعتماد localStorage لحفظ بيانات الطلب (`pendingOnlineOrderData`)       | ⬜     |         |
-| [ ] تحديث payment-result page ليقرأ من DB بدل localStorage                       | ⬜     |         |
-| [ ] إضافة cron job لإلغاء الطلبات بحالة `pending_payment` بعد 30 دقيقة          | ⬜     |         |
+| المهمة                                                                     | الحالة | التاريخ |
+| -------------------------------------------------------------------------- | ------ | ------- |
+| [ ] إنشاء الطلب بحالة `pending_payment` **قبل** توجيه المستخدم لـ Kashier  | ⬜     |         |
+| [ ] إزالة اعتماد localStorage لحفظ بيانات الطلب (`pendingOnlineOrderData`) | ⬜     |         |
+| [ ] تحديث payment-result page ليقرأ من DB بدل localStorage                 | ⬜     |         |
+| [ ] إضافة cron job لإلغاء الطلبات بحالة `pending_payment` بعد 30 دقيقة     | ⬜     |         |
 
 ### 1.5.2 إنشاء Kashier Refund API
 
-| المهمة                                                           | الحالة | التاريخ |
-| ---------------------------------------------------------------- | ------ | ------- |
-| [ ] إنشاء `/api/payment/kashier/refund` endpoint                 | ⬜     |         |
-| [ ] ربط الـ endpoint بـ Kashier Refund API                        | ⬜     |         |
-| [ ] تخزين `refund_transaction_id` عند إرسال الاسترجاع            | ⬜     |         |
-| [ ] إضافة webhook handler لتأكيد الاسترجاع من Kashier             | ⬜     |         |
-| [ ] توضيح عملية استرجاع الطلبات المدفوعة نقداً (COD)             | ⬜     |         |
+| المهمة                                                | الحالة | التاريخ |
+| ----------------------------------------------------- | ------ | ------- |
+| [ ] إنشاء `/api/payment/kashier/refund` endpoint      | ⬜     |         |
+| [ ] ربط الـ endpoint بـ Kashier Refund API            | ⬜     |         |
+| [ ] تخزين `refund_transaction_id` عند إرسال الاسترجاع | ⬜     |         |
+| [ ] إضافة webhook handler لتأكيد الاسترجاع من Kashier | ⬜     |         |
+| [ ] توضيح عملية استرجاع الطلبات المدفوعة نقداً (COD)  | ⬜     |         |
 
 ### 1.5.3 حماية Webhook من المعالجة المكررة
 
 | المهمة                                                              | الحالة | التاريخ |
 | ------------------------------------------------------------------- | ------ | ------- |
 | [ ] إضافة unique constraint على `payment_transaction_id` في الطلبات | ⬜     |         |
-| [ ] إضافة idempotency check قبل معالجة الـ webhook                   | ⬜     |         |
+| [ ] إضافة idempotency check قبل معالجة الـ webhook                  | ⬜     |         |
 | [ ] التعامل مع حالات webhook retry من Kashier                       | ⬜     |         |
 
 ### 1.5.4 تفعيل حماية CSRF
 
-| المهمة                                                              | الحالة | التاريخ |
-| ------------------------------------------------------------------- | ------ | ------- |
-| [ ] تطبيق `withCsrf` middleware على API routes التي تغير البيانات    | ⬜     |         |
-| [ ] التأكد من إرسال CSRF token من الـ frontend مع كل request         | ⬜     |         |
-| [ ] استثناء webhooks و public APIs من CSRF check                     | ⬜     |         |
+| المهمة                                                            | الحالة | التاريخ |
+| ----------------------------------------------------------------- | ------ | ------- |
+| [ ] تطبيق `withCsrf` middleware على API routes التي تغير البيانات | ⬜     |         |
+| [ ] التأكد من إرسال CSRF token من الـ frontend مع كل request      | ⬜     |         |
+| [ ] استثناء webhooks و public APIs من CSRF check                  | ⬜     |         |
 
 ### 1.5.5 تنظيف Console.log وتحسين الأمان
 
-| المهمة                                                                        | الحالة | التاريخ |
-| ----------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إزالة/استبدال ~80+ console.log من كود الإنتاج بـ logger utility           | ⬜     |         |
-| [ ] إزالة console.log من webhook الدفع (بيانات حساسة)                         | ⬜     |         |
-| [ ] إصلاح Kashier credentials validation (throw error بدل fallback فارغ)      | ⬜     |         |
+| المهمة                                                                   | الحالة | التاريخ |
+| ------------------------------------------------------------------------ | ------ | ------- |
+| [ ] إزالة/استبدال ~80+ console.log من كود الإنتاج بـ logger utility      | ⬜     |         |
+| [ ] إزالة console.log من webhook الدفع (بيانات حساسة)                    | ⬜     |         |
+| [ ] إصلاح Kashier credentials validation (throw error بدل fallback فارغ) | ⬜     |         |
 
 ### 1.5.6 معالجة الطلبات المعلقة
 
-| المهمة                                                                     | الحالة | التاريخ |
-| -------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إنشاء cron job لتحويل طلبات `payment_status='pending'` لـ `failed`     | ⬜     |         |
-| [ ] إضافة إشعار للعميل عند فشل/انتهاء صلاحية الدفع                        | ⬜     |         |
+| المهمة                                                                 | الحالة | التاريخ |
+| ---------------------------------------------------------------------- | ------ | ------- |
+| [ ] إنشاء cron job لتحويل طلبات `payment_status='pending'` لـ `failed` | ⬜     |         |
+| [ ] إضافة إشعار للعميل عند فشل/انتهاء صلاحية الدفع                     | ⬜     |         |
 
 ---
 
@@ -586,24 +586,24 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | نافذة الإشعارات تظهر بشكل متكرر      | فحص localStorage داخل timer effect                | ✅ تم   |
 | migrations غير مطبقة على الإنتاج     | تم تطبيقها عبر SQL Editor (2/9)                   | ✅ تم   |
 | SMS/WhatsApp notifications           | توصيل provider (Twilio/MessageBird) - مرحلة لاحقة | ⬜      |
-| طلبات وهمية (Phantom Orders)        | إنشاء الطلب قبل التوجيه لـ Kashier (المرحلة 1.5)  | ⬜      |
-| Kashier Refund API مفقود            | إنشاء endpoint للاسترجاع الفعلي (المرحلة 1.5)     | ⬜      |
+| طلبات وهمية (Phantom Orders)         | إنشاء الطلب قبل التوجيه لـ Kashier (المرحلة 1.5)  | ⬜      |
+| Kashier Refund API مفقود             | إنشاء endpoint للاسترجاع الفعلي (المرحلة 1.5)     | ⬜      |
 | Webhook duplicate processing         | إضافة idempotency check (المرحلة 1.5)             | ⬜      |
-| CSRF middleware غير مفعل            | تطبيق withCsrf على API routes (المرحلة 1.5)       | ⬜      |
-| ~80+ console.log في الإنتاج         | استبدال بـ logger utility (المرحلة 1.5)            | ⬜      |
-| طلبات معلقة بالدفع للأبد            | cron job لتنظيف pending_payment (المرحلة 1.5)      | ⬜      |
-| ملفات كبيرة (>2000 سطر)            | تقسيم تدريجي - ليس حاجزاً للنشر                   | ⬜      |
+| CSRF middleware غير مفعل             | تطبيق withCsrf على API routes (المرحلة 1.5)       | ⬜      |
+| ~80+ console.log في الإنتاج          | استبدال بـ logger utility (المرحلة 1.5)           | ⬜      |
+| طلبات معلقة بالدفع للأبد             | cron job لتنظيف pending_payment (المرحلة 1.5)     | ⬜      |
+| ملفات كبيرة (>2000 سطر)              | تقسيم تدريجي - ليس حاجزاً للنشر                   | ⬜      |
 
 ### ملفات مرجعية
 
-| الملف                                               | المحتوى                        |
-| --------------------------------------------------- | ------------------------------ |
-| `docs/PRE_RELEASE_REVIEW_REPORT.md`                | تقرير مراجعة ما قبل النشر الشامل (2/12) |
-| `docs/LAUNCH_READINESS_CHECKLIST.md`                | قائمة جاهزية الإطلاق العامة    |
-| `docs/SECURITY_ISSUES_FOUND.md`                     | تقرير الثغرات الأمنية المكتشفة |
-| `docs/features/FIREBASE_PUSH_NOTIFICATIONS_PLAN.md` | خطة Firebase المفصلة           |
-| `docs/MONITORING_SETUP.md`                          | إعداد المراقبة                 |
-| `docs/QUALITY_LAYERS_ROADMAP.md`                    | خريطة طبقات الجودة             |
+| الملف                                               | المحتوى                                 |
+| --------------------------------------------------- | --------------------------------------- |
+| `docs/PRE_RELEASE_REVIEW_REPORT.md`                 | تقرير مراجعة ما قبل النشر الشامل (2/12) |
+| `docs/LAUNCH_READINESS_CHECKLIST.md`                | قائمة جاهزية الإطلاق العامة             |
+| `docs/SECURITY_ISSUES_FOUND.md`                     | تقرير الثغرات الأمنية المكتشفة          |
+| `docs/features/FIREBASE_PUSH_NOTIFICATIONS_PLAN.md` | خطة Firebase المفصلة                    |
+| `docs/MONITORING_SETUP.md`                          | إعداد المراقبة                          |
+| `docs/QUALITY_LAYERS_ROADMAP.md`                    | خريطة طبقات الجودة                      |
 
 ---
 
@@ -618,5 +618,5 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync           | Claude |
 | 2026-02-09 | إصلاح نظام الطلبات الخاصة: auto-archive, RLS, حالات, أصناف, إشعارات (1.9)    | Claude |
 | 2026-02-09 | تناسق تصميم كروت الطلبات الخاصة + زر تأكيد الدفع على الكارت (1.10)           | Claude |
-| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor                | Claude |
-| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md | Claude |
+| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor               | Claude |
+| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md  | Claude |
