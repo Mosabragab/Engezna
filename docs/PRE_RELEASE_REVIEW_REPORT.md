@@ -8,6 +8,55 @@
 
 ---
 
+## ⚠️ تنبيه مهم: سياسة التعامل مع Supabase وقاعدة البيانات
+
+> **قاعدة صارمة:** هذا التقرير مبني على مراجعة **كود المشروع فقط** (migrations، types، API routes).
+> كل ما يخص حالة قاعدة البيانات الفعلية (الجداول، الأعمدة، السياسات، الـ RLS، الـ triggers، الـ functions) **لا يمكن التأكد منه بنسبة 100%** من الكود وحده.
+>
+> **لذلك:**
+> - لا يجب افتراض أن migrations تم تطبيقها بالفعل على قاعدة الإنتاج
+> - لا يجب افتراض أن RLS policies تعمل كما هو متوقع بدون فحص مباشر
+> - لا يجب افتراض وجود أو عدم وجود أعمدة/جداول/constraints بدون استعلام
+>
+> **البروتوكول المطلوب قبل تنفيذ أي مهمة تتعلق بقاعدة البيانات:**
+> 1. Claude يكتب استعلامات SQL للفحص والتحقق
+> 2. المالك ينفذها على Supabase SQL Editor
+> 3. المالك يشارك النتائج مع Claude
+> 4. Claude يحلل ويبني قراراته على **بيانات حقيقية** وليس افتراضات
+>
+> **أمثلة على استعلامات ستكون مطلوبة قبل بدء العمل:**
+> ```sql
+> -- فحص الجداول الموجودة فعلياً
+> SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
+>
+> -- فحص أعمدة جدول معين
+> SELECT column_name, data_type, is_nullable, column_default
+> FROM information_schema.columns WHERE table_name = 'orders';
+>
+> -- فحص سياسات RLS المفعلة
+> SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
+> FROM pg_policies WHERE schemaname = 'public';
+>
+> -- فحص الـ constraints
+> SELECT conname, contype, conrelid::regclass
+> FROM pg_constraint WHERE conrelid = 'orders'::regclass;
+>
+> -- فحص الـ triggers المفعلة
+> SELECT trigger_name, event_manipulation, action_statement
+> FROM information_schema.triggers WHERE trigger_schema = 'public';
+>
+> -- فحص الـ cron jobs المسجلة
+> SELECT * FROM cron.job;
+> ```
+>
+> **هذا البروتوكول يضمن عدم:**
+> - إنشاء migration لجدول موجود بالفعل
+> - إضافة constraint مكرر
+> - تعديل سياسة RLS بناءً على افتراض خاطئ
+> - تجاهل مشكلة فعلية لأن الكود يبدو سليماً
+
+---
+
 ## ملخص تنفيذي
 
 بعد مراجعة معمقة لخارطة طريق النشر (`GOOGLE_PLAY_RELEASE_ROADMAP.md`) وكامل الكود، تم تحديد **مهام حرجة يجب تنفيذها** قبل استكمال رحلة النشر. المراحل 0 و 1 مكتملة بنجاح، لكن هناك مشاكل مكتشفة في التدفقات التجارية الأساسية وفجوات أمنية تحتاج معالجة.
