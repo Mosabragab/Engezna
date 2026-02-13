@@ -281,11 +281,11 @@
 
 | المهمة                                                | الحالة | التاريخ |
 | ----------------------------------------------------- | ------ | ------- |
-| [ ] إنشاء `/api/payment/kashier/refund` endpoint      | ⬜     |         |
-| [ ] ربط الـ endpoint بـ Kashier Refund API            | ⬜     |         |
-| [ ] تخزين `refund_transaction_id` عند إرسال الاسترجاع | ⬜     |         |
+| [x] إنشاء `/api/payment/kashier/refund` endpoint      | ✅     | 2/13    |
+| [x] ربط الـ endpoint بـ Kashier Refund API            | ✅     | 2/13    |
+| [x] تخزين `refund_transaction_id` عند إرسال الاسترجاع | ✅     | 2/13    |
 | [ ] إضافة webhook handler لتأكيد الاسترجاع من Kashier | ⬜     |         |
-| [ ] توضيح عملية استرجاع الطلبات المدفوعة نقداً (COD)  | ⬜     |         |
+| [x] توضيح عملية استرجاع الطلبات المدفوعة نقداً (COD)  | ✅     | 2/13    |
 
 ### 1.5.3 حماية Webhook من المعالجة المكررة
 
@@ -634,7 +634,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | لا يوجد CSP header                       | إضافة CSP report-only ✅ (2/13) - enforce لاحقاً           | 🔄 جزئي     |
 | سياسات SELECT واسعة (promo, profiles)    | تضييق RLS policies المفتوحة                                | ⬜          |
 | طلبات وهمية (Phantom Orders)             | إنشاء الطلب بـ pending_payment قبل Kashier ✅ (2/13)       | ✅ تم       |
-| Kashier Refund API مفقود                 | إنشاء endpoint للاسترجاع الفعلي (المرحلة 1.5)              | ⬜          |
+| Kashier Refund API مفقود                 | endpoint + Kashier API integration ✅ (2/13)               | ✅ تم       |
 | Webhook duplicate processing             | idempotency + unique constraint + retry handling ✅ (2/13) | ✅ تم       |
 | CSRF middleware غير مفعل                 | تطبيق withCsrf على API routes (المرحلة 1.5)                | ⬜          |
 | ~80+ console.log في الإنتاج              | webhook تم ✅ - باقي ~75 في الإنتاج (المرحلة 1.5)          | 🔄 جزئي     |

@@ -157,6 +157,64 @@ export interface KashierCallbackResponse {
   error?: string;
 }
 
+/**
+ * Refund a Kashier payment
+ * Calls Kashier's refund API to reverse a completed payment
+ *
+ * @see https://developers.kashier.io/
+ */
+export async function refundKashierPayment(params: {
+  transactionId: string;
+  orderId: string;
+  amount: number;
+  currency?: string;
+}): Promise<{
+  success: boolean;
+  refundId?: string;
+  error?: string;
+}> {
+  const { merchantId, apiKey, apiUrl } = kashierConfig;
+  const currency = params.currency || kashierConfig.currency;
+
+  // Kashier uses Basic auth: base64(merchantId:apiKey)
+  const authToken = Buffer.from(`${merchantId}:${apiKey}`).toString('base64');
+
+  try {
+    const response = await fetch(`${apiUrl}/payments/refund`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        transactionId: params.transactionId,
+        orderId: params.orderId,
+        amount: params.amount.toFixed(2),
+        currency,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || data.status === 'FAILURE') {
+      return {
+        success: false,
+        error: data.message || data.error || `Refund failed (HTTP ${response.status})`,
+      };
+    }
+
+    return {
+      success: true,
+      refundId: data.refundId || data.transactionId || data.id,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Network error during refund',
+    };
+  }
+}
+
 export function parseKashierCallback(params: Record<string, string>): KashierCallbackResponse {
   return {
     paymentStatus: (params.paymentStatus || params.status || 'FAILED') as KashierPaymentStatus,
