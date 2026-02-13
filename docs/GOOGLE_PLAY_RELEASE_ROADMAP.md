@@ -299,9 +299,10 @@
 
 | المهمة                                                            | الحالة | التاريخ |
 | ----------------------------------------------------------------- | ------ | ------- |
-| [ ] تطبيق `withCsrf` middleware على API routes التي تغير البيانات | ⬜     |         |
-| [ ] التأكد من إرسال CSRF token من الـ frontend مع كل request      | ⬜     |         |
-| [ ] استثناء webhooks و public APIs من CSRF check                  | ⬜     |         |
+| [x] تطبيق CSRF validation في middleware (log-only أولاً)          | ✅     | 2/13    |
+| [x] إرسال CSRF token من checkout (payment initiation)             | ✅     | 2/13    |
+| [x] استثناء webhooks و cron و auth من CSRF check                  | ✅     | 2/13    |
+| [ ] التحويل من log-only لـ enforce (CSRF_ENFORCE=true) بعد التأكد | ⬜     |         |
 
 ### 1.5.5 تنظيف Console.log وتحسين الأمان
 
@@ -636,7 +637,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | طلبات وهمية (Phantom Orders)             | إنشاء الطلب بـ pending_payment قبل Kashier ✅ (2/13)       | ✅ تم       |
 | Kashier Refund API مفقود                 | endpoint + Kashier API integration ✅ (2/13)               | ✅ تم       |
 | Webhook duplicate processing             | idempotency + unique constraint + retry handling ✅ (2/13) | ✅ تم       |
-| CSRF middleware غير مفعل                 | تطبيق withCsrf على API routes (المرحلة 1.5)                | ⬜          |
+| CSRF middleware غير مفعل                 | CSRF log-only في middleware ✅ (2/13) - enforce لاحقاً     | 🔄 جزئي     |
 | ~80+ console.log في الإنتاج              | webhook تم ✅ - باقي ~75 في الإنتاج (المرحلة 1.5)          | 🔄 جزئي     |
 | طلبات معلقة بالدفع للأبد                 | cron job كل 15 دقيقة لتنظيف pending_payment ✅ (2/13)      | ✅ تم       |
 | ملفات كبيرة (>2000 سطر)                  | تقسيم تدريجي - ليس حاجزاً للنشر                            | ⬜          |

@@ -28,7 +28,7 @@ export function generateCsrfToken(): string {
  */
 export function setCsrfCookie(response: NextResponse, token: string): NextResponse {
   response.cookies.set(CSRF_COOKIE_NAME, token, {
-    httpOnly: true,
+    httpOnly: false, // Must be readable by JavaScript for Double Submit Cookie pattern
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/',
@@ -154,7 +154,14 @@ export async function getOrCreateCsrfToken(): Promise<string> {
  * API endpoint paths that should skip CSRF validation
  * (e.g., webhooks, public APIs)
  */
-const CSRF_EXEMPT_PATHS = ['/api/webhooks/', '/api/public/', '/api/health'];
+const CSRF_EXEMPT_PATHS = [
+  '/api/webhooks/',
+  '/api/public/',
+  '/api/health',
+  '/api/payment/kashier/webhook', // Kashier sends callbacks
+  '/api/cron/', // Vercel cron jobs (protected by CRON_SECRET)
+  '/api/auth/', // Auth callbacks from Supabase
+];
 
 /**
  * Check if path is exempt from CSRF validation

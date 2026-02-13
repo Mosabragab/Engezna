@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { useCart } from '@/lib/store/cart';
 import { useAuth } from '@/lib/auth';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { CustomerLayout } from '@/components/customer/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,14 +132,7 @@ export default function CheckoutPage() {
   const locale = useLocale();
   const router = useRouter();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
-  const {
-    cart,
-    provider,
-    getSubtotal,
-    getTotal,
-    clearCart,
-    _hasHydrated,
-  } = useCart();
+  const { cart, provider, getSubtotal, getTotal, clearCart, _hasHydrated } = useCart();
 
   // Get location data from context (no redundant queries!)
   const {
@@ -1057,7 +1051,7 @@ export default function CheckoutPage() {
       // Initiate payment (creates order in DB + returns Kashier URL)
       const paymentResponse = await fetch('/api/payment/kashier/initiate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ orderData: pendingOrderData }),
       });
 
