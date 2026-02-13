@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendAdminInvitationEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // Create Supabase admin client
 function getSupabaseAdmin() {
@@ -110,17 +111,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error('[Admin Invitation Email] Failed to send:', result.error);
+      logger.error('[Admin Invitation Email] Failed to send', { error: result.error });
       return NextResponse.json({ error: result.error || 'Failed to send email' }, { status: 500 });
     }
 
-    console.log(`[Admin Invitation Email] Successfully sent to ${to}`);
+    logger.info(`[Admin Invitation Email] Successfully sent to ${to}`);
     return NextResponse.json({
       success: true,
       messageId: result.data?.id,
     });
   } catch (error) {
-    console.error('[Admin Invitation Email] Error:', error);
+    logger.error('[Admin Invitation Email] Error', { error });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

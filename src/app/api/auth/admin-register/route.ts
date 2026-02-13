@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -88,7 +89,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (inviteError || !invitation) {
-      console.error('[Admin Register] Invitation not found:', inviteError);
+      logger.error('[Admin Register] Invitation not found:', { error: inviteError });
       return NextResponse.json(
         {
           error:
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('[Admin Register] Auth error:', authError);
+      logger.error('[Admin Register] Auth error:', { error: authError });
 
       if (authError.message?.includes('already registered')) {
         return NextResponse.json(
@@ -214,7 +215,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      console.error('[Admin Register] Profile error:', profileError);
+      logger.error('[Admin Register] Profile error:', { error: profileError });
 
       // Rollback: delete auth user
       await supabase.auth.admin.deleteUser(userId);
@@ -241,7 +242,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError || !newAdmin) {
-      console.error('[Admin Register] Admin user error:', adminError);
+      logger.error('[Admin Register] Admin user error:', { error: adminError });
 
       // Rollback: delete profile and auth user
       await supabase.from('profiles').delete().eq('id', userId);
@@ -279,7 +280,7 @@ export async function POST(request: NextRequest) {
       });
 
       if (roleError) {
-        console.error('[Admin Register] Admin role error:', roleError);
+        logger.error('[Admin Register] Admin role error:', { error: roleError });
         // Continue anyway - admin was created
       }
     }
@@ -296,7 +297,7 @@ export async function POST(request: NextRequest) {
       .eq('id', invitation.id);
 
     if (updateError) {
-      console.error('[Admin Register] Update invitation error:', updateError);
+      logger.error('[Admin Register] Update invitation error:', { error: updateError });
       // Don't rollback - the important parts succeeded
     }
 
@@ -319,12 +320,12 @@ export async function POST(request: NextRequest) {
           is_read: false,
         });
       } catch (notifError) {
-        console.error('[Admin Register] Notification error:', notifError);
+        logger.error('[Admin Register] Notification error:', { error: notifError });
         // Don't fail registration if notification fails
       }
     }
 
-    console.log(
+    logger.info(
       `[Admin Register] Successfully registered admin ${email} with role ${invitation.role}`
     );
 
@@ -338,7 +339,7 @@ export async function POST(request: NextRequest) {
       adminId: newAdmin.id,
     });
   } catch (error) {
-    console.error('[Admin Register] Unexpected error:', error);
+    logger.error('[Admin Register] Unexpected error:', { error });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

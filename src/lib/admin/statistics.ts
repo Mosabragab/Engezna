@@ -11,6 +11,7 @@ import type {
   RegionalStats,
   OperationResult,
 } from './types';
+import { logger } from '@/lib/logger';
 
 // ═══════════════════════════════════════════════════════════════════════
 // دوال مساعدة - Helper Functions
@@ -116,7 +117,7 @@ export async function getDashboardStats(
     const { data: providersData, error: providersError } = await providersQuery;
 
     if (providersError) {
-      console.error('Error fetching providers:', providersError);
+      logger.error('Error fetching providers', { error: providersError });
       return { success: false, error: providersError.message };
     }
 
@@ -161,7 +162,7 @@ export async function getDashboardStats(
     const { data: profilesData, error: profilesError } = await profilesQuery;
 
     if (profilesError) {
-      console.error('Error fetching profiles:', profilesError);
+      logger.error('Error fetching profiles', { error: profilesError });
       return { success: false, error: profilesError.message };
     }
 
@@ -210,7 +211,7 @@ export async function getDashboardStats(
     const { data: ordersData, error: ordersError } = await ordersQuery;
 
     if (ordersError) {
-      console.error('Error fetching orders:', ordersError);
+      logger.error('Error fetching orders', { error: ordersError });
       return { success: false, error: ordersError.message };
     }
 
@@ -293,7 +294,7 @@ export async function getDashboardStats(
         pendingSettlement = pendingSettlementsData.reduce((sum, s) => sum + (s.net_payout || 0), 0);
       }
     } catch (err) {
-      console.error('Error fetching pending settlements:', err);
+      logger.error('Error fetching pending settlements', { error: err });
       // Fall back to 0 if there's an error
       pendingSettlement = 0;
     }
@@ -332,7 +333,7 @@ export async function getDashboardStats(
         openSupportTickets = count;
       }
     } catch (err) {
-      console.error('Error fetching support tickets:', err);
+      logger.error('Error fetching support tickets', { error: err });
       openSupportTickets = 0;
     }
 
@@ -355,7 +356,7 @@ export async function getDashboardStats(
         pendingRefunds = count;
       }
     } catch (err) {
-      console.error('Error fetching pending refunds:', err);
+      logger.error('Error fetching pending refunds', { error: err });
       pendingRefunds = 0;
     }
 
@@ -376,7 +377,7 @@ export async function getDashboardStats(
       },
     };
   } catch (err) {
-    console.error('Error in getDashboardStats:', err);
+    logger.error('Error in getDashboardStats', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',

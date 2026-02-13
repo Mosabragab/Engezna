@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 // Helper to get the Supabase URL and key for Edge Function calls
 function getSupabaseConfig() {
@@ -53,7 +54,7 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error getting embedding stats:', error);
+    logger.error('Error getting embedding stats', { error });
     return NextResponse.json({ error: 'Failed to get embedding statistics' }, { status: 500 });
   }
 }
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error triggering embedding generation:', error);
+    logger.error('Error triggering embedding generation', { error });
     return NextResponse.json({ error: 'Failed to trigger embedding generation' }, { status: 500 });
   }
 }

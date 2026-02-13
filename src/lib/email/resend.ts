@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 // Lazy initialization - only create client when needed (not at build time)
 let resendClient: Resend | null = null;
@@ -410,13 +411,13 @@ async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
   try {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      console.error(
+      logger.error(
         '[getTemplateFromDB] Supabase client not available - check SUPABASE_SERVICE_ROLE_KEY env var'
       );
       return null;
     }
 
-    console.log(`[getTemplateFromDB] Querying template: ${slug}`);
+    logger.debug(`[getTemplateFromDB] Querying template: ${slug}`);
     const { data, error } = await supabase
       .from('email_templates')
       .select('slug, subject, html_content, is_active')
@@ -425,19 +426,19 @@ async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
       .single();
 
     if (error) {
-      console.error(`[getTemplateFromDB] Query error for "${slug}":`, error.message);
+      logger.error(`[getTemplateFromDB] Query error for "${slug}"`, { error: error.message });
       return null;
     }
 
     if (!data) {
-      console.warn(`[getTemplateFromDB] Template "${slug}" not found in DB or is inactive`);
+      logger.warn(`[getTemplateFromDB] Template "${slug}" not found in DB or is inactive`);
       return null;
     }
 
-    console.log(`[getTemplateFromDB] Template "${slug}" found successfully`);
+    logger.debug(`[getTemplateFromDB] Template "${slug}" found successfully`);
     return data;
   } catch (error) {
-    console.error('[getTemplateFromDB] Error:', error);
+    logger.error('[getTemplateFromDB] Error', { error });
     return null;
   }
 }
@@ -498,13 +499,13 @@ export async function sendEmail({
     });
 
     if (error) {
-      console.error('Resend error:', error);
+      logger.error('Resend error', { error });
       return { success: false, error: error.message };
     }
 
     return { success: true, data: data ? { id: data.id } : undefined };
   } catch (error) {
-    console.error('Email send error:', error);
+    logger.error('Email send error', { error });
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send email',
@@ -521,21 +522,21 @@ async function sendTemplateEmail(
   variables: Record<string, string | number>,
   fallbackSubject: string
 ): Promise<SendEmailResult> {
-  console.log(`[sendTemplateEmail] Fetching template: ${slug}`);
+  logger.debug(`[sendTemplateEmail] Fetching template: ${slug}`);
   const dbTemplate = await getTemplateFromDB(slug);
 
   if (!dbTemplate) {
-    console.error(`[sendTemplateEmail] Template "${slug}" not available, email not sent`);
+    logger.error(`[sendTemplateEmail] Template "${slug}" not available, email not sent`);
     return { success: false, error: `Template "${slug}" not found or inactive` };
   }
 
-  console.log(`[sendTemplateEmail] Template found, sending email to: ${to}`);
+  logger.debug(`[sendTemplateEmail] Template found, sending email to: ${to}`);
   const result = await sendEmail({
     to,
     subject: replaceVariables(dbTemplate.subject, variables),
     html: replaceVariables(dbTemplate.html_content, variables),
   });
-  console.log(`[sendTemplateEmail] Email send result:`, result);
+  logger.debug('[sendTemplateEmail] Email send result', { data: result });
   return result;
 }
 

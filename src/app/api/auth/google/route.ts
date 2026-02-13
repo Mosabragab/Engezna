@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      console.error('Google OAuth credentials not configured');
+      logger.error('Google OAuth credentials not configured');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     const tokens = await tokenResponse.json();
 
     if (tokens.error) {
-      console.error('Google token exchange error:', tokens.error);
+      logger.error('Google token exchange error:', { error: tokens.error });
       return NextResponse.json(
         { error: tokens.error_description || 'Token exchange failed' },
         { status: 400 }
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       access_token: tokens.access_token,
     });
   } catch (error) {
-    console.error('Google auth error:', error);
+    logger.error('Google auth error:', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

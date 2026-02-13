@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 import {
   getOrders,
   getOrderById,
@@ -50,16 +51,14 @@ export async function POST(request: NextRequest) {
       // ───────────────────────────────────────────────────────────────────
       case 'list': {
         const filters: OrderFilters = params.filters || {};
-        console.log('[Orders API] Fetching orders with filters:', filters);
+        logger.info('[Orders API] Fetching orders with filters', { filters });
         const result = await getOrders(filters);
-        console.log(
-          '[Orders API] Result success:',
-          result.success,
-          'Data count:',
-          result.data?.data?.length || 0
-        );
+        logger.info('[Orders API] Result received', {
+          success: result.success,
+          dataCount: result.data?.data?.length || 0,
+        });
         if (!result.success) {
-          console.error('[Orders API] Error:', result.error);
+          logger.error('[Orders API] Error fetching orders', { error: result.error });
         }
         return NextResponse.json(result);
       }
@@ -160,7 +159,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Error in admin orders API:', error);
+    logger.error('Error in admin orders API', { error });
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

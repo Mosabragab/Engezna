@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { logger } from '@/lib/logger';
 
 interface ExportedUserData {
   exportDate: string;
@@ -193,7 +194,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Export data error:', error);
+    logger.error('Export data error:', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

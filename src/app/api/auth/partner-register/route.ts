@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmailVerificationEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('Auth error:', authError);
+      logger.error('Auth error:', { error: authError });
 
       // Handle specific auth errors
       if (authError.message?.includes('already registered')) {
@@ -179,7 +180,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      console.error('Profile error:', profileError);
+      logger.error('Profile error:', { error: profileError });
 
       // If profile creation fails, delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
@@ -221,7 +222,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (providerError) {
-      console.error('Provider error:', providerError);
+      logger.error('Provider error:', { error: providerError });
       // Don't fail - provider can be created later
     }
 
@@ -236,7 +237,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError) {
-      console.error('Link generation error:', linkError);
+      logger.error('Link generation error:', { error: linkError });
     }
 
     // Extract token from the link
@@ -248,7 +249,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send email verification email (user must verify before accessing dashboard)
-    console.log('[Partner Register] Sending verification email to:', email);
+    logger.info('[Partner Register] Sending verification email to:', { data: email });
 
     const emailResult = await sendEmailVerificationEmail({
       to: email,
@@ -256,10 +257,10 @@ export async function POST(request: NextRequest) {
       verificationUrl: verificationUrl,
     });
 
-    console.log('[Partner Register] Email result:', emailResult);
+    logger.info('[Partner Register] Email result:', { data: emailResult });
 
     if (!emailResult.success) {
-      console.error('[Partner Register] Email send error:', emailResult.error);
+      logger.error('[Partner Register] Email send error:', { error: emailResult.error });
       // Don't fail registration if email fails, user can request resend
     }
 
@@ -272,7 +273,7 @@ export async function POST(request: NextRequest) {
       userId: authData.user.id,
     });
   } catch (error) {
-    console.error('Partner registration error:', error);
+    logger.error('Partner registration error:', { error });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

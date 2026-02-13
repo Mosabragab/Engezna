@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface ValidateRequest {
   code: string;
@@ -280,7 +281,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateR
       promo_code_id: promoCode.id,
     });
   } catch (err) {
-    console.error('[Promo Validate] Error:', err);
+    logger.error('[Promo Validate] Error validating promo code', { error: err });
     return NextResponse.json(
       { valid: false, error: 'Internal server error', error_code: 'SERVER_ERROR' },
       { status: 500 }

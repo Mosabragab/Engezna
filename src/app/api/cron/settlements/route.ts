@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSettlementCreatedEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -55,16 +56,16 @@ function verifyCronSecret(request: NextRequest): boolean {
   if (!cronSecret) {
     // Allow in development without secret for testing
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[Cron] CRON_SECRET not set - allowing in development mode');
+      logger.warn('[Cron] CRON_SECRET not set - allowing in development mode');
       return true;
     }
-    console.error('[Cron] CRON_SECRET not configured');
+    logger.error('[Cron] CRON_SECRET not configured');
     return false;
   }
 
   // Check Bearer token format
   if (!authHeader?.startsWith('Bearer ')) {
-    console.error('[Cron] Invalid authorization header format');
+    logger.error('[Cron] Invalid authorization header format');
     return false;
   }
 
@@ -297,10 +298,12 @@ async function processDailySettlements(): Promise<CronJobResult> {
               periodEnd,
               dashboardUrl: `${siteUrl}/ar/provider/dashboard/settlements`,
             });
-            console.log(`[Cron] Settlement email sent to ${data.providerEmail} for ${providerId}`);
+            logger.info(`[Cron] Settlement email sent to ${data.providerEmail} for ${providerId}`);
           } catch (emailErr) {
             // Email failure should not block settlement creation
-            console.error(`[Cron] Failed to send settlement email for ${providerId}:`, emailErr);
+            logger.error(`[Cron] Failed to send settlement email for ${providerId}`, {
+              error: emailErr,
+            });
           }
         }
       } catch (err) {
@@ -354,16 +357,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<CronJobRes
     );
   }
 
-  console.log('[Cron] Starting daily settlement processing...');
+  logger.info('[Cron] Starting daily settlement processing...');
 
   const result = await processDailySettlements();
 
   if (result.success) {
-    console.log(
+    logger.info(
       `[Cron] Settlement completed: ${result.settlementsCreated} settlements created for ${result.providersProcessed} providers`
     );
   } else {
-    console.error(`[Cron] Settlement failed with errors:`, result.errors);
+    logger.error('[Cron] Settlement failed with errors', { error: result.errors });
   }
 
   return NextResponse.json(result, {

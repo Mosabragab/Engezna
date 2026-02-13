@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmailVerificationEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      console.error('Auth error:', authError);
+      logger.error('Auth error:', { error: authError });
 
       // Handle specific auth errors
       if (authError.message?.includes('already registered')) {
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      console.error('Profile error:', profileError);
+      logger.error('Profile error:', { error: profileError });
 
       // If profile creation fails, delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
@@ -222,7 +223,9 @@ export async function POST(request: NextRequest) {
 
     // Skip verification for test accounts
     if (isTest) {
-      console.log('[Register] Test account detected, skipping email verification:', email);
+      logger.info('[Register] Test account detected, skipping email verification:', {
+        data: email,
+      });
       return NextResponse.json({
         success: true,
         message:
@@ -245,7 +248,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError) {
-      console.error('Link generation error:', linkError);
+      logger.error('Link generation error:', { error: linkError });
     }
 
     // Extract token from the link
@@ -257,8 +260,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Send verification email using our custom template
-    console.log('[Register] Sending verification email to:', email);
-    console.log('[Register] Verification URL:', verificationUrl);
+    logger.info('[Register] Sending verification email to:', { data: email });
+    logger.debug('[Register] Verification URL:', { data: verificationUrl });
 
     const emailResult = await sendEmailVerificationEmail({
       to: email,
@@ -266,10 +269,10 @@ export async function POST(request: NextRequest) {
       verificationUrl,
     });
 
-    console.log('[Register] Email result:', emailResult);
+    logger.info('[Register] Email result:', { data: emailResult });
 
     if (!emailResult.success) {
-      console.error('[Register] Email send error:', emailResult.error);
+      logger.error('[Register] Email send error:', { error: emailResult.error });
       // Don't fail registration if email fails, user can request resend
     }
 
@@ -283,7 +286,7 @@ export async function POST(request: NextRequest) {
       isTestAccount: false,
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', { error });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

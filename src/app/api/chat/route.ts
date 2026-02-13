@@ -10,6 +10,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 import { runAgentStream, type AgentStreamEvent, type AgentMessage } from '@/lib/ai/agentHandler';
 import type { AgentContext } from '@/lib/ai/agentPrompt';
 import { getCustomerMemory } from '@/lib/ai/customerMemory';
@@ -225,7 +226,7 @@ export async function POST(request: NextRequest) {
               case 'tool_result':
                 // Tool results (for debugging)
                 if (process.env.NODE_ENV === 'development') {
-                  console.log(`[Tool Result] ${event.toolName}:`, event.toolResult);
+                  logger.debug(`[Tool Result] ${event.toolName}`, { toolResult: event.toolResult });
                 }
                 break;
 
@@ -260,13 +261,12 @@ export async function POST(request: NextRequest) {
 
                   // Log skipped actions for debugging
                   if (postProcessed.skippedActions.length > 0) {
-                    console.log(
-                      '[Cart Dedup] Skipped duplicate actions:',
-                      postProcessed.skippedActions.map((a) => a.menu_item_name_ar)
-                    );
+                    logger.debug('[Cart Dedup] Skipped duplicate actions', {
+                      skippedItems: postProcessed.skippedActions.map((a) => a.menu_item_name_ar),
+                    });
                   }
                   if (cartWarnings.length > 0) {
-                    console.log('[Cart Warnings]:', cartWarnings);
+                    logger.info('[Cart Warnings]', { warnings: cartWarnings });
                   }
                 }
 
@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
           controller.enqueue(sse.encodeDone());
           controller.close();
         } catch (error) {
-          console.error('[Chat API Error]:', error);
+          logger.error('[Chat API] Streaming error', { error });
           controller.enqueue(
             sse.encodeError(error instanceof Error ? error.message : 'An error occurred')
           );
@@ -343,7 +343,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Chat API Error]:', error);
+    logger.error('[Chat API] POST handler error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -472,7 +472,7 @@ export async function PUT(request: NextRequest) {
       cart_actions: processedCartActions,
     });
   } catch (error) {
-    console.error('[Chat API Error]:', error);
+    logger.error('[Chat API] PUT handler error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

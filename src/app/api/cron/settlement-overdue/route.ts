@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSettlementOverdueEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -35,15 +36,15 @@ function verifyCronSecret(request: NextRequest): boolean {
 
   if (!cronSecret) {
     if (process.env.NODE_ENV === 'development') {
-      console.warn('[Overdue Cron] CRON_SECRET not set - allowing in development mode');
+      logger.warn('[Overdue Cron] CRON_SECRET not set - allowing in development mode');
       return true;
     }
-    console.error('[Overdue Cron] CRON_SECRET not configured');
+    logger.error('[Overdue Cron] CRON_SECRET not configured');
     return false;
   }
 
   if (!authHeader?.startsWith('Bearer ')) {
-    console.error('[Overdue Cron] Invalid authorization header format');
+    logger.error('[Overdue Cron] Invalid authorization header format');
     return false;
   }
 
@@ -174,14 +175,13 @@ async function processOverdueSettlements(): Promise<OverdueResult> {
             });
 
             emailsSent++;
-            console.log(
+            logger.info(
               `[Overdue Cron] Email sent to ${providerEmail} for settlement ${settlement.id} (${overdueDays} days overdue)`
             );
           } catch (emailErr) {
-            console.error(
-              `[Overdue Cron] Failed to send email for settlement ${settlement.id}:`,
-              emailErr
-            );
+            logger.error(`[Overdue Cron] Failed to send email for settlement ${settlement.id}`, {
+              error: emailErr,
+            });
             errors.push(`Email failed for ${settlement.id}: ${emailErr}`);
           }
         }
@@ -231,16 +231,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<OverdueRes
     );
   }
 
-  console.log('[Overdue Cron] Starting overdue settlement check...');
+  logger.info('[Overdue Cron] Starting overdue settlement check...');
 
   const result = await processOverdueSettlements();
 
   if (result.success) {
-    console.log(
+    logger.info(
       `[Overdue Cron] Completed: ${result.overdueFound} overdue found, ${result.statusUpdated} updated, ${result.emailsSent} emails sent`
     );
   } else {
-    console.error('[Overdue Cron] Failed with errors:', result.errors);
+    logger.error('[Overdue Cron] Failed with errors', { error: result.errors });
   }
 
   return NextResponse.json(result, {
