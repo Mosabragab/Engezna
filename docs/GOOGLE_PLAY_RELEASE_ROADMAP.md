@@ -347,9 +347,9 @@
 
 | المهمة                                                       | الحالة | التاريخ |
 | ------------------------------------------------------------ | ------ | ------- |
-| [ ] تضييق SELECT على promo_codes (active + valid date فقط)   | ⬜     |         |
-| [ ] مراجعة SELECT policies على profiles (إخفاء بيانات حساسة) | ⬜     |         |
-| [ ] تنظيف السياسات المتكررة/المتداخلة على الجداول            | ⬜     |         |
+| [x] تضييق SELECT على promo_codes (active + valid date فقط)   | ✅     | 2/13    |
+| [x] مراجعة SELECT policies على profiles (إخفاء بيانات حساسة) | ✅     | 2/13    |
+| [x] تنظيف السياسات المتكررة/المتداخلة على الجداول            | ✅     | 2/13    |
 
 ---
 
@@ -635,7 +635,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | Kashier webhook بدون signature إلزامية   | إلزام التوقيع ورفض بدونه ✅ (2/13)                          | ✅ تم       |
 | Promo validation يثق بـ user_id من body  | ربط بـ session الفعلية ✅ (2/13)                            | ✅ تم       |
 | لا يوجد CSP header                       | إضافة CSP report-only ✅ (2/13) - enforce لاحقاً            | 🔄 جزئي     |
-| سياسات SELECT واسعة (promo, profiles)    | تضييق RLS policies المفتوحة                                 | ⬜          |
+| سياسات SELECT واسعة (promo, profiles)    | تضييق RLS policies المفتوحة                                 | ✅ تم       |
 | طلبات وهمية (Phantom Orders)             | إنشاء الطلب بـ pending_payment قبل Kashier ✅ (2/13)        | ✅ تم       |
 | Kashier Refund API مفقود                 | endpoint + Kashier API integration ✅ (2/13)                | ✅ تم       |
 | Webhook duplicate processing             | idempotency + unique constraint + retry handling ✅ (2/13)  | ✅ تم       |
