@@ -172,15 +172,18 @@ export async function POST(request: NextRequest) {
 
     // Send notification to customer
     await supabaseAdmin.from('customer_notifications').insert({
-      user_id: order.customer_id,
+      customer_id: order.customer_id,
       type: notificationType,
-      title: newPaymentStatus === 'paid' ? 'تم الدفع بنجاح' : 'تحديث حالة الدفع',
-      message: notificationMessage,
-      data: {
-        order_id: orderId,
-        payment_status: newPaymentStatus,
-        transaction_id: transactionId,
-      },
+      title_ar: newPaymentStatus === 'paid' ? 'تم الدفع بنجاح' : 'تحديث حالة الدفع',
+      title_en: newPaymentStatus === 'paid' ? 'Payment Successful' : 'Payment Status Update',
+      body_ar: notificationMessage,
+      body_en:
+        newPaymentStatus === 'paid'
+          ? 'Payment received successfully! Your order is being prepared.'
+          : newPaymentStatus === 'pending'
+            ? 'Processing payment...'
+            : 'Payment failed. Please try again or choose a different payment method.',
+      related_order_id: orderId,
     });
 
     logger.info('[Kashier Webhook] Order updated successfully', {

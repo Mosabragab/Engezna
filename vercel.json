@@ -9,10 +9,6 @@
     {
       "path": "/api/cron/settlement-overdue",
       "schedule": "0 10 * * *"
-    },
-    {
-      "path": "/api/cron/expire-pending-payments",
-      "schedule": "*/15 * * * *"
     }
   ]
 }

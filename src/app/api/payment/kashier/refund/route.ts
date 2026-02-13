@@ -151,15 +151,13 @@ export async function POST(request: NextRequest) {
 
     // Notify customer
     await supabaseAdmin.from('customer_notifications').insert({
-      user_id: order.customer_id,
+      customer_id: order.customer_id,
       type: 'refund_processed',
-      title: 'تم استرجاع المبلغ',
-      message: `تم استرجاع مبلغ ${refundAmount} جنيه إلى حسابك. قد يستغرق الأمر 5-14 يوم عمل.`,
-      data: {
-        order_id: order.id,
-        refund_amount: refundAmount,
-        refund_id: refundResult.refundId,
-      },
+      title_ar: 'تم استرجاع المبلغ',
+      title_en: 'Refund Processed',
+      body_ar: `تم استرجاع مبلغ ${refundAmount} جنيه إلى حسابك. قد يستغرق الأمر 5-14 يوم عمل.`,
+      body_en: `A refund of ${refundAmount} EGP has been processed. It may take 5-14 business days.`,
+      related_order_id: order.id,
     });
 
     logger.info('[Kashier Refund] Refund completed', {

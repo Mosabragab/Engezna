@@ -318,6 +318,8 @@
 | ---------------------------------------------------------------- | ------ | ------- |
 | [x] إنشاء cron job لتحويل طلبات `pending_payment` لـ `cancelled` | ✅     | 2/13    |
 | [x] إضافة إشعار للعميل عند فشل/انتهاء صلاحية الدفع               | ✅     | 2/13    |
+| [x] نقل الـ cron من Vercel لـ Supabase pg_cron (Hobby plan قيود) | ✅     | 2/13    |
+| [x] إصلاح أسماء أعمدة customer_notifications في كل الـ routes    | ✅     | 2/13    |
 
 ### 1.5.7 إلزام Kashier Webhook Signature (من تقرير Codex)
 

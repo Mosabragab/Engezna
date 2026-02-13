@@ -123,14 +123,13 @@ export async function GET(request: NextRequest) {
 
       // Notify customer about expired payment
       await supabaseAdmin.from('customer_notifications').insert({
-        user_id: order.customer_id,
+        customer_id: order.customer_id,
         type: 'payment_expired',
-        title: 'انتهت صلاحية الدفع',
-        message: 'انتهت صلاحية عملية الدفع. يمكنك إعادة الطلب من جديد.',
-        data: {
-          order_id: order.id,
-          payment_status: 'failed',
-        },
+        title_ar: 'انتهت صلاحية الدفع',
+        title_en: 'Payment Expired',
+        body_ar: 'انتهت صلاحية عملية الدفع. يمكنك إعادة الطلب من جديد.',
+        body_en: 'Your payment has expired. You can place a new order.',
+        related_order_id: order.id,
       });
 
       cancelledCount++;
