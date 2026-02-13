@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendStaffInvitationEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send staff invitation email
-    console.log('[staff-invitation API] Sending email to:', to);
+    logger.info('[staff-invitation API] Sending email to', { data: to });
     const result = await sendStaffInvitationEmail({
       to,
       staffName: staffName || to.split('@')[0],
@@ -53,20 +54,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error('[staff-invitation API] Failed to send email:', result.error);
+      logger.error('[staff-invitation API] Failed to send email', { error: result.error });
       return NextResponse.json(
         { error: 'Failed to send email', details: result.error },
         { status: 500 }
       );
     }
 
-    console.log('[staff-invitation API] Email sent successfully');
+    logger.info('[staff-invitation API] Email sent successfully');
     return NextResponse.json({
       success: true,
       message: 'Staff invitation email sent successfully',
     });
   } catch (error) {
-    console.error('[staff-invitation API] Error:', error);
+    logger.error('[staff-invitation API] Error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

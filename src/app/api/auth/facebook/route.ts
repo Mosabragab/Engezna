@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
       picture: userData.picture?.data?.url,
     });
   } catch (error) {
-    console.error('Facebook auth error:', error);
+    logger.error('Facebook auth error:', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

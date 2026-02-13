@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendCustomerWelcomeEmail, sendMerchantWelcomeEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       message: emailResult.success ? 'Welcome email sent' : 'Failed to send welcome email',
     });
   } catch (error) {
-    console.error('Send welcome email error:', error);
+    logger.error('Send welcome email error:', { error });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

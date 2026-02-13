@@ -4,6 +4,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import type { AuditAction, AuditLogEntry, OperationResult } from './types';
+import { logger } from '@/lib/logger';
 
 /**
  * تسجيل إجراء في سجل التدقيق
@@ -41,13 +42,13 @@ export async function logAuditAction(
       .single();
 
     if (error) {
-      console.error('Failed to log audit action:', error);
+      logger.error('Failed to log audit action', { error });
       return { success: false, error: error.message };
     }
 
     return { success: true, data: data as AuditLogEntry };
   } catch (err) {
-    console.error('Audit logging error:', err);
+    logger.error('Audit logging error', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -90,13 +91,13 @@ export async function logDeniedAction(
       .single();
 
     if (error) {
-      console.error('Failed to log denied action:', error);
+      logger.error('Failed to log denied action', { error });
       return { success: false, error: error.message };
     }
 
     return { success: true, data: data as AuditLogEntry };
   } catch (err) {
-    console.error('Audit logging error:', err);
+    logger.error('Audit logging error', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -126,13 +127,13 @@ export async function logActivity(
     });
 
     if (error) {
-      console.error('Failed to log activity:', error);
+      logger.error('Failed to log activity', { error });
       return { success: false, error: error.message };
     }
 
     return { success: true };
   } catch (err) {
-    console.error('Activity logging error:', err);
+    logger.error('Activity logging error', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',

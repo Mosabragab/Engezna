@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { ExtractedCategory, ExtractedAddon, ExtractedVariant } from '@/types/menu-import';
+import { logger } from '@/lib/logger';
 
 export const maxDuration = 60; // 60 seconds timeout
 
@@ -129,21 +130,21 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
 
     // Debug: Log what we're about to process
-    console.log('=== MENU IMPORT SAVE DEBUG ===');
-    console.log('Total categories received:', categories.length);
+    logger.debug('=== MENU IMPORT SAVE DEBUG ===');
+    logger.debug('Total categories received', { data: categories.length });
     const totalProductsToSave = categories.reduce(
       (sum, cat) => sum + (cat.products?.length || 0),
       0
     );
-    console.log('Total products to save:', totalProductsToSave);
+    logger.debug('Total products to save', { data: totalProductsToSave });
 
     // Log first category for debugging
     if (categories.length > 0) {
       const firstCat = categories[0];
-      console.log('First category:', firstCat.name_ar);
-      console.log('First category products count:', firstCat.products?.length || 0);
+      logger.debug('First category', { data: firstCat.name_ar });
+      logger.debug('First category products count', { data: firstCat.products?.length || 0 });
       if (firstCat.products && firstCat.products.length > 0) {
-        console.log('First product sample:', JSON.stringify(firstCat.products[0], null, 2));
+        logger.debug('First product sample', { data: firstCat.products[0] });
       }
     }
 
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (categoryError) {
-          console.error('Error creating category:', categoryError);
+          logger.error('Error creating category', { error: categoryError });
           errors.push(`فشل إنشاء القسم: ${category.name_ar}`);
           continue;
         }
@@ -234,7 +235,7 @@ export async function POST(request: NextRequest) {
               .eq('id', existingProduct.id);
 
             if (updateError) {
-              console.error('Error updating product:', updateError);
+              logger.error('Error updating product', { error: updateError });
               errors.push(`فشل تحديث المنتج: ${product.name_ar}`);
             } else {
               productsUpdated++;
@@ -305,7 +306,7 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (productError) {
-          console.error('Error creating product:', productError);
+          logger.error('Error creating product', { error: productError });
           errors.push(`فشل إنشاء المنتج: ${product.name_ar} - ${productError.message}`);
           continue;
         }
@@ -344,7 +345,7 @@ export async function POST(request: NextRequest) {
             .select();
 
           if (variantsError) {
-            console.error('Error creating variants:', variantsError);
+            logger.error('Error creating variants', { error: variantsError });
             errors.push(`فشل إنشاء خيارات المنتج: ${product.name_ar}`);
           } else {
             variantsCreated += createdVariants?.length || 0;
@@ -391,7 +392,7 @@ export async function POST(request: NextRequest) {
       message: `تم إنشاء ${productsCreated} منتج جديد${productsUpdated > 0 ? ` وتحديث ${productsUpdated}` : ''}${productsSkipped > 0 ? ` وتخطي ${productsSkipped} موجود` : ''}`,
     });
   } catch (error) {
-    console.error('Menu save API error:', error);
+    logger.error('Menu save API error', { error });
 
     return NextResponse.json(
       {

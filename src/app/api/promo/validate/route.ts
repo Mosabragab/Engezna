@@ -8,10 +8,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createClient as createServerClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 
 interface ValidateRequest {
   code: string;
-  user_id: string;
   provider_id: string;
   provider_category?: string;
   subtotal: number;
@@ -77,18 +78,34 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateR
     );
   }
 
-  const { code, user_id, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
+  const { code, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
 
-  if (!code || !user_id || !provider_id || subtotal === undefined) {
+  if (!code || !provider_id || subtotal === undefined) {
     return NextResponse.json(
       {
         valid: false,
-        error: 'Missing required fields: code, user_id, provider_id, subtotal',
+        error: 'Missing required fields: code, provider_id, subtotal',
         error_code: 'MISSING_FIELDS',
       },
       { status: 400 }
     );
   }
+
+  // SECURITY: Get user identity from session, NOT from request body
+  // This prevents identity spoofing attacks
+  const serverSupabase = await createServerClient();
+  const {
+    data: { user },
+  } = await serverSupabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(
+      { valid: false, error: 'Authentication required', error_code: 'UNAUTHORIZED' },
+      { status: 401 }
+    );
+  }
+
+  const user_id = user.id;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -264,7 +281,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateR
       promo_code_id: promoCode.id,
     });
   } catch (err) {
-    console.error('[Promo Validate] Error:', err);
+    logger.error('[Promo Validate] Error validating promo code', { error: err });
     return NextResponse.json(
       { valid: false, error: 'Internal server error', error_code: 'SERVER_ERROR' },
       { status: 500 }

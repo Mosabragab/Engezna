@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 // Verify webhook signature (if configured)
 function verifyWebhookSignature(request: NextRequest): boolean {
@@ -22,7 +23,7 @@ function verifyWebhookSignature(request: NextRequest): boolean {
 
   // If no secret is configured, skip verification (not recommended for production)
   if (!secret) {
-    console.warn('SUPABASE_WEBHOOK_SECRET not configured - skipping signature verification');
+    logger.warn('SUPABASE_WEBHOOK_SECRET not configured - skipping signature verification');
     return true;
   }
 
@@ -69,13 +70,13 @@ export async function POST(request: NextRequest) {
   try {
     // Verify webhook signature
     if (!verifyWebhookSignature(request)) {
-      console.error('Invalid webhook signature');
+      logger.error('Invalid webhook signature');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
     const payload: WebhookPayload = await request.json();
 
-    console.log(`[Webhook] Received ${payload.type} event for menu_items`);
+    logger.info(`[Webhook] Received ${payload.type} event for menu_items`);
 
     // Only process INSERT and UPDATE events
     if (payload.type === 'DELETE') {
@@ -115,11 +116,11 @@ export async function POST(request: NextRequest) {
     const { url, serviceKey } = getSupabaseConfig();
 
     if (!url || !serviceKey) {
-      console.error('Supabase configuration missing');
+      logger.error('Supabase configuration missing');
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    console.log(`[Webhook] Triggering embedding generation for item ${record.id}`);
+    logger.info('[Webhook] Triggering embedding generation', { itemId: record.id });
 
     const response = await fetch(`${url}/functions/v1/generate-embedding`, {
       method: 'POST',
@@ -136,7 +137,7 @@ export async function POST(request: NextRequest) {
     const result = await response.json();
 
     if (!result.success) {
-      console.error(`[Webhook] Embedding generation failed:`, result.error);
+      logger.error('[Webhook] Embedding generation failed', { error: result.error });
       // Don't return error - webhook should always return 200 to prevent retries
       return NextResponse.json({
         success: false,
@@ -145,7 +146,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`[Webhook] Embedding generated successfully for item ${record.id}`);
+    logger.info('[Webhook] Embedding generated successfully', { itemId: record.id });
 
     return NextResponse.json({
       success: true,
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
       item_id: record.id,
     });
   } catch (error) {
-    console.error('[Webhook] Error processing menu item webhook:', error);
+    logger.error('[Webhook] Error processing menu item webhook', { error });
     // Return 200 to prevent Supabase from retrying
     return NextResponse.json({
       success: false,

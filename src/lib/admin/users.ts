@@ -5,6 +5,7 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logAuditAction, logActivity } from './audit';
 import type { AdminUser, UserFilters, PaginatedResult, OperationResult, UserRole } from './types';
+import { logger } from '@/lib/logger';
 
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
@@ -82,7 +83,7 @@ export async function getUsers(
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching users:', error);
+      logger.error('Error fetching users', { error });
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };
     }
 
@@ -101,7 +102,7 @@ export async function getUsers(
       },
     };
   } catch (err) {
-    console.error('Error in getUsers:', err);
+    logger.error('Error in getUsers', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -327,7 +328,7 @@ export async function unbanUser(
     });
 
     if (notifError) {
-      console.error('[UNBAN USER] Failed to send notification:', notifError.message);
+      logger.error('[UNBAN USER] Failed to send notification', { error: notifError.message });
     }
 
     return { success: true, data: updated as AdminUser };

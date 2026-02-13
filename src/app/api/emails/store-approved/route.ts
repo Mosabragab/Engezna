@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { sendStoreApprovedEmail } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error('Failed to send store approved email:', result.error);
+      logger.error('Failed to send store approved email', { error: result.error });
       return NextResponse.json(
         { error: 'Failed to send email', details: result.error },
         { status: 500 }
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Store approved email sent successfully' });
   } catch (error) {
-    console.error('Error in store-approved API:', error);
+    logger.error('Error in store-approved API', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

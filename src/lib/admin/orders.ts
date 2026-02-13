@@ -10,6 +10,7 @@ import {
   sendCustomerOrderCancelledEmail,
   sendOrderReceivedEmail,
 } from '@/lib/email/resend';
+import { logger } from '@/lib/logger';
 import type {
   AdminOrder,
   OrderFilters,
@@ -112,7 +113,7 @@ export async function getOrders(
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching orders:', error);
+      logger.error('Error fetching orders', { error });
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };
     }
 
@@ -131,7 +132,7 @@ export async function getOrders(
       },
     };
   } catch (err) {
-    console.error('Error in getOrders:', err);
+    logger.error('Error in getOrders', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -177,7 +178,7 @@ export async function getOrderById(
       .eq('order_id', orderId);
 
     if (itemsError) {
-      console.error('Error fetching order items:', itemsError);
+      logger.error('Error fetching order items', { error: itemsError });
     }
 
     // If no regular items found, check custom_order_items table
@@ -195,7 +196,7 @@ export async function getOrderById(
         .order('display_order', { ascending: true });
 
       if (customItemsError) {
-        console.error('Error fetching custom order items:', customItemsError);
+        logger.error('Error fetching custom order items', { error: customItemsError });
       }
 
       // Map custom items to the expected OrderItem format
@@ -321,7 +322,7 @@ export async function cancelOrder(
 
     // Send cancellation email (non-blocking)
     sendOrderStatusEmail(updated, 'cancelled').catch((err) =>
-      console.error(`[Orders] Failed to send cancellation email for ${orderId}:`, err)
+      logger.error(`[Orders] Failed to send cancellation email for ${orderId}`, { error: err })
     );
 
     return { success: true, data: updated as AdminOrder };
@@ -422,7 +423,7 @@ export async function initiateRefund(
       });
     } catch {
       // Refunds table might not exist, continue anyway
-      console.log('Refunds table not available, skipping refund record');
+      logger.info('Refunds table not available, skipping refund record');
     }
 
     // Log audit action
@@ -547,7 +548,7 @@ export async function updateOrderStatus(
 
     // Send email notifications (non-blocking)
     sendOrderStatusEmail(updated, newStatus).catch((err) =>
-      console.error(`[Orders] Failed to send status email for ${orderId}:`, err)
+      logger.error(`[Orders] Failed to send status email for ${orderId}`, { error: err })
     );
 
     return { success: true, data: updated as AdminOrder };
@@ -672,7 +673,7 @@ async function sendOrderStatusEmail(
           deliveryAddress: order.delivery_address || '',
           orderUrl: `${siteUrl}/ar/provider/dashboard/orders/${order.id}`,
         });
-        console.log(`[Orders] Order received email sent to merchant ${providerEmail}`);
+        logger.info(`[Orders] Order received email sent to merchant ${providerEmail}`);
       }
       break;
     }
@@ -690,7 +691,7 @@ async function sendOrderStatusEmail(
           estimatedArrival: '',
           trackingUrl: `${siteUrl}/ar/orders/${order.id}`,
         });
-        console.log(`[Orders] Shipped email sent to customer ${customerEmail}`);
+        logger.info(`[Orders] Shipped email sent to customer ${customerEmail}`);
       }
       break;
     }
@@ -706,7 +707,7 @@ async function sendOrderStatusEmail(
           deliveryTime: new Date().toLocaleString('ar-EG'),
           reviewUrl: `${siteUrl}/ar/orders/${order.id}/review`,
         });
-        console.log(`[Orders] Delivered email sent to customer ${customerEmail}`);
+        logger.info(`[Orders] Delivered email sent to customer ${customerEmail}`);
       }
       break;
     }
@@ -726,7 +727,7 @@ async function sendOrderStatusEmail(
               : 'سيتم مراجعة عملية الاسترداد',
           reorderUrl: `${siteUrl}/ar/store/${order.provider_id}`,
         });
-        console.log(`[Orders] Cancellation email sent to customer ${customerEmail}`);
+        logger.info(`[Orders] Cancellation email sent to customer ${customerEmail}`);
       }
       break;
     }

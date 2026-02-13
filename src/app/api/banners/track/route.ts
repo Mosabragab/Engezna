@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/lib/logger';
 
 interface TrackRequest {
   banner_id: string;
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrackResp
     });
 
     if (error) {
-      console.error('[Banner Track] Insert error:', error.message);
+      logger.error('[Banner Track] Insert error', { error: error.message });
       return NextResponse.json(
         { success: false, error: 'Failed to record event' },
         { status: 500 }
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<TrackResp
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error('[Banner Track] Error:', err);
+    logger.error('[Banner Track] Error tracking banner event', { error: err });
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

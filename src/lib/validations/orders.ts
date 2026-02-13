@@ -50,6 +50,7 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
  * Order status enum
  */
 export const orderStatusSchema = z.enum([
+  'pending_payment',
   'pending',
   'confirmed',
   'preparing',

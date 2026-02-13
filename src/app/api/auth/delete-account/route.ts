@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { logger } from '@/lib/logger';
 
 export async function DELETE() {
   try {
@@ -100,13 +101,13 @@ export async function DELETE() {
     const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId);
 
     if (deleteAuthError) {
-      console.error('Error deleting auth user:', deleteAuthError);
+      logger.error('Error deleting auth user:', { error: deleteAuthError });
       return NextResponse.json({ error: 'Failed to delete account' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Delete account error:', error);
+    logger.error('Delete account error:', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

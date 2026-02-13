@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
 import {
   getDashboardStats,
   getOrdersTimeSeries,
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('Error in admin stats API:', error);
+    logger.error('Error in admin stats API', { error });
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

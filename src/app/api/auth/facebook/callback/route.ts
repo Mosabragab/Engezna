@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com';
 
   if (error) {
-    console.error('Facebook OAuth error:', error);
+    logger.error('Facebook OAuth error:', { error });
     return NextResponse.redirect(`${baseUrl}/${locale}/auth/login?error=facebook_denied`);
   }
 
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
     const appSecret = process.env.FACEBOOK_APP_SECRET;
 
     if (!appId || !appSecret) {
-      console.error('Facebook credentials not configured');
+      logger.error('Facebook credentials not configured');
       return NextResponse.redirect(`${baseUrl}/${locale}/auth/login?error=config`);
     }
 
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
     const tokenData = await tokenResponse.json();
 
     if (tokenData.error) {
-      console.error('Facebook token error:', tokenData.error);
+      logger.error('Facebook token error:', { error: tokenData.error });
       return NextResponse.redirect(`${baseUrl}/${locale}/auth/login?error=token_failed`);
     }
 
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
     const userData = await userResponse.json();
 
     if (!userData.id) {
-      console.error('Failed to get Facebook user data');
+      logger.error('Failed to get Facebook user data');
       return NextResponse.redirect(`${baseUrl}/${locale}/auth/login?error=user_data_failed`);
     }
 
@@ -143,7 +144,7 @@ export async function GET(request: Request) {
       return response;
     }
   } catch (error) {
-    console.error('Facebook callback error:', error);
+    logger.error('Facebook callback error:', { error });
     return NextResponse.redirect(`${baseUrl}/${locale}/auth/login?error=callback_failed`);
   }
 }

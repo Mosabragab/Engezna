@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logger';
 
 /**
  * Quota Check API Endpoint
@@ -227,10 +228,10 @@ async function sendAlerts(results: QuotaCheckResult[]): Promise<boolean> {
     //   });
     // }
 
-    console.log('[Quota Check] Alerts stored:', alertData);
+    logger.info('[Quota Check] Alerts stored', { alertData });
     return true;
   } catch (error) {
-    console.error('[Quota Check] Failed to send alerts:', error);
+    logger.error('[Quota Check] Failed to send alerts', { error });
     return false;
   }
 }

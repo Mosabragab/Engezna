@@ -1,35 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { buildKashierCheckoutUrl, kashierConfig } from '@/lib/payment/kashier';
-import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 /**
  * Payment Initiation API
  *
- * CRITICAL: This API does NOT create orders in the database!
- * Orders are only created after successful payment confirmation.
+ * CRITICAL: This API creates the order in database with 'pending_payment' status
+ * BEFORE redirecting the user to Kashier. This prevents "phantom orders" where
+ * payment succeeds but the order is lost because the user closed their browser.
  *
  * Flow:
  * 1. Receive order data from checkout
- * 2. Generate temporary payment reference
- * 3. Return Kashier checkout URL
- * 4. Order created by payment-result page on success
+ * 2. Create order in DB with status='pending_payment', payment_status='pending'
+ * 3. Create order items
+ * 4. Handle promo code usage
+ * 5. Generate Kashier checkout URL with real order ID
+ * 6. Return checkout URL to client
+ *
+ * After payment:
+ * - Webhook updates order: status='pending', payment_status='paid'
+ * - Payment-result page confirms status and redirects
+ * - Cron job cancels pending_payment orders after 30 minutes
  */
 export async function POST(request: NextRequest) {
   try {
-    // Validate Kashier configuration
-    if (!kashierConfig.merchantId || !kashierConfig.apiKey || !kashierConfig.secretKey) {
-      console.error('Kashier configuration missing:', {
-        hasMerchantId: !!kashierConfig.merchantId,
-        hasApiKey: !!kashierConfig.apiKey,
-        hasSecretKey: !!kashierConfig.secretKey,
-      });
-      return NextResponse.json(
-        { error: 'Payment gateway not configured. Please contact support.' },
-        { status: 500 }
-      );
-    }
-
     const supabase = await createClient();
 
     // Check authentication
@@ -61,19 +56,127 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Customer ID mismatch' }, { status: 403 });
     }
 
-    // Generate a unique temporary payment reference
-    // Format: temp_YYYYMMDD_HHMMSS_randomhex
-    const now = new Date();
-    // Build date string manually to avoid regex that confuses Tailwind JIT
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
-    const hours = String(now.getUTCHours()).padStart(2, '0');
-    const mins = String(now.getUTCMinutes()).padStart(2, '0');
-    const secs = String(now.getUTCSeconds()).padStart(2, '0');
-    const dateStr = `${year}${month}${day}${hours}${mins}${secs}`;
-    const randomHex = crypto.randomBytes(4).toString('hex');
-    const paymentRef = `temp_${dateStr}_${randomHex}`;
+    // Handle promo code atomically (same pattern as COD flow)
+    let promoUsageId: string | null = null;
+    if (orderData.promo_code_id && orderData.discount > 0) {
+      // Atomically increment usage count (optimistic lock)
+      const { error: countError } = await supabase
+        .from('promo_codes')
+        .update({ usage_count: (orderData.promo_code_usage_count ?? 0) + 1 })
+        .eq('id', orderData.promo_code_id)
+        .eq('usage_count', orderData.promo_code_usage_count ?? 0);
+
+      if (countError) {
+        return NextResponse.json(
+          { error: 'Promo code was just used by someone else. Please try again.' },
+          { status: 409 }
+        );
+      }
+
+      // Record usage (order_id will be updated after order creation)
+      const { data: usageRecord, error: usageError } = await supabase
+        .from('promo_code_usage')
+        .insert({
+          promo_code_id: orderData.promo_code_id,
+          user_id: user.id,
+          order_id: null,
+          discount_amount: orderData.discount,
+        })
+        .select('id')
+        .single();
+
+      if (usageError) {
+        // Rollback usage count
+        await supabase
+          .from('promo_codes')
+          .update({ usage_count: orderData.promo_code_usage_count ?? 0 })
+          .eq('id', orderData.promo_code_id);
+        return NextResponse.json({ error: 'Failed to record promo code usage' }, { status: 500 });
+      }
+      promoUsageId = usageRecord?.id || null;
+    }
+
+    // CREATE ORDER IN DATABASE with pending_payment status
+    // This ensures the order exists BEFORE the user is redirected to Kashier
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        customer_id: user.id,
+        provider_id: orderData.provider_id,
+        status: 'pending_payment', // Not visible to merchant yet
+        subtotal: orderData.subtotal,
+        delivery_fee: orderData.delivery_fee,
+        discount: orderData.discount,
+        total: orderData.total,
+        payment_method: 'online',
+        payment_status: 'pending',
+        order_type: orderData.order_type,
+        delivery_timing: orderData.delivery_timing,
+        scheduled_time: orderData.scheduled_time,
+        delivery_address: orderData.delivery_address,
+        customer_notes: orderData.customer_notes,
+        estimated_delivery_time: orderData.estimated_delivery_time,
+        promo_code: orderData.promo_code,
+      })
+      .select()
+      .single();
+
+    if (orderError) {
+      logger.error('[Payment Initiate] Order creation failed', { error: orderError });
+      // Rollback promo if order creation fails
+      if (promoUsageId) {
+        await supabase.from('promo_code_usage').delete().eq('id', promoUsageId);
+        if (orderData.promo_code_id) {
+          await supabase
+            .from('promo_codes')
+            .update({ usage_count: orderData.promo_code_usage_count ?? 0 })
+            .eq('id', orderData.promo_code_id);
+        }
+      }
+      return NextResponse.json({ error: 'Failed to create order' }, { status: 500 });
+    }
+
+    // Link promo usage to order
+    if (promoUsageId && order?.id) {
+      await supabase.from('promo_code_usage').update({ order_id: order.id }).eq('id', promoUsageId);
+    }
+
+    // Create order items
+    if (orderData.cart_items?.length > 0) {
+      const orderItems = orderData.cart_items.map(
+        (item: {
+          item_id: string;
+          item_name_ar: string;
+          item_name_en: string;
+          quantity: number;
+          unit_price: number;
+          total_price: number;
+          variant_id?: string | null;
+          variant_name_ar?: string | null;
+          variant_name_en?: string | null;
+        }) => ({
+          order_id: order.id,
+          menu_item_id: item.item_id,
+          item_name_ar: item.item_name_ar,
+          item_name_en: item.item_name_en,
+          quantity: item.quantity,
+          item_price: item.unit_price,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          variant_id: item.variant_id || null,
+          variant_name_ar: item.variant_name_ar || null,
+          variant_name_en: item.variant_name_en || null,
+        })
+      );
+
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      if (itemsError) {
+        logger.error('[Payment Initiate] Order items creation failed', {
+          orderId: order.id,
+          error: itemsError,
+        });
+      }
+    }
 
     // Get customer profile for payment form
     const { data: profile } = await supabase
@@ -84,35 +187,35 @@ export async function POST(request: NextRequest) {
 
     // Build site URL for redirects
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com';
-    const locale = 'ar'; // Default to Arabic
+    const locale = 'ar';
 
-    // Generate Kashier checkout URL
-    // IMPORTANT: Using paymentRef as orderId since we don't have a DB order yet
+    // Generate Kashier checkout URL with REAL order ID
     const checkoutUrl = buildKashierCheckoutUrl({
-      orderId: paymentRef,
+      orderId: order.id,
       amount: orderData.total,
       customerName: profile?.full_name || undefined,
       customerEmail: user.email || undefined,
       customerPhone: profile?.phone || undefined,
       description: `Order from ${orderData.provider_name || 'Engezna'}`,
-      // Redirect to payment-result with the payment reference
-      redirectUrl: `${siteUrl}/${locale}/payment-result?ref=${paymentRef}`,
+      redirectUrl: `${siteUrl}/${locale}/payment-result?orderId=${order.id}`,
       webhookUrl: `${siteUrl}/api/payment/kashier/webhook`,
       language: 'ar',
     });
 
-    // NO DATABASE INSERTION HERE!
-    // Order will be created by payment-result page after successful payment
+    logger.info('[Payment Initiate] Order created, redirecting to Kashier', {
+      orderId: order.id,
+      amount: orderData.total,
+    });
 
     return NextResponse.json({
       success: true,
       checkoutUrl,
-      paymentRef,
+      orderId: order.id,
       amount: orderData.total,
       currency: kashierConfig.currency,
     });
   } catch (error) {
-    console.error('Payment initiation error:', error);
+    logger.error('[Payment Initiate] Error', { error });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: `Failed to initiate payment: ${errorMessage}` },

@@ -15,6 +15,7 @@ import type {
   MAX_PAGE_SIZE,
   ERROR_CODES,
 } from './types';
+import { logger } from '@/lib/logger';
 
 const PAGE_SIZE = 20;
 const MAX_SIZE = 100;
@@ -121,7 +122,7 @@ export async function getProviders(
     const { data, error, count } = await query;
 
     if (error) {
-      console.error('Error fetching providers:', error);
+      logger.error('Error fetching providers', { error });
       return { success: false, error: error.message, errorCode: 'DATABASE_ERROR' };
     }
 
@@ -140,7 +141,7 @@ export async function getProviders(
       },
     };
   } catch (err) {
-    console.error('Error in getProviders:', err);
+    logger.error('Error in getProviders', { error: err });
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Unknown error',
@@ -587,10 +588,8 @@ export async function updateProviderCommission(
       .single();
 
     if (fetchError) {
-      console.error('updateProviderCommission fetch error:', {
-        code: fetchError.code,
-        message: fetchError.message,
-        providerId,
+      logger.error('updateProviderCommission fetch error', {
+        error: { code: fetchError.code, message: fetchError.message, providerId },
       });
       return {
         success: false,

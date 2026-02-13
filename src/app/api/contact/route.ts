@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
 /**
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Error creating contact ticket:', error);
+      logger.error('Error creating contact ticket', { error });
       return NextResponse.json(
         { error: 'Failed to submit contact form', details: error.message },
         { status: 500 }
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
       });
     } catch (notifError) {
       // Don't fail the request if notification fails
-      console.error('Error creating admin notification:', notifError);
+      logger.error('Error creating admin notification', { error: notifError });
     }
 
     return NextResponse.json({
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.error('Contact form error:', error);
+    logger.error('Contact form error', { error });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
