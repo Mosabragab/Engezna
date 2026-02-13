@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     // Fetch the order
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, customer_id, payment_status, status')
+      .select('id, customer_id, payment_status, payment_transaction_id, status')
       .eq('id', orderId)
       .single();
 
@@ -57,12 +57,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    // Idempotency: Don't process if already paid (handles duplicate webhooks)
-    if (order.payment_status === 'paid') {
-      return NextResponse.json({ success: true, message: 'Order already paid' });
+    // Idempotency: Skip if already in a terminal payment state
+    if (order.payment_status === 'paid' || order.payment_status === 'failed') {
+      logger.info('[Kashier Webhook] Skipped: already processed', {
+        orderId,
+        existingStatus: order.payment_status,
+        incomingStatus: paymentStatus,
+        transactionId,
+      });
+      return NextResponse.json({
+        success: true,
+        message: `Order already ${order.payment_status}`,
+      });
     }
 
-    // Update order based on payment status
+    // Idempotency: Skip if order is already cancelled (e.g., by cron or payment-result page)
+    if (order.status === 'cancelled') {
+      logger.info('[Kashier Webhook] Skipped: order already cancelled', {
+        orderId,
+        transactionId,
+      });
+      return NextResponse.json({ success: true, message: 'Order already cancelled' });
+    }
+
+    // Duplicate transaction check: if same transactionId already stored, skip
+    if (
+      transactionId &&
+      order.payment_transaction_id &&
+      order.payment_transaction_id === transactionId
+    ) {
+      logger.info('[Kashier Webhook] Skipped: duplicate transactionId', {
+        orderId,
+        transactionId,
+      });
+      return NextResponse.json({ success: true, message: 'Duplicate webhook' });
+    }
+
+    // Determine new payment status
     let newPaymentStatus: string;
     let notificationMessage: string;
     let notificationType: string;
@@ -89,10 +120,11 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    // Update order payment status
+    // Build update data
     const updateData: Record<string, unknown> = {
       payment_status: newPaymentStatus,
       payment_completed_at: newPaymentStatus === 'paid' ? new Date().toISOString() : null,
+      payment_response: body,
     };
 
     // CRITICAL: When payment succeeds, change order status from 'pending_payment' to 'pending'
@@ -101,18 +133,25 @@ export async function POST(request: NextRequest) {
       updateData.status = 'pending';
     }
 
+    // When payment fails, cancel the order
+    if (newPaymentStatus === 'failed') {
+      updateData.status = 'cancelled';
+      updateData.cancelled_at = new Date().toISOString();
+    }
+
     // Store transaction ID if available
     if (transactionId) {
       updateData.payment_transaction_id = transactionId;
     }
 
-    // Store full payment response for auditing
-    updateData.payment_response = body;
-
-    const { error: updateError } = await supabaseAdmin
+    // Idempotent update: only update if order is still in pending_payment status
+    // This prevents race conditions with payment-result page and cron job
+    const { data: updatedRows, error: updateError } = await supabaseAdmin
       .from('orders')
       .update(updateData)
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .eq('status', 'pending_payment')
+      .select('id');
 
     if (updateError) {
       logger.error('[Kashier Webhook] Failed to update order', { orderId, error: updateError });
@@ -120,6 +159,15 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Failed to update order' },
         { status: 500 }
       );
+    }
+
+    // If no rows updated, the order was already processed by another path
+    if (!updatedRows || updatedRows.length === 0) {
+      logger.info('[Kashier Webhook] No update needed (already processed by another path)', {
+        orderId,
+        transactionId,
+      });
+      return NextResponse.json({ success: true, message: 'Order already processed' });
     }
 
     // Send notification to customer
@@ -135,7 +183,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    logger.info('[Kashier Webhook] Order updated', { orderId, paymentStatus: newPaymentStatus });
+    logger.info('[Kashier Webhook] Order updated successfully', {
+      orderId,
+      paymentStatus: newPaymentStatus,
+      transactionId,
+    });
 
     return NextResponse.json({
       success: true,
