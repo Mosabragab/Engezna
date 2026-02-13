@@ -28,7 +28,9 @@ export type ProviderStatus =
   | 'rejected';
 
 // Updated: Added 'completed' and 'confirmed' for settlement calculations
+// Added 'pending_payment' for online payment orders awaiting Kashier confirmation
 export type OrderStatus =
+  | 'pending_payment'
   | 'pending'
   | 'confirmed'
   | 'accepted'
@@ -43,7 +45,7 @@ export type OrderStatus =
 // Updated: Added 'online' for Kashier integration, keeping legacy types for compatibility
 export type PaymentMethod = 'cash' | 'online' | 'card' | 'fawry' | 'vodafone_cash' | 'credit_card';
 
-export type PaymentStatus = 'pending' | 'completed' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'paid' | 'completed' | 'failed' | 'refunded';
 
 export type MessageType = 'text' | 'image' | 'system';
 

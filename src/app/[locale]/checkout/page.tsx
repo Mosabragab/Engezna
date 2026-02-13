@@ -138,9 +138,6 @@ export default function CheckoutPage() {
     getTotal,
     clearCart,
     _hasHydrated,
-    setPendingOnlineOrder,
-    clearPendingOnlineOrder,
-    pendingOnlineOrder,
   } = useCart();
 
   // Get location data from context (no redundant queries!)
@@ -1013,11 +1010,12 @@ export default function CheckoutPage() {
       }
 
       // ============================================================
-      // ONLINE PAYMENT FLOW: DO NOT CREATE ORDER IN DATABASE!
-      // Order will be created by webhook or payment-result page on success
+      // ONLINE PAYMENT FLOW: Create order in DB via initiate API
+      // Order created with 'pending_payment' status before Kashier redirect
+      // This prevents phantom orders if user closes browser after paying
       // ============================================================
 
-      // Prepare order data to be stored temporarily
+      // Prepare order data for server-side order creation
       const pendingOrderData = {
         customer_id: user.id,
         provider_id: provider.id,
@@ -1036,7 +1034,6 @@ export default function CheckoutPage() {
         promo_code: appliedPromoCode?.code || null,
         promo_code_id: appliedPromoCode?.id || null,
         promo_code_usage_count: appliedPromoCode?.usage_count || null,
-        // Cart items for order_items creation
         cart_items: cart.map((item) => {
           const itemPrice = item.selectedVariant?.price ?? item.menuItem.price;
           const variantName = item.selectedVariant ? ` (${item.selectedVariant.name_ar})` : '';
@@ -1055,41 +1052,27 @@ export default function CheckoutPage() {
             variant_name_en: item.selectedVariant?.name_en || null,
           };
         }),
-        created_at: new Date().toISOString(),
       };
 
-      // Store order data in localStorage (NOT in database!)
-      localStorage.setItem('pendingOnlineOrderData', JSON.stringify(pendingOrderData));
-
-      // Initiate payment WITHOUT creating order in database
+      // Initiate payment (creates order in DB + returns Kashier URL)
       const paymentResponse = await fetch('/api/payment/kashier/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Pass order data directly instead of orderId
-          orderData: pendingOrderData,
-        }),
+        body: JSON.stringify({ orderData: pendingOrderData }),
       });
 
       const paymentData = await paymentResponse.json();
-      console.log('Payment initiation response:', paymentData);
 
       if (paymentData.success && paymentData.checkoutUrl) {
-        // IMPORTANT: Don't clear cart here!
-        // Cart will be cleared in payment-result page on success
-        // Order will be created by webhook or payment-result after payment succeeds
+        // Order is now safely in DB with pending_payment status
+        // Don't clear cart here - will be cleared on payment confirmation
         window.location.href = paymentData.checkoutUrl;
         return;
       } else {
-        // Payment initiation failed - no order was created (good!)
-        // Clean up localStorage
-        localStorage.removeItem('pendingOnlineOrderData');
+        // Payment initiation failed - order + promo are rolled back server-side
         const errorMsg = paymentData.error || 'Payment initiation failed';
-        console.error('Payment initiation failed:', errorMsg);
         setError(
-          locale === 'ar'
-            ? `فشل بدء الدفع. يمكنك إعادة المحاولة.`
-            : `Payment initiation failed. You can try again.`
+          locale === 'ar' ? `فشل بدء الدفع: ${errorMsg}` : `Payment initiation failed: ${errorMsg}`
         );
         setIsLoading(false);
         return;

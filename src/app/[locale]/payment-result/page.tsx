@@ -10,22 +10,23 @@ import { useCart } from '@/lib/store/cart';
 import { CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
 
 /**
- * Payment Result Page (New Flow)
+ * Payment Result Page (Server-Side Order Flow)
  *
- * CRITICAL: This page creates the order in database ONLY after successful payment
+ * The order already exists in database with 'pending_payment' status
+ * (created by /api/payment/kashier/initiate before Kashier redirect).
  *
  * Flow:
  * 1. Kashier redirects here with payment status in URL params
  * 2. If payment successful:
- *    - Read order data from localStorage
- *    - Create order in database (status: 'pending', payment_status: 'paid')
- *    - Create order items
- *    - Handle promo codes
- *    - Clear localStorage and cart
- *    - Redirect to order confirmation
+ *    - Look up existing order by orderId from URL
+ *    - Verify order belongs to current user
+ *    - If webhook already updated it → show confirmation
+ *    - If still pending_payment → update status (fallback for webhook delay)
+ *    - Clear cart and redirect to confirmation
  * 3. If payment failed:
- *    - Keep cart and localStorage intact for retry
- *    - Show error message with retry option
+ *    - Mark order as cancelled (cleanup)
+ *    - Keep cart intact for retry
+ *    - Show error with retry option
  */
 export default function PaymentResultPage() {
   const locale = useLocale();
@@ -34,66 +35,38 @@ export default function PaymentResultPage() {
 
   const { clearCart } = useCart();
 
-  const [status, setStatus] = useState<'loading' | 'creating' | 'success' | 'failed' | 'error'>(
-    'loading'
-  );
+  const [status, setStatus] = useState<'loading' | 'success' | 'failed' | 'error'>('loading');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
 
-  // Prevent duplicate order creation
-  const orderCreatedRef = useRef(false);
+  // Prevent duplicate processing
+  const processedRef = useRef(false);
 
   useEffect(() => {
     const processPayment = async () => {
-      // Prevent duplicate processing
-      if (orderCreatedRef.current) return;
-      orderCreatedRef.current = true;
+      if (processedRef.current) return;
+      processedRef.current = true;
 
       try {
-        // Get payment status from URL params (Kashier callback)
+        // Get params from URL (Kashier callback)
         const paymentStatus = searchParams.get('paymentStatus') || searchParams.get('status');
-        const paymentRef = searchParams.get('ref') || searchParams.get('orderId');
+        const orderIdParam = searchParams.get('orderId') || searchParams.get('merchantOrderId');
         const transactionId =
           searchParams.get('transactionId') || searchParams.get('kashierOrderId');
 
-        console.log('Payment callback received:', { paymentStatus, paymentRef, transactionId });
-
-        // Check if payment was successful
-        const isSuccess = paymentStatus === 'SUCCESS' || paymentStatus === 'CAPTURED';
-
-        if (!isSuccess) {
-          setStatus('failed');
-          setErrorMessage(
-            locale === 'ar'
-              ? 'فشل الدفع. سلتك محفوظة ويمكنك المحاولة مرة أخرى.'
-              : 'Payment failed. Your cart is saved and you can try again.'
-          );
-          return;
-        }
-
-        // Payment successful - create the order
-        setStatus('creating');
-
-        // Read order data from localStorage
-        const orderDataJson = localStorage.getItem('pendingOnlineOrderData');
-        if (!orderDataJson) {
+        if (!orderIdParam) {
           setStatus('error');
           setErrorMessage(
             locale === 'ar'
-              ? 'لم يتم العثور على بيانات الطلب. يرجى المحاولة مرة أخرى من صفحة الدفع.'
-              : 'Order data not found. Please try again from checkout.'
+              ? 'لم يتم العثور على معرف الطلب. يرجى التواصل مع الدعم.'
+              : 'Order ID not found. Please contact support.'
           );
           return;
         }
 
-        const orderData = JSON.parse(orderDataJson);
-
-        // Verify this is the correct payment (match ref)
-        // Note: The ref in localStorage might differ slightly, so we just proceed if data exists
-
         const supabase = createClient();
 
-        // Check authentication
+        // Verify authentication
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -107,101 +80,98 @@ export default function PaymentResultPage() {
           return;
         }
 
-        // Verify user matches order data
-        if (orderData.customer_id !== user.id) {
+        // Look up the existing order
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .select('id, customer_id, status, payment_status')
+          .eq('id', orderIdParam)
+          .single();
+
+        if (orderError || !order) {
           setStatus('error');
           setErrorMessage(
             locale === 'ar'
-              ? 'خطأ في التحقق. يرجى المحاولة مرة أخرى.'
-              : 'Verification error. Please try again.'
+              ? 'لم يتم العثور على الطلب. يرجى التواصل مع الدعم.'
+              : 'Order not found. Please contact support.'
           );
           return;
         }
 
-        // CREATE THE ORDER IN DATABASE (FINALLY!)
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            customer_id: orderData.customer_id,
-            provider_id: orderData.provider_id,
-            status: 'pending', // Visible to merchant immediately
-            subtotal: orderData.subtotal,
-            delivery_fee: orderData.delivery_fee,
-            discount: orderData.discount,
-            total: orderData.total,
-            payment_method: 'online',
-            payment_status: 'paid', // Payment already confirmed!
-            order_type: orderData.order_type,
-            delivery_timing: orderData.delivery_timing,
-            scheduled_time: orderData.scheduled_time,
-            delivery_address: orderData.delivery_address,
-            customer_notes: orderData.customer_notes,
-            estimated_delivery_time: orderData.estimated_delivery_time,
-            promo_code: orderData.promo_code,
-            payment_transaction_id: transactionId,
-            payment_completed_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (orderError) {
-          console.error('Order creation error:', orderError);
-          throw new Error(`Failed to create order: ${orderError.message}`);
+        // Verify order belongs to current user
+        if (order.customer_id !== user.id) {
+          setStatus('error');
+          setErrorMessage(
+            locale === 'ar'
+              ? 'خطأ في التحقق. يرجى التواصل مع الدعم.'
+              : 'Verification error. Please contact support.'
+          );
+          return;
         }
 
-        // Create order items
-        if (orderData.cart_items && orderData.cart_items.length > 0) {
-          const orderItems = orderData.cart_items.map((item: any) => ({
-            order_id: order.id,
-            item_id: item.item_id,
-            item_name_ar: item.item_name_ar,
-            item_name_en: item.item_name_en,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.total_price,
-            options: item.options,
-            notes: item.notes,
-          }));
+        // Check payment result
+        const isSuccess = paymentStatus === 'SUCCESS' || paymentStatus === 'CAPTURED';
 
-          const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+        if (!isSuccess) {
+          // Payment failed - mark order as cancelled
+          await supabase
+            .from('orders')
+            .update({
+              status: 'cancelled',
+              payment_status: 'failed',
+              cancelled_at: new Date().toISOString(),
+            })
+            .eq('id', order.id)
+            .eq('status', 'pending_payment'); // Only cancel if still pending
 
-          if (itemsError) {
-            console.error('Order items creation error:', itemsError);
-            // Don't fail the whole process, order is created
+          setStatus('failed');
+          setErrorMessage(
+            locale === 'ar'
+              ? 'فشل الدفع. سلتك محفوظة ويمكنك المحاولة مرة أخرى.'
+              : 'Payment failed. Your cart is saved and you can try again.'
+          );
+          return;
+        }
+
+        // Payment succeeded!
+        // Check if webhook already processed the order
+        if (order.payment_status === 'paid' && order.status !== 'pending_payment') {
+          // Webhook already handled it - just show success
+          setOrderId(order.id);
+          setStatus('success');
+          clearCart();
+          setTimeout(() => {
+            router.push(`/${locale}/orders/${order.id}/confirmation`);
+          }, 2000);
+          return;
+        }
+
+        // Webhook hasn't processed yet - update order as fallback
+        if (order.status === 'pending_payment') {
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({
+              status: 'pending', // Now visible to merchant
+              payment_status: 'paid',
+              payment_transaction_id: transactionId,
+              payment_completed_at: new Date().toISOString(),
+            })
+            .eq('id', order.id)
+            .eq('status', 'pending_payment'); // Idempotent: only update if still pending
+
+          if (updateError) {
+            // Order might have been updated by webhook in the meantime - that's OK
           }
         }
 
-        // Handle promo code usage
-        if (orderData.promo_code_id && orderData.discount > 0) {
-          await supabase.from('promo_code_usage').insert({
-            promo_code_id: orderData.promo_code_id,
-            user_id: user.id,
-            order_id: order.id,
-            discount_amount: orderData.discount,
-          });
-
-          if (orderData.promo_code_usage_count !== null) {
-            await supabase
-              .from('promo_codes')
-              .update({ usage_count: orderData.promo_code_usage_count + 1 })
-              .eq('id', orderData.promo_code_id);
-          }
-        }
-
-        // SUCCESS! Clean up and redirect
+        // Success - clean up and redirect
         setOrderId(order.id);
         setStatus('success');
-
-        // Clear localStorage and cart
-        localStorage.removeItem('pendingOnlineOrderData');
         clearCart();
 
-        // Redirect to order confirmation after a short delay
         setTimeout(() => {
           router.push(`/${locale}/orders/${order.id}/confirmation`);
         }, 2000);
-      } catch (err) {
-        console.error('Payment processing error:', err);
+      } catch {
         setStatus('error');
         setErrorMessage(
           locale === 'ar'
@@ -215,19 +185,13 @@ export default function PaymentResultPage() {
   }, [searchParams, locale, router, clearCart]);
 
   // Loading state
-  if (status === 'loading' || status === 'creating') {
+  if (status === 'loading') {
     return (
       <CustomerLayout showBackButton={false} showBottomNav={false}>
         <div className="min-h-[60vh] flex flex-col items-center justify-center p-6">
           <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
           <p className="text-lg text-muted-foreground">
-            {status === 'loading'
-              ? locale === 'ar'
-                ? 'جاري التحقق من حالة الدفع...'
-                : 'Checking payment status...'
-              : locale === 'ar'
-                ? 'جاري إنشاء الطلب...'
-                : 'Creating order...'}
+            {locale === 'ar' ? 'جاري التحقق من حالة الدفع...' : 'Checking payment status...'}
           </p>
         </div>
       </CustomerLayout>
@@ -247,8 +211,8 @@ export default function PaymentResultPage() {
           </h1>
           <p className="text-muted-foreground text-center mb-6 max-w-md">
             {locale === 'ar'
-              ? 'شكراً لك! تم إنشاء طلبك وسيتم توجيهك لصفحة التأكيد.'
-              : 'Thank you! Your order has been created. Redirecting to confirmation...'}
+              ? 'شكراً لك! طلبك قيد التجهيز. جاري التوجيه لصفحة التأكيد...'
+              : 'Thank you! Your order is being prepared. Redirecting to confirmation...'}
           </p>
           <Loader2 className="w-6 h-6 text-primary animate-spin" />
         </div>
@@ -292,6 +256,11 @@ export default function PaymentResultPage() {
           {locale === 'ar' ? 'حدث خطأ' : 'Something Went Wrong'}
         </h1>
         <p className="text-muted-foreground text-center mb-6 max-w-md">{errorMessage}</p>
+        {orderId && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {locale === 'ar' ? `رقم الطلب: ${orderId}` : `Order #: ${orderId}`}
+          </p>
+        )}
         <div className="flex gap-3">
           <Button onClick={() => router.push(`/${locale}/checkout`)}>
             {locale === 'ar' ? 'العودة للدفع' : 'Back to Checkout'}
