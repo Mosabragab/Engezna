@@ -210,45 +210,19 @@ DROP TRIGGER IF EXISTS new_message_notification ON public.chat_messages;
 
 ---
 
-### 1.5 🔴 Kashier Webhook يقبل Payload بدون Signature إلزامية (مؤكد - من تقرير Codex + تحقق)
+### 1.5 ✅ ~~Kashier Webhook يقبل Payload بدون Signature إلزامية~~ (تم الإصلاح 2/13)
 
-**الموقع:** `src/app/api/payment/kashier/webhook/route.ts` (سطر 31-38)
+**الموقع:** `src/app/api/payment/kashier/webhook/route.ts`
 
-**المشكلة:** التحقق من التوقيع **اختياري** - إذا لم يرسل المهاجم حقل signature أصلاً، يقبل الـ webhook أي بيانات:
-
-```typescript
-if (signature) {
-  // ← المشكلة: التحقق فقط إذا signature موجودة!
-  const isValid = validateKashierSignature(body, signature);
-  if (!isValid) {
-    return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });
-  }
-}
-// إذا لم ترسل signature أصلاً → يمر بدون تحقق!
-```
-
-**الخطر:** أي شخص يعرف URL الـ webhook يستطيع إرسال طلبات مزيفة لتغيير حالة الدفع
-
-**الحل:** تحويل الشرط لإلزامي - رفض أي request بدون signature صالحة
+**تم الإصلاح:** التحقق من التوقيع أصبح **إلزامياً** - أي request بدون signature صالحة يُرفض فوراً بـ 403. تم استبدال console.log بـ logger.
 
 ---
 
-### 1.6 🔴 Promo Validation يثق بـ user_id من العميل (مؤكد - من تقرير Codex + تحقق)
+### 1.6 ✅ ~~Promo Validation يثق بـ user_id من العميل~~ (تم الإصلاح 2/13)
 
 **الموقع:** `src/app/api/promo/validate/route.ts`
 
-**المشكلة:** الـ endpoint يقرأ `user_id` من body الطلب مباشرة ويستخدمه مع Service Role Key (الذي يتخطى RLS):
-
-```typescript
-const { code, user_id, provider_id, ... } = body;  // user_id من العميل
-const supabase = createClient(supabaseUrl, supabaseServiceKey, ...);  // service role
-// ... يستعلم بـ user_id بدون أي تحقق من هوية المتصل
-.eq('user_id', user_id);
-```
-
-**الخطر:** مهاجم يرسل user_id مختلف → يستخدم أكواد خصم خاصة بمستخدم آخر أو يتخطى حدود الاستخدام
-
-**الحل:** استخدام `getUser()` من Supabase Auth لجلب الهوية الفعلية بدل الاعتماد على body
+**تم الإصلاح:** حُذف `user_id` من body الطلب. يُستخدم الآن `getUser()` من Supabase Auth لجلب هوية المستخدم الفعلية من الجلسة. أي طلب بدون session صالحة يُرفض بـ 401.
 
 ---
 
@@ -287,12 +261,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, ...);  // service
 
 ---
 
-### 2.3 ⚠️ Kashier credentials تستخدم fallback فارغ
+### 2.3 ✅ ~~Kashier credentials تستخدم fallback فارغ~~ (تم الإصلاح 2/13)
 
-**الموقع:** `src/lib/payment/kashier.ts` (سطر 5-8)
+**الموقع:** `src/lib/payment/kashier.ts`
 
-**المشكلة:** `process.env.KASHIER_API_KEY || ''` - يستخدم string فارغ بدل throw error
-**الحل:** استبدال بـ validation يرمي خطأ واضح إذا المتغير مفقود
+**تم الإصلاح:** استُبدل `process.env.X || ''` بـ getter functions تلقي خطأ واضح (`throw new Error(...)`) إذا المتغير مفقود. لا فشل صامت بعد الآن.
 
 ---
 
@@ -302,16 +275,11 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, ...);  // service
 **الخطر:** العميل يرى "قيد الانتظار" للأبد إذا فشل الـ webhook بصمت
 **الحل:** إنشاء cron job يعالج الطلبات المعلقة بعد 30 دقيقة
 
-### 2.5 ⚠️ لا يوجد Content-Security-Policy (CSP) header (مؤكد - من تقرير Codex)
+### 2.5 ✅ ~~لا يوجد Content-Security-Policy (CSP) header~~ (تم الإصلاح جزئياً 2/13)
 
-**الموقع:** `next.config.ts` (سطر 48-85)
+**الموقع:** `next.config.ts`
 
-**المشكلة:** يوجد headers أمنية جيدة (HSTS, X-Frame-Options, etc.) لكن **لا يوجد CSP**. هذا يترك التطبيق عرضة لـ:
-
-- حقن scripts خارجية
-- تحميل موارد من مصادر غير موثوقة
-
-**الحل:** إضافة CSP header بنمط report-only أولاً ثم enforce بعد التأكد من التوافق مع Supabase/Kashier/Firebase/HERE Maps
+**تم الإصلاح:** أُضيف `Content-Security-Policy-Report-Only` header شامل يغطي Supabase, Kashier, Firebase, HERE Maps, Sentry, Vercel. يعمل في وضع report-only حالياً. يحتاج اختبار توافق ثم تحويل لـ enforce.
 
 ---
 

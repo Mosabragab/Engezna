@@ -5,6 +5,7 @@ import {
   parseKashierCallback,
   KASHIER_PAYMENT_STATUS,
 } from '@/lib/payment/kashier';
+import { logger } from '@/lib/logger';
 
 /**
  * Kashier Webhook Handler
@@ -17,24 +18,28 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    console.log('Kashier webhook received:', JSON.stringify(body, null, 2));
+    logger.info('[Kashier Webhook] Received callback');
 
     // Extract callback data
     const callbackData = parseKashierCallback(body);
     const { paymentStatus, orderId, transactionId, signature } = callbackData;
 
     if (!orderId) {
-      console.error('Kashier webhook: Missing order ID');
+      logger.warn('[Kashier Webhook] Missing order ID');
       return NextResponse.json({ success: false, error: 'Missing order ID' }, { status: 400 });
     }
 
-    // Validate signature if provided
-    if (signature) {
-      const isValid = validateKashierSignature(body, signature);
-      if (!isValid) {
-        console.error('Kashier webhook: Invalid signature');
-        return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });
-      }
+    // SECURITY: Signature validation is MANDATORY
+    // Reject any webhook without a valid signature to prevent forged callbacks
+    if (!signature) {
+      logger.warn('[Kashier Webhook] Rejected: no signature provided', { orderId });
+      return NextResponse.json({ success: false, error: 'Missing signature' }, { status: 403 });
+    }
+
+    const isValid = validateKashierSignature(body, signature);
+    if (!isValid) {
+      logger.warn('[Kashier Webhook] Rejected: invalid signature', { orderId });
+      return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });
     }
 
     // Use admin client to bypass RLS
@@ -48,13 +53,12 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError || !order) {
-      console.error('Kashier webhook: Order not found:', orderId);
+      logger.warn('[Kashier Webhook] Order not found', { orderId });
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }
 
-    // Don't process if already paid
+    // Idempotency: Don't process if already paid (handles duplicate webhooks)
     if (order.payment_status === 'paid') {
-      console.log('Kashier webhook: Order already paid:', orderId);
       return NextResponse.json({ success: true, message: 'Order already paid' });
     }
 
@@ -102,7 +106,7 @@ export async function POST(request: NextRequest) {
       updateData.payment_transaction_id = transactionId;
     }
 
-    // Store full payment response for debugging
+    // Store full payment response for auditing
     updateData.payment_response = body;
 
     const { error: updateError } = await supabaseAdmin
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
       .eq('id', orderId);
 
     if (updateError) {
-      console.error('Kashier webhook: Failed to update order:', updateError);
+      logger.error('[Kashier Webhook] Failed to update order', { orderId, error: updateError });
       return NextResponse.json(
         { success: false, error: 'Failed to update order' },
         { status: 500 }
@@ -131,7 +135,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`Kashier webhook: Order ${orderId} payment status updated to ${newPaymentStatus}`);
+    logger.info('[Kashier Webhook] Order updated', { orderId, paymentStatus: newPaymentStatus });
 
     return NextResponse.json({
       success: true,
@@ -139,7 +143,7 @@ export async function POST(request: NextRequest) {
       paymentStatus: newPaymentStatus,
     });
   } catch (error) {
-    console.error('Kashier webhook error:', error);
+    logger.error('[Kashier Webhook] Processing failed', { error });
     return NextResponse.json(
       { success: false, error: 'Webhook processing failed' },
       { status: 500 }

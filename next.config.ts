@@ -79,6 +79,23 @@ const nextConfig: NextConfig = {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(self), geolocation=(self), interest-cohort=()',
           },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.kashier.io https://*.firebaseio.com https://www.googletagmanager.com https://js.sentry-cdn.com https://vercel.live https://*.vercel.app",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.kashier.io https://checkout.kashier.io https://*.firebaseio.com https://fcm.googleapis.com https://*.here.com https://*.sentry.io https://vercel.live https://*.ingest.sentry.io",
+              "frame-src 'self' https://checkout.kashier.io https://*.firebaseapp.com",
+              "worker-src 'self' blob:",
+              "media-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
     ];

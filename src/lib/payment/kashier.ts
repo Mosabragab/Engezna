@@ -1,10 +1,24 @@
 import crypto from 'crypto';
 
-// Kashier Configuration
+// Kashier Configuration - validates required credentials at access time
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
 export const kashierConfig = {
-  merchantId: process.env.KASHIER_MERCHANT_ID || '',
-  apiKey: process.env.KASHIER_API_KEY || '',
-  secretKey: process.env.KASHIER_SECRET_KEY || '',
+  get merchantId() {
+    return getRequiredEnv('KASHIER_MERCHANT_ID');
+  },
+  get apiKey() {
+    return getRequiredEnv('KASHIER_API_KEY');
+  },
+  get secretKey() {
+    return getRequiredEnv('KASHIER_SECRET_KEY');
+  },
   mode: (process.env.KASHIER_MODE || 'test') as 'test' | 'live',
   baseUrl: 'https://checkout.kashier.io',
   apiUrl: 'https://api.kashier.io',
