@@ -370,21 +370,21 @@
 
 ### 2.2 تحسين Cumulative Layout Shift (CLS)
 
-| المهمة                                             | الحالة | التاريخ |
-| -------------------------------------------------- | ------ | ------- |
+| المهمة                                                                  | الحالة | التاريخ |
+| ----------------------------------------------------------------------- | ------ | ------- |
 | [x] إضافة `width` و `height` صريح لكل صورة (أو fill مع relative parent) | ✅     | 2/14    |
 | [x] إضافة skeleton placeholders للمحتوى الديناميكي                      | ✅     | 2/14    |
-| [x] إصلاح font loading (swap + preload + preconnect)                   | ✅     | 2/14    |
+| [x] إصلاح font loading (swap + preload + preconnect)                    | ✅     | 2/14    |
 | [ ] الهدف: CLS < 0.1                                                    | ⬜     |         |
 
 ### 2.3 تحسين First Contentful Paint (FCP)
 
-| المهمة                                            | الحالة | التاريخ |
-| ------------------------------------------------- | ------ | ------- |
-| [x] تقليل initial JavaScript bundle size (lazy sections)         | ✅     | 2/14    |
-| [x] تأخير تحميل Firebase SDK (lazy loading محسّن - كان جاهز)    | ✅     | 2/14    |
+| المهمة                                                            | الحالة | التاريخ |
+| ----------------------------------------------------------------- | ------ | ------- |
+| [x] تقليل initial JavaScript bundle size (lazy sections)          | ✅     | 2/14    |
+| [x] تأخير تحميل Firebase SDK (lazy loading محسّن - كان جاهز)      | ✅     | 2/14    |
 | [x] استخدام dynamic imports للصفحات الثقيلة (5 homepage sections) | ✅     | 2/14    |
-| [ ] الهدف: FCP < 1.5s                                            | ⬜     |         |
+| [ ] الهدف: FCP < 1.5s                                             | ⬜     |         |
 
 ### 2.4 تحسين Speed Index
 
@@ -399,10 +399,10 @@
 
 | المهمة                                                        | الحالة | التاريخ |
 | ------------------------------------------------------------- | ------ | ------- |
-| [x] تحويل الصور الكبيرة لـ WebP/AVIF (next/image auto format)  | ✅     | 2/14    |
-| [x] إضافة المزيد من Skeleton Loaders (homepage + sections)     | ✅     | 2/14    |
+| [x] تحويل الصور الكبيرة لـ WebP/AVIF (next/image auto format) | ✅     | 2/14    |
+| [x] إضافة المزيد من Skeleton Loaders (homepage + sections)    | ✅     | 2/14    |
 | [ ] تفعيل gzip/brotli compression                             | ⬜     |         |
-| [x] تحسين Accessibility (aria-labels, contrast, alt text)      | ✅     | 2/14    |
+| [x] تحسين Accessibility (aria-labels, contrast, alt text)     | ✅     | 2/14    |
 | [ ] تشغيل Lighthouse audit ومقارنة النتائج                    | ⬜     |         |
 | [ ] الهدف: Lighthouse Performance > 80                        | ⬜     |         |
 
@@ -678,4 +678,4 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | 2026-02-13 | تم Rotate Service Role Key + تحديث Supabase Dashboard + Vercel + GitHub Secrets                 | Owner  |
 | 2026-02-14 | إكمال المرحلة 1.5: Refund webhook + CSRF enforce + CSP enforce + CSRF headers لـ 27 endpoint    | Claude |
 | 2026-02-14 | المرحلة 2: إزالة unoptimized من الصور + تحويل img لـ next/image + skeleton loaders              | Claude |
-| 2026-02-14 | المرحلة 2: lazy loading لـ 5 أقسام homepage + preconnect hints + تحسينات accessibility           | Claude |
+| 2026-02-14 | المرحلة 2: lazy loading لـ 5 أقسام homepage + preconnect hints + تحسينات accessibility          | Claude |

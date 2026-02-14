@@ -59,7 +59,13 @@ export function QuantitySelector({
         <Minus className={classes.icon} />
       </button>
 
-      <span className={`${classes.text} text-center font-semibold tabular-nums`} aria-live="polite" aria-label={`الكمية: ${quantity}`}>{quantity}</span>
+      <span
+        className={`${classes.text} text-center font-semibold tabular-nums`}
+        aria-live="polite"
+        aria-label={`الكمية: ${quantity}`}
+      >
+        {quantity}
+      </span>
 
       <button
         onClick={onIncrease}

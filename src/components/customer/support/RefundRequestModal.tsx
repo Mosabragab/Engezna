@@ -638,7 +638,11 @@ export function RefundRequestModal({
                         key={index}
                         className="relative w-20 h-20 rounded-lg overflow-hidden border"
                       >
-                        <img src={preview} alt={`صورة إثبات ${index + 1}`} className="w-full h-full object-cover" />
+                        <img
+                          src={preview}
+                          alt={`صورة إثبات ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
