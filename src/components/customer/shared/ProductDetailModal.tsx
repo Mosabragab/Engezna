@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import { X, Plus, Minus, Flame, Leaf, Clock, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -122,7 +123,14 @@ export function ProductDetailModal({
             <X className="w-5 h-5" />
           </button>
           {product.image_url ? (
-            <img src={product.image_url} alt={name} className="w-full h-full object-cover" />
+            <Image
+              src={product.image_url}
+              alt={name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 512px"
+              loading="lazy"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-5xl">🍽️</div>
           )}

@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar, AdminLayout } from '@/components/admin';
 import { formatNumber, formatDate, formatCurrency } from '@/lib/utils/formatters';
 import {
@@ -235,7 +236,7 @@ export default function ProviderDetailPage() {
     try {
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ action: 'get', providerId }),
       });
       const result = await response.json();
@@ -300,7 +301,7 @@ export default function ProviderDetailPage() {
 
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: actionMap[currentAction],
           providerId,
@@ -330,7 +331,7 @@ export default function ProviderDetailPage() {
     try {
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: 'updateCommission',
           providerId,
@@ -364,7 +365,7 @@ export default function ProviderDetailPage() {
     try {
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: 'toggleFeatured',
           providerId,
@@ -386,7 +387,7 @@ export default function ProviderDetailPage() {
     try {
       const response = await fetch('/api/admin/providers', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: 'toggleVerified',
           providerId,

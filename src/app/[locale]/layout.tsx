@@ -143,6 +143,8 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
+        {/* Preconnect to Supabase storage for faster image loading */}
+        <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" crossOrigin="anonymous" />
         {/* Fonts are loaded via next/font/google in @/lib/fonts for better performance */}
         {/* Apple Touch Icons - Required for iOS Home Screen */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />

@@ -7,6 +7,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { useCart, type MenuItem, type Provider, type ProductVariant } from '@/lib/store/cart';
 import {
   useChatStore,
@@ -233,7 +234,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
 
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify(requestBody),
           signal: abortControllerRef.current.signal,
         });
@@ -695,7 +696,7 @@ export function useAIChat(options: UseAIChatOptions = {}): UseAIChatReturn {
 
         const response = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify(requestBody),
           signal: abortControllerRef.current.signal,
         });

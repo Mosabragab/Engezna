@@ -594,6 +594,7 @@ export function RefundRequestModal({
                           setSelectedItems([]); // Clear item selection when manual amount is entered
                         }}
                         placeholder={isArabic ? 'المبلغ' : 'Amount'}
+                        aria-label={isArabic ? 'مبلغ الاسترجاع' : 'Refund amount'}
                         className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                         dir="ltr"
                       />
@@ -637,10 +638,11 @@ export function RefundRequestModal({
                         key={index}
                         className="relative w-20 h-20 rounded-lg overflow-hidden border"
                       >
-                        <img src={preview} alt="" className="w-full h-full object-cover" />
+                        <img src={preview} alt={`صورة إثبات ${index + 1}`} className="w-full h-full object-cover" />
                         <button
                           type="button"
                           onClick={() => removeImage(index)}
+                          aria-label={`حذف الصورة ${index + 1}`}
                           className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
                         >
                           <Trash2 className="w-3 h-3" />

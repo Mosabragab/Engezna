@@ -23,16 +23,16 @@ export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // ─── API Routes: CSRF validation ────────────────────────────────────────
-  // Phase 1: Log-only mode (like CSP report-only) - monitors without blocking
-  // Phase 2: Set CSRF_ENFORCE=true in env vars to block invalid requests
+  // Enforced: blocks requests without valid CSRF token (Double Submit Cookie)
+  // Set CSRF_ENFORCE=false to revert to log-only mode for debugging
   if (pathname.startsWith('/api/')) {
     if (requiresCsrfProtection(request) && !isCsrfExempt(pathname)) {
       if (!validateCsrfToken(request)) {
-        const enforce = process.env.CSRF_ENFORCE === 'true';
+        const enforce = process.env.CSRF_ENFORCE !== 'false';
         if (enforce) {
           return NextResponse.json({ error: 'Invalid or missing CSRF token' }, { status: 403 });
         }
-        // Log-only mode: let the request through but flag the violation
+        // Log-only fallback mode (set CSRF_ENFORCE=false to enable)
         const response = NextResponse.next();
         response.headers.set('X-CSRF-Warning', 'missing-or-invalid-token');
         return response;

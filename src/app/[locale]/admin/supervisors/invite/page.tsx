@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, GeoFilter, GeoFilterValue, useAdminSidebar } from '@/components/admin';
 import {
   Shield,
@@ -447,6 +448,7 @@ export default function InviteSupervisorPage() {
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${session.access_token}`,
+              ...csrfHeaders(),
             },
             body: JSON.stringify({
               to: email.toLowerCase().trim(),
