@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { useUserLocation } from '@/lib/contexts/LocationContext';
 
 // Helper function to calculate color luminance and determine if text should be dark or light
@@ -224,7 +225,7 @@ function trackBannerEvent(bannerId: string, eventType: 'impression' | 'click') {
   if (/^\d+$/.test(bannerId)) return;
   fetch('/api/banners/track', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ banner_id: bannerId, event_type: eventType }),
   }).catch(() => {
     // Silently ignore tracking failures
@@ -315,7 +316,6 @@ function BannerCard({
             className="object-cover opacity-30"
             sizes="(max-width: 768px) 85vw, 33vw"
             priority={isLCPCandidate}
-            unoptimized
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
@@ -418,7 +418,6 @@ function BannerCard({
               className="w-auto h-full max-w-full object-contain"
               sizes="(max-width: 768px) 25vw, 15vw"
               priority={isLCPCandidate}
-              unoptimized
               style={{
                 filter:
                   'drop-shadow(0 8px 16px rgba(0,0,0,0.15)) drop-shadow(0 16px 32px rgba(0,0,0,0.1))',

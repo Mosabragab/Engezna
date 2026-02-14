@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin';
 import { formatNumber, formatDate } from '@/lib/utils/formatters';
 import {
@@ -224,7 +225,7 @@ export default function AdminProvidersPage() {
       if (confirmAction.action === 'approve') {
         const response = await fetch('/api/admin/providers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({
             action: 'approve',
             providerId: confirmAction.providerId,
@@ -234,7 +235,7 @@ export default function AdminProvidersPage() {
       } else if (confirmAction.action === 'reject') {
         const response = await fetch('/api/admin/providers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({
             action: 'reject',
             providerId: confirmAction.providerId,
@@ -245,7 +246,7 @@ export default function AdminProvidersPage() {
       } else if (confirmAction.action === 'pause') {
         const response = await fetch('/api/admin/providers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({
             action: 'suspend',
             providerId: confirmAction.providerId,
@@ -257,7 +258,7 @@ export default function AdminProvidersPage() {
         // resume/reactivate
         const response = await fetch('/api/admin/providers', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({
             action: 'reactivate',
             providerId: confirmAction.providerId,

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { CustomerLayout } from '@/components/customer/layout';
 import { Button } from '@/components/ui/button';
@@ -336,9 +337,16 @@ export default function OrderConfirmationPage() {
             <Card className="mb-4">
               <CardContent className="py-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden">
+                  <div className="relative w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden">
                     {provider.logo_url ? (
-                      <img src={provider.logo_url} alt="" className="w-full h-full object-cover" />
+                      <Image
+                        src={provider.logo_url}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                        loading="lazy"
+                      />
                     ) : (
                       <Store className="w-6 h-6 text-slate-400" />
                     )}

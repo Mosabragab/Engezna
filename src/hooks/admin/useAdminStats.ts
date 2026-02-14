@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback } from 'react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type {
   DashboardStats,
   StatsFilters,
@@ -20,7 +21,7 @@ import type {
 async function fetchDashboardStats(filters: StatsFilters = {}) {
   const response = await fetch('/api/admin/stats', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'dashboard', filters }),
   });
   return response.json();
@@ -29,7 +30,7 @@ async function fetchDashboardStats(filters: StatsFilters = {}) {
 async function fetchOrdersTimeSeries(filters: StatsFilters = {}) {
   const response = await fetch('/api/admin/stats', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'ordersTimeSeries', filters }),
   });
   return response.json();
@@ -38,7 +39,7 @@ async function fetchOrdersTimeSeries(filters: StatsFilters = {}) {
 async function fetchRevenueTimeSeries(filters: StatsFilters = {}) {
   const response = await fetch('/api/admin/stats', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'revenueTimeSeries', filters }),
   });
   return response.json();
@@ -47,7 +48,7 @@ async function fetchRevenueTimeSeries(filters: StatsFilters = {}) {
 async function fetchOrdersByCategory(filters: StatsFilters = {}) {
   const response = await fetch('/api/admin/stats', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'ordersByCategory', filters }),
   });
   return response.json();
@@ -56,7 +57,7 @@ async function fetchOrdersByCategory(filters: StatsFilters = {}) {
 async function fetchStatsByGovernorate() {
   const response = await fetch('/api/admin/stats', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'byGovernorate' }),
   });
   return response.json();
@@ -338,7 +339,7 @@ export function useQuickStats(refreshInterval = 60000): UseQuickStatsReturn {
     try {
       const response = await window.fetch('/api/admin/stats', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ action: 'quick' }),
       });
       const result = await response.json();

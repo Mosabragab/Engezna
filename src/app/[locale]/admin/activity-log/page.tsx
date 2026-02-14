@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatDateTime, formatTimeAgo } from '@/lib/utils/formatters';
 import {
@@ -77,7 +78,7 @@ export default function AdminActivityLogPage() {
     try {
       const response = await fetch('/api/admin/audit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ action: 'list', limit: 200 }),
       });
       const result = await response.json();

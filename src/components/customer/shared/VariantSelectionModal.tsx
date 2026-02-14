@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import { X, Plus, Minus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -108,8 +109,15 @@ export function VariantSelectionModal({
 
         {/* Product Image */}
         {product.image_url && (
-          <div className="w-full h-48 bg-slate-100">
-            <img src={product.image_url} alt={name} className="w-full h-full object-cover" />
+          <div className="relative w-full h-48 bg-slate-100">
+            <Image
+              src={product.image_url}
+              alt={name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 448px"
+              loading="lazy"
+            />
           </div>
         )}
 

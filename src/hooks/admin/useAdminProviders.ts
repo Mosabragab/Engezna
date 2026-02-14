@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type {
   AdminProvider,
   ProviderFilters,
@@ -19,7 +20,7 @@ import type {
 async function fetchProviders(filters: ProviderFilters) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'list', filters }),
   });
   return response.json();
@@ -28,7 +29,7 @@ async function fetchProviders(filters: ProviderFilters) {
 async function approveProviderAction(providerId: string, commissionRate?: number) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'approve', providerId, commissionRate }),
   });
   return response.json();
@@ -37,7 +38,7 @@ async function approveProviderAction(providerId: string, commissionRate?: number
 async function rejectProviderAction(providerId: string, reason: string) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'reject', providerId, reason }),
   });
   return response.json();
@@ -46,7 +47,7 @@ async function rejectProviderAction(providerId: string, reason: string) {
 async function suspendProviderAction(providerId: string, reason: string) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'suspend', providerId, reason }),
   });
   return response.json();
@@ -55,7 +56,7 @@ async function suspendProviderAction(providerId: string, reason: string) {
 async function updateCommissionAction(providerId: string, commissionRate: number) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'updateCommission', providerId, commissionRate }),
   });
   return response.json();
@@ -64,7 +65,7 @@ async function updateCommissionAction(providerId: string, commissionRate: number
 async function toggleFeaturedAction(providerId: string, isFeatured: boolean) {
   const response = await fetch('/api/admin/providers', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
     body: JSON.stringify({ action: 'toggleFeatured', providerId, isFeatured }),
   });
   return response.json();

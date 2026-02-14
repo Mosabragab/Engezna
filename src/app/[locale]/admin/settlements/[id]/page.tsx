@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters';
 import { exportSettlementToPDF, type SettlementExportData } from '@/lib/finance';
@@ -410,7 +411,7 @@ export default function SettlementDetailPage() {
     try {
       const response = await fetch('/api/emails/settlement', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           settlementId: settlement.id,
           storeId: settlement.provider_id,

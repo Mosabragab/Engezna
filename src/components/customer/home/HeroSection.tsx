@@ -68,7 +68,8 @@ export function HeroSection({ onSearch, onSearchClick, className = '' }: HeroSec
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={isRTL ? 'ابحث عن متجر أو منتج...' : 'Search for a store or product...'}
-                className={`flex-1 mx-4 bg-transparent text-slate-900 placeholder:text-slate-400 text-base outline-none ${
+                aria-label={isRTL ? 'البحث عن متجر أو منتج' : 'Search for a store or product'}
+                className={`flex-1 mx-4 bg-transparent text-slate-900 placeholder:text-slate-500 text-base outline-none ${
                   isRTL ? 'text-right' : 'text-left'
                 }`}
               />

@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -241,7 +242,7 @@ export default function JoinProviderPage() {
       // Call API to register and accept invitation
       const response = await fetch('/api/auth/staff-register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           email: invitation.email,
           password,

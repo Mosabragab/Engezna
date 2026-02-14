@@ -67,13 +67,14 @@
 
 ### التقييم العام
 
-| الجانب             | التقييم | ملاحظات                                                           |
-| ------------------ | ------- | ----------------------------------------------------------------- |
-| الأمان             | A-      | ممتاز بعد إصلاحات 2/13 (key rotation, CSRF, webhook security)     |
-| جودة الكود         | A-      | ممتاز مع ملفات كبيرة تحتاج تقسيم                                  |
-| التدفقات التجارية  | A-      | مكتملة مع إصلاح Phantom Orders + Refund API + Webhook idempotency |
-| جاهزية Capacitor   | C+      | أساس PWA ممتاز، إعداد Capacitor لم يبدأ                           |
-| جاهزية Google Play | D       | لم يبدأ (المرحلة 3-6 من الخارطة)                                  |
+| الجانب             | التقييم | ملاحظات                                                             |
+| ------------------ | ------- | ------------------------------------------------------------------- |
+| الأمان             | A       | ممتاز: CSRF enforce + CSP enforce + webhook security + key rotation |
+| جودة الكود         | A-      | ممتاز مع ملفات كبيرة تحتاج تقسيم                                    |
+| التدفقات التجارية  | A       | مكتملة: Phantom Orders + Refund API + Refund webhook + idempotency  |
+| الأداء             | B+      | next/image optimized + lazy loading + skeletons + preconnect        |
+| جاهزية Capacitor   | C+      | أساس PWA ممتاز، إعداد Capacitor لم يبدأ                             |
+| جاهزية Google Play | D       | لم يبدأ (المرحلة 3-6 من الخارطة)                                    |
 
 ---
 
@@ -475,11 +476,22 @@
 - ✅ Console.log: تم تنظيف API routes والملفات الحساسة
 - ✅ RLS policies: تم تضييق promo_codes وprofiles
 
-**المتبقي قبل المرحلة 2:**
+**تم إنجازه في 2/14:**
+
+- ✅ تحويل CSRF من log-only لـ enforce (+ إضافة csrfHeaders لـ 27 endpoint)
+- ✅ تحويل CSP من report-only لـ enforce
+- ✅ إنشاء Kashier refund webhook handler
+- ✅ تأكيد أن triggers الآمنة تغطي كل الحالات
+- ✅ المرحلة 2 (جزئي): إزالة unoptimized من الصور، تحويل img لـ next/image
+- ✅ المرحلة 2 (جزئي): lazy loading لـ 5 أقسام homepage + skeleton loaders
+- ✅ المرحلة 2 (جزئي): تحسينات Accessibility (aria-labels, contrast, alt text)
+
+**المتبقي:**
 
 - نشر Edge Functions (1.7) - الإشعارات لا تصل عبر FCM فعلياً
-- تحويل CSRF من log-only لـ enforce
-- تحويل CSP من report-only لـ enforce
 - حذف Database Webhooks من Dashboard
+- ضغط البانر الرئيسي (< 200KB)
+- تشغيل Lighthouse audit ومقارنة النتائج
+- المراحل 3-6 (Capacitor, Google Play)
 
-المراحل 2-6 من خارطة الطريق لم تبدأ بعد، وهذا متوقع حسب الجدول الزمني. القرار الاستراتيجي الأهم هو اعتماد **Hybrid App approach** لـ Capacitor (استخدام WebView يشير لـ backend المنشور) بدلاً من محاولة static export التي ستتطلب إعادة هيكلة كبيرة.
+المراحل 3-6 من خارطة الطريق لم تبدأ بعد، وهذا متوقع حسب الجدول الزمني. القرار الاستراتيجي الأهم هو اعتماد **Hybrid App approach** لـ Capacitor (استخدام WebView يشير لـ backend المنشور) بدلاً من محاولة static export التي ستتطلب إعادة هيكلة كبيرة.

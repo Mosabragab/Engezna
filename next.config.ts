@@ -80,7 +80,7 @@ const nextConfig: NextConfig = {
             value: 'camera=(), microphone=(self), geolocation=(self), interest-cohort=()',
           },
           {
-            key: 'Content-Security-Policy-Report-Only',
+            key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.kashier.io https://*.firebaseio.com https://www.googletagmanager.com https://js.sentry-cdn.com https://vercel.live https://*.vercel.app",

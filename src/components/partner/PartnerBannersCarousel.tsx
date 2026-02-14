@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
@@ -161,7 +162,14 @@ function PartnerBannerCard({
     >
       {imageOnBackground && banner.image_url && (
         <div className="absolute inset-0">
-          <img src={banner.image_url} alt="" className="w-full h-full object-cover opacity-30" />
+          <Image
+            src={banner.image_url}
+            alt=""
+            fill
+            className="object-cover opacity-30"
+            sizes="(max-width: 1024px) 85vw, 33vw"
+            loading="lazy"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
       )}

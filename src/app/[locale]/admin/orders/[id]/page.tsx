@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDateTime, formatDate } from '@/lib/utils/formatters';
 import {
@@ -172,7 +173,7 @@ export default function AdminOrderDetailsPage() {
     try {
       const response = await fetch('/api/admin/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ action: 'get', orderId }),
       });
       const result = await response.json();
@@ -249,7 +250,7 @@ export default function AdminOrderDetailsPage() {
 
       const response = await fetch('/api/admin/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: newStatus === 'cancelled' ? 'cancel' : 'updateStatus',
           orderId: order.id,

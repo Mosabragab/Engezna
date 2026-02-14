@@ -158,7 +158,8 @@ const CSRF_EXEMPT_PATHS = [
   '/api/webhooks/',
   '/api/public/',
   '/api/health',
-  '/api/payment/kashier/webhook', // Kashier sends callbacks
+  '/api/payment/kashier/webhook', // Kashier payment callbacks
+  '/api/payment/kashier/refund-webhook', // Kashier refund callbacks
   '/api/cron/', // Vercel cron jobs (protected by CRON_SECRET)
   '/api/auth/', // Auth callbacks from Supabase
 ];

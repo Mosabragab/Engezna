@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import {
   CheckCircle2,
   XCircle,
@@ -110,6 +111,7 @@ export function ConfirmStep({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...csrfHeaders(),
         },
         body: JSON.stringify({
           importId,

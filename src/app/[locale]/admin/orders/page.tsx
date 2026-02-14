@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin';
 import type { GeoFilterValue } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDateTime } from '@/lib/utils/formatters';
@@ -122,7 +123,7 @@ export default function AdminOrdersPage() {
     try {
       const response = await fetch('/api/admin/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           action: 'list',
           filters: { limit: 100 },

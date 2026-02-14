@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
@@ -223,7 +224,7 @@ export default function ContactPage() {
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,

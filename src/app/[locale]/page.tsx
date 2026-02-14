@@ -5,16 +5,10 @@ import { useLocale } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { CustomerLayout } from '@/components/customer/layout';
-import {
-  HeroSection,
-  OffersCarousel,
-  ReorderSection,
-  TopRatedSection,
-  NearbySection,
-} from '@/components/customer/home';
+import { HeroSection, OffersCarousel } from '@/components/customer/home';
 import { useSDUI } from '@/hooks/sdui';
 
-// Lazy load heavy components to improve FCP
+// Lazy load below-the-fold sections to improve FCP and reduce initial bundle
 const CategoriesSection = dynamic(
   () => import('@/components/customer/home').then((mod) => mod.CategoriesSection),
   {
@@ -40,6 +34,49 @@ const DeliveryModeSelector = dynamic(
     loading: () => (
       <div className="mt-3 px-4">
         <div className="h-14 bg-slate-100 rounded-xl animate-pulse" />
+      </div>
+    ),
+  }
+);
+
+const ReorderSection = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.ReorderSection),
+  {
+    loading: () => (
+      <div className="mt-2 px-4">
+        <div className="h-24 bg-slate-100 rounded-2xl animate-pulse" />
+      </div>
+    ),
+  }
+);
+
+const TopRatedSection = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.TopRatedSection),
+  {
+    loading: () => (
+      <div className="mt-2 px-4">
+        <div className="h-6 w-32 bg-slate-100 rounded animate-pulse mb-3" />
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-36 h-44 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+          ))}
+        </div>
+      </div>
+    ),
+  }
+);
+
+const NearbySection = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.NearbySection),
+  {
+    loading: () => (
+      <div className="mt-2 px-4">
+        <div className="h-6 w-32 bg-slate-100 rounded animate-pulse mb-3" />
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="w-36 h-44 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+          ))}
+        </div>
       </div>
     ),
   }
@@ -445,8 +482,30 @@ export default function HomePage() {
   if (isLoading) {
     return (
       <CustomerLayout showHeader={false} showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="min-h-screen">
+          {/* Skeleton hero */}
+          <div className="px-4 pt-12 pb-6">
+            <div className="h-8 w-48 bg-slate-100 rounded animate-pulse mb-2" />
+            <div className="h-5 w-64 bg-slate-100 rounded animate-pulse mb-4" />
+            <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+          </div>
+          {/* Skeleton banners */}
+          <div className="px-4 flex gap-3 overflow-hidden">
+            <div className="w-72 h-36 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+            <div className="w-72 h-36 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+          </div>
+          {/* Skeleton categories */}
+          <div className="px-4 mt-6">
+            <div className="h-6 w-24 bg-slate-100 rounded animate-pulse mb-4" />
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-100 animate-pulse" />
+                  <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </CustomerLayout>
     );

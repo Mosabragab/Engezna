@@ -49,6 +49,7 @@ export function QuantitySelector({
       <button
         onClick={onDecrease}
         disabled={!canDecrease}
+        aria-label="تقليل الكمية"
         className={`${classes.button} flex items-center justify-center rounded-full border transition-all ${
           canDecrease
             ? 'border-primary text-primary hover:bg-primary hover:text-white'
@@ -58,11 +59,18 @@ export function QuantitySelector({
         <Minus className={classes.icon} />
       </button>
 
-      <span className={`${classes.text} text-center font-semibold tabular-nums`}>{quantity}</span>
+      <span
+        className={`${classes.text} text-center font-semibold tabular-nums`}
+        aria-live="polite"
+        aria-label={`الكمية: ${quantity}`}
+      >
+        {quantity}
+      </span>
 
       <button
         onClick={onIncrease}
         disabled={!canIncrease}
+        aria-label="زيادة الكمية"
         className={`${classes.button} flex items-center justify-center rounded-full border transition-all ${
           canIncrease
             ? 'border-primary bg-primary text-white hover:bg-primary/90'

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatTimeAgo } from '@/lib/utils/formatters';
 import {
@@ -114,7 +115,7 @@ export default function AdminDashboard() {
         // Load stats from API with region filter
         const statsResponse = await fetch('/api/admin/stats', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({
             action: 'dashboard',
             filters:
