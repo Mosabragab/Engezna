@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     // Get authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      logger.error('[Admin Invitation Email] No Bearer token in request');
+      return NextResponse.json({ error: 'Unauthorized - no token' }, { status: 401 });
     }
 
     const token = authHeader.substring(7);
@@ -49,7 +50,13 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      logger.error('[Admin Invitation Email] Token verification failed', undefined, {
+        authError: authError?.message,
+      });
+      return NextResponse.json(
+        { error: `Invalid token: ${authError?.message || 'user not found'}` },
+        { status: 401 }
+      );
     }
 
     // Verify user is a super_admin
@@ -68,7 +75,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError || !adminUser) {
-      return NextResponse.json({ error: 'Not authorized - admin user not found' }, { status: 403 });
+      logger.error('[Admin Invitation Email] Admin user not found', undefined, {
+        userId: user.id,
+        adminError: adminError?.message,
+      });
+      return NextResponse.json(
+        { error: `Admin not found: ${adminError?.message || 'no record'}` },
+        { status: 403 }
+      );
     }
 
     // Check if user is super_admin (legacy field or admin_roles)
@@ -83,6 +97,9 @@ export async function POST(request: NextRequest) {
       );
 
     if (!isSuperAdmin) {
+      logger.error('[Admin Invitation Email] User is not super_admin', undefined, {
+        role: adminUser.role,
+      });
       return NextResponse.json(
         { error: 'Not authorized - only super admins can send invitations' },
         { status: 403 }
@@ -95,10 +112,18 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!to || !adminName || !roleName || !inviteUrl || !expiresIn) {
+      logger.error('[Admin Invitation Email] Missing required fields', undefined, {
+        to: !!to,
+        adminName: !!adminName,
+        roleName: !!roleName,
+        inviteUrl: !!inviteUrl,
+        expiresIn: !!expiresIn,
+      });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Send the email
+    logger.info(`[Admin Invitation Email] Sending to ${to}...`);
     const result = await sendAdminInvitationEmail({
       to,
       adminName,
@@ -113,6 +138,7 @@ export async function POST(request: NextRequest) {
     if (!result.success) {
       logger.error('[Admin Invitation Email] Failed to send', undefined, {
         error: result.error,
+        to,
       });
       return NextResponse.json({ error: result.error || 'Failed to send email' }, { status: 500 });
     }
@@ -123,7 +149,12 @@ export async function POST(request: NextRequest) {
       messageId: result.data?.id,
     });
   } catch (error) {
-    logger.error('[Admin Invitation Email] Error', error instanceof Error ? error : undefined);
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    logger.error('[Admin Invitation Email] Error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.json(
+      { error: `Unexpected error: ${error instanceof Error ? error.message : 'unknown'}` },
+      { status: 500 }
+    );
   }
 }
