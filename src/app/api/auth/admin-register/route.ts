@@ -89,7 +89,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (inviteError || !invitation) {
-      logger.error('[Admin Register] Invitation not found:', { error: inviteError });
+      logger.error('[Admin Register] Invitation not found', undefined, {
+        errorMessage: inviteError?.message,
+      });
       return NextResponse.json(
         {
           error:
@@ -174,7 +176,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      logger.error('[Admin Register] Auth error:', { error: authError });
+      logger.error('[Admin Register] Auth error', undefined, {
+        errorMessage: authError.message,
+      });
 
       if (authError.message?.includes('already registered')) {
         return NextResponse.json(
@@ -204,8 +208,10 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id;
 
-    // Step 4: Create profile
-    const { error: profileError } = await supabase.from('profiles').insert({
+    // Step 4: Create/update profile
+    // Note: The handle_new_user() trigger auto-creates a profile on auth.users INSERT,
+    // so we use upsert to update it with additional fields (phone, is_active).
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: userId,
       email: email.toLowerCase(),
       full_name: fullName,
@@ -215,9 +221,12 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      logger.error('[Admin Register] Profile error:', { error: profileError });
+      logger.error('[Admin Register] Profile error', undefined, {
+        errorMessage: profileError.message,
+        errorCode: profileError.code,
+      });
 
-      // Rollback: delete auth user
+      // Rollback: delete auth user (cascade will also delete trigger-created profile)
       await supabase.auth.admin.deleteUser(userId);
 
       return NextResponse.json(
@@ -242,7 +251,10 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (adminError || !newAdmin) {
-      logger.error('[Admin Register] Admin user error:', { error: adminError });
+      logger.error('[Admin Register] Admin user error', undefined, {
+        errorMessage: adminError?.message,
+        errorCode: adminError?.code,
+      });
 
       // Rollback: delete profile and auth user
       await supabase.from('profiles').delete().eq('id', userId);
@@ -280,7 +292,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (roleError) {
-        logger.error('[Admin Register] Admin role error:', { error: roleError });
+        logger.error('[Admin Register] Admin role error', undefined, {
+          errorMessage: roleError.message,
+          errorCode: roleError.code,
+        });
         // Continue anyway - admin was created
       }
     }
@@ -297,7 +312,9 @@ export async function POST(request: NextRequest) {
       .eq('id', invitation.id);
 
     if (updateError) {
-      logger.error('[Admin Register] Update invitation error:', { error: updateError });
+      logger.error('[Admin Register] Update invitation error', undefined, {
+        errorMessage: updateError.message,
+      });
       // Don't rollback - the important parts succeeded
     }
 
@@ -320,7 +337,7 @@ export async function POST(request: NextRequest) {
           is_read: false,
         });
       } catch (notifError) {
-        logger.error('[Admin Register] Notification error:', { error: notifError });
+        logger.error('[Admin Register] Notification error', notifError instanceof Error ? notifError : undefined);
         // Don't fail registration if notification fails
       }
     }
@@ -339,7 +356,11 @@ export async function POST(request: NextRequest) {
       adminId: newAdmin.id,
     });
   } catch (error) {
-    logger.error('[Admin Register] Unexpected error:', { error });
+    logger.error(
+      '[Admin Register] Unexpected error',
+      error instanceof Error ? error : undefined,
+      { errorMessage: error instanceof Error ? error.message : String(error) }
+    );
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { adminInvitationTemplate } from '@/lib/email/templates/admin-invitation';
 
 // Lazy initialization - only create client when needed (not at build time)
 let resendClient: Resend | null = null;
@@ -1312,10 +1313,12 @@ export interface AdminInvitationData {
 
 /**
  * Send admin invitation email
+ * Falls back to hardcoded template if DB template is not available.
  */
 export async function sendAdminInvitationEmail(
   data: AdminInvitationData
 ): Promise<SendEmailResult> {
+  const subject = `دعوة للانضمام لفريق إدارة إنجزنا - ${data.roleName}`;
   const variables = {
     adminName: data.adminName,
     roleName: data.roleName,
@@ -1327,12 +1330,19 @@ export async function sendAdminInvitationEmail(
     message: data.message || '',
   };
 
-  return sendTemplateEmail(
-    'admin-invitation',
-    data.to,
-    variables,
-    `دعوة للانضمام لفريق إدارة إنجزنا - ${data.roleName}`
-  );
+  const result = await sendTemplateEmail('admin-invitation', data.to, variables, subject);
+
+  // Fall back to hardcoded template if DB template not found
+  if (!result.success && result.error?.includes('not found')) {
+    logger.info('[sendAdminInvitationEmail] DB template not found, using hardcoded fallback');
+    return sendEmail({
+      to: data.to,
+      subject,
+      html: adminInvitationTemplate(data),
+    });
+  }
+
+  return result;
 }
 
 // ============================================================================
