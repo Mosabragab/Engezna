@@ -62,15 +62,7 @@ export async function POST(request: NextRequest) {
     // Verify user is a super_admin
     const { data: adminUser, error: adminError } = await supabase
       .from('admin_users')
-      .select(
-        `
-        id,
-        role,
-        admin_roles (
-          role:roles (code)
-        )
-      `
-      )
+      .select('id, role')
       .eq('user_id', user.id)
       .single();
 
@@ -85,18 +77,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user is super_admin (legacy field or admin_roles)
-    const isSuperAdmin =
-      adminUser.role === 'super_admin' ||
-      (adminUser.admin_roles as { role: { code: string } | { code: string }[] | null }[])?.some(
-        (ar) => {
-          const role = ar.role;
-          const roleCode = Array.isArray(role) ? role[0]?.code : role?.code;
-          return roleCode === 'super_admin';
-        }
-      );
-
-    if (!isSuperAdmin) {
+    // Check if user is super_admin
+    if (adminUser.role !== 'super_admin') {
       logger.error('[Admin Invitation Email] User is not super_admin', undefined, {
         role: adminUser.role,
       });
