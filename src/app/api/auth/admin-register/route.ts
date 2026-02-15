@@ -337,7 +337,10 @@ export async function POST(request: NextRequest) {
           is_read: false,
         });
       } catch (notifError) {
-        logger.error('[Admin Register] Notification error', notifError instanceof Error ? notifError : undefined);
+        logger.error(
+          '[Admin Register] Notification error',
+          notifError instanceof Error ? notifError : undefined
+        );
         // Don't fail registration if notification fails
       }
     }
@@ -356,11 +359,9 @@ export async function POST(request: NextRequest) {
       adminId: newAdmin.id,
     });
   } catch (error) {
-    logger.error(
-      '[Admin Register] Unexpected error',
-      error instanceof Error ? error : undefined,
-      { errorMessage: error instanceof Error ? error.message : String(error) }
-    );
+    logger.error('[Admin Register] Unexpected error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

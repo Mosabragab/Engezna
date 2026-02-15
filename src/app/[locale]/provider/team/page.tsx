@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { AddStaffModal } from './AddStaffModal';
 import { EditPermissionsModal } from './EditPermissionsModal';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 
 // ============================================================================
 // Types
@@ -671,6 +672,31 @@ export default function TeamManagementPage() {
       if (!data?.success) {
         alert(data?.error || (locale === 'ar' ? 'حدث خطأ' : 'An error occurred'));
         return;
+      }
+
+      // Send invitation email
+      const inviteUrl = `${window.location.origin}/${locale}/provider/join?token=${data.invitation_token}`;
+      const storeName = providerInfo
+        ? locale === 'ar'
+          ? providerInfo.name_ar
+          : providerInfo.name_en
+        : '';
+
+      try {
+        await fetch('/api/emails/staff-invitation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          body: JSON.stringify({
+            to: invitation.email,
+            staffName: data.user_name || invitation.email.split('@')[0],
+            storeName,
+            merchantName: providerInfo?.owner_name || '',
+            role: 'staff',
+            inviteUrl,
+          }),
+        });
+      } catch (emailErr) {
+        console.error('Error sending invitation email:', emailErr);
       }
 
       await loadTeamData();

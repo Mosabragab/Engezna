@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      logger.error('Auth error:', { error: authError });
+      logger.error('[Register] Auth error', undefined, { errorMessage: authError.message });
 
       // Handle specific auth errors
       if (authError.message?.includes('already registered')) {
@@ -195,7 +195,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      logger.error('Profile error:', { error: profileError });
+      logger.error('[Register] Profile error', undefined, {
+        errorMessage: profileError.message,
+        errorCode: profileError.code,
+      });
 
       // If profile creation fails, delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
@@ -249,7 +252,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError) {
-      logger.error('Link generation error:', { error: linkError });
+      logger.error('[Register] Link generation error', undefined, {
+        errorMessage: linkError?.message,
+      });
     }
 
     // Extract token from the link
@@ -273,7 +278,7 @@ export async function POST(request: NextRequest) {
     logger.info('[Register] Email result:', { data: emailResult });
 
     if (!emailResult.success) {
-      logger.error('[Register] Email send error:', { error: emailResult.error });
+      logger.error('[Register] Email send error', undefined, { error: emailResult.error });
       // Don't fail registration if email fails, user can request resend
     }
 
@@ -287,7 +292,9 @@ export async function POST(request: NextRequest) {
       isTestAccount: false,
     });
   } catch (error) {
-    logger.error('Registration error:', { error });
+    logger.error('[Register] Unexpected error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
