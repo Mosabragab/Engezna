@@ -223,6 +223,17 @@ export default function CompleteProfilePage() {
         throw updateError;
       }
 
+      // Send welcome email (idempotent - endpoint checks welcome_email_sent flag)
+      try {
+        await fetch('/api/auth/send-welcome-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        });
+      } catch {
+        // Don't block the flow if welcome email fails
+      }
+
       // Sync location to localStorage (so home page can read it)
       const selectedGov = governorates.find((g) => g.id === data.governorateId);
       const selectedCity = cities.find((c) => c.id === data.cityId);
