@@ -138,6 +138,7 @@ export default function InviteSupervisorPage() {
     token: string;
     url: string;
     emailSent: boolean;
+    emailError?: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -437,6 +438,7 @@ export default function InviteSupervisorPage() {
 
       // Send the invitation email via API
       let emailSent = false;
+      let emailError = '';
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -463,14 +465,19 @@ export default function InviteSupervisorPage() {
           });
 
           if (!emailResponse.ok) {
-            console.error('[Invite] Email sending failed, but invitation was created');
+            const errorData = await emailResponse.json().catch(() => ({}));
+            emailError = errorData.error || `HTTP ${emailResponse.status}`;
+            console.error('[Invite] Email sending failed:', emailError);
           } else {
-            console.log('[Invite] Email sent successfully');
             emailSent = true;
           }
-        } catch (emailError) {
-          console.error('[Invite] Email sending error:', emailError);
+        } catch (fetchError) {
+          emailError = fetchError instanceof Error ? fetchError.message : 'Network error';
+          console.error('[Invite] Email sending error:', fetchError);
         }
+      } else {
+        emailError = 'No session token available';
+        console.error('[Invite] No session token - email sending skipped');
       }
 
       setInvitationResult({
@@ -478,6 +485,7 @@ export default function InviteSupervisorPage() {
         token: invitation.invitation_token,
         url: invitationUrl,
         emailSent,
+        emailError: emailSent ? undefined : emailError,
       });
     } catch {
       setFormError(locale === 'ar' ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
@@ -607,6 +615,18 @@ export default function InviteSupervisorPage() {
                       : 'Copy the link below and send it to the new supervisor'}
                 </p>
               </div>
+
+              {/* Email Error */}
+              {!invitationResult.emailSent && invitationResult.emailError && (
+                <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 p-3 rounded-lg mb-4">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span>
+                    {locale === 'ar'
+                      ? `لم يتم إرسال الإيميل: ${invitationResult.emailError}`
+                      : `Email not sent: ${invitationResult.emailError}`}
+                  </span>
+                </div>
+              )}
 
               {/* Email Status */}
               {invitationResult.emailSent && (

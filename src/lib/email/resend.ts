@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { adminInvitationTemplate } from '@/lib/email/templates/admin-invitation';
+import { staffInvitationTemplate } from '@/lib/email/templates/staff-invitation';
 
 // Lazy initialization - only create client when needed (not at build time)
 let resendClient: Resend | null = null;
@@ -445,10 +446,28 @@ async function getTemplateFromDB(slug: string): Promise<EmailTemplate | null> {
 }
 
 /**
- * Replace {{variables}} in template with actual values
+ * Replace {{variables}} in template with actual values.
+ * Also handles simple {{#if var}}...{{/if}} conditionals:
+ * - If the variable is truthy (non-empty string), the block content is kept
+ * - If falsy (empty string, undefined), the entire block is removed
  */
 function replaceVariables(template: string, variables: Record<string, string | number>): string {
   let result = template;
+
+  // First, process {{#if var}}...{{/if}} conditionals
+  result = result.replace(
+    /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+    (_match, varName: string, content: string) => {
+      const value = variables[varName];
+      // Keep block content if variable is truthy (non-empty)
+      if (value !== undefined && value !== '' && value !== 0) {
+        return content;
+      }
+      return '';
+    }
+  );
+
+  // Then, replace simple {{variable}} placeholders
   for (const [key, value] of Object.entries(variables)) {
     const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
     result = result.replace(regex, String(value));
@@ -704,6 +723,7 @@ export async function sendSettlementOverdueEmail(
 
 /**
  * Send staff invitation email
+ * Tries DB template first, falls back to hardcoded template on ANY failure.
  */
 export async function sendStaffInvitationEmail(
   data: StaffInvitationData
@@ -716,6 +736,7 @@ export async function sendStaffInvitationEmail(
   };
 
   const roleName = roleNames[data.role] || data.role;
+  const subject = `دعوة للانضمام لفريق ${data.storeName} - إنجزنا`;
 
   const variables = {
     staffName: data.staffName,
@@ -726,12 +747,22 @@ export async function sendStaffInvitationEmail(
     inviteUrl: data.inviteUrl,
   };
 
-  return sendTemplateEmail(
-    'staff-invitation',
-    data.to,
-    variables,
-    `دعوة للانضمام لفريق ${data.storeName} - إنجزنا`
+  // Try DB template first
+  const result = await sendTemplateEmail('staff-invitation', data.to, variables, subject);
+
+  if (result.success) {
+    return result;
+  }
+
+  // Fall back to hardcoded template on ANY failure
+  logger.info(
+    `[sendStaffInvitationEmail] DB template failed (${result.error}), using hardcoded fallback`
   );
+  return sendEmail({
+    to: data.to,
+    subject,
+    html: staffInvitationTemplate(data),
+  });
 }
 
 /**
@@ -1313,7 +1344,7 @@ export interface AdminInvitationData {
 
 /**
  * Send admin invitation email
- * Falls back to hardcoded template if DB template is not available.
+ * Tries DB template first, falls back to hardcoded template on ANY failure.
  */
 export async function sendAdminInvitationEmail(
   data: AdminInvitationData
@@ -1330,19 +1361,22 @@ export async function sendAdminInvitationEmail(
     message: data.message || '',
   };
 
+  // Try DB template first
   const result = await sendTemplateEmail('admin-invitation', data.to, variables, subject);
 
-  // Fall back to hardcoded template if DB template not found
-  if (!result.success && result.error?.includes('not found')) {
-    logger.info('[sendAdminInvitationEmail] DB template not found, using hardcoded fallback');
-    return sendEmail({
-      to: data.to,
-      subject,
-      html: adminInvitationTemplate(data),
-    });
+  if (result.success) {
+    return result;
   }
 
-  return result;
+  // Fall back to hardcoded template on ANY failure (not just "not found")
+  logger.info(
+    `[sendAdminInvitationEmail] DB template failed (${result.error}), using hardcoded fallback`
+  );
+  return sendEmail({
+    to: data.to,
+    subject,
+    html: adminInvitationTemplate(data),
+  });
 }
 
 // ============================================================================
