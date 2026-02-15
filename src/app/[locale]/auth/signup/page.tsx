@@ -59,6 +59,7 @@ export default function SignupPage() {
         const tokens = await tokenResponse.json();
 
         if (!tokenResponse.ok || !tokens.id_token) {
+          console.error('Google token exchange failed:', tokens.error || tokens);
           setError(
             locale === 'ar' ? 'فشل في الحصول على بيانات Google' : 'Failed to get Google credentials'
           );
@@ -72,6 +73,7 @@ export default function SignupPage() {
         const { data, error: signInError } = await supabase.auth.signInWithIdToken({
           provider: 'google',
           token: tokens.id_token,
+          access_token: tokens.access_token,
         });
 
         if (signInError) {

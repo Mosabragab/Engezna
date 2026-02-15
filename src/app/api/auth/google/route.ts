@@ -32,18 +32,44 @@ export async function POST(request: Request) {
       }),
     });
 
-    const tokens = await tokenResponse.json();
+    // Handle non-OK responses from Google
+    if (!tokenResponse.ok) {
+      let errorBody: Record<string, unknown> = {};
+      try {
+        errorBody = await tokenResponse.json();
+      } catch {
+        const text = await tokenResponse.text();
+        errorBody = { raw: text };
+      }
 
-    if (tokens.error) {
-      logger.error('[Google Auth] Token exchange failed', {
-        googleError: tokens.error,
-        googleErrorDescription: tokens.error_description,
+      const errorCode = typeof errorBody.error === 'string' ? errorBody.error : 'unknown';
+      const errorDesc =
+        typeof errorBody.error_description === 'string' ? errorBody.error_description : undefined;
+
+      logger.error('[Google Auth] Token exchange failed', undefined, {
+        googleError: errorCode,
+        googleErrorDescription: errorDesc || 'none',
         httpStatus: tokenResponse.status,
       });
+
       return NextResponse.json(
-        { error: tokens.error_description || tokens.error || 'Token exchange failed' },
+        {
+          error: errorDesc || errorCode || 'Token exchange failed',
+          error_code: errorCode,
+        },
         { status: 400 }
       );
+    }
+
+    const tokens = await tokenResponse.json();
+
+    // Validate that we received the required tokens
+    if (!tokens.id_token) {
+      logger.error('[Google Auth] No id_token in response', undefined, {
+        hasAccessToken: !!tokens.access_token,
+        tokenKeys: Object.keys(tokens).join(','),
+      });
+      return NextResponse.json({ error: 'Invalid token response from Google' }, { status: 400 });
     }
 
     // Return the ID token to the client
@@ -52,7 +78,9 @@ export async function POST(request: Request) {
       access_token: tokens.access_token,
     });
   } catch (error) {
-    logger.error('Google auth error:', { error });
+    logger.error('[Google Auth] Unexpected error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
