@@ -166,8 +166,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create profile (admin client bypasses trigger and RLS)
-    const { error: profileError } = await supabase.from('profiles').insert({
+    // Create/update profile - handle_new_user() trigger auto-creates a basic profile,
+    // so we upsert to add additional fields (phone, location, partner_role).
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: authData.user.id,
       email,
       full_name: fullName,

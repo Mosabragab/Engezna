@@ -200,8 +200,9 @@ export async function POST(request: NextRequest) {
 
     const userId = authData.user.id;
 
-    // Step 4: Create profile
-    const { error: profileError } = await supabase.from('profiles').insert({
+    // Step 4: Create/update profile - handle_new_user() trigger auto-creates a basic profile,
+    // so we upsert to ensure additional fields are set correctly.
+    const { error: profileError } = await supabase.from('profiles').upsert({
       id: userId,
       email: email.toLowerCase(),
       full_name: email.split('@')[0], // Default name from email
