@@ -115,7 +115,8 @@ export async function updateSession(request: NextRequest) {
     user = data?.user ?? null;
 
     // Capture auth errors to Sentry for monitoring
-    if (error) {
+    // AuthSessionMissingError is expected for unauthenticated visitors - don't report it
+    if (error && error.name !== 'AuthSessionMissingError') {
       // Add breadcrumb for auth flow tracking
       Sentry.addBreadcrumb({
         category: 'auth',
