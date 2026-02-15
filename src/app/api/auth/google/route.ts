@@ -69,10 +69,7 @@ export async function POST(request: Request) {
         hasAccessToken: !!tokens.access_token,
         tokenKeys: Object.keys(tokens).join(','),
       });
-      return NextResponse.json(
-        { error: 'Invalid token response from Google' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid token response from Google' }, { status: 400 });
     }
 
     // Return the ID token to the client
