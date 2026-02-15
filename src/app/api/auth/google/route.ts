@@ -35,9 +35,13 @@ export async function POST(request: Request) {
     const tokens = await tokenResponse.json();
 
     if (tokens.error) {
-      logger.error('Google token exchange error:', { error: tokens.error });
+      logger.error('[Google Auth] Token exchange failed', {
+        googleError: tokens.error,
+        googleErrorDescription: tokens.error_description,
+        httpStatus: tokenResponse.status,
+      });
       return NextResponse.json(
-        { error: tokens.error_description || 'Token exchange failed' },
+        { error: tokens.error_description || tokens.error || 'Token exchange failed' },
         { status: 400 }
       );
     }
