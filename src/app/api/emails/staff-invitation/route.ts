@@ -54,7 +54,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      logger.error('[staff-invitation API] Failed to send email', { error: result.error });
+      logger.error('[staff-invitation API] Failed to send email', undefined, {
+        error: result.error,
+      });
       return NextResponse.json(
         { error: 'Failed to send email', details: result.error },
         { status: 500 }
@@ -67,7 +69,7 @@ export async function POST(request: NextRequest) {
       message: 'Staff invitation email sent successfully',
     });
   } catch (error) {
-    logger.error('[staff-invitation API] Error', { error });
+    logger.error('[staff-invitation API] Error', error instanceof Error ? error : undefined);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

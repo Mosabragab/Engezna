@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      logger.error('Auth error:', { error: authError });
+      logger.error('[Partner Register] Auth error', undefined, { errorMessage: authError.message });
 
       // Handle specific auth errors
       if (authError.message?.includes('already registered')) {
@@ -181,7 +181,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      logger.error('Profile error:', { error: profileError });
+      logger.error('[Partner Register] Profile error', undefined, {
+        errorMessage: profileError.message,
+        errorCode: profileError.code,
+      });
 
       // If profile creation fails, delete the auth user
       await supabase.auth.admin.deleteUser(authData.user.id);
@@ -223,7 +226,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (providerError) {
-      logger.error('Provider error:', { error: providerError });
+      logger.error('[Partner Register] Provider error', undefined, {
+        errorMessage: providerError.message,
+        errorCode: providerError.code,
+      });
       // Don't fail - provider can be created later
     }
 
@@ -238,7 +244,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (linkError) {
-      logger.error('Link generation error:', { error: linkError });
+      logger.error('[Partner Register] Link generation error', undefined, {
+        errorMessage: linkError?.message,
+      });
     }
 
     // Extract token from the link
@@ -261,7 +269,9 @@ export async function POST(request: NextRequest) {
     logger.info('[Partner Register] Email result:', { data: emailResult });
 
     if (!emailResult.success) {
-      logger.error('[Partner Register] Email send error:', { error: emailResult.error });
+      logger.error('[Partner Register] Email send error', undefined, {
+        error: emailResult.error,
+      });
       // Don't fail registration if email fails, user can request resend
     }
 
@@ -274,7 +284,11 @@ export async function POST(request: NextRequest) {
       userId: authData.user.id,
     });
   } catch (error) {
-    logger.error('Partner registration error:', { error });
+    logger.error(
+      '[Partner Register] Unexpected error',
+      error instanceof Error ? error : undefined,
+      { errorMessage: error instanceof Error ? error.message : String(error) }
+    );
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

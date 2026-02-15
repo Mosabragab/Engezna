@@ -111,7 +111,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      logger.error('[Admin Invitation Email] Failed to send', { error: result.error });
+      logger.error('[Admin Invitation Email] Failed to send', undefined, {
+        error: result.error,
+      });
       return NextResponse.json({ error: result.error || 'Failed to send email' }, { status: 500 });
     }
 
@@ -121,7 +123,7 @@ export async function POST(request: NextRequest) {
       messageId: result.data?.id,
     });
   } catch (error) {
-    logger.error('[Admin Invitation Email] Error', { error });
+    logger.error('[Admin Invitation Email] Error', error instanceof Error ? error : undefined);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

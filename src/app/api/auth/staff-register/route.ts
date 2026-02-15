@@ -93,7 +93,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (inviteError || !invitation) {
-      logger.error('[Staff Register] Invitation not found:', { error: inviteError });
+      logger.error('[Staff Register] Invitation not found', undefined, {
+        errorMessage: inviteError?.message,
+      });
       return NextResponse.json(
         {
           error:
@@ -170,7 +172,9 @@ export async function POST(request: NextRequest) {
     });
 
     if (authError) {
-      logger.error('[Staff Register] Auth error:', { error: authError });
+      logger.error('[Staff Register] Auth error', undefined, {
+        errorMessage: authError.message,
+      });
 
       if (authError.message?.includes('already registered')) {
         return NextResponse.json(
@@ -211,7 +215,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (profileError) {
-      logger.error('[Staff Register] Profile error:', { error: profileError });
+      logger.error('[Staff Register] Profile error', undefined, {
+        errorMessage: profileError.message,
+        errorCode: profileError.code,
+      });
 
       // Rollback: delete auth user
       await supabase.auth.admin.deleteUser(userId);
@@ -238,7 +245,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (staffError) {
-      logger.error('[Staff Register] Staff record error:', { error: staffError });
+      logger.error('[Staff Register] Staff record error', undefined, {
+        errorMessage: staffError.message,
+        errorCode: staffError.code,
+      });
 
       // Rollback: delete profile and auth user
       await supabase.from('profiles').delete().eq('id', userId);
@@ -263,7 +273,9 @@ export async function POST(request: NextRequest) {
       .eq('id', invitation.id);
 
     if (updateError) {
-      logger.error('[Staff Register] Update invitation error:', { error: updateError });
+      logger.error('[Staff Register] Update invitation error', undefined, {
+        errorMessage: updateError.message,
+      });
       // Don't rollback - the important parts succeeded
     }
 
@@ -290,7 +302,9 @@ export async function POST(request: NextRequest) {
       providerId: invitation.provider_id,
     });
   } catch (error) {
-    logger.error('[Staff Register] Unexpected error:', { error });
+    logger.error('[Staff Register] Unexpected error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
