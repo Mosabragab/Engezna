@@ -25,10 +25,9 @@ interface DeleteAdminRequest {
 }
 
 // Helper to safely run a query and log errors without blocking
-async function safeDelete(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
+async function safeCleanup(
   description: string,
-  queryFn: () => Promise<{ error: { message: string } | null }>
+  queryFn: () => PromiseLike<{ error: { message: string } | null }>
 ): Promise<void> {
   try {
     const { error } = await queryFn();
@@ -125,66 +124,66 @@ export async function DELETE(request: NextRequest) {
     // ================================================================
 
     // CASCADE tables (auto-deleted, but we delete explicitly for safety)
-    await safeDelete(supabase, 'admin_roles', () =>
+    await safeCleanup('admin_roles', () =>
       supabase.from('admin_roles').delete().eq('admin_id', adminId)
     );
-    await safeDelete(supabase, 'admin_permissions', () =>
+    await safeCleanup('admin_permissions', () =>
       supabase.from('admin_permissions').delete().eq('admin_id', adminId)
     );
-    await safeDelete(supabase, 'admin_notifications', () =>
+    await safeCleanup('admin_notifications', () =>
       supabase.from('admin_notifications').delete().eq('admin_id', adminId)
     );
 
     // SET NULL tables referencing admin_id
-    await safeDelete(supabase, 'activity_log.admin_id', () =>
+    await safeCleanup('activity_log.admin_id', () =>
       supabase.from('activity_log').update({ admin_id: null }).eq('admin_id', adminId)
     );
-    await safeDelete(supabase, 'admin_tasks.assigned_to', () =>
+    await safeCleanup('admin_tasks.assigned_to', () =>
       supabase.from('admin_tasks').update({ assigned_to: null }).eq('assigned_to', adminId)
     );
-    await safeDelete(supabase, 'admin_tasks.created_by', () =>
+    await safeCleanup('admin_tasks.created_by', () =>
       supabase.from('admin_tasks').update({ created_by: null }).eq('created_by', adminId)
     );
-    await safeDelete(supabase, 'support_tickets.assigned_to', () =>
+    await safeCleanup('support_tickets.assigned_to', () =>
       supabase.from('support_tickets').update({ assigned_to: null }).eq('assigned_to', adminId)
     );
-    await safeDelete(supabase, 'approval_requests.requested_by', () =>
+    await safeCleanup('approval_requests.requested_by', () =>
       supabase.from('approval_requests').update({ requested_by: null }).eq('requested_by', adminId)
     );
-    await safeDelete(supabase, 'approval_requests.decided_by', () =>
+    await safeCleanup('approval_requests.decided_by', () =>
       supabase.from('approval_requests').update({ decided_by: null }).eq('decided_by', adminId)
     );
-    await safeDelete(supabase, 'approval_discussions.admin_id', () =>
+    await safeCleanup('approval_discussions.admin_id', () =>
       supabase.from('approval_discussions').update({ admin_id: null }).eq('admin_id', adminId)
     );
-    await safeDelete(supabase, 'internal_messages.sender_id', () =>
+    await safeCleanup('internal_messages.sender_id', () =>
       supabase.from('internal_messages').update({ sender_id: null }).eq('sender_id', adminId)
     );
-    await safeDelete(supabase, 'announcements.created_by', () =>
+    await safeCleanup('announcements.created_by', () =>
       supabase.from('announcements').update({ created_by: null }).eq('created_by', adminId)
     );
-    await safeDelete(supabase, 'platform_settings.updated_by', () =>
+    await safeCleanup('platform_settings.updated_by', () =>
       supabase.from('platform_settings').update({ updated_by: null }).eq('updated_by', adminId)
     );
-    await safeDelete(supabase, 'admin_invitations.invited_by', () =>
+    await safeCleanup('admin_invitations.invited_by', () =>
       supabase.from('admin_invitations').update({ invited_by: null }).eq('invited_by', adminId)
     );
-    await safeDelete(supabase, 'admin_invitations.cancelled_by', () =>
+    await safeCleanup('admin_invitations.cancelled_by', () =>
       supabase.from('admin_invitations').update({ cancelled_by: null }).eq('cancelled_by', adminId)
     );
-    await safeDelete(supabase, 'escalation_rules.escalate_to_admin_id', () =>
+    await safeCleanup('escalation_rules.escalate_to_admin_id', () =>
       supabase
         .from('escalation_rules')
         .update({ escalate_to_admin_id: null })
         .eq('escalate_to_admin_id', adminId)
     );
-    await safeDelete(supabase, 'escalation_rules.created_by', () =>
+    await safeCleanup('escalation_rules.created_by', () =>
       supabase.from('escalation_rules').update({ created_by: null }).eq('created_by', adminId)
     );
-    await safeDelete(supabase, 'settlements.processed_by', () =>
+    await safeCleanup('settlements.processed_by', () =>
       supabase.from('settlements').update({ processed_by: null }).eq('processed_by', adminId)
     );
-    await safeDelete(supabase, 'admin_users.reports_to (self-ref)', () =>
+    await safeCleanup('admin_users.reports_to (self-ref)', () =>
       supabase.from('admin_users').update({ reports_to: null }).eq('reports_to', adminId)
     );
 
@@ -205,54 +204,50 @@ export async function DELETE(request: NextRequest) {
     // ================================================================
 
     // DELETE tables with NOT NULL constraint on FK (can't SET NULL)
-    await safeDelete(supabase, 'homepage_section_drafts', () =>
+    await safeCleanup('homepage_section_drafts', () =>
       supabase.from('homepage_section_drafts').delete().eq('created_by', userId)
     );
 
     // SET NULL + NOT NULL conflict: update to caller's ID instead of NULL
-    await safeDelete(supabase, 'homepage_sections.created_by', () =>
+    await safeCleanup('homepage_sections.created_by', () =>
       supabase.from('homepage_sections').update({ created_by: caller.id }).eq('created_by', userId)
     );
 
     // SET NULL tables referencing user_id (profiles.id)
-    await safeDelete(supabase, 'support_tickets.user_id', () =>
+    await safeCleanup('support_tickets.user_id', () =>
       supabase.from('support_tickets').update({ user_id: null }).eq('user_id', userId)
     );
-    await safeDelete(supabase, 'ticket_messages.sender_id', () =>
+    await safeCleanup('ticket_messages.sender_id', () =>
       supabase.from('ticket_messages').update({ sender_id: null }).eq('sender_id', userId)
     );
-    await safeDelete(supabase, 'admin_invitations.accepted_user_id', () =>
+    await safeCleanup('admin_invitations.accepted_user_id', () =>
       supabase
         .from('admin_invitations')
         .update({ accepted_user_id: null })
         .eq('accepted_user_id', userId)
     );
-    await safeDelete(supabase, 'homepage_banners.created_by', () =>
+    await safeCleanup('homepage_banners.created_by', () =>
       supabase.from('homepage_banners').update({ created_by: null }).eq('created_by', userId)
     );
-    await safeDelete(supabase, 'homepage_section_items.created_by', () =>
+    await safeCleanup('homepage_section_items.created_by', () =>
       supabase.from('homepage_section_items').update({ created_by: null }).eq('created_by', userId)
     );
-    await safeDelete(supabase, 'homepage_section_items.updated_by', () =>
+    await safeCleanup('homepage_section_items.updated_by', () =>
       supabase.from('homepage_section_items').update({ updated_by: null }).eq('updated_by', userId)
     );
-    await safeDelete(supabase, 'settlement_group_members.added_by', () =>
+    await safeCleanup('settlement_group_members.added_by', () =>
       supabase.from('settlement_group_members').update({ added_by: null }).eq('added_by', userId)
     );
 
     // ================================================================
     // Phase 3: Delete admin_users record explicitly
     // ================================================================
-    await safeDelete(supabase, 'admin_users', () =>
-      supabase.from('admin_users').delete().eq('id', adminId)
-    );
+    await safeCleanup('admin_users', () => supabase.from('admin_users').delete().eq('id', adminId));
 
     // ================================================================
     // Phase 4: Delete profiles record explicitly
     // ================================================================
-    await safeDelete(supabase, 'profiles', () =>
-      supabase.from('profiles').delete().eq('id', userId)
-    );
+    await safeCleanup('profiles', () => supabase.from('profiles').delete().eq('id', userId));
 
     // ================================================================
     // Phase 5: Delete auth.users (final cleanup)
