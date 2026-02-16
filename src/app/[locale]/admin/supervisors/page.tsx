@@ -593,27 +593,47 @@ export default function AdminSupervisorsPage() {
     if (!selectedSupervisor) return;
 
     setFormLoading(true);
+    setFormError('');
     const supabase = createClient();
 
-    // Remove admin_roles first (due to foreign key)
-    await supabase.from('admin_roles').delete().eq('admin_id', selectedSupervisor.id);
+    // Get session token for API call
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    // Remove admin_permissions if any
-    await supabase.from('admin_permissions').delete().eq('admin_id', selectedSupervisor.id);
-
-    // Remove from admin_users
-    const { error } = await supabase.from('admin_users').delete().eq('id', selectedSupervisor.id);
-
-    if (error) {
+    if (!session?.access_token) {
+      setFormError(
+        locale === 'ar'
+          ? 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+          : 'Session expired. Please login again.'
+      );
       setFormLoading(false);
       return;
     }
 
-    // Update profile role back to customer
-    await supabase
-      .from('profiles')
-      .update({ role: 'customer' })
-      .eq('id', selectedSupervisor.user_id);
+    // Call server-side API to completely delete the admin from all tables
+    // (auth.users, profiles, admin_users, admin_roles, admin_permissions, etc.)
+    const response = await fetch('/api/auth/delete-admin', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        adminId: selectedSupervisor.id,
+        userId: selectedSupervisor.user_id,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      setFormError(
+        result.error || (locale === 'ar' ? 'فشل في حذف المشرف' : 'Failed to delete supervisor')
+      );
+      setFormLoading(false);
+      return;
+    }
 
     // Reload supervisors
     await loadSupervisors(supabase);
@@ -640,6 +660,7 @@ export default function AdminSupervisorsPage() {
 
   function openDeleteModal(supervisor: Supervisor) {
     setSelectedSupervisor(supervisor);
+    setFormError('');
     setShowDeleteModal(true);
   }
 
@@ -1423,9 +1444,14 @@ export default function AdminSupervisorsPage() {
               </p>
               <p className="text-center text-sm text-slate-500 mt-2">
                 {locale === 'ar'
-                  ? 'سيتم إزالة صلاحيات الإدارة من هذا المستخدم'
-                  : 'Admin privileges will be removed from this user'}
+                  ? 'سيتم حذف هذا المشرف نهائياً من النظام بالكامل'
+                  : 'This supervisor will be permanently deleted from the system'}
               </p>
+              {formError && (
+                <p className="text-center text-sm text-red-600 mt-3 bg-red-50 rounded-lg p-2">
+                  {formError}
+                </p>
+              )}
             </div>
 
             <div className="flex gap-3">
