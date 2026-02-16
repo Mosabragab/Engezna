@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { ArrowLeft, ArrowRight, Loader2, Mail, CheckCircle } from 'lucide-react';
@@ -28,22 +27,27 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const supabase = createClient();
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${siteUrl}/${locale}/auth/reset-password`,
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase().trim(), locale }),
       });
 
-      if (resetError) {
-        console.error('Reset password error:', resetError);
-        setError(resetError.message);
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Reset password error:', result.error);
+        setError(result.error);
         return;
       }
 
       setEmailSent(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      setError(
+        locale === 'ar'
+          ? 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.'
+          : 'An unexpected error occurred. Please try again.'
+      );
     } finally {
       setIsLoading(false);
     }

@@ -88,6 +88,14 @@ export default function AuthCallbackPage() {
         }
         user = data.user;
         isSignupVerification = type === 'signup';
+
+        // For password recovery, redirect directly to reset-password page
+        // The session is already established by verifyOtp, so the reset-password
+        // page will detect the valid session and show the password form
+        if (type === 'recovery' && user) {
+          navigateTo(`/${locale}/auth/reset-password`);
+          return;
+        }
       }
 
       // If no user and we have a code, try to exchange it
