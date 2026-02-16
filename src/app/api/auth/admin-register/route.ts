@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Step 2: Check if email already exists
+    // Step 2: Check if email already has a complete registration (profile exists)
     const { data: existingUsers } = await supabase
       .from('profiles')
       .select('id')
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Create user in Supabase Auth
     // Auto-confirm email since they're invited by a super admin
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    let authData = await supabase.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
       email_confirm: true, // Auto-confirm since they're invited
@@ -175,20 +175,82 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (authError) {
+    // Handle orphaned auth user: exists in auth but no profile (from previous failed attempt)
+    if (authData.error) {
+      const isAlreadyRegistered = /already (registered|exists)|duplicate/i.test(
+        authData.error.message || ''
+      );
+
+      if (isAlreadyRegistered) {
+        // No profile exists (checked above), so this is an orphaned auth user
+        // Try to clean up and recreate
+        logger.info('[Admin Register] Orphaned auth user detected, attempting cleanup', {
+          email: email.toLowerCase(),
+        });
+
+        // Find the orphaned user in auth
+        const {
+          data: { users: authUsers },
+        } = await supabase.auth.admin.listUsers({ page: 1, perPage: 500 });
+        const orphanedUser = authUsers?.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+
+        if (orphanedUser) {
+          // Delete the orphaned auth user
+          const { error: deleteError } = await supabase.auth.admin.deleteUser(orphanedUser.id);
+          if (deleteError) {
+            logger.error('[Admin Register] Failed to delete orphaned user', undefined, {
+              orphanedUserId: orphanedUser.id,
+              deleteError: deleteError.message,
+            });
+            return NextResponse.json(
+              {
+                error:
+                  locale === 'ar'
+                    ? 'البريد الإلكتروني مسجل جزئياً من محاولة سابقة. يرجى التواصل مع المدير.'
+                    : 'Email partially registered from a previous attempt. Please contact admin.',
+              },
+              { status: 400 }
+            );
+          }
+
+          logger.info('[Admin Register] Orphaned user deleted, retrying creation', {
+            orphanedUserId: orphanedUser.id,
+          });
+
+          // Retry user creation
+          authData = await supabase.auth.admin.createUser({
+            email: email.toLowerCase(),
+            password,
+            email_confirm: true,
+            user_metadata: {
+              full_name: fullName,
+              phone: phone || null,
+              role: 'admin',
+            },
+          });
+        }
+      }
+    }
+
+    if (authData.error) {
       logger.error('[Admin Register] Auth error', undefined, {
-        errorMessage: authError.message,
+        errorMessage: authData.error.message,
+        errorCode: (authData.error as { code?: string }).code,
+        email: email.toLowerCase(),
       });
 
-      if (authError.message?.includes('already registered')) {
-        return NextResponse.json(
-          {
-            error: locale === 'ar' ? 'البريد الإلكتروني مسجل بالفعل' : 'Email already registered',
-          },
-          { status: 400 }
-        );
-      }
+      return NextResponse.json(
+        {
+          error:
+            locale === 'ar'
+              ? `فشل في إنشاء الحساب: ${authData.error.message}`
+              : `Failed to create account: ${authData.error.message}`,
+        },
+        { status: 500 }
+      );
+    }
 
+    if (!authData.data.user) {
       return NextResponse.json(
         {
           error: locale === 'ar' ? 'فشل في إنشاء الحساب' : 'Failed to create account',
@@ -197,16 +259,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!authData.user) {
-      return NextResponse.json(
-        {
-          error: locale === 'ar' ? 'فشل في إنشاء الحساب' : 'Failed to create account',
-        },
-        { status: 500 }
-      );
-    }
-
-    const userId = authData.user.id;
+    const userId = authData.data.user.id;
 
     // Step 4: Create/update profile
     // Note: The handle_new_user() trigger auto-creates a profile on auth.users INSERT,
@@ -224,6 +277,7 @@ export async function POST(request: NextRequest) {
       logger.error('[Admin Register] Profile error', undefined, {
         errorMessage: profileError.message,
         errorCode: profileError.code,
+        userId,
       });
 
       // Rollback: delete auth user (cascade will also delete trigger-created profile)
@@ -231,7 +285,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          error: locale === 'ar' ? 'فشل في إنشاء الملف الشخصي' : 'Failed to create profile',
+          error:
+            locale === 'ar'
+              ? `فشل في إنشاء الملف الشخصي: ${profileError.message}`
+              : `Failed to create profile: ${profileError.message}`,
         },
         { status: 500 }
       );
@@ -254,6 +311,8 @@ export async function POST(request: NextRequest) {
       logger.error('[Admin Register] Admin user error', undefined, {
         errorMessage: adminError?.message,
         errorCode: adminError?.code,
+        userId,
+        role: invitation.role,
       });
 
       // Rollback: delete profile and auth user
@@ -262,7 +321,10 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          error: locale === 'ar' ? 'فشل في إنشاء سجل المشرف' : 'Failed to create admin record',
+          error:
+            locale === 'ar'
+              ? `فشل في إنشاء سجل المشرف: ${adminError?.message || 'unknown'}`
+              : `Failed to create admin record: ${adminError?.message || 'unknown'}`,
         },
         { status: 500 }
       );
@@ -359,9 +421,15 @@ export async function POST(request: NextRequest) {
       adminId: newAdmin.id,
     });
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     logger.error('[Admin Register] Unexpected error', error instanceof Error ? error : undefined, {
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: msg,
     });
-    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `Unexpected error: ${msg}`,
+      },
+      { status: 500 }
+    );
   }
 }
