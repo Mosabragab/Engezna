@@ -272,11 +272,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      // Update last active
-      await supabase
-        .from('admin_users')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('user_id', authData.user.id);
+      // Update last active (uses SECURITY DEFINER function to bypass RLS)
+      await supabase.rpc('update_admin_last_active');
 
       // Clear failed login attempts on successful login
       clearAttempts();

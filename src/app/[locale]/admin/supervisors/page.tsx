@@ -295,13 +295,20 @@ export default function AdminSupervisorsPage() {
       )
       .in('admin_id', adminIds);
 
-    // Map admin_roles to each supervisor
+    // Map admin_roles to each supervisor (deduplicate by keeping only first primary role)
     const supervisorsData: Supervisor[] = (adminUsers || []).map(
       (admin: Record<string, unknown>) => {
         const adminRoles = (allAdminRoles || []).filter(
           (ar) => ar.admin_id === admin.id
         ) as AdminRoleAssignment[];
+
+        // Deduplicate: use only the first primary role assignment
         const primaryRoleAssignment = adminRoles.find((ar) => ar.is_primary) || adminRoles[0];
+        // Remove duplicate primary entries from display
+        const deduplicatedRoles = adminRoles.filter(
+          (ar, index, self) => self.findIndex((r) => r.role_id === ar.role_id) === index
+        );
+
         const profileData = Array.isArray(admin.profile) ? admin.profile[0] : admin.profile;
 
         return {
@@ -313,7 +320,7 @@ export default function AdminSupervisorsPage() {
             phone: null,
             avatar_url: null,
           },
-          admin_roles: adminRoles,
+          admin_roles: deduplicatedRoles,
           primaryRole: primaryRoleAssignment?.role,
         } as Supervisor;
       }
@@ -546,33 +553,76 @@ export default function AdminSupervisorsPage() {
     // Get the selected role for legacy field sync
     const selectedRole = availableRoles.find((r) => r.id === formData.role_id);
 
-    // Update admin_users (with legacy role field)
-    const { error } = await supabase
+    // Update admin_users (with legacy role field) and verify with .select()
+    const { data: updatedAdmin, error } = await supabase
       .from('admin_users')
       .update({
         role: selectedRole?.code || selectedSupervisor.role, // Sync legacy field
         assigned_regions: formData.assigned_regions,
         is_active: formData.is_active,
       })
-      .eq('id', selectedSupervisor.id);
+      .eq('id', selectedSupervisor.id)
+      .select('id, assigned_regions')
+      .single();
 
     if (error) {
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء تحديث المشرف' : 'Error updating supervisor');
+      console.error('Error updating supervisor:', error);
+      setFormError(
+        locale === 'ar'
+          ? `حدث خطأ أثناء تحديث المشرف: ${error.message}`
+          : `Error updating supervisor: ${error.message}`
+      );
       setFormLoading(false);
       return;
     }
 
-    // Update admin_roles - remove old primary and add new
-    // First, check if there's an existing primary role
-    const existingPrimaryRole = selectedSupervisor.admin_roles?.find((ar) => ar.is_primary);
+    // Verify the regions were actually saved
+    if (updatedAdmin) {
+      const savedRegions = updatedAdmin.assigned_regions || [];
+      const expectedRegions = formData.assigned_regions;
+      if (expectedRegions.length > 0 && (!savedRegions || savedRegions.length === 0)) {
+        console.warn(
+          'Regions may not have been saved. Expected:',
+          expectedRegions,
+          'Got:',
+          savedRegions
+        );
+        setFormError(
+          locale === 'ar'
+            ? 'تحذير: قد لا تكون المناطق قد حُفظت بشكل صحيح. يرجى التحقق.'
+            : 'Warning: Regions may not have saved correctly. Please verify.'
+        );
+      }
+    }
 
-    if (existingPrimaryRole && existingPrimaryRole.role_id !== formData.role_id) {
-      // Update existing primary role
-      await supabase
-        .from('admin_roles')
-        .update({ role_id: formData.role_id })
-        .eq('id', existingPrimaryRole.id);
-    } else if (!existingPrimaryRole) {
+    // Update admin_roles - handle duplicates and update primary role
+    const allPrimaryRoles = (selectedSupervisor.admin_roles || []).filter((ar) => ar.is_primary);
+
+    if (allPrimaryRoles.length > 1) {
+      // Fix duplicate primary roles: keep the first, delete the rest
+      const [keepRole, ...duplicates] = allPrimaryRoles;
+      const duplicateIds = duplicates.map((d) => d.id);
+
+      if (duplicateIds.length > 0) {
+        await supabase.from('admin_roles').delete().in('id', duplicateIds);
+      }
+
+      // Update the kept role if needed
+      if (keepRole.role_id !== formData.role_id) {
+        await supabase
+          .from('admin_roles')
+          .update({ role_id: formData.role_id })
+          .eq('id', keepRole.id);
+      }
+    } else if (allPrimaryRoles.length === 1) {
+      const existingPrimaryRole = allPrimaryRoles[0];
+      if (existingPrimaryRole.role_id !== formData.role_id) {
+        await supabase
+          .from('admin_roles')
+          .update({ role_id: formData.role_id })
+          .eq('id', existingPrimaryRole.id);
+      }
+    } else {
       // No existing role, create new one
       await supabase.from('admin_roles').insert({
         admin_id: selectedSupervisor.id,
@@ -580,7 +630,6 @@ export default function AdminSupervisorsPage() {
         is_primary: true,
       });
     }
-    // If same role, no change needed
 
     // Reload supervisors
     await loadSupervisors(supabase);
@@ -667,26 +716,29 @@ export default function AdminSupervisorsPage() {
   function addRegion() {
     if (!tempRegion.governorate_id) return;
 
-    // Check if region already exists
-    const exists = formData.assigned_regions.some(
-      (r) => r.governorate_id === tempRegion.governorate_id && r.city_id === tempRegion.city_id
-    );
+    // Use functional update to avoid stale closure issues
+    setFormData((prev) => {
+      const exists = prev.assigned_regions.some(
+        (r) => r.governorate_id === tempRegion.governorate_id && r.city_id === tempRegion.city_id
+      );
 
-    if (!exists) {
-      setFormData({
-        ...formData,
-        assigned_regions: [...formData.assigned_regions, { ...tempRegion }],
-      });
-    }
+      if (!exists) {
+        return {
+          ...prev,
+          assigned_regions: [...prev.assigned_regions, { ...tempRegion }],
+        };
+      }
+      return prev;
+    });
 
     setTempRegion({ governorate_id: null, city_id: null, district_id: null });
   }
 
   function removeRegion(index: number) {
-    setFormData({
-      ...formData,
-      assigned_regions: formData.assigned_regions.filter((_, i) => i !== index),
-    });
+    setFormData((prev) => ({
+      ...prev,
+      assigned_regions: prev.assigned_regions.filter((_, i) => i !== index),
+    }));
   }
 
   function getRegionLabel(region: AssignedRegion): string {
