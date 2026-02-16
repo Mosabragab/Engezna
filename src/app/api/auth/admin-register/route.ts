@@ -295,17 +295,31 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 5: Create admin_users record
+    const regionsToSave = invitation.assigned_regions || [];
+    logger.info('[Admin Register] Saving assigned_regions from invitation', {
+      invitationId: invitation.id,
+      assignedRegions: JSON.stringify(regionsToSave),
+      regionsCount: Array.isArray(regionsToSave) ? regionsToSave.length : 'not-array',
+    });
+
     const { data: newAdmin, error: adminError } = await supabase
       .from('admin_users')
       .insert({
         user_id: userId,
         role: invitation.role,
         permissions: invitation.permissions || {},
-        assigned_regions: invitation.assigned_regions || [],
+        assigned_regions: regionsToSave,
         is_active: true,
       })
-      .select('id')
+      .select('id, assigned_regions')
       .single();
+
+    if (newAdmin) {
+      logger.info('[Admin Register] Admin created, verifying regions', {
+        adminId: newAdmin.id,
+        savedRegions: JSON.stringify(newAdmin.assigned_regions),
+      });
+    }
 
     if (adminError || !newAdmin) {
       logger.error('[Admin Register] Admin user error', undefined, {
