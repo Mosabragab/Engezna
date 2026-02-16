@@ -256,22 +256,26 @@ export default function InviteSupervisorPage() {
   function addRegion() {
     if (!tempRegion.governorate_id) return;
 
-    const exists = assignedRegions.some(
-      (r) =>
-        r.governorate_id === tempRegion.governorate_id &&
-        r.city_id === tempRegion.city_id &&
-        r.district_id === tempRegion.district_id
-    );
+    // Use functional update to avoid stale closure issues
+    setAssignedRegions((prev) => {
+      const exists = prev.some(
+        (r) =>
+          r.governorate_id === tempRegion.governorate_id &&
+          r.city_id === tempRegion.city_id &&
+          r.district_id === tempRegion.district_id
+      );
 
-    if (!exists) {
-      setAssignedRegions([...assignedRegions, { ...tempRegion }]);
-    }
+      if (!exists) {
+        return [...prev, { ...tempRegion }];
+      }
+      return prev;
+    });
 
     setTempRegion({ governorate_id: null, city_id: null, district_id: null });
   }
 
   function removeRegion(index: number) {
-    setAssignedRegions(assignedRegions.filter((_, i) => i !== index));
+    setAssignedRegions((prev) => prev.filter((_, i) => i !== index));
   }
 
   function getRegionLabel(region: AssignedRegion): string {
@@ -308,6 +312,22 @@ export default function InviteSupervisorPage() {
 
     setFormLoading(true);
     setFormError('');
+
+    // Auto-add pending region if user selected a governorate but didn't click "Add"
+    let finalRegions = [...assignedRegions];
+    if (tempRegion.governorate_id) {
+      const exists = finalRegions.some(
+        (r) =>
+          r.governorate_id === tempRegion.governorate_id &&
+          r.city_id === tempRegion.city_id &&
+          r.district_id === tempRegion.district_id
+      );
+      if (!exists) {
+        finalRegions = [...finalRegions, { ...tempRegion }];
+        setAssignedRegions(finalRegions);
+      }
+      setTempRegion({ governorate_id: null, city_id: null, district_id: null });
+    }
 
     const supabase = createClient();
 
@@ -389,7 +409,7 @@ export default function InviteSupervisorPage() {
           role: selectedRole.code, // Use role code for backward compatibility
           role_id: selectedRoleId, // New: store role_id for the new permission system
           permissions: {}, // Permissions are now managed via roles
-          assigned_regions: assignedRegions,
+          assigned_regions: finalRegions,
           invitation_token: invitationToken,
           expires_at: expiresAt,
           invited_by: currentAdmin.id,

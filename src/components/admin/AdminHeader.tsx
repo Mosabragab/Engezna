@@ -103,6 +103,9 @@ export function AdminHeader({
 
     setAdminUserData(adminUser as AdminUserData);
 
+    // Update last_active_at silently (uses SECURITY DEFINER to bypass RLS)
+    supabase.rpc('update_admin_last_active').then(() => {});
+
     // Determine region filter (only for non-super_admin with assigned regions)
     const isSuperAdmin = adminUser.role === 'super_admin';
     const assignedGovernorateIds =
