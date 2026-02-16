@@ -59,6 +59,7 @@ interface Task {
   progress_percentage: number;
   created_by: string | null;
   assigned_to: string | null;
+  cc_to: string[] | null;
   deadline: string | null;
   reminder_before: string | null;
   auto_escalate: boolean;
@@ -75,6 +76,7 @@ interface Task {
   // Joined data
   creator?: { full_name: string | null; email: string | null } | null;
   assignee?: { full_name: string | null; email: string | null } | null;
+  ccUsers?: { id: string; full_name: string | null }[];
 }
 
 type FilterStatus = 'all' | TaskStatus;
@@ -160,6 +162,7 @@ export default function AdminTasksPage() {
     type: 'other' as TaskType,
     priority: 'medium' as TaskPriority,
     assigned_to: '',
+    cc_to: [] as string[],
     deadline: '',
     requires_approval: false,
     auto_escalate: false,
@@ -203,63 +206,92 @@ export default function AdminTasksPage() {
     setStats(stats);
   }, []);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const loadTasks = useCallback(
     async (supabase: ReturnType<typeof createClient>) => {
+      setLoadError(null);
       const { data: tasksData, error } = await supabase
         .from('admin_tasks')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) return;
+      if (error) {
+        setLoadError(
+          locale === 'ar'
+            ? 'خطأ في تحميل المهام: ' + error.message
+            : 'Error loading tasks: ' + error.message
+        );
+        return;
+      }
 
-      // Load creator and assignee names
-      const tasksWithUsers = await Promise.all(
-        (tasksData || []).map(async (task) => {
-          let creator = null;
-          let assignee = null;
+      if (!tasksData || tasksData.length === 0) {
+        setTasks([]);
+        calculateStats([]);
+        return;
+      }
 
-          if (task.created_by) {
-            const { data: creatorAdmin } = await supabase
-              .from('admin_users')
-              .select('user_id')
-              .eq('id', task.created_by)
-              .single();
+      // Batch load all admin users in ONE query instead of N+1
+      const adminIds = new Set<string>();
+      for (const task of tasksData) {
+        if (task.created_by) adminIds.add(task.created_by);
+        if (task.assigned_to) adminIds.add(task.assigned_to);
+        if (task.cc_to && Array.isArray(task.cc_to)) {
+          task.cc_to.forEach((id: string) => adminIds.add(id));
+        }
+      }
 
-            if (creatorAdmin) {
-              const { data: creatorProfile } = await supabase
-                .from('profiles')
-                .select('full_name, email')
-                .eq('id', creatorAdmin.user_id)
-                .single();
-              creator = creatorProfile;
+      const adminIdArray = Array.from(adminIds);
+      const adminProfileMap = new Map<string, { full_name: string | null; email: string | null }>();
+
+      if (adminIdArray.length > 0) {
+        const { data: adminUsers } = await supabase
+          .from('admin_users')
+          .select('id, user_id')
+          .in('id', adminIdArray);
+
+        if (adminUsers && adminUsers.length > 0) {
+          const userIds = adminUsers.map((a) => a.user_id);
+          const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', userIds);
+
+          if (profiles) {
+            const profileMap = new Map(profiles.map((p) => [p.id, p]));
+            for (const admin of adminUsers) {
+              const profile = profileMap.get(admin.user_id);
+              if (profile) {
+                adminProfileMap.set(admin.id, {
+                  full_name: profile.full_name,
+                  email: profile.email,
+                });
+              }
             }
           }
+        }
+      }
 
-          if (task.assigned_to) {
-            const { data: assigneeAdmin } = await supabase
-              .from('admin_users')
-              .select('user_id')
-              .eq('id', task.assigned_to)
-              .single();
-
-            if (assigneeAdmin) {
-              const { data: assigneeProfile } = await supabase
-                .from('profiles')
-                .select('full_name, email')
-                .eq('id', assigneeAdmin.user_id)
-                .single();
-              assignee = assigneeProfile;
-            }
-          }
-
-          return { ...task, creator, assignee };
-        })
-      );
+      // Map tasks with pre-loaded user data
+      const tasksWithUsers: Task[] = tasksData.map((task) => ({
+        ...task,
+        creator: task.created_by ? adminProfileMap.get(task.created_by) || null : null,
+        assignee: task.assigned_to ? adminProfileMap.get(task.assigned_to) || null : null,
+        ccUsers:
+          task.cc_to && Array.isArray(task.cc_to)
+            ? task.cc_to
+                .map((id: string) => {
+                  const profile = adminProfileMap.get(id);
+                  return profile ? { id, full_name: profile.full_name } : null;
+                })
+                .filter(Boolean)
+            : [],
+      }));
 
       setTasks(tasksWithUsers);
       calculateStats(tasksWithUsers);
     },
-    [calculateStats]
+    [calculateStats, locale]
   );
 
   const loadSupervisors = useCallback(async (supabase: ReturnType<typeof createClient>) => {
@@ -290,9 +322,14 @@ export default function AdminTasksPage() {
   const filterTasks = useCallback(() => {
     let filtered = [...tasks];
 
-    // Filter by view mode (all vs my tasks)
+    // Filter by view mode (all vs my tasks) - includes assigned + cc'd tasks
     if (viewMode === 'my' && currentAdminId) {
-      filtered = filtered.filter((t) => t.assigned_to === currentAdminId);
+      filtered = filtered.filter(
+        (t) =>
+          t.assigned_to === currentAdminId ||
+          t.created_by === currentAdminId ||
+          (t.cc_to && t.cc_to.includes(currentAdminId))
+      );
     }
 
     if (searchQuery) {
@@ -402,24 +439,57 @@ export default function AdminTasksPage() {
     setFormError('');
     const supabase = createClient();
 
-    const { error } = await supabase.from('admin_tasks').insert({
-      title: formData.title,
-      description: formData.description || null,
-      type: formData.type,
-      priority: formData.priority,
-      created_by: currentAdminId,
-      assigned_to: formData.assigned_to,
-      deadline: formData.deadline || null,
-      requires_approval: formData.requires_approval,
-      auto_escalate: formData.auto_escalate,
-      status: 'new',
-      progress_percentage: 0,
-    });
+    const ccToArray = formData.cc_to.length > 0 ? formData.cc_to : null;
+
+    const { data: newTask, error } = await supabase
+      .from('admin_tasks')
+      .insert({
+        title: formData.title,
+        description: formData.description || null,
+        type: formData.type,
+        priority: formData.priority,
+        created_by: currentAdminId,
+        assigned_to: formData.assigned_to,
+        cc_to: ccToArray,
+        deadline: formData.deadline || null,
+        requires_approval: formData.requires_approval,
+        auto_escalate: formData.auto_escalate,
+        status: 'new',
+        progress_percentage: 0,
+      })
+      .select('id, task_number')
+      .single();
 
     if (error) {
-      setFormError(locale === 'ar' ? 'حدث خطأ أثناء إنشاء المهمة' : 'Error creating task');
+      setFormError(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء إنشاء المهمة: ' + error.message
+          : 'Error creating task: ' + error.message
+      );
       setFormLoading(false);
       return;
+    }
+
+    // Create notification for assignee
+    if (newTask) {
+      const notifyIds = new Set<string>();
+      notifyIds.add(formData.assigned_to);
+      if (ccToArray) ccToArray.forEach((id) => notifyIds.add(id));
+      // Don't notify the creator
+      if (currentAdminId) notifyIds.delete(currentAdminId);
+
+      const notifications = Array.from(notifyIds).map((adminId) => ({
+        admin_id: adminId,
+        type: 'task',
+        title: locale === 'ar' ? 'مهمة جديدة مُسندة إليك' : 'New task assigned to you',
+        body: formData.title,
+        related_task_id: newTask.id,
+        is_read: false,
+      }));
+
+      if (notifications.length > 0) {
+        await supabase.from('admin_notifications').insert(notifications);
+      }
     }
 
     await loadTasks(supabase);
@@ -430,6 +500,7 @@ export default function AdminTasksPage() {
       type: 'other',
       priority: 'medium',
       assigned_to: '',
+      cc_to: [],
       deadline: '',
       requires_approval: false,
       auto_escalate: false,
@@ -768,6 +839,25 @@ export default function AdminTasksPage() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {loadError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <span className="text-sm">{loadError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const s = createClient();
+                loadTasks(s);
+              }}
+              className="ms-auto"
+            >
+              {locale === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+            </Button>
+          </div>
+        )}
+
         {/* Tasks List */}
         <div className="space-y-4">
           {filteredTasks.length > 0 ? (
@@ -825,6 +915,15 @@ export default function AdminTasksPage() {
                           <span>{locale === 'ar' ? 'مُسندة إلى:' : 'Assigned to:'}</span>
                           <span className="font-medium text-slate-900">
                             {task.assignee.full_name}
+                          </span>
+                        </div>
+                      )}
+                      {task.ccUsers && task.ccUsers.length > 0 && (
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Bell className="w-4 h-4 text-slate-400" />
+                          <span>{locale === 'ar' ? 'منسوخ:' : 'CC:'}</span>
+                          <span className="font-medium text-slate-900">
+                            {task.ccUsers.map((u) => u.full_name || u.id).join(', ')}
                           </span>
                         </div>
                       )}
@@ -1047,6 +1146,65 @@ export default function AdminTasksPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* CC To */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  {locale === 'ar' ? 'نسخة إلى (اختياري)' : 'CC To (optional)'}
+                </label>
+                <div className="space-y-2">
+                  <select
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val && !formData.cc_to.includes(val) && val !== formData.assigned_to) {
+                        setFormData({ ...formData, cc_to: [...formData.cc_to, val] });
+                      }
+                      e.target.value = '';
+                    }}
+                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">
+                      {locale === 'ar' ? 'أضف مشرف...' : 'Add supervisor...'}
+                    </option>
+                    {supervisors
+                      .filter(
+                        (s) => s.id !== formData.assigned_to && !formData.cc_to.includes(s.id)
+                      )
+                      .map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.full_name || s.id}
+                        </option>
+                      ))}
+                  </select>
+                  {formData.cc_to.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.cc_to.map((id) => {
+                        const sup = supervisors.find((s) => s.id === id);
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
+                          >
+                            {sup?.full_name || id}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData({
+                                  ...formData,
+                                  cc_to: formData.cc_to.filter((c) => c !== id),
+                                })
+                              }
+                              className="hover:text-red-500"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Deadline */}
