@@ -1,24 +1,42 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
+
+// Safety timeout: if processing takes longer than this, show error with retry
+const PROCESSING_TIMEOUT_MS = 30000;
 
 export default function AuthCallbackPage() {
   const locale = useLocale();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const processingRef = useRef(false);
+
+  // Navigate using window.location.href to ensure full page reload
+  // This guarantees auth cookies are sent to server middleware on the next request
+  // (router.push() does client-side navigation which can miss newly-set cookies)
+  const navigateTo = (url: string) => {
+    window.location.href = url;
+  };
 
   useEffect(() => {
-    // Prevent double execution
-    if (isProcessing) return;
-    setIsProcessing(true);
+    // Prevent double execution (using ref to avoid dependency array issues)
+    if (processingRef.current) return;
+    processingRef.current = true;
+
+    // Safety timeout: if processing takes too long, show an error
+    const timeoutId = setTimeout(() => {
+      setError(
+        locale === 'ar'
+          ? 'استغرقت العملية وقتاً طويلاً. يرجى المحاولة مرة أخرى.'
+          : 'Processing took too long. Please try again.'
+      );
+    }, PROCESSING_TIMEOUT_MS);
 
     const handleCallback = async () => {
       const code = searchParams.get('code');
@@ -27,7 +45,6 @@ export default function AuthCallbackPage() {
       const errorParam = searchParams.get('error');
       const errorDescription = searchParams.get('error_description');
       const redirectParam = searchParams.get('redirect');
-      const verified = searchParams.get('verified');
       const next = searchParams.get('next') ?? redirectParam ?? '/';
 
       const supabase = createClient();
@@ -36,7 +53,7 @@ export default function AuthCallbackPage() {
       if (errorParam) {
         console.error('Auth callback error:', errorParam, errorDescription);
         const errorMessage = errorParam === 'access_denied' ? 'link_expired' : errorParam;
-        router.push(
+        navigateTo(
           `/${locale}/auth/login?error=${errorMessage}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
         );
         return;
@@ -63,7 +80,7 @@ export default function AuthCallbackPage() {
               : 'Failed to verify link. It may have expired.'
           );
           setTimeout(() => {
-            router.push(
+            navigateTo(
               `/${locale}/auth/login?error=verification_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
             );
           }, 3000);
@@ -71,6 +88,14 @@ export default function AuthCallbackPage() {
         }
         user = data.user;
         isSignupVerification = type === 'signup';
+
+        // For password recovery, redirect directly to reset-password page
+        // The session is already established by verifyOtp, so the reset-password
+        // page will detect the valid session and show the password form
+        if (type === 'recovery' && user) {
+          navigateTo(`/${locale}/auth/reset-password`);
+          return;
+        }
       }
 
       // If no user and we have a code, try to exchange it
@@ -88,7 +113,7 @@ export default function AuthCallbackPage() {
           } else {
             setError(locale === 'ar' ? 'فشل التحقق من الرابط' : 'Failed to verify link');
             setTimeout(() => {
-              router.push(
+              navigateTo(
                 `/${locale}/auth/login?error=exchange_failed${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`
               );
             }, 2000);
@@ -102,7 +127,7 @@ export default function AuthCallbackPage() {
       // If still no user, redirect to login
       if (!user) {
         console.error('Auth callback: No user found');
-        router.push(`/${locale}/auth/login?error=no_user`);
+        navigateTo(`/${locale}/auth/login?error=no_user`);
         return;
       }
 
@@ -136,7 +161,7 @@ export default function AuthCallbackPage() {
           next !== '/'
             ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
             : `/${locale}/auth/complete-profile`;
-        router.push(completeProfileUrl);
+        navigateTo(completeProfileUrl);
         return;
       }
 
@@ -144,7 +169,7 @@ export default function AuthCallbackPage() {
       if (!profile.governorate_id || !profile.phone) {
         // For providers, redirect to provider complete-profile
         if (profile.role === 'provider_owner') {
-          router.push(`/${locale}/provider/complete-profile`);
+          navigateTo(`/${locale}/provider/complete-profile`);
           return;
         }
         // For customers, redirect to customer complete-profile
@@ -152,11 +177,11 @@ export default function AuthCallbackPage() {
           next !== '/'
             ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(next)}`
             : `/${locale}/auth/complete-profile`;
-        router.push(completeProfileUrl);
+        navigateTo(completeProfileUrl);
         return;
       }
 
-      // Send welcome email if this is a signup verification
+      // Send welcome email if this is a signup verification (non-blocking)
       if (isSignupVerification && user) {
         try {
           await fetch('/api/auth/send-welcome-email', {
@@ -171,15 +196,23 @@ export default function AuthCallbackPage() {
       }
 
       // Sync location to localStorage (so home page can read it)
-      const gov = profile.governorates as unknown as { name_ar: string; name_en: string } | null;
-      const city = profile.cities as unknown as { name_ar: string; name_en: string } | null;
+      try {
+        const gov = profile.governorates as unknown as {
+          name_ar: string;
+          name_en: string;
+        } | null;
+        const city = profile.cities as unknown as { name_ar: string; name_en: string } | null;
 
-      guestLocationStorage.set({
-        governorateId: profile.governorate_id,
-        governorateName: gov ? { ar: gov.name_ar, en: gov.name_en } : null,
-        cityId: profile.city_id || null,
-        cityName: city ? { ar: city.name_ar, en: city.name_en } : null,
-      });
+        guestLocationStorage.set({
+          governorateId: profile.governorate_id,
+          governorateName: gov ? { ar: gov.name_ar, en: gov.name_en } : null,
+          cityId: profile.city_id || null,
+          cityName: city ? { ar: city.name_ar, en: city.name_en } : null,
+        });
+      } catch (locationError) {
+        // Don't block the flow if localStorage sync fails
+        console.error('Failed to sync guest location:', locationError);
+      }
 
       // Profile complete - redirect based on role
       if (profile.role === 'provider_owner') {
@@ -191,10 +224,10 @@ export default function AuthCallbackPage() {
           .single();
 
         if (provider?.status === 'incomplete') {
-          router.push(`/${locale}/provider/complete-profile`);
+          navigateTo(`/${locale}/provider/complete-profile`);
           return;
         }
-        router.push(`/${locale}/provider`);
+        navigateTo(`/${locale}/provider`);
         return;
       }
 
@@ -202,11 +235,27 @@ export default function AuthCallbackPage() {
       const redirectUrl = next.startsWith('/')
         ? next
         : `/${locale}${next.startsWith('/') ? '' : '/'}${next}`;
-      router.push(redirectUrl);
+      navigateTo(redirectUrl);
     };
 
-    handleCallback();
-  }, [searchParams, locale, router, isProcessing]);
+    handleCallback()
+      .catch((err) => {
+        console.error('Auth callback: Unexpected error:', err);
+        setError(
+          locale === 'ar'
+            ? 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.'
+            : 'An unexpected error occurred. Please try again.'
+        );
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+      });
+  }, [searchParams, locale]);
+
+  const handleRetry = () => {
+    // Reload the page to retry the callback
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
@@ -222,7 +271,14 @@ export default function AuthCallbackPage() {
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
           <p className="text-red-600 font-medium">{error}</p>
-          <p className="text-slate-400 text-sm mt-2">
+          <button
+            onClick={handleRetry}
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#009DE0] rounded-lg hover:bg-[#0086c0] transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            {locale === 'ar' ? 'حاول مرة أخرى' : 'Try Again'}
+          </button>
+          <p className="text-slate-400 text-sm mt-3">
             {locale === 'ar' ? 'جاري التحويل...' : 'Redirecting...'}
           </p>
         </div>
