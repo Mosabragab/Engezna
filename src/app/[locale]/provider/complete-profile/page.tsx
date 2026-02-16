@@ -19,17 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Link from 'next/link';
-import {
-  Store,
-  Upload,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft,
-  Image as ImageIcon,
-  Loader2,
-  MapPin,
-} from 'lucide-react';
-import { LocationPicker } from '@/components/maps/LocationPicker';
+import { Store, Upload, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 
 // Types
 interface Governorate {
@@ -99,15 +89,13 @@ export default function CompleteProfilePage() {
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
   const [governorateLocked, setGovernorateLocked] = useState(false); // Governorate locked from registration
+  const [cityLocked, setCityLocked] = useState(false); // City locked from registration
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
-
-  // GPS Location state
-  const [storeLocation, setStoreLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   const {
     register,
@@ -137,9 +125,12 @@ export default function CompleteProfilePage() {
     if (governorateId) {
       const filtered = cities.filter((city) => city.governorate_id === governorateId);
       setFilteredCities(filtered);
-      setValue('cityId', ''); // Reset city selection
+      // Only reset city if not locked from registration
+      if (!cityLocked) {
+        setValue('cityId', '');
+      }
     }
-  }, [governorateId, cities, setValue]);
+  }, [governorateId, cities, setValue, cityLocked]);
 
   async function loadData() {
     const supabase = createClient();
@@ -192,11 +183,6 @@ export default function CompleteProfilePage() {
         setLogoPreview(providerData.logo_url);
       }
 
-      // Pre-fill GPS location if exists
-      if (providerData.latitude && providerData.longitude) {
-        setStoreLocation({ lat: providerData.latitude, lng: providerData.longitude });
-      }
-
       // Pre-fill governorate if set (locked from registration)
       if (providerData.governorate_id) {
         setValue('governorateId', providerData.governorate_id);
@@ -204,6 +190,7 @@ export default function CompleteProfilePage() {
       }
       if (providerData.city_id) {
         setValue('cityId', providerData.city_id);
+        setCityLocked(true); // Lock city - cannot be changed
       }
 
       // Load governorates
@@ -329,13 +316,14 @@ export default function CompleteProfilePage() {
         estimated_delivery_time_min: data.estimatedDeliveryTime,
         min_order_amount: data.minOrderAmount,
         delivery_radius_km: data.deliveryRadius,
-        city_id: data.cityId,
         status: 'pending_approval', // Change status to pending approval
         updated_at: new Date().toISOString(),
-        // GPS coordinates
-        latitude: storeLocation?.lat || null,
-        longitude: storeLocation?.lng || null,
       };
+
+      // Only update city if not locked (not set during registration)
+      if (!cityLocked) {
+        updateData.city_id = data.cityId;
+      }
 
       // Only update governorate if not locked (not set during registration)
       if (!governorateLocked) {
@@ -550,13 +538,22 @@ export default function CompleteProfilePage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>{t('city')}</Label>
+                    <Label className="flex items-center gap-2">
+                      {t('city')}
+                      {cityLocked && (
+                        <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                          {locale === 'ar' ? 'مثبت' : 'Locked'}
+                        </span>
+                      )}
+                    </Label>
                     <Select
                       value={watch('cityId')}
                       onValueChange={(value) => setValue('cityId', value)}
-                      disabled={isSaving || !governorateId}
+                      disabled={isSaving || !governorateId || cityLocked}
                     >
-                      <SelectTrigger className={errors.cityId ? 'border-destructive' : ''}>
+                      <SelectTrigger
+                        className={`${errors.cityId ? 'border-destructive' : ''} ${cityLocked ? 'bg-slate-50 cursor-not-allowed' : ''}`}
+                      >
                         <SelectValue placeholder={t('cityPlaceholder')} />
                       </SelectTrigger>
                       <SelectContent>
@@ -567,7 +564,14 @@ export default function CompleteProfilePage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.cityId && (
+                    {cityLocked && (
+                      <p className="text-xs text-slate-500">
+                        {locale === 'ar'
+                          ? 'تم تحديد المدينة عند التسجيل ولا يمكن تغييرها'
+                          : 'City was set during registration and cannot be changed'}
+                      </p>
+                    )}
+                    {errors.cityId && !cityLocked && (
                       <p className="text-sm text-destructive">{errors.cityId.message}</p>
                     )}
                   </div>
@@ -586,39 +590,6 @@ export default function CompleteProfilePage() {
                     <p className="text-sm text-destructive">{errors.address.message}</p>
                   )}
                 </div>
-
-                {/* GPS Location Picker */}
-                {watch('cityId') && (
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      {locale === 'ar' ? 'موقع المتجر على الخريطة' : 'Store Location on Map'}
-                    </Label>
-                    <LocationPicker
-                      value={storeLocation}
-                      onChange={(coords, address) => {
-                        setStoreLocation(coords);
-                        // Optionally update address if not already set
-                        if (address && !watch('address')) {
-                          setValue('address', address);
-                        }
-                      }}
-                      placeholder={
-                        locale === 'ar'
-                          ? 'ابحث عن موقع متجرك أو استخدم GPS'
-                          : 'Search for your store location or use GPS'
-                      }
-                      disabled={isSaving}
-                    />
-                    {!storeLocation && (
-                      <p className="text-xs text-amber-600">
-                        {locale === 'ar'
-                          ? '📍 يُفضل تحديد الموقع لمساعدة العملاء في الوصول إليك'
-                          : '📍 Setting location helps customers find you'}
-                      </p>
-                    )}
-                  </div>
-                )}
 
                 {/* Logo Upload */}
                 <div className="space-y-2">
