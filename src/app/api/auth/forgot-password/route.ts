@@ -107,11 +107,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error(
-      '[Forgot Password] Unexpected error',
-      error instanceof Error ? error : undefined,
-      { errorMessage: error instanceof Error ? error.message : String(error) }
-    );
+    logger.error('[Forgot Password] Unexpected error', error instanceof Error ? error : undefined, {
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
