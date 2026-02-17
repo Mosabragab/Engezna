@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +19,7 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  CheckCircle2,
   RefreshCw,
   LogIn,
   ArrowRight,
@@ -35,12 +37,17 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function ProviderLoginPage() {
   const locale = useLocale();
   const t = useTranslations('partner.login');
+  const searchParams = useSearchParams();
   const isRTL = locale === 'ar';
 
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Show success message when coming from email verification
+  const verified = searchParams.get('verified');
+  const successMessage = searchParams.get('message');
 
   const {
     register,
@@ -234,6 +241,13 @@ export default function ProviderLoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+            {verified && successMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
+                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{decodeURIComponent(successMessage)}</span>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />

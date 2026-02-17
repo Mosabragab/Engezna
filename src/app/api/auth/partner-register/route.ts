@@ -28,7 +28,8 @@ interface PartnerRegisterRequest {
   governorateId: string;
   cityId?: string;
   businessCategory: string;
-  storeName: string;
+  storeNameAr: string;
+  storeNameEn: string;
   partnerRole: string;
   locale: string;
 }
@@ -44,7 +45,8 @@ export async function POST(request: NextRequest) {
       governorateId,
       cityId,
       businessCategory,
-      storeName,
+      storeNameAr,
+      storeNameEn,
       partnerRole,
       locale = 'ar',
     } = body;
@@ -57,7 +59,8 @@ export async function POST(request: NextRequest) {
       !phone ||
       !governorateId ||
       !businessCategory ||
-      !storeName ||
+      !storeNameAr ||
+      !storeNameEn ||
       !partnerRole
     ) {
       return NextResponse.json(
@@ -214,8 +217,8 @@ export async function POST(request: NextRequest) {
     // Create provider record with status "incomplete"
     const { error: providerError } = await supabase.from('providers').insert({
       owner_id: authData.user.id,
-      name_ar: storeName,
-      name_en: storeName, // Can be updated later in dashboard
+      name_ar: storeNameAr,
+      name_en: storeNameEn,
       category: businessCategory,
       phone,
       address_ar: '',
