@@ -61,6 +61,7 @@ type Category = {
   id: string;
   name_ar: string;
   name_en: string;
+  is_extras?: boolean;
 };
 
 type Promotion = {
@@ -95,6 +96,12 @@ export default function ProviderProductsPage() {
   const [newCategoryNameEn, setNewCategoryNameEn] = useState('');
   const [newCategoryIsExtras, setNewCategoryIsExtras] = useState(false);
   const [categoryLoading, setCategoryLoading] = useState(false);
+  // Edit category state
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCategoryNameAr, setEditCategoryNameAr] = useState('');
+  const [editCategoryNameEn, setEditCategoryNameEn] = useState('');
+  const [editCategoryIsExtras, setEditCategoryIsExtras] = useState(false);
+  const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState<string | null>(null);
 
   const loadProducts = useCallback(async (provId: string) => {
     const supabase = createClient();
@@ -112,8 +119,9 @@ export default function ProviderProductsPage() {
     // Then get categories for this provider
     const { data: categoriesData } = await supabase
       .from('provider_categories')
-      .select('id, name_ar, name_en')
+      .select('id, name_ar, name_en, is_extras')
       .eq('provider_id', provId)
+      .eq('is_active', true)
       .order('display_order', { ascending: true });
 
     // Store categories for filter tabs
@@ -257,6 +265,68 @@ export default function ProviderProductsPage() {
       setNewCategoryNameAr('');
       setNewCategoryNameEn('');
       setNewCategoryIsExtras(false);
+    }
+    setCategoryLoading(false);
+  };
+
+  // Handle editing existing category
+  const openEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setEditCategoryNameAr(category.name_ar);
+    setEditCategoryNameEn(category.name_en);
+    setEditCategoryIsExtras(category.is_extras || false);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory || !editCategoryNameAr.trim() || !providerId) return;
+
+    setCategoryLoading(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from('provider_categories')
+      .update({
+        name_ar: editCategoryNameAr.trim(),
+        name_en: editCategoryNameEn.trim() || editCategoryNameAr.trim(),
+        is_extras: editCategoryIsExtras,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', editingCategory.id);
+
+    if (!error) {
+      await loadProducts(providerId);
+      setEditingCategory(null);
+    }
+    setCategoryLoading(false);
+  };
+
+  // Handle deleting category (soft delete)
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!providerId) return;
+
+    setCategoryLoading(true);
+    const supabase = createClient();
+
+    // Soft delete: set is_active = false
+    const { error } = await supabase
+      .from('provider_categories')
+      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .eq('id', categoryId);
+
+    if (!error) {
+      // Unlink products from this category
+      await supabase
+        .from('menu_items')
+        .update({ category_id: null })
+        .eq('category_id', categoryId)
+        .eq('provider_id', providerId);
+
+      await loadProducts(providerId);
+      setDeleteCategoryConfirm(null);
+      setEditingCategory(null);
+      if (selectedCategory === categoryId) {
+        setSelectedCategory(null);
+      }
     }
     setCategoryLoading(false);
   };
@@ -485,20 +555,29 @@ export default function ProviderProductsPage() {
                 <span className="mx-1 text-xs opacity-70">({products.length})</span>
               </Button>
               {categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={
-                    selectedCategory !== category.id ? 'border-slate-300 text-slate-600' : ''
-                  }
-                >
-                  {locale === 'ar' ? category.name_ar : category.name_en}
-                  <span className="mx-1 text-xs opacity-70">
-                    ({getCategoryProductCount(category.id)})
-                  </span>
-                </Button>
+                <div key={category.id} className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant={selectedCategory === category.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={
+                      selectedCategory !== category.id ? 'border-slate-300 text-slate-600' : ''
+                    }
+                  >
+                    {locale === 'ar' ? category.name_ar : category.name_en}
+                    {category.is_extras && <Gift className="w-3 h-3 mx-0.5 opacity-60" />}
+                    <span className="mx-1 text-xs opacity-70">
+                      ({getCategoryProductCount(category.id)})
+                    </span>
+                  </Button>
+                  <button
+                    onClick={() => openEditCategory(category)}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                    title={locale === 'ar' ? 'تعديل التصنيف' : 'Edit category'}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ))}
               {uncategorizedCount > 0 && (
                 <Button
@@ -846,6 +925,154 @@ export default function ProviderProductsPage() {
                   'إضافة'
                 ) : (
                   'Add'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Category Modal */}
+      {editingCategory && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4"
+          onClick={() => setEditingCategory(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100">
+              <h3 className="font-bold text-lg text-slate-900">
+                {locale === 'ar' ? 'تعديل التصنيف' : 'Edit Category'}
+              </h3>
+              <button
+                onClick={() => setEditingCategory(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar' ? 'اسم التصنيف (عربي) *' : 'Category Name (Arabic) *'}
+                </label>
+                <input
+                  type="text"
+                  value={editCategoryNameAr}
+                  onChange={(e) => setEditCategoryNameAr(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  {locale === 'ar'
+                    ? 'اسم التصنيف (إنجليزي) - اختياري'
+                    : 'Category Name (English) - Optional'}
+                </label>
+                <input
+                  type="text"
+                  value={editCategoryNameEn}
+                  onChange={(e) => setEditCategoryNameEn(e.target.value)}
+                  placeholder={locale === 'ar' ? 'اختياري' : 'Optional'}
+                  className="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary"
+                  dir="ltr"
+                />
+              </div>
+              {/* Is Extras Checkbox */}
+              <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="edit_is_extras"
+                  checked={editCategoryIsExtras}
+                  onChange={(e) => setEditCategoryIsExtras(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 text-primary border-slate-300 rounded focus:ring-primary"
+                />
+                <label htmlFor="edit_is_extras" className="flex-1 cursor-pointer">
+                  <span className="block font-medium text-slate-900 text-sm">
+                    {locale === 'ar' ? 'هذا تصنيف إضافات' : 'This is an extras category'}
+                  </span>
+                  <span className="block text-xs text-slate-500 mt-0.5">
+                    {locale === 'ar'
+                      ? 'محتوى هذا التصنيف سيظهر كاقتراحات للعميل في صفحة السلة'
+                      : 'Items in this category will appear as suggestions in the cart page'}
+                  </span>
+                </label>
+              </div>
+
+              {/* Delete Section */}
+              {deleteCategoryConfirm === editingCategory.id ? (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-sm text-red-700 mb-3">
+                    {locale === 'ar'
+                      ? `هل أنت متأكد من حذف "${editingCategory.name_ar}"؟ سيتم إلغاء ربط المنتجات المرتبطة بهذا التصنيف.`
+                      : `Are you sure you want to delete "${editingCategory.name_ar}"? Products in this category will become uncategorized.`}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeleteCategoryConfirm(null)}
+                      className="flex-1"
+                    >
+                      {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteCategory(editingCategory.id)}
+                      disabled={categoryLoading}
+                      className="flex-1"
+                    >
+                      {categoryLoading ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : locale === 'ar' ? (
+                        'تأكيد الحذف'
+                      ) : (
+                        'Confirm Delete'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setDeleteCategoryConfirm(editingCategory.id)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 text-red-600 hover:bg-red-50 border border-red-200 rounded-xl text-sm font-medium transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {locale === 'ar' ? 'حذف التصنيف' : 'Delete Category'}
+                </button>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 p-4 border-t border-slate-100">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setEditingCategory(null);
+                  setDeleteCategoryConfirm(null);
+                }}
+              >
+                {locale === 'ar' ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleUpdateCategory}
+                disabled={!editCategoryNameAr.trim() || categoryLoading}
+              >
+                {categoryLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : locale === 'ar' ? (
+                  'حفظ التعديلات'
+                ) : (
+                  'Save Changes'
                 )}
               </Button>
             </div>
