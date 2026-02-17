@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { adminInvitationTemplate } from '@/lib/email/templates/admin-invitation';
+import { passwordResetTemplate } from '@/lib/email/templates/password-reset';
 import { staffInvitationTemplate } from '@/lib/email/templates/staff-invitation';
 
 // Lazy initialization - only create client when needed (not at build time)
@@ -890,20 +891,58 @@ export async function sendCustomerOrderCancelledEmail(
 
 /**
  * Send password reset email
+ * Tries DB template first, falls back to hardcoded template on ANY failure
+ * (including corrupted DB templates with wrong variable syntax).
  */
 export async function sendPasswordResetEmail(data: PasswordResetData): Promise<SendEmailResult> {
+  const subject = 'إعادة تعيين كلمة المرور - إنجزنا';
   const variables = {
     userName: data.userName,
     resetUrl: data.resetUrl,
     expiryTime: data.expiryTime,
   };
 
-  return sendTemplateEmail(
-    'password-reset',
-    data.to,
-    variables,
-    'إعادة تعيين كلمة المرور - إنجزنا'
-  );
+  // Try DB template first
+  const dbTemplate = await getTemplateFromDB('password-reset');
+
+  if (dbTemplate) {
+    const htmlContent = replaceVariables(dbTemplate.html_content, variables);
+
+    // Validate: if the rendered HTML still contains unreplaced template variables
+    // (e.g. {{ .ConfirmationURL }} from Supabase Go syntax), fall back to hardcoded
+    if (htmlContent.includes('{{ .') || htmlContent.includes('{{.')) {
+      logger.warn(
+        '[sendPasswordResetEmail] DB template contains Supabase Go template syntax ({{ .Variable }}), using hardcoded fallback'
+      );
+    } else {
+      const result = await sendEmail({
+        to: data.to,
+        subject: replaceVariables(dbTemplate.subject, variables),
+        html: htmlContent,
+      });
+
+      if (result.success) {
+        return result;
+      }
+
+      logger.info(
+        `[sendPasswordResetEmail] DB template send failed (${result.error}), using hardcoded fallback`
+      );
+    }
+  } else {
+    logger.info('[sendPasswordResetEmail] DB template not found, using hardcoded fallback');
+  }
+
+  // Fall back to hardcoded template
+  return sendEmail({
+    to: data.to,
+    subject,
+    html: passwordResetTemplate({
+      userName: data.userName,
+      resetUrl: data.resetUrl,
+      expiryTime: data.expiryTime,
+    }),
+  });
 }
 
 /**
