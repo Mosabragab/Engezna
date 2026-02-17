@@ -308,9 +308,6 @@ export default function AddProductPage() {
     if (!formData.name_ar.trim()) {
       newErrors.name_ar = locale === 'ar' ? 'الاسم بالعربية مطلوب' : 'Arabic name is required';
     }
-    if (!formData.name_en.trim()) {
-      newErrors.name_en = locale === 'ar' ? 'الاسم بالإنجليزية مطلوب' : 'English name is required';
-    }
     if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price =
         locale === 'ar'
@@ -687,7 +684,9 @@ export default function AddProductPage() {
               {/* English Name */}
               <div>
                 <label className="block text-sm font-medium text-slate-600 mb-2">
-                  {locale === 'ar' ? 'اسم المنتج (إنجليزي)' : 'Product Name (English)'} *
+                  {locale === 'ar'
+                    ? 'اسم المنتج (إنجليزي) - اختياري'
+                    : 'Product Name (English) - Optional'}
                 </label>
                 <input
                   type="text"
