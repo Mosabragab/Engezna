@@ -242,7 +242,7 @@ export default function ResetPasswordPage() {
               <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'كلمة المرور الجديدة' : 'New Password'}
             </label>
-            <div className="relative">
+            <div className="relative" dir="ltr">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
@@ -250,13 +250,12 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={locale === 'ar' ? '8 أحرف على الأقل' : 'At least 8 characters'}
                 disabled={isLoading}
-                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
-                dir="ltr"
+                className="w-full h-[52px] px-4 pr-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 placeholder:text-right focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+                className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-400 hover:text-slate-600"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -272,7 +271,7 @@ export default function ResetPasswordPage() {
               <Lock className="w-4 h-4 text-primary" />
               {locale === 'ar' ? 'تأكيد كلمة المرور' : 'Confirm Password'}
             </label>
-            <div className="relative">
+            <div className="relative" dir="ltr">
               <input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
@@ -280,13 +279,12 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={locale === 'ar' ? 'أعد كتابة كلمة المرور' : 'Re-enter password'}
                 disabled={isLoading}
-                className="w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
-                dir="ltr"
+                className="w-full h-[52px] px-4 pr-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 placeholder:text-right focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+                className="absolute top-1/2 -translate-y-1/2 right-4 text-slate-400 hover:text-slate-600"
               >
                 {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
