@@ -106,7 +106,7 @@ SET
     </table>
 </body>
 </html>',
-  available_variables = '[\"userName\", \"resetUrl\", \"expiryTime\"]'::jsonb,
+  available_variables = '["userName", "resetUrl", "expiryTime"]'::jsonb,
   updated_at = NOW()
 WHERE slug = 'password-reset';
 
