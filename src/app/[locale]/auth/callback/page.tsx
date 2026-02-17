@@ -91,8 +91,10 @@ export default function AuthCallbackPage() {
 
         // For password recovery, redirect directly to reset-password page
         // The session is already established by verifyOtp, so the reset-password
-        // page will detect the valid session and show the password form
+        // page will detect the valid session and show the password form.
+        // We add a small delay to ensure auth cookies are fully written before redirect.
         if (type === 'recovery' && user) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
           navigateTo(`/${locale}/auth/reset-password`);
           return;
         }
@@ -167,7 +169,20 @@ export default function AuthCallbackPage() {
 
       // Check if profile is incomplete
       if (!profile.governorate_id || !profile.phone) {
-        // For providers, redirect to provider complete-profile
+        // For providers coming from signup verification, sign them out and redirect to login
+        // so they confirm their credentials before completing their store profile
+        if (profile.role === 'provider_owner' && isSignupVerification) {
+          await supabase.auth.signOut();
+          navigateTo(
+            `/${locale}/provider/login?verified=true&message=${encodeURIComponent(
+              locale === 'ar'
+                ? 'تم تأكيد بريدك الإلكتروني بنجاح. سجل دخولك لاستكمال ملف متجرك.'
+                : 'Email verified successfully. Please log in to complete your store profile.'
+            )}`
+          );
+          return;
+        }
+        // For providers (not from signup), redirect to provider complete-profile
         if (profile.role === 'provider_owner') {
           navigateTo(`/${locale}/provider/complete-profile`);
           return;
@@ -224,6 +239,18 @@ export default function AuthCallbackPage() {
           .single();
 
         if (provider?.status === 'incomplete') {
+          // For signup verification, sign out and redirect to login first
+          if (isSignupVerification) {
+            await supabase.auth.signOut();
+            navigateTo(
+              `/${locale}/provider/login?verified=true&message=${encodeURIComponent(
+                locale === 'ar'
+                  ? 'تم تأكيد بريدك الإلكتروني بنجاح. سجل دخولك لاستكمال ملف متجرك.'
+                  : 'Email verified successfully. Please log in to complete your store profile.'
+              )}`
+            );
+            return;
+          }
           navigateTo(`/${locale}/provider/complete-profile`);
           return;
         }

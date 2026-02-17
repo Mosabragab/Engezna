@@ -92,7 +92,8 @@ const partnerSignupSchema = z
     password: z.string().min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string(),
     businessCategory: z.string().min(1, 'Please select a business category'),
-    storeName: z.string().min(2, 'Store name must be at least 2 characters'),
+    storeNameAr: z.string().min(2, 'Store name (Arabic) must be at least 2 characters'),
+    storeNameEn: z.string().min(2, 'Store name (English) must be at least 2 characters'),
     partnerRole: z.string().min(1, 'Please select your role'),
     governorateId: z.string().min(1, 'Please select your governorate'),
     cityId: z.string().optional(),
@@ -131,7 +132,8 @@ export default function PartnerRegisterPage() {
     resolver: zodResolver(partnerSignupSchema),
     defaultValues: {
       businessCategory: '',
-      storeName: '',
+      storeNameAr: '',
+      storeNameEn: '',
       partnerRole: '',
       governorateId: '',
       cityId: '',
@@ -233,7 +235,8 @@ export default function PartnerRegisterPage() {
           governorateId: data.governorateId,
           cityId: data.cityId || undefined,
           businessCategory: data.businessCategory,
-          storeName: data.storeName,
+          storeNameAr: data.storeNameAr,
+          storeNameEn: data.storeNameEn,
           partnerRole: data.partnerRole,
           locale,
         }),
@@ -714,26 +717,56 @@ export default function PartnerRegisterPage() {
                   )}
                 </div>
 
-                {/* Store Name */}
+                {/* Store Name Arabic */}
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
                     <Store className="w-4 h-4 text-primary" />
-                    {locale === 'ar' ? 'اسم المتجر' : 'Store Name'}
+                    {locale === 'ar' ? 'اسم المتجر بالعربية' : 'Store Name (Arabic)'}
                     <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
                       {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
                     </span>
                   </Label>
                   <Input
-                    placeholder={locale === 'ar' ? 'أدخل اسم متجرك' : 'Enter your store name'}
-                    {...register('storeName')}
+                    placeholder={
+                      locale === 'ar' ? 'أدخل اسم متجرك بالعربية' : 'Enter store name in Arabic'
+                    }
+                    {...register('storeNameAr')}
                     disabled={isLoading}
-                    className={errors.storeName ? 'border-destructive' : ''}
+                    className={errors.storeNameAr ? 'border-destructive' : ''}
+                    dir="rtl"
                   />
-                  {errors.storeName && (
+                  {errors.storeNameAr && (
                     <p className="text-sm text-destructive">
                       {locale === 'ar'
-                        ? 'اسم المتجر مطلوب (حرفين على الأقل)'
-                        : errors.storeName.message}
+                        ? 'اسم المتجر بالعربية مطلوب (حرفين على الأقل)'
+                        : errors.storeNameAr.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Store Name English */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-primary" />
+                    {locale === 'ar' ? 'اسم المتجر بالإنجليزية' : 'Store Name (English)'}
+                    <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                      {locale === 'ar' ? 'غير قابل للتغيير' : 'Cannot be changed'}
+                    </span>
+                  </Label>
+                  <Input
+                    placeholder={
+                      locale === 'ar' ? 'أدخل اسم متجرك بالإنجليزية' : 'Enter store name in English'
+                    }
+                    {...register('storeNameEn')}
+                    disabled={isLoading}
+                    className={errors.storeNameEn ? 'border-destructive' : ''}
+                    dir="ltr"
+                  />
+                  {errors.storeNameEn && (
+                    <p className="text-sm text-destructive">
+                      {locale === 'ar'
+                        ? 'اسم المتجر بالإنجليزية مطلوب (حرفين على الأقل)'
+                        : errors.storeNameEn.message}
                     </p>
                   )}
                 </div>

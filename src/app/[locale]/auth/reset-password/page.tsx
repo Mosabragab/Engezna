@@ -46,14 +46,26 @@ export default function ResetPasswordPage() {
           setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link');
         }
       } else {
-        // Check if there's an existing session
+        // Check if there's an existing authenticated user (set by callback page via verifyOtp)
+        // Use getUser() instead of getSession() to verify with the server
         const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session) {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (user && !userError) {
           setIsValidSession(true);
         } else {
-          setError(locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link');
+          // Fallback: also check getSession() in case cookies are still being written
+          const {
+            data: { session },
+          } = await supabase.auth.getSession();
+          if (session) {
+            setIsValidSession(true);
+          } else {
+            setError(
+              locale === 'ar' ? 'رابط غير صالح أو منتهي الصلاحية' : 'Invalid or expired link'
+            );
+          }
         }
       }
 
