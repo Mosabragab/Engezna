@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { MapPinned, Loader2, Check, User, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { useLocation, useUserLocation } from '@/lib/contexts';
 
 export default function GovernoratePage() {
@@ -44,7 +44,6 @@ export default function GovernoratePage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
-  const [isNewVisitor, setIsNewVisitor] = useState(false); // Guest without location
   const [authLoading, setAuthLoading] = useState(true);
 
   // Selected values (may differ from current saved values)
@@ -89,9 +88,6 @@ export default function GovernoratePage() {
         if (currentCityId) {
           setCityId(currentCityId);
         }
-      } else if (!userId) {
-        // Guest without location
-        setIsNewVisitor(true);
       }
     }
   }, [userLocationLoading, locationDataLoaded, currentGovernorateId, currentCityId, userId]);
@@ -189,20 +185,14 @@ export default function GovernoratePage() {
           </div>
         )}
 
-        {/* Back to Welcome Page - Only for new visitors */}
-        {isNewVisitor && (
-          <button
-            onClick={() => router.push(`/${locale}/welcome`)}
-            className="mb-4 flex items-center gap-2 text-sm text-slate-600 hover:text-primary transition-colors"
-          >
-            {locale === 'ar' ? (
-              <ArrowRight className="w-4 h-4" />
-            ) : (
-              <ArrowLeft className="w-4 h-4" />
-            )}
-            {locale === 'ar' ? 'العودة لصفحة الترحيب' : 'Back to Welcome Page'}
-          </button>
-        )}
+        {/* Back to Welcome Page */}
+        <button
+          onClick={() => router.push(`/${locale}/welcome?force=true`)}
+          className="mb-4 w-full flex items-center justify-center gap-2 py-3 px-4 bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-xl text-primary text-sm font-medium transition-colors"
+        >
+          <Sparkles className="w-4 h-4" />
+          {locale === 'ar' ? 'عرض صفحة الترحيب' : 'View Welcome Page'}
+        </button>
 
         <Card>
           <CardContent className="pt-6 space-y-4">
@@ -212,30 +202,13 @@ export default function GovernoratePage() {
                 <MapPinned className="w-4 h-4 text-muted-foreground" />
                 {locale === 'ar' ? 'المحافظة' : 'Governorate'}
               </Label>
-              <Select
-                value={governorateId}
-                onValueChange={(value) => {
-                  if (value === '_welcome_') {
-                    // Navigate to welcome page
-                    router.push(`/${locale}/welcome`);
-                  } else {
-                    setGovernorateId(value);
-                  }
-                }}
-              >
+              <Select value={governorateId} onValueChange={setGovernorateId}>
                 <SelectTrigger className="w-full">
                   <SelectValue
                     placeholder={locale === 'ar' ? 'اختر المحافظة' : 'Select governorate'}
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* Welcome page option - always first */}
-                  <SelectItem
-                    value="_welcome_"
-                    className="text-primary border-b border-slate-100 mb-1"
-                  >
-                    {locale === 'ar' ? '← العودة لصفحة الترحيب' : '← Back to Welcome Page'}
-                  </SelectItem>
                   {governorates.map((gov) => (
                     <SelectItem key={gov.id} value={gov.id}>
                       {locale === 'ar' ? gov.name_ar : gov.name_en}

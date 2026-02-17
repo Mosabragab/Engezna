@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 import { Globe } from 'lucide-react';
@@ -13,9 +13,14 @@ interface WelcomeClientWrapperProps {
 export function WelcomeClientWrapper({ children }: WelcomeClientWrapperProps) {
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Check if user already has location set - non-blocking redirect
+  // Skip redirect if ?force=true is present (user intentionally navigated here)
   useEffect(() => {
+    const force = searchParams.get('force');
+    if (force === 'true') return;
+
     const checkLocation = () => {
       const guestLocation = guestLocationStorage.get();
       if (guestLocation?.governorateId) {
@@ -28,7 +33,7 @@ export function WelcomeClientWrapper({ children }: WelcomeClientWrapperProps) {
     } else {
       setTimeout(checkLocation, 100);
     }
-  }, [locale, router]);
+  }, [locale, router, searchParams]);
 
   return <>{children}</>;
 }
