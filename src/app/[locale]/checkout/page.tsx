@@ -833,11 +833,11 @@ export default function CheckoutPage() {
           return false;
         }
       } else {
-        if (!selectedGovernorateId || !selectedCityId || !addressLine1) {
+        if (!selectedGovernorateId || !selectedCityId || !selectedDistrictId || !addressLine1) {
           setError(
             locale === 'ar'
-              ? 'يرجى ملء المحافظة والمدينة والعنوان'
-              : 'Please fill governorate, city and address'
+              ? 'يرجى ملء المحافظة والمدينة والحي والعنوان'
+              : 'Please fill governorate, city, district and address'
           );
           return false;
         }
@@ -1600,8 +1600,8 @@ export default function CheckoutPage() {
                     {/* New Address Form */}
                     {addressMode === 'new' && (
                       <div className="space-y-4">
-                        {/* Geographic Hierarchy - Districts removed, using GPS instead */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Geographic Hierarchy - Governorate > City > District */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Governorate */}
                           <div>
                             <Label>{locale === 'ar' ? 'المحافظة' : 'Governorate'} *</Label>
@@ -1641,6 +1641,29 @@ export default function CheckoutPage() {
                                 {cities.map((city) => (
                                   <option key={city.id} value={city.id}>
                                     {locale === 'ar' ? city.name_ar : city.name_en}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            </div>
+                          </div>
+
+                          {/* District */}
+                          <div>
+                            <Label>{locale === 'ar' ? 'الحي' : 'District'} *</Label>
+                            <div className="relative">
+                              <select
+                                value={selectedDistrictId}
+                                onChange={(e) => setSelectedDistrictId(e.target.value)}
+                                className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer pe-10"
+                                disabled={isLoading || !selectedCityId}
+                              >
+                                <option value="">
+                                  {locale === 'ar' ? 'اختر الحي' : 'Select District'}
+                                </option>
+                                {districts.map((dist: District) => (
+                                  <option key={dist.id} value={dist.id}>
+                                    {locale === 'ar' ? dist.name_ar : dist.name_en}
                                   </option>
                                 ))}
                               </select>
