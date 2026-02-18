@@ -3,7 +3,7 @@
 import { useLocale } from 'next-intl';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Building, Map, X } from 'lucide-react';
+import { Building, Map, Home, X } from 'lucide-react';
 
 interface Governorate {
   id: string;
@@ -20,18 +20,24 @@ interface City {
   is_active: boolean;
 }
 
-// NOTE: district_id is kept for backward compatibility but is DEPRECATED
-// The system now uses GPS coordinates instead of districts
+interface District {
+  id: string;
+  city_id: string;
+  name_ar: string;
+  name_en: string;
+  is_active: boolean;
+}
+
 export interface GeoFilterValue {
   governorate_id: string | null;
   city_id: string | null;
-  district_id: string | null; // DEPRECATED - always null, use GPS coordinates instead
+  district_id: string | null;
 }
 
 interface GeoFilterProps {
   value: GeoFilterValue;
   onChange: (value: GeoFilterValue) => void;
-  showDistrict?: boolean; // DEPRECATED - districts no longer used
+  showDistrict?: boolean;
   className?: string;
   inline?: boolean;
   showClearButton?: boolean;
@@ -40,7 +46,7 @@ interface GeoFilterProps {
 export function GeoFilter({
   value,
   onChange,
-  showDistrict = false, // DEPRECATED - Changed default to false
+  showDistrict = true,
   className = '',
   inline = true,
   showClearButton = true,
@@ -50,12 +56,13 @@ export function GeoFilter({
 
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
   const [cities, setCities] = useState<City[]>([]);
+  const [districts, setDistricts] = useState<District[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadLocations = useCallback(async () => {
     const supabase = createClient();
 
-    const [govRes, cityRes] = await Promise.all([
+    const [govRes, cityRes, distRes] = await Promise.all([
       supabase
         .from('governorates')
         .select('*')
@@ -63,10 +70,12 @@ export function GeoFilter({
         .order('display_order', { ascending: true })
         .order('name_ar'),
       supabase.from('cities').select('*').eq('is_active', true).order('name_ar'),
+      supabase.from('districts').select('*').eq('is_active', true).order('name_ar'),
     ]);
 
     setGovernorates(govRes.data || []);
     setCities(cityRes.data || []);
+    setDistricts(distRes.data || []);
     setLoading(false);
   }, []);
 
@@ -78,11 +87,15 @@ export function GeoFilter({
     ? cities.filter((c) => c.governorate_id === value.governorate_id)
     : [];
 
+  const filteredDistricts = value.city_id
+    ? districts.filter((d) => d.city_id === value.city_id)
+    : [];
+
   const handleGovernorateChange = (governorate_id: string) => {
     onChange({
       governorate_id: governorate_id || null,
       city_id: null,
-      district_id: null, // Always null - districts deprecated
+      district_id: null,
     });
   };
 
@@ -90,7 +103,14 @@ export function GeoFilter({
     onChange({
       ...value,
       city_id: city_id || null,
-      district_id: null, // Always null - districts deprecated
+      district_id: null,
+    });
+  };
+
+  const handleDistrictChange = (district_id: string) => {
+    onChange({
+      ...value,
+      district_id: district_id || null,
     });
   };
 
@@ -102,7 +122,7 @@ export function GeoFilter({
     });
   };
 
-  const hasActiveFilter = value.governorate_id || value.city_id;
+  const hasActiveFilter = value.governorate_id || value.city_id || value.district_id;
 
   if (loading) {
     return (
@@ -153,6 +173,27 @@ export function GeoFilter({
               {filteredCities.map((c) => (
                 <option key={c.id} value={c.id}>
                   {locale === 'ar' ? c.name_ar : c.name_en}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* District */}
+        {showDistrict && value.city_id && filteredDistricts.length > 0 && (
+          <div className="relative">
+            <Home
+              className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400`}
+            />
+            <select
+              value={value.district_id || ''}
+              onChange={(e) => handleDistrictChange(e.target.value)}
+              className={`${selectClass} ${isRTL ? 'pr-10' : 'pl-10'}`}
+            >
+              <option value="">{locale === 'ar' ? 'كل الأحياء' : 'All Districts'}</option>
+              {filteredDistricts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {locale === 'ar' ? d.name_ar : d.name_en}
                 </option>
               ))}
             </select>
@@ -215,6 +256,27 @@ export function GeoFilter({
           </select>
         </div>
       )}
+
+      {/* District */}
+      {showDistrict && filteredDistricts.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            {locale === 'ar' ? 'الحي' : 'District'}
+          </label>
+          <select
+            value={value.district_id || ''}
+            onChange={(e) => handleDistrictChange(e.target.value)}
+            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
+          >
+            <option value="">{locale === 'ar' ? 'الكل' : 'All'}</option>
+            {filteredDistricts.map((d) => (
+              <option key={d.id} value={d.id}>
+                {locale === 'ar' ? d.name_ar : d.name_en}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -224,7 +286,7 @@ export function useGeoFilter() {
   const [geoFilter, setGeoFilter] = useState<GeoFilterValue>({
     governorate_id: null,
     city_id: null,
-    district_id: null, // Always null - deprecated
+    district_id: null,
   });
 
   return { geoFilter, setGeoFilter };

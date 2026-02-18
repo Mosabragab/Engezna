@@ -1114,17 +1114,15 @@ export default function AdminLocationsPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan={
-                            (() => {
-                              // Base columns: name_ar, name_en, status = 3
-                              let cols = 3;
-                              if (viewLevel === 'governorates') cols += 2; // cities_count + commission
-                              if (viewLevel === 'cities') cols += 1; // districts_count
-                              if (viewLevel === 'districts' && !selectedCity) cols += 1; // city name
-                              if (isSuperAdmin) cols += 1; // actions
-                              return cols;
-                            })()
-                          }
+                          colSpan={(() => {
+                            // Base columns: name_ar, name_en, status = 3
+                            let cols = 3;
+                            if (viewLevel === 'governorates') cols += 2; // cities_count + commission
+                            if (viewLevel === 'cities') cols += 1; // districts_count
+                            if (viewLevel === 'districts' && !selectedCity) cols += 1; // city name
+                            if (isSuperAdmin) cols += 1; // actions
+                            return cols;
+                          })()}
                           className="px-4 py-12 text-center"
                         >
                           <MapPin className="w-12 h-12 mx-auto mb-3 text-slate-300" />

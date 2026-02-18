@@ -216,6 +216,9 @@ export default function CheckoutPage() {
   const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>('');
 
+  // District-based delivery fee
+  const [zoneDeliveryFee, setZoneDeliveryFee] = useState<number | null>(null);
+
   // Filter cities and districts based on selection using context helpers
   const cities = useMemo(() => {
     if (!selectedGovernorateId) return [];
@@ -227,11 +230,13 @@ export default function CheckoutPage() {
     return getDistrictsByCity(selectedCityId);
   }, [selectedCityId, getDistrictsByCity]);
 
-  // Calculate delivery fee based on order type
+  // Calculate delivery fee based on order type and district zone
   const calculatedDeliveryFee = useMemo(() => {
     if (orderType === 'pickup') return 0;
+    // Use zone-specific fee if available, otherwise fall back to provider default
+    if (zoneDeliveryFee !== null) return zoneDeliveryFee;
     return providerData?.delivery_fee || provider?.delivery_fee || 0;
-  }, [orderType, providerData, provider]);
+  }, [orderType, zoneDeliveryFee, providerData, provider]);
 
   // Available dates for scheduling (next 48 hours)
   const availableDates = useMemo(() => {
@@ -358,7 +363,55 @@ export default function CheckoutPage() {
   // Reset district when city changes
   useEffect(() => {
     setSelectedDistrictId('');
+    setZoneDeliveryFee(null);
   }, [selectedCityId]);
+
+  // Load zone-based delivery fee when district changes (new address mode)
+  useEffect(() => {
+    const loadZoneFee = async () => {
+      if (!provider?.id || !selectedDistrictId || addressMode !== 'new') {
+        if (addressMode === 'new') setZoneDeliveryFee(null);
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('provider_delivery_zones')
+        .select('delivery_fee')
+        .eq('provider_id', provider.id)
+        .eq('district_id', selectedDistrictId)
+        .eq('is_active', true)
+        .single();
+
+      setZoneDeliveryFee(data?.delivery_fee ?? null);
+    };
+    loadZoneFee();
+  }, [selectedDistrictId, provider?.id, addressMode]);
+
+  // Load zone-based delivery fee when saved address changes
+  useEffect(() => {
+    const loadZoneFeeForSavedAddress = async () => {
+      if (!provider?.id || !selectedAddressId || addressMode !== 'saved') {
+        if (addressMode === 'saved' && !selectedAddressId) setZoneDeliveryFee(null);
+        return;
+      }
+      const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+      if (!addr?.district_id) {
+        setZoneDeliveryFee(null);
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('provider_delivery_zones')
+        .select('delivery_fee')
+        .eq('provider_id', provider.id)
+        .eq('district_id', addr.district_id)
+        .eq('is_active', true)
+        .single();
+
+      setZoneDeliveryFee(data?.delivery_fee ?? null);
+    };
+    loadZoneFeeForSavedAddress();
+  }, [selectedAddressId, provider?.id, addressMode, savedAddresses]);
 
   // Reset scheduled time when order type or timing changes
   useEffect(() => {
@@ -712,6 +765,7 @@ export default function CheckoutPage() {
       // New address - use context helpers
       const selectedGov = getGovernorateById(selectedGovernorateId);
       const selectedCity = getCityById(selectedCityId);
+      const selectedDist = districts.find((d: District) => d.id === selectedDistrictId);
 
       return {
         // Geographic hierarchy with IDs and names
@@ -721,9 +775,9 @@ export default function CheckoutPage() {
         city_id: selectedCityId || null,
         city_ar: selectedCity?.name_ar || null,
         city_en: selectedCity?.name_en || null,
-        district_id: null, // DEPRECATED - always null for new addresses
-        district_ar: null,
-        district_en: null,
+        district_id: selectedDistrictId || null,
+        district_ar: selectedDist?.name_ar || null,
+        district_en: selectedDist?.name_en || null,
         // Address details
         address: addressLine1,
         address_line1: addressLine1,
