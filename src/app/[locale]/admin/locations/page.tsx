@@ -63,8 +63,7 @@ interface City {
 
 interface District {
   id: string;
-  governorate_id: string;
-  city_id: string | null;
+  city_id: string;
   name_ar: string;
   name_en: string;
   is_active: boolean;
@@ -260,8 +259,8 @@ export default function AdminLocationsPage() {
       // Fetch cities
       const { data: citiesData } = await supabase.from('cities').select('id, governorate_id');
 
-      // Fetch districts
-      const { data: districtsData } = await supabase.from('districts').select('id, governorate_id');
+      // Fetch districts with city relationship to resolve governorate
+      const { data: districtsData } = await supabase.from('districts').select('id, city_id');
 
       const govs = govData || [];
       const providers = providersData || [];
@@ -322,7 +321,9 @@ export default function AdminLocationsPage() {
         const customerScore = Math.min(govCustomers.length * 3, 30);
         const orderScore = Math.min(completedOrders.length * 2, 20);
         const citiesCount = citiesList.filter((c) => c.governorate_id === gov.id).length;
-        const districtsCount = districtsList.filter((d) => d.governorate_id === gov.id).length;
+        // Districts don't have governorate_id - resolve through city relationship
+        const govCityIds = citiesList.filter((c) => c.governorate_id === gov.id).map((c) => c.id);
+        const districtsCount = districtsList.filter((d) => govCityIds.includes(d.city_id)).length;
         const coverageScore = Math.min((citiesCount + districtsCount) * 2, 10);
         const readinessScore = Math.round(
           providerScore + customerScore + orderScore + coverageScore
@@ -366,11 +367,17 @@ export default function AdminLocationsPage() {
         ? cities.filter((c) => c.governorate_id === selectedGovernorate)
         : cities;
     } else {
-      items = selectedCity
-        ? districts.filter((d) => d.city_id === selectedCity)
-        : selectedGovernorate
-          ? districts.filter((d) => d.governorate_id === selectedGovernorate)
-          : districts;
+      if (selectedCity) {
+        items = districts.filter((d) => d.city_id === selectedCity);
+      } else if (selectedGovernorate) {
+        // Districts don't have governorate_id - filter through city relationship
+        const cityIdsInGov = cities
+          .filter((c) => c.governorate_id === selectedGovernorate)
+          .map((c) => c.id);
+        items = districts.filter((d) => cityIdsInGov.includes(d.city_id));
+      } else {
+        items = districts;
+      }
     }
 
     // Filter by active status
@@ -407,11 +414,26 @@ export default function AdminLocationsPage() {
   }
 
   function openEditModal(item: Governorate | City | District) {
+    // For districts, resolve governorate_id from city relationship
+    let govId = '';
+    let cityId = '';
+    if ('governorate_id' in item) {
+      govId = item.governorate_id;
+    }
+    if ('city_id' in item && item.city_id) {
+      cityId = item.city_id;
+      // If this is a district, find governorate_id through city
+      if (viewLevel === 'districts') {
+        const parentCity = cities.find((c) => c.id === item.city_id);
+        govId = parentCity?.governorate_id || '';
+      }
+    }
+
     setFormData({
       name_ar: item.name_ar,
       name_en: item.name_en,
-      governorate_id: 'governorate_id' in item ? item.governorate_id : '',
-      city_id: 'city_id' in item && item.city_id ? item.city_id : '',
+      governorate_id: govId,
+      city_id: cityId,
       is_active: item.is_active,
       commission_override:
         'commission_override' in item ? (item.commission_override ?? null) : null,
@@ -448,12 +470,20 @@ export default function AdminLocationsPage() {
         return;
       }
     } else if (viewLevel === 'districts' && modalType === 'add') {
-      // For districts, require names (manual creation)
+      // For districts, require names and city (manual creation)
       if (!formData.name_ar || !formData.name_en) {
         setFormError(
           locale === 'ar'
             ? 'الاسمان بالعربية والإنجليزية مطلوبان'
             : 'Both Arabic and English names are required'
+        );
+        return;
+      }
+      if (!formData.city_id) {
+        setFormError(
+          locale === 'ar'
+            ? 'المدينة مطلوبة - اختر المحافظة ثم المدينة'
+            : 'City is required - select governorate then city'
         );
         return;
       }
@@ -537,8 +567,8 @@ export default function AdminLocationsPage() {
           if (error) throw error;
         }
       } else if (viewLevel === 'districts') {
-        if (!formData.governorate_id) {
-          setFormError(locale === 'ar' ? 'المحافظة مطلوبة' : 'Governorate is required');
+        if (!formData.city_id) {
+          setFormError(locale === 'ar' ? 'المدينة مطلوبة' : 'City is required');
           setFormLoading(false);
           return;
         }
@@ -547,8 +577,7 @@ export default function AdminLocationsPage() {
           const { error } = await supabase.from('districts').insert({
             name_ar: formData.name_ar,
             name_en: formData.name_en,
-            governorate_id: formData.governorate_id,
-            city_id: formData.city_id || null,
+            city_id: formData.city_id,
             is_active: formData.is_active,
           });
           if (error) throw error;
@@ -558,8 +587,7 @@ export default function AdminLocationsPage() {
             .update({
               name_ar: formData.name_ar,
               name_en: formData.name_en,
-              governorate_id: formData.governorate_id,
-              city_id: formData.city_id || null,
+              city_id: formData.city_id,
               is_active: formData.is_active,
             })
             .eq('id', editItem!.id);
@@ -937,6 +965,11 @@ export default function AdminLocationsPage() {
                           {locale === 'ar' ? 'الأحياء' : 'Districts'}
                         </th>
                       )}
+                      {viewLevel === 'districts' && !selectedCity && (
+                        <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
+                          {locale === 'ar' ? 'المدينة' : 'City'}
+                        </th>
+                      )}
                       <th className="text-start px-4 py-3 text-sm font-medium text-slate-600">
                         {locale === 'ar' ? 'الحالة' : 'Status'}
                       </th>
@@ -1004,6 +1037,22 @@ export default function AdminLocationsPage() {
                               </span>
                             </td>
                           )}
+                          {viewLevel === 'districts' && !selectedCity && (
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-slate-600">
+                                {(() => {
+                                  const parentCity = cities.find(
+                                    (c) => c.id === (item as District).city_id
+                                  );
+                                  return parentCity
+                                    ? locale === 'ar'
+                                      ? parentCity.name_ar
+                                      : parentCity.name_en
+                                    : '-';
+                                })()}
+                              </span>
+                            </td>
+                          )}
                           <td className="px-4 py-3">
                             {item.is_active ? (
                               <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
@@ -1066,13 +1115,15 @@ export default function AdminLocationsPage() {
                       <tr>
                         <td
                           colSpan={
-                            isSuperAdmin
-                              ? viewLevel === 'governorates'
-                                ? 6
-                                : 5
-                              : viewLevel === 'governorates'
-                                ? 5
-                                : 4
+                            (() => {
+                              // Base columns: name_ar, name_en, status = 3
+                              let cols = 3;
+                              if (viewLevel === 'governorates') cols += 2; // cities_count + commission
+                              if (viewLevel === 'cities') cols += 1; // districts_count
+                              if (viewLevel === 'districts' && !selectedCity) cols += 1; // city name
+                              if (isSuperAdmin) cols += 1; // actions
+                              return cols;
+                            })()
                           }
                           className="px-4 py-12 text-center"
                         >
@@ -1721,16 +1772,18 @@ export default function AdminLocationsPage() {
               {viewLevel === 'districts' && formData.governorate_id && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    {locale === 'ar' ? 'المدينة (اختياري)' : 'City (optional)'}
+                    {locale === 'ar' ? 'المدينة' : 'City'} *
                   </label>
                   <select
                     value={formData.city_id}
                     onChange={(e) => setFormData({ ...formData, city_id: e.target.value })}
                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">{locale === 'ar' ? 'بدون مدينة' : 'No city'}</option>
+                    <option value="">
+                      {locale === 'ar' ? 'اختر المدينة...' : 'Select city...'}
+                    </option>
                     {cities
-                      .filter((c) => c.governorate_id === formData.governorate_id)
+                      .filter((c) => c.governorate_id === formData.governorate_id && c.is_active)
                       .map((c) => (
                         <option key={c.id} value={c.id}>
                           {locale === 'ar' ? c.name_ar : c.name_en}
