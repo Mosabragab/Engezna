@@ -316,8 +316,8 @@ export default function ProviderSettingsPage() {
     setPickupInstructionsEn(providerData.pickup_instructions_en || '');
     setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15');
 
-    // Load delivery zones
-    loadDeliveryZones(providerData.id, providerData.city_id);
+    // Load delivery zones (all districts in provider's governorate)
+    loadDeliveryZones(providerData.id, providerData.governorate_id);
 
     // Load custom order settings
     setOperationMode(providerData.operation_mode || 'standard');
@@ -502,51 +502,94 @@ export default function ProviderSettingsPage() {
   };
 
   // Load delivery zones for provider
-  const loadDeliveryZones = useCallback(async (providerId: string, cityId: string | null) => {
-    setLoadingZones(true);
-    const supabase = createClient();
+  const loadDeliveryZones = useCallback(
+    async (providerId: string, governorateId: string | null) => {
+      setLoadingZones(true);
+      const supabase = createClient();
 
-    // Load existing zones with district names
-    const { data: zones } = await supabase
-      .from('provider_delivery_zones')
-      .select('id, district_id, delivery_fee, estimated_delivery_time_min, is_active')
-      .eq('provider_id', providerId)
-      .order('created_at');
+      // Load existing zones with district names
+      const { data: zones } = await supabase
+        .from('provider_delivery_zones')
+        .select('id, district_id, delivery_fee, estimated_delivery_time_min, is_active')
+        .eq('provider_id', providerId)
+        .order('created_at');
 
-    if (zones && zones.length > 0) {
-      // Fetch district names for zones
-      const districtIds = zones.map((z) => z.district_id);
-      const { data: distData } = await supabase
-        .from('districts')
-        .select('id, name_ar, name_en')
-        .in('id', districtIds);
+      if (zones && zones.length > 0) {
+        // Fetch district names for zones (with city info)
+        const districtIds = zones.map((z) => z.district_id);
+        const { data: distData } = await supabase
+          .from('districts')
+          .select('id, name_ar, name_en, city_id')
+          .in('id', districtIds);
 
-      const distMap = new Map((distData || []).map((d) => [d.id, d]));
-      setDeliveryZones(
-        zones.map((z) => ({
-          ...z,
-          district_name_ar: distMap.get(z.district_id)?.name_ar || '',
-          district_name_en: distMap.get(z.district_id)?.name_en || '',
-        }))
-      );
-    } else {
-      setDeliveryZones([]);
-    }
+        // Get city names for zone display
+        const cityIds = [...new Set((distData || []).map((d) => d.city_id))];
+        const { data: cityData } = await supabase
+          .from('cities')
+          .select('id, name_ar, name_en')
+          .in('id', cityIds);
 
-    // Load available districts for the provider's city
-    if (cityId) {
-      const { data: districts } = await supabase
-        .from('districts')
-        .select('id, name_ar, name_en')
-        .eq('city_id', cityId)
-        .eq('is_active', true)
-        .order('name_ar');
+        const cityMap = new Map((cityData || []).map((c) => [c.id, c]));
+        const distMap = new Map((distData || []).map((d) => [d.id, d]));
 
-      setAvailableDistricts(districts || []);
-    }
+        setDeliveryZones(
+          zones.map((z) => {
+            const dist = distMap.get(z.district_id);
+            const city = dist ? cityMap.get(dist.city_id) : null;
+            return {
+              ...z,
+              district_name_ar: city
+                ? `${city.name_ar} - ${dist?.name_ar || ''}`
+                : dist?.name_ar || '',
+              district_name_en: city
+                ? `${city.name_en} - ${dist?.name_en || ''}`
+                : dist?.name_en || '',
+            };
+          })
+        );
+      } else {
+        setDeliveryZones([]);
+      }
 
-    setLoadingZones(false);
-  }, []);
+      // Load available districts from ALL cities in the same governorate
+      if (governorateId) {
+        const { data: cities } = await supabase
+          .from('cities')
+          .select('id, name_ar, name_en')
+          .eq('governorate_id', governorateId)
+          .eq('is_active', true)
+          .order('name_ar');
+
+        if (cities && cities.length > 0) {
+          const cityIds = cities.map((c) => c.id);
+          const { data: districts } = await supabase
+            .from('districts')
+            .select('id, city_id, name_ar, name_en')
+            .in('city_id', cityIds)
+            .eq('is_active', true)
+            .order('name_ar');
+
+          // Build district list with city name prefix for grouping
+          const cityMap = new Map(cities.map((c) => [c.id, c]));
+          const groupedDistricts = (districts || []).map((d) => {
+            const city = cityMap.get(d.city_id);
+            return {
+              id: d.id,
+              name_ar: city ? `${city.name_ar} - ${d.name_ar}` : d.name_ar,
+              name_en: city ? `${city.name_en} - ${d.name_en}` : d.name_en,
+            };
+          });
+
+          setAvailableDistricts(groupedDistricts);
+        } else {
+          setAvailableDistricts([]);
+        }
+      }
+
+      setLoadingZones(false);
+    },
+    []
+  );
 
   const handleAddDeliveryZone = async () => {
     if (!provider || !newZoneDistrictId || !newZoneFee) return;
@@ -584,7 +627,7 @@ export default function ProviderSettingsPage() {
         text: locale === 'ar' ? 'تم إضافة الحي بنجاح' : 'District added successfully',
       });
       setTimeout(() => setZonesMessage(null), 3000);
-      await loadDeliveryZones(provider.id, provider.city_id);
+      await loadDeliveryZones(provider.id, provider.governorate_id);
     }
 
     setSavingZone(false);
@@ -597,7 +640,7 @@ export default function ProviderSettingsPage() {
     const { error } = await supabase.from('provider_delivery_zones').delete().eq('id', zoneId);
 
     if (!error) {
-      await loadDeliveryZones(provider.id, provider.city_id);
+      await loadDeliveryZones(provider.id, provider.governorate_id);
     }
   };
 
@@ -1381,8 +1424,8 @@ export default function ProviderSettingsPage() {
                   {availableDistricts.length === 0 && !loadingZones && (
                     <div className="text-center p-4 text-sm text-amber-600 bg-amber-50 rounded-lg">
                       {locale === 'ar'
-                        ? 'لا توجد أحياء مسجلة لمدينتك. تواصل مع الإدارة لإضافة الأحياء.'
-                        : 'No districts registered for your city. Contact admin to add districts.'}
+                        ? 'لا توجد أحياء مسجلة لمحافظتك. تواصل مع الإدارة لإضافة الأحياء.'
+                        : 'No districts registered for your governorate. Contact admin to add districts.'}
                     </div>
                   )}
 

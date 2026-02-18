@@ -64,6 +64,7 @@ export default function CartPage() {
   const [loadingPromotions, setLoadingPromotions] = useState(false);
   const [extrasItems, setExtrasItems] = useState<ExtrasItem[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
+  const [zoneDeliveryFee, setZoneDeliveryFee] = useState<number | null>(null);
 
   // Fetch active promotions for the provider
   useEffect(() => {
@@ -143,6 +144,53 @@ export default function CartPage() {
 
     fetchExtras();
   }, [provider?.id, items]);
+
+  // Load zone-based delivery fee for the customer's default address
+  useEffect(() => {
+    async function fetchZoneDeliveryFee() {
+      if (!provider?.id) {
+        setZoneDeliveryFee(null);
+        return;
+      }
+
+      const supabase = createClient();
+
+      // Get current user's default/latest address district_id
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setZoneDeliveryFee(null);
+        return;
+      }
+
+      const { data: address } = await supabase
+        .from('addresses')
+        .select('district_id')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .limit(1)
+        .single();
+
+      const districtId = address?.district_id;
+      if (!districtId) {
+        setZoneDeliveryFee(null);
+        return;
+      }
+
+      const { data: zone } = await supabase
+        .from('provider_delivery_zones')
+        .select('delivery_fee')
+        .eq('provider_id', provider.id)
+        .eq('district_id', districtId)
+        .eq('is_active', true)
+        .single();
+
+      setZoneDeliveryFee(zone?.delivery_fee ?? null);
+    }
+
+    fetchZoneDeliveryFee();
+  }, [provider?.id]);
 
   // Get applicable promotion for a product
   const getProductPromotion = (productId: string): Promotion | null => {
@@ -232,7 +280,7 @@ export default function CartPage() {
 
   const subtotal = getSubtotal();
   const discount = calculateTotalDiscount();
-  const deliveryFee = provider?.delivery_fee || 0;
+  const deliveryFee = zoneDeliveryFee ?? provider?.delivery_fee ?? 0;
   const total = subtotal - discount + deliveryFee;
 
   const handleCheckout = () => {
