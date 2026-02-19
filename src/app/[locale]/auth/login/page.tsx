@@ -147,11 +147,11 @@ export default function LoginPage() {
       return;
     }
 
-    if (!password || password.length < 6) {
+    if (!password || password.length < 8) {
       setError(
         locale === 'ar'
-          ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-          : 'Password must be at least 6 characters'
+          ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
+          : 'Password must be at least 8 characters'
       );
       return;
     }

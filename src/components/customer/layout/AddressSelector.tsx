@@ -330,7 +330,8 @@ export function AddressSelector({ className }: AddressSelectorProps) {
             <button
               onClick={() => {
                 setIsOpen(false);
-                router.push(`/${locale}/profile/addresses`);
+                // Use window.location.href to ensure full page reload with auth cookies
+                window.location.href = `/${locale}/profile/addresses`;
               }}
               className="w-full px-4 py-3 flex items-center justify-center gap-2 text-primary hover:bg-slate-50 transition-colors"
             >

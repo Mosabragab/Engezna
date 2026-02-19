@@ -265,11 +265,15 @@ export default function RegisterPage() {
             return;
           }
 
-          // Redirect to complete profile if needed
-          const completeProfileUrl = redirectTo
-            ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-            : `/${locale}/auth/complete-profile`;
-          window.location.href = completeProfileUrl;
+          // Check if profile is already complete (returning Google user)
+          if (profile?.governorate_id && profile?.phone) {
+            window.location.href = redirectTo || `/${locale}`;
+          } else {
+            const completeProfileUrl = redirectTo
+              ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+              : `/${locale}/auth/complete-profile`;
+            window.location.href = completeProfileUrl;
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');

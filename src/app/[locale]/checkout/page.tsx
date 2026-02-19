@@ -216,6 +216,11 @@ export default function CheckoutPage() {
   const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>('');
 
+  // Save new address from checkout
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
+  const [newAddressLabel, setNewAddressLabel] = useState('');
+  const [savingAddress, setSavingAddress] = useState(false);
+
   // District-based delivery fee
   const [zoneDeliveryFee, setZoneDeliveryFee] = useState<number | null>(null);
 
@@ -504,6 +509,82 @@ export default function CheckoutPage() {
       return savedAddresses.find((a) => a.id === selectedAddressId) || null;
     }
     return null;
+  };
+
+  // Save new address to database directly from checkout
+  const handleSaveNewAddress = async () => {
+    if (!user || !isAuthenticated) return;
+    if (!selectedGovernorateId || !selectedCityId || !addressLine1) {
+      setError(
+        locale === 'ar'
+          ? 'يرجى ملء المحافظة والمدينة والعنوان أولاً'
+          : 'Please fill governorate, city and address first'
+      );
+      return;
+    }
+
+    setSavingAddress(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+
+      const addressLabel =
+        newAddressLabel.trim() || (locale === 'ar' ? 'عنوان جديد' : 'New Address');
+      const isFirst = savedAddresses.length === 0;
+
+      const { data: newAddr, error: saveError } = await supabase
+        .from('addresses')
+        .insert({
+          user_id: user.id,
+          label: addressLabel,
+          address_line1: addressLine1,
+          governorate_id: selectedGovernorateId || null,
+          city_id: selectedCityId || null,
+          district_id: selectedDistrictId || null,
+          city: '',
+          building: building || null,
+          floor: floor || null,
+          apartment: apartment || null,
+          landmark: landmark || null,
+          phone: phone || null,
+          delivery_instructions: deliveryInstructions || null,
+          is_default: isFirst,
+          is_active: true,
+        })
+        .select(
+          `
+          *,
+          governorate:governorates(id, name_ar, name_en),
+          city_ref:cities(id, name_ar, name_en),
+          district:districts(id, name_ar, name_en)
+        `
+        )
+        .single();
+
+      if (saveError) {
+        throw saveError;
+      }
+
+      if (newAddr) {
+        // Add to saved addresses and select it
+        const updatedAddresses = [...savedAddresses, newAddr as SavedAddress];
+        setSavedAddresses(updatedAddresses);
+        setSelectedAddressId(newAddr.id);
+        setAddressMode('saved');
+        setSaveNewAddress(false);
+        setNewAddressLabel('');
+      }
+    } catch (err) {
+      console.error('Error saving address:', err);
+      setError(
+        locale === 'ar'
+          ? 'حدث خطأ أثناء حفظ العنوان. يرجى المحاولة مرة أخرى.'
+          : 'An error occurred while saving the address. Please try again.'
+      );
+    } finally {
+      setSavingAddress(false);
+    }
   };
 
   // Promo code validation
@@ -1728,6 +1809,60 @@ export default function CheckoutPage() {
                             disabled={isLoading}
                           />
                         </div>
+
+                        {/* Save Address Option - only for authenticated users */}
+                        {isAuthenticated && user && (
+                          <div className="pt-3 border-t border-border">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={saveNewAddress}
+                                onChange={(e) => setSaveNewAddress(e.target.checked)}
+                                className="w-4 h-4 rounded border-input text-primary focus:ring-primary"
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {locale === 'ar'
+                                  ? 'حفظ هذا العنوان لاستخدامه لاحقاً'
+                                  : 'Save this address for later use'}
+                              </span>
+                            </label>
+                            {saveNewAddress && (
+                              <div className="mt-3 flex gap-2">
+                                <Input
+                                  value={newAddressLabel}
+                                  onChange={(e) => setNewAddressLabel(e.target.value)}
+                                  placeholder={
+                                    locale === 'ar'
+                                      ? 'اسم العنوان (مثل: البيت، العمل)'
+                                      : 'Address label (e.g., Home, Work)'
+                                  }
+                                  disabled={savingAddress}
+                                  className="flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  onClick={handleSaveNewAddress}
+                                  disabled={
+                                    savingAddress ||
+                                    !selectedGovernorateId ||
+                                    !selectedCityId ||
+                                    !addressLine1
+                                  }
+                                  variant="outline"
+                                  size="default"
+                                >
+                                  {savingAddress ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : locale === 'ar' ? (
+                                    'حفظ'
+                                  ) : (
+                                    'Save'
+                                  )}
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 

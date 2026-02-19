@@ -9,7 +9,7 @@ import { Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 
 // Safety timeout: if processing takes longer than this, show error with retry
-const PROCESSING_TIMEOUT_MS = 30000;
+const PROCESSING_TIMEOUT_MS = 15000;
 
 export default function AuthCallbackPage() {
   const locale = useLocale();
@@ -167,22 +167,13 @@ export default function AuthCallbackPage() {
         return;
       }
 
+      // Small delay to ensure auth cookies are fully written before any redirect
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       // Check if profile is incomplete
       if (!profile.governorate_id || !profile.phone) {
-        // For providers coming from signup verification, sign them out and redirect to login
-        // so they confirm their credentials before completing their store profile
-        if (profile.role === 'provider_owner' && isSignupVerification) {
-          await supabase.auth.signOut();
-          navigateTo(
-            `/${locale}/provider/login?verified=true&message=${encodeURIComponent(
-              locale === 'ar'
-                ? 'تم تأكيد بريدك الإلكتروني بنجاح. سجل دخولك لاستكمال ملف متجرك.'
-                : 'Email verified successfully. Please log in to complete your store profile.'
-            )}`
-          );
-          return;
-        }
-        // For providers (not from signup), redirect to provider complete-profile
+        // For providers, redirect directly to complete-profile
+        // (session is already valid from verifyOtp - no need to sign out and re-login)
         if (profile.role === 'provider_owner') {
           navigateTo(`/${locale}/provider/complete-profile`);
           return;
@@ -239,18 +230,8 @@ export default function AuthCallbackPage() {
           .single();
 
         if (provider?.status === 'incomplete') {
-          // For signup verification, sign out and redirect to login first
-          if (isSignupVerification) {
-            await supabase.auth.signOut();
-            navigateTo(
-              `/${locale}/provider/login?verified=true&message=${encodeURIComponent(
-                locale === 'ar'
-                  ? 'تم تأكيد بريدك الإلكتروني بنجاح. سجل دخولك لاستكمال ملف متجرك.'
-                  : 'Email verified successfully. Please log in to complete your store profile.'
-              )}`
-            );
-            return;
-          }
+          // Redirect directly to complete-profile
+          // Session is already valid - no need to sign out and re-login
           navigateTo(`/${locale}/provider/complete-profile`);
           return;
         }
@@ -259,9 +240,7 @@ export default function AuthCallbackPage() {
       }
 
       // For customers, redirect to destination
-      const redirectUrl = next.startsWith('/')
-        ? next
-        : `/${locale}${next.startsWith('/') ? '' : '/'}${next}`;
+      const redirectUrl = next.startsWith('/') ? next : `/${locale}/${next}`;
       navigateTo(redirectUrl);
     };
 
