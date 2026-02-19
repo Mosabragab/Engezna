@@ -245,11 +245,11 @@ export default function AdminLocationsPage() {
         .from('providers')
         .select('id, governorate_id, status');
 
-      // Fetch customers via addresses (profiles has no governorate_id)
-      const { data: addressesData } = await supabase
-        .from('addresses')
-        .select('user_id, governorate_id')
-        .not('governorate_id', 'is', null);
+      // Fetch customers with governorate
+      const { data: customersData } = await supabase
+        .from('profiles')
+        .select('id, governorate_id, role')
+        .eq('role', 'customer');
 
       // Fetch orders with provider info (field is 'total' not 'total_amount')
       const { data: ordersData } = await supabase
@@ -264,21 +264,10 @@ export default function AdminLocationsPage() {
 
       const govs = govData || [];
       const providers = providersData || [];
-      const addresses = addressesData || [];
+      const customers = customersData || [];
       const orders = ordersData || [];
       const citiesList = citiesData || [];
       const districtsList = districtsData || [];
-
-      // Unique customers per governorate (from addresses)
-      const customersByGov: Record<string, Set<string>> = {};
-      addresses.forEach((a) => {
-        if (a.governorate_id && a.user_id) {
-          if (!customersByGov[a.governorate_id]) {
-            customersByGov[a.governorate_id] = new Set();
-          }
-          customersByGov[a.governorate_id].add(a.user_id);
-        }
-      });
 
       // Create provider-to-governorate mapping
       const providerToGov: Record<string, string> = {};
@@ -295,7 +284,8 @@ export default function AdminLocationsPage() {
       const analytics: GovernorateAnalytics[] = govs.map((gov) => {
         const govProviders = providers.filter((p) => p.governorate_id === gov.id);
         const activeProviders = govProviders.filter((p) => activeStatuses.includes(p.status));
-        const govCustomersCount = customersByGov[gov.id]?.size || 0;
+        const govCustomers = customers.filter((c) => c.governorate_id === gov.id);
+        const govCustomersCount = govCustomers.length;
 
         // Get orders for this governorate's providers
         const govOrders = orders.filter((o) => {
