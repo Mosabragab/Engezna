@@ -243,18 +243,18 @@ export default function AdminLocationsPage() {
       // Fetch providers with their governorate
       const { data: providersData } = await supabase
         .from('providers')
-        .select('id, governorate_id, is_active, status');
+        .select('id, governorate_id, status');
 
-      // Fetch customers (profiles with role=customer and governorate)
-      const { data: customersData } = await supabase
-        .from('profiles')
-        .select('id, governorate_id, role')
-        .eq('role', 'customer');
+      // Fetch customers via addresses (profiles has no governorate_id)
+      const { data: addressesData } = await supabase
+        .from('addresses')
+        .select('user_id, governorate_id')
+        .not('governorate_id', 'is', null);
 
-      // Fetch orders with provider info
+      // Fetch orders with provider info (field is 'total' not 'total_amount')
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('id, provider_id, total_amount, status, created_at');
+        .select('id, provider_id, total, status, created_at');
 
       // Fetch cities
       const { data: citiesData } = await supabase.from('cities').select('id, governorate_id');
@@ -264,10 +264,21 @@ export default function AdminLocationsPage() {
 
       const govs = govData || [];
       const providers = providersData || [];
-      const customers = customersData || [];
+      const addresses = addressesData || [];
       const orders = ordersData || [];
       const citiesList = citiesData || [];
       const districtsList = districtsData || [];
+
+      // Unique customers per governorate (from addresses)
+      const customersByGov: Record<string, Set<string>> = {};
+      addresses.forEach((a) => {
+        if (a.governorate_id && a.user_id) {
+          if (!customersByGov[a.governorate_id]) {
+            customersByGov[a.governorate_id] = new Set();
+          }
+          customersByGov[a.governorate_id].add(a.user_id);
+        }
+      });
 
       // Create provider-to-governorate mapping
       const providerToGov: Record<string, string> = {};
@@ -277,11 +288,14 @@ export default function AdminLocationsPage() {
         }
       });
 
+      // Active provider statuses
+      const activeStatuses = ['open', 'active', 'approved', 'closed', 'temporarily_paused'];
+
       // Calculate analytics for each governorate
       const analytics: GovernorateAnalytics[] = govs.map((gov) => {
         const govProviders = providers.filter((p) => p.governorate_id === gov.id);
-        const activeProviders = govProviders.filter((p) => p.is_active && p.status === 'active');
-        const govCustomers = customers.filter((c) => c.governorate_id === gov.id);
+        const activeProviders = govProviders.filter((p) => activeStatuses.includes(p.status));
+        const govCustomersCount = customersByGov[gov.id]?.size || 0;
 
         // Get orders for this governorate's providers
         const govOrders = orders.filter((o) => {
@@ -289,21 +303,27 @@ export default function AdminLocationsPage() {
           return provGov === gov.id;
         });
 
+        // Valid orders (exclude cancelled/rejected/pending_payment)
+        const validOrders = govOrders.filter(
+          (o) =>
+            o.status !== 'cancelled' && o.status !== 'rejected' && o.status !== 'pending_payment'
+        );
+        // Revenue from completed/delivered orders
         const completedOrders = govOrders.filter(
           (o) => o.status === 'completed' || o.status === 'delivered'
         );
-        const revenue = completedOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+        const revenue = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
         const avgOrderValue = completedOrders.length > 0 ? revenue / completedOrders.length : 0;
 
-        // Calculate growth rate (orders in last 30 days vs previous 30 days)
+        // Calculate growth rate (valid orders in last 30 days vs previous 30 days)
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-        const recentOrders = govOrders.filter(
+        const recentOrders = validOrders.filter(
           (o) => new Date(o.created_at) >= thirtyDaysAgo
         ).length;
-        const previousOrders = govOrders.filter((o) => {
+        const previousOrders = validOrders.filter((o) => {
           const date = new Date(o.created_at);
           return date >= sixtyDaysAgo && date < thirtyDaysAgo;
         }).length;
@@ -318,8 +338,8 @@ export default function AdminLocationsPage() {
         // Calculate readiness score (0-100)
         // Factors: active providers (40%), customers (30%), orders (20%), coverage (10%)
         const providerScore = Math.min(activeProviders.length * 10, 40);
-        const customerScore = Math.min(govCustomers.length * 3, 30);
-        const orderScore = Math.min(completedOrders.length * 2, 20);
+        const customerScore = Math.min(govCustomersCount * 3, 30);
+        const orderScore = Math.min(validOrders.length * 2, 20);
         const citiesCount = citiesList.filter((c) => c.governorate_id === gov.id).length;
         // Districts don't have governorate_id - resolve through city relationship
         const govCityIds = citiesList.filter((c) => c.governorate_id === gov.id).map((c) => c.id);
@@ -336,8 +356,8 @@ export default function AdminLocationsPage() {
           is_active: gov.is_active,
           providers_count: govProviders.length,
           active_providers: activeProviders.length,
-          customers_count: govCustomers.length,
-          orders_count: completedOrders.length,
+          customers_count: govCustomersCount,
+          orders_count: validOrders.length,
           revenue,
           avg_order_value: avgOrderValue,
           cities_count: citiesCount,
