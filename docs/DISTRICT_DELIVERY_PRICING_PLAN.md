@@ -15,18 +15,18 @@ Implement a complete district-based delivery pricing system where each merchant 
 
 ## Implementation Status Summary
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 1 | Database - `provider_delivery_zones` Table | COMPLETED |
-| Phase 2 | Admin Locations - District Management Fixes | COMPLETED |
-| Phase 3 | Customer Address - District Dropdown | COMPLETED |
+| Phase   | Description                                       | Status    |
+| ------- | ------------------------------------------------- | --------- |
+| Phase 1 | Database - `provider_delivery_zones` Table        | COMPLETED |
+| Phase 2 | Admin Locations - District Management Fixes       | COMPLETED |
+| Phase 3 | Customer Address - District Dropdown              | COMPLETED |
 | Phase 4 | Provider Settings - Delivery Pricing Per District | COMPLETED |
-| Phase 5 | Marketplace - ProviderCard & Cart Updates | COMPLETED |
-| Phase 6 | Checkout Flow Updates | COMPLETED |
-| Phase 7 | Analytics Updates | COMPLETED |
-| Extra | Cart Page - Zone Detection | COMPLETED |
-| Extra | Custom Orders - Zone-Based Pricing | COMPLETED |
-| Extra | Analytics Data Fixes (Locations & Regions) | COMPLETED |
+| Phase 5 | Marketplace - ProviderCard & Cart Updates         | COMPLETED |
+| Phase 6 | Checkout Flow Updates                             | COMPLETED |
+| Phase 7 | Analytics Updates                                 | COMPLETED |
+| Extra   | Cart Page - Zone Detection                        | COMPLETED |
+| Extra   | Custom Orders - Zone-Based Pricing                | COMPLETED |
+| Extra   | Analytics Data Fixes (Locations & Regions)        | COMPLETED |
 
 ## Implementation Phases
 
@@ -53,6 +53,7 @@ CREATE TABLE provider_delivery_zones (
 ```
 
 **Used in 6 files across the codebase:**
+
 - `src/app/[locale]/cart/page.tsx` - Zone lookup for cart display
 - `src/app/[locale]/checkout/page.tsx` - Zone lookup for fee calculation
 - `src/app/[locale]/provider/settings/page.tsx` - CRUD operations
@@ -120,6 +121,7 @@ CREATE TABLE provider_delivery_zones (
 7. Default flat `delivery_fee` kept as fallback for districts without zone pricing
 
 **Key Functions:**
+
 - `loadDeliveryZones()` - Fetches existing zones with district names
 - `handleAddZone()` - Inserts new zone
 - `handleDeleteZone()` - Deletes zone
@@ -238,15 +240,15 @@ CREATE TABLE provider_delivery_zones (
 
 ## Bug Fixes Applied After Initial Implementation
 
-| Commit | Description | Root Cause |
-|--------|-------------|------------|
-| `886edea` | Fix admin district management - broken governorate_id refs | Districts table has no `governorate_id` column; was sending invalid field |
-| `297c61b` | Use zone-based delivery fee in cart & custom orders | Cart showed flat fee even when provider uses zones; custom orders ignored zones |
-| `44635c4` | Add district dropdown in checkout, fix cart delivery fee display | Checkout new-address form had no district selection; cart fee display incorrect |
-| `c3f5f27` | Remove non-existent governorate_id from districts query | Analytics regions page queried `districts.governorate_id` which doesn't exist |
-| `5367ee1` | Remove governorate_id from District interface | TypeScript District interface included non-existent field |
-| `49934fc` | Correct expansion analytics data fetching | Provider status filter `'active'` matched 0 providers (all are `'open'`); revenue field `total_amount` doesn't exist |
-| `b34d822` | Restore customer counting from profiles table | Customer count changed to addresses-based query which returned 0; profiles.governorate_id exists and works |
+| Commit    | Description                                                      | Root Cause                                                                                                           |
+| --------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `886edea` | Fix admin district management - broken governorate_id refs       | Districts table has no `governorate_id` column; was sending invalid field                                            |
+| `297c61b` | Use zone-based delivery fee in cart & custom orders              | Cart showed flat fee even when provider uses zones; custom orders ignored zones                                      |
+| `44635c4` | Add district dropdown in checkout, fix cart delivery fee display | Checkout new-address form had no district selection; cart fee display incorrect                                      |
+| `c3f5f27` | Remove non-existent governorate_id from districts query          | Analytics regions page queried `districts.governorate_id` which doesn't exist                                        |
+| `5367ee1` | Remove governorate_id from District interface                    | TypeScript District interface included non-existent field                                                            |
+| `49934fc` | Correct expansion analytics data fetching                        | Provider status filter `'active'` matched 0 providers (all are `'open'`); revenue field `total_amount` doesn't exist |
+| `b34d822` | Restore customer counting from profiles table                    | Customer count changed to addresses-based query which returned 0; profiles.governorate_id exists and works           |
 
 ---
 
@@ -254,14 +256,14 @@ CREATE TABLE provider_delivery_zones (
 
 ### Existing Tables (Relevant)
 
-| Table          | Key Columns                                            |
-| -------------- | ------------------------------------------------------ |
-| `governorates` | id, name_ar, name_en, is_active                        |
-| `cities`       | id, governorate_id, name_ar, name_en, is_active        |
-| `districts`    | id, city_id, name_ar, name_en, is_active               |
-| `providers`    | id, delivery_fee, governorate_id, city_id, district_id, status |
-| `profiles`     | id, role, governorate_id                               |
-| `addresses`    | id, user_id, governorate_id, city_id, district_id      |
+| Table          | Key Columns                                                           |
+| -------------- | --------------------------------------------------------------------- |
+| `governorates` | id, name_ar, name_en, is_active                                       |
+| `cities`       | id, governorate_id, name_ar, name_en, is_active                       |
+| `districts`    | id, city_id, name_ar, name_en, is_active                              |
+| `providers`    | id, delivery_fee, governorate_id, city_id, district_id, status        |
+| `profiles`     | id, role, governorate_id                                              |
+| `addresses`    | id, user_id, governorate_id, city_id, district_id                     |
 | `orders`       | id, delivery_fee, total, delivery_address (JSONB), status, created_at |
 
 ### New Table
@@ -272,14 +274,14 @@ CREATE TABLE provider_delivery_zones (
 
 ### Provider Status Values
 
-| Status | Meaning |
-|--------|---------|
-| `open` | Active and accepting orders (most common) |
-| `active` | Alternative active status |
-| `approved` | Approved but may not be fully active |
-| `closed` | Temporarily closed |
-| `temporarily_paused` | Paused by provider |
-| `pending_approval` | Awaiting admin approval |
+| Status               | Meaning                                   |
+| -------------------- | ----------------------------------------- |
+| `open`               | Active and accepting orders (most common) |
+| `active`             | Alternative active status                 |
+| `approved`           | Approved but may not be fully active      |
+| `closed`             | Temporarily closed                        |
+| `temporarily_paused` | Paused by provider                        |
+| `pending_approval`   | Awaiting admin approval                   |
 
 ## Key Relationships
 
@@ -298,15 +300,15 @@ profiles (N) → (1) governorates
 
 ## Files Modified (Complete List)
 
-| File | Phases |
-|------|--------|
-| `src/app/[locale]/admin/locations/page.tsx` | Phase 2, Analytics Fixes |
-| `src/app/[locale]/profile/addresses/page.tsx` | Phase 3 |
-| `src/app/[locale]/provider/settings/page.tsx` | Phase 4 |
-| `src/components/customer/shared/ProviderCard.tsx` | Phase 5 |
-| `src/app/[locale]/providers/ProvidersClient.tsx` | Phase 5 |
-| `src/app/[locale]/checkout/page.tsx` | Phase 6 |
-| `src/app/[locale]/cart/page.tsx` | Extra (Cart Zone Detection) |
-| `src/lib/orders/broadcast-service.ts` | Extra (Custom Orders) |
-| `src/components/admin/GeoFilter.tsx` | Phase 7 |
-| `src/app/[locale]/admin/analytics/regions/page.tsx` | Phase 7, Bug Fixes |
+| File                                                | Phases                      |
+| --------------------------------------------------- | --------------------------- |
+| `src/app/[locale]/admin/locations/page.tsx`         | Phase 2, Analytics Fixes    |
+| `src/app/[locale]/profile/addresses/page.tsx`       | Phase 3                     |
+| `src/app/[locale]/provider/settings/page.tsx`       | Phase 4                     |
+| `src/components/customer/shared/ProviderCard.tsx`   | Phase 5                     |
+| `src/app/[locale]/providers/ProvidersClient.tsx`    | Phase 5                     |
+| `src/app/[locale]/checkout/page.tsx`                | Phase 6                     |
+| `src/app/[locale]/cart/page.tsx`                    | Extra (Cart Zone Detection) |
+| `src/lib/orders/broadcast-service.ts`               | Extra (Custom Orders)       |
+| `src/components/admin/GeoFilter.tsx`                | Phase 7                     |
+| `src/app/[locale]/admin/analytics/regions/page.tsx` | Phase 7, Bug Fixes          |
