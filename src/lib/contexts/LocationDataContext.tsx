@@ -32,7 +32,6 @@ export interface District {
   name_ar: string;
   name_en: string;
   city_id: string;
-  governorate_id: string;
   is_active: boolean;
 }
 
@@ -136,7 +135,7 @@ export function LocationDataProvider({ children }: { children: ReactNode }) {
           .order('name_ar'),
         supabase
           .from('districts')
-          .select('id, name_ar, name_en, city_id, governorate_id, is_active')
+          .select('id, name_ar, name_en, city_id, is_active')
           .eq('is_active', true)
           .order('name_ar'),
       ]);

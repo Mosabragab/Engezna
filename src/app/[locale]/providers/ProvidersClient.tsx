@@ -296,7 +296,22 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       if (error) {
         setProviders([]);
       } else {
-        setProviders(data || []);
+        // Check which providers have delivery zones configured
+        if (data && data.length > 0) {
+          const providerIds = data.map((p) => p.id);
+          const { data: zones } = await supabase
+            .from('provider_delivery_zones')
+            .select('provider_id')
+            .in('provider_id', providerIds)
+            .eq('is_active', true);
+
+          const providersWithZones = new Set((zones || []).map((z) => z.provider_id));
+          setProviders(
+            data.map((p) => ({ ...p, has_delivery_zones: providersWithZones.has(p.id) }))
+          );
+        } else {
+          setProviders(data || []);
+        }
       }
     } catch {
       // Error handled silently

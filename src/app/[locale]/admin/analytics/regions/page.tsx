@@ -47,8 +47,7 @@ interface City {
 
 interface District {
   id: string;
-  governorate_id: string;
-  city_id: string | null;
+  city_id: string;
   name_ar: string;
   name_en: string;
   is_active: boolean;
@@ -228,7 +227,9 @@ export default function AdminRegionalAnalyticsPage() {
 
             const govCustomers = customers.filter((c) => {
               const district = districts.find((d) => d.id === c.district_id);
-              return district?.governorate_id === gov.id;
+              if (!district) return false;
+              const city = cities.find((ct) => ct.id === district.city_id);
+              return city?.governorate_id === gov.id;
             });
 
             return {
@@ -295,7 +296,10 @@ export default function AdminRegionalAnalyticsPage() {
         if (selectedCity) {
           filteredDistricts = districts.filter((d) => d.city_id === selectedCity);
         } else if (selectedGovernorate) {
-          filteredDistricts = districts.filter((d) => d.governorate_id === selectedGovernorate);
+          const govCityIds = new Set<string>(
+            cities.filter((c) => c.governorate_id === selectedGovernorate).map((c) => c.id)
+          );
+          filteredDistricts = districts.filter((d) => d.city_id && govCityIds.has(d.city_id));
         }
 
         stats = filteredDistricts

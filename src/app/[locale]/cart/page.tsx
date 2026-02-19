@@ -64,6 +64,7 @@ export default function CartPage() {
   const [loadingPromotions, setLoadingPromotions] = useState(false);
   const [extrasItems, setExtrasItems] = useState<ExtrasItem[]>([]);
   const [loadingExtras, setLoadingExtras] = useState(false);
+  const [hasDeliveryZones, setHasDeliveryZones] = useState(false);
 
   // Fetch active promotions for the provider
   useEffect(() => {
@@ -143,6 +144,27 @@ export default function CartPage() {
 
     fetchExtras();
   }, [provider?.id, items]);
+
+  // Check if provider has delivery zones (fee determined at checkout by district)
+  useEffect(() => {
+    async function checkDeliveryZones() {
+      if (!provider?.id) {
+        setHasDeliveryZones(false);
+        return;
+      }
+
+      const supabase = createClient();
+      const { count } = await supabase
+        .from('provider_delivery_zones')
+        .select('id', { count: 'exact', head: true })
+        .eq('provider_id', provider.id)
+        .eq('is_active', true);
+
+      setHasDeliveryZones((count || 0) > 0);
+    }
+
+    checkDeliveryZones();
+  }, [provider?.id]);
 
   // Get applicable promotion for a product
   const getProductPromotion = (productId: string): Promotion | null => {
@@ -232,8 +254,8 @@ export default function CartPage() {
 
   const subtotal = getSubtotal();
   const discount = calculateTotalDiscount();
-  const deliveryFee = provider?.delivery_fee || 0;
-  const total = subtotal - discount + deliveryFee;
+  const deliveryFee = hasDeliveryZones ? null : (provider?.delivery_fee ?? 0);
+  const total = subtotal - discount + (deliveryFee ?? 0);
 
   const handleCheckout = () => {
     router.push(`/${locale}/checkout`);
@@ -554,16 +576,27 @@ export default function CartPage() {
             <div className="flex justify-between text-slate-600">
               <span>{t('deliveryFee')}</span>
               <span>
-                {deliveryFee === 0
+                {deliveryFee === null
                   ? locale === 'ar'
-                    ? 'مجاني'
-                    : 'Free'
-                  : `${deliveryFee.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
+                    ? 'يُحدد حسب الحي'
+                    : 'By district'
+                  : deliveryFee === 0
+                    ? locale === 'ar'
+                      ? 'مجاني'
+                      : 'Free'
+                    : `${deliveryFee.toFixed(2)} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
               </span>
             </div>
 
             <div className="border-t border-slate-100 pt-3 flex justify-between font-bold text-lg">
-              <span>{t('total')}</span>
+              <span>
+                {t('total')}
+                {deliveryFee === null && (
+                  <span className="text-xs font-normal text-slate-400 ms-1">
+                    {locale === 'ar' ? '+ التوصيل' : '+ delivery'}
+                  </span>
+                )}
+              </span>
               <span className="text-primary">
                 {total.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
               </span>

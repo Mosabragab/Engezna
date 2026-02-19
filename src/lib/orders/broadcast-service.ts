@@ -142,15 +142,17 @@ export class BroadcastService {
 
     // Get delivery address if provided
     let deliveryAddress = null;
+    let customerDistrictId: string | null = null;
     if (payload.deliveryAddressId) {
       const { data: address } = await this.supabase
         .from('addresses')
         .select(
-          'id, label, address_line1, address_line2, building, floor, apartment, area, city, landmark, delivery_instructions, location'
+          'id, label, address_line1, address_line2, building, floor, apartment, area, city, landmark, delivery_instructions, location, district_id'
         )
         .eq('id', payload.deliveryAddressId)
         .single();
       if (address) {
+        customerDistrictId = address.district_id || null;
         // Convert to JSONB format compatible with orders table
         deliveryAddress = {
           address_id: address.id,
@@ -165,6 +167,24 @@ export class BroadcastService {
           notes: address.delivery_instructions,
           location: address.location,
         };
+      }
+    }
+
+    // Look up zone-based delivery fees per provider if customer has a district
+    let zoneFeesMap = new Map<string, number>();
+    if (customerDistrictId) {
+      const { data: zones } = await this.supabase
+        .from('provider_delivery_zones')
+        .select('provider_id, delivery_fee')
+        .in(
+          'provider_id',
+          providers.map((p) => p.id)
+        )
+        .eq('district_id', customerDistrictId)
+        .eq('is_active', true);
+
+      if (zones) {
+        zoneFeesMap = new Map(zones.map((z) => [z.provider_id, z.delivery_fee]));
       }
     }
 
@@ -197,7 +217,7 @@ export class BroadcastService {
       );
     }
 
-    // Create requests for each provider
+    // Create requests for each provider (zone fee → flat fee fallback)
     const requestsToCreate = providers.map((provider) => ({
       broadcast_id: broadcast.id,
       provider_id: provider.id,
@@ -209,7 +229,7 @@ export class BroadcastService {
       status: 'pending' as CustomRequestStatus,
       items_count: 0,
       subtotal: 0,
-      delivery_fee: provider.delivery_fee,
+      delivery_fee: zoneFeesMap.get(provider.id) ?? provider.delivery_fee,
       total: 0,
       pricing_expires_at: pricingDeadline.toISOString(),
     }));

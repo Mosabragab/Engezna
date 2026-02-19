@@ -196,6 +196,31 @@ export default function ProviderSettingsPage() {
     type: 'success' | 'error';
     text: string;
   } | null>(null);
+
+  // Delivery zones per district
+  const [deliveryZones, setDeliveryZones] = useState<
+    {
+      id: string;
+      district_id: string;
+      district_name_ar: string;
+      district_name_en: string;
+      delivery_fee: number;
+      estimated_delivery_time_min: number;
+      is_active: boolean;
+    }[]
+  >([]);
+  const [availableDistricts, setAvailableDistricts] = useState<
+    { id: string; name_ar: string; name_en: string }[]
+  >([]);
+  const [loadingZones, setLoadingZones] = useState(false);
+  const [savingZone, setSavingZone] = useState(false);
+  const [newZoneDistrictId, setNewZoneDistrictId] = useState('');
+  const [newZoneFee, setNewZoneFee] = useState('');
+  const [newZoneTime, setNewZoneTime] = useState('30');
+  const [zonesMessage, setZonesMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
   // Pickup settings
   const [supportsPickup, setSupportsPickup] = useState(false);
   const [pickupInstructionsAr, setPickupInstructionsAr] = useState('');
@@ -290,6 +315,9 @@ export default function ProviderSettingsPage() {
     setPickupInstructionsAr(providerData.pickup_instructions_ar || '');
     setPickupInstructionsEn(providerData.pickup_instructions_en || '');
     setEstimatedPickupTime(providerData.estimated_pickup_time_min?.toString() || '15');
+
+    // Load delivery zones (all districts in provider's governorate)
+    loadDeliveryZones(providerData.id, providerData.governorate_id);
 
     // Load custom order settings
     setOperationMode(providerData.operation_mode || 'standard');
@@ -471,6 +499,161 @@ export default function ProviderSettingsPage() {
     }
 
     setSaving(false);
+  };
+
+  // Load delivery zones for provider
+  const loadDeliveryZones = useCallback(
+    async (providerId: string, governorateId: string | null) => {
+      setLoadingZones(true);
+      const supabase = createClient();
+
+      // Load existing zones with district names
+      const { data: zones } = await supabase
+        .from('provider_delivery_zones')
+        .select('id, district_id, delivery_fee, estimated_delivery_time_min, is_active')
+        .eq('provider_id', providerId)
+        .order('created_at');
+
+      if (zones && zones.length > 0) {
+        // Fetch district names for zones (with city info)
+        const districtIds = zones.map((z) => z.district_id);
+        const { data: distData } = await supabase
+          .from('districts')
+          .select('id, name_ar, name_en, city_id')
+          .in('id', districtIds);
+
+        // Get city names for zone display
+        const cityIds = [...new Set((distData || []).map((d) => d.city_id))];
+        const { data: cityData } = await supabase
+          .from('cities')
+          .select('id, name_ar, name_en')
+          .in('id', cityIds);
+
+        const cityMap = new Map((cityData || []).map((c) => [c.id, c]));
+        const distMap = new Map((distData || []).map((d) => [d.id, d]));
+
+        setDeliveryZones(
+          zones.map((z) => {
+            const dist = distMap.get(z.district_id);
+            const city = dist ? cityMap.get(dist.city_id) : null;
+            return {
+              ...z,
+              district_name_ar: city
+                ? `${city.name_ar} - ${dist?.name_ar || ''}`
+                : dist?.name_ar || '',
+              district_name_en: city
+                ? `${city.name_en} - ${dist?.name_en || ''}`
+                : dist?.name_en || '',
+            };
+          })
+        );
+      } else {
+        setDeliveryZones([]);
+      }
+
+      // Load available districts from ALL cities in the same governorate
+      if (governorateId) {
+        const { data: cities } = await supabase
+          .from('cities')
+          .select('id, name_ar, name_en')
+          .eq('governorate_id', governorateId)
+          .eq('is_active', true)
+          .order('name_ar');
+
+        if (cities && cities.length > 0) {
+          const cityIds = cities.map((c) => c.id);
+          const { data: districts } = await supabase
+            .from('districts')
+            .select('id, city_id, name_ar, name_en')
+            .in('city_id', cityIds)
+            .eq('is_active', true)
+            .order('name_ar');
+
+          // Build district list with city name prefix for grouping
+          const cityMap = new Map(cities.map((c) => [c.id, c]));
+          const groupedDistricts = (districts || []).map((d) => {
+            const city = cityMap.get(d.city_id);
+            return {
+              id: d.id,
+              name_ar: city ? `${city.name_ar} - ${d.name_ar}` : d.name_ar,
+              name_en: city ? `${city.name_en} - ${d.name_en}` : d.name_en,
+            };
+          });
+
+          setAvailableDistricts(groupedDistricts);
+        } else {
+          setAvailableDistricts([]);
+        }
+      }
+
+      setLoadingZones(false);
+    },
+    []
+  );
+
+  const handleAddDeliveryZone = async () => {
+    if (!provider || !newZoneDistrictId || !newZoneFee) return;
+
+    setSavingZone(true);
+    setZonesMessage(null);
+    const supabase = createClient();
+
+    const { error } = await supabase.from('provider_delivery_zones').insert({
+      provider_id: provider.id,
+      district_id: newZoneDistrictId,
+      delivery_fee: parseFloat(newZoneFee),
+      estimated_delivery_time_min: parseInt(newZoneTime) || 30,
+      is_active: true,
+    });
+
+    if (error) {
+      setZonesMessage({
+        type: 'error',
+        text:
+          error.code === '23505'
+            ? locale === 'ar'
+              ? 'هذا الحي مضاف بالفعل'
+              : 'This district is already added'
+            : locale === 'ar'
+              ? 'فشل في إضافة الحي'
+              : 'Failed to add district',
+      });
+    } else {
+      setNewZoneDistrictId('');
+      setNewZoneFee('');
+      setNewZoneTime('30');
+      setZonesMessage({
+        type: 'success',
+        text: locale === 'ar' ? 'تم إضافة الحي بنجاح' : 'District added successfully',
+      });
+      setTimeout(() => setZonesMessage(null), 3000);
+      await loadDeliveryZones(provider.id, provider.governorate_id);
+    }
+
+    setSavingZone(false);
+  };
+
+  const handleRemoveDeliveryZone = async (zoneId: string) => {
+    if (!provider) return;
+
+    const supabase = createClient();
+    const { error } = await supabase.from('provider_delivery_zones').delete().eq('id', zoneId);
+
+    if (!error) {
+      await loadDeliveryZones(provider.id, provider.governorate_id);
+    }
+  };
+
+  const handleUpdateZoneFee = async (zoneId: string, newFee: number) => {
+    if (!provider) return;
+
+    const supabase = createClient();
+    await supabase
+      .from('provider_delivery_zones')
+      .update({ delivery_fee: newFee, updated_at: new Date().toISOString() })
+      .eq('id', zoneId);
+
+    await loadDeliveryZones(provider.id, provider.city_id);
   };
 
   const handleSavePickup = async () => {
@@ -1074,105 +1257,248 @@ export default function ProviderSettingsPage() {
 
           {/* Delivery Tab */}
           {activeTab === 'delivery' && (
-            <Card className="bg-white border-slate-200">
-              <CardHeader>
-                <CardTitle className="text-slate-900 flex items-center gap-2">
-                  <Truck className="w-5 h-5" />
-                  {locale === 'ar' ? 'إعدادات التوصيل' : 'Delivery Settings'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Delivery Fee */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
-                    <DollarSign className="w-4 h-4" />
-                    {locale === 'ar' ? 'رسوم التوصيل (ج.م)' : 'Delivery Fee (EGP)'}
-                  </label>
-                  <Input
-                    type="number"
-                    value={deliveryFee}
-                    onChange={(e) => setDeliveryFee(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    placeholder="10"
-                  />
-                </div>
-
-                {/* Delivery Time */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {locale === 'ar' ? 'وقت التوصيل المتوقع' : 'Expected Delivery Time'}
-                  </label>
-                  <Input
-                    value={deliveryTime}
-                    onChange={(e) => setDeliveryTime(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    placeholder={locale === 'ar' ? '30-45 دقيقة' : '30-45 min'}
-                  />
-                </div>
-
-                {/* Minimum Order */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1">
-                    {locale === 'ar' ? 'الحد الأدنى للطلب (ج.م)' : 'Minimum Order (EGP)'}
-                  </label>
-                  <Input
-                    type="number"
-                    value={minimumOrder}
-                    onChange={(e) => setMinimumOrder(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    placeholder="50"
-                  />
-                </div>
-
-                {/* Delivery Radius */}
-                <div>
-                  <label className="block text-sm text-slate-500 mb-1">
-                    {locale === 'ar' ? 'نطاق التوصيل (كم)' : 'Delivery Radius (km)'}
-                  </label>
-                  <Input
-                    type="number"
-                    value={deliveryRadius}
-                    onChange={(e) => setDeliveryRadius(e.target.value)}
-                    className="bg-white border-slate-200 text-slate-900"
-                    placeholder="5"
-                  />
-                </div>
-
-                {/* Error/Success Message */}
-                {deliveryMessage && (
-                  <div
-                    className={`flex items-center gap-2 p-3 rounded-lg ${
-                      deliveryMessage.type === 'error'
-                        ? 'bg-red-50 text-red-600 border border-red-200'
-                        : 'bg-green-50 text-green-600 border border-green-200'
-                    }`}
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">{deliveryMessage.text}</span>
+            <>
+              <Card className="bg-white border-slate-200">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 flex items-center gap-2">
+                    <Truck className="w-5 h-5" />
+                    {locale === 'ar' ? 'إعدادات التوصيل' : 'Delivery Settings'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Delivery Fee */}
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      {locale === 'ar' ? 'رسوم التوصيل (ج.م)' : 'Delivery Fee (EGP)'}
+                    </label>
+                    <Input
+                      type="number"
+                      value={deliveryFee}
+                      onChange={(e) => setDeliveryFee(e.target.value)}
+                      className="bg-white border-slate-200 text-slate-900"
+                      placeholder="10"
+                    />
                   </div>
-                )}
 
-                <Button className="w-full" onClick={handleSaveDelivery} disabled={saving}>
-                  {saving ? (
-                    <>
-                      <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
-                    </>
-                  ) : saved ? (
-                    <>
-                      <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
-                    </>
-                  ) : (
-                    <>
-                      <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-                      {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
-                    </>
+                  {/* Delivery Time */}
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {locale === 'ar' ? 'وقت التوصيل المتوقع' : 'Expected Delivery Time'}
+                    </label>
+                    <Input
+                      value={deliveryTime}
+                      onChange={(e) => setDeliveryTime(e.target.value)}
+                      className="bg-white border-slate-200 text-slate-900"
+                      placeholder={locale === 'ar' ? '30-45 دقيقة' : '30-45 min'}
+                    />
+                  </div>
+
+                  {/* Minimum Order */}
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1">
+                      {locale === 'ar' ? 'الحد الأدنى للطلب (ج.م)' : 'Minimum Order (EGP)'}
+                    </label>
+                    <Input
+                      type="number"
+                      value={minimumOrder}
+                      onChange={(e) => setMinimumOrder(e.target.value)}
+                      className="bg-white border-slate-200 text-slate-900"
+                      placeholder="50"
+                    />
+                  </div>
+
+                  {/* Delivery Radius */}
+                  <div>
+                    <label className="block text-sm text-slate-500 mb-1">
+                      {locale === 'ar' ? 'نطاق التوصيل (كم)' : 'Delivery Radius (km)'}
+                    </label>
+                    <Input
+                      type="number"
+                      value={deliveryRadius}
+                      onChange={(e) => setDeliveryRadius(e.target.value)}
+                      className="bg-white border-slate-200 text-slate-900"
+                      placeholder="5"
+                    />
+                  </div>
+
+                  {/* Error/Success Message */}
+                  {deliveryMessage && (
+                    <div
+                      className={`flex items-center gap-2 p-3 rounded-lg ${
+                        deliveryMessage.type === 'error'
+                          ? 'bg-red-50 text-red-600 border border-red-200'
+                          : 'bg-green-50 text-green-600 border border-green-200'
+                      }`}
+                    >
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm">{deliveryMessage.text}</span>
+                    </div>
                   )}
-                </Button>
-              </CardContent>
-            </Card>
+
+                  <Button className="w-full" onClick={handleSaveDelivery} disabled={saving}>
+                    {saving ? (
+                      <>
+                        <RefreshCw className={`w-4 h-4 animate-spin ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {locale === 'ar' ? 'جاري الحفظ...' : 'Saving...'}
+                      </>
+                    ) : saved ? (
+                      <>
+                        <Check className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {locale === 'ar' ? 'تم الحفظ!' : 'Saved!'}
+                      </>
+                    ) : (
+                      <>
+                        <Save className={`w-4 h-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
+                        {locale === 'ar' ? 'حفظ التغييرات' : 'Save Changes'}
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Delivery Zones Per District */}
+              <Card className="bg-white border-slate-200 mt-4">
+                <CardHeader>
+                  <CardTitle className="text-slate-900 flex items-center gap-2">
+                    <MapPin className="w-5 h-5" />
+                    {locale === 'ar' ? 'أسعار التوصيل حسب الحي' : 'Delivery Fees by District'}
+                  </CardTitle>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {locale === 'ar'
+                      ? 'حدد سعر توصيل مختلف لكل حي. إذا لم يتم تحديد سعر للحي، سيتم استخدام السعر الافتراضي أعلاه.'
+                      : 'Set different delivery fees per district. If no fee is set for a district, the default fee above will be used.'}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Add New Zone */}
+                  {availableDistricts.length > 0 && (
+                    <div className="p-4 bg-slate-50 rounded-lg space-y-3">
+                      <label className="block text-sm font-medium text-slate-700">
+                        {locale === 'ar' ? 'إضافة حي جديد' : 'Add New District'}
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <select
+                          value={newZoneDistrictId}
+                          onChange={(e) => setNewZoneDistrictId(e.target.value)}
+                          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+                        >
+                          <option value="">
+                            {locale === 'ar' ? 'اختر الحي...' : 'Select district...'}
+                          </option>
+                          {availableDistricts
+                            .filter((d) => !deliveryZones.some((z) => z.district_id === d.id))
+                            .map((d) => (
+                              <option key={d.id} value={d.id}>
+                                {locale === 'ar' ? d.name_ar : d.name_en}
+                              </option>
+                            ))}
+                        </select>
+                        <Input
+                          type="number"
+                          value={newZoneFee}
+                          onChange={(e) => setNewZoneFee(e.target.value)}
+                          placeholder={locale === 'ar' ? 'سعر التوصيل (ج.م)' : 'Fee (EGP)'}
+                          className="bg-white border-slate-200 text-slate-900"
+                        />
+                        <Button
+                          onClick={handleAddDeliveryZone}
+                          disabled={savingZone || !newZoneDistrictId || !newZoneFee}
+                          className="w-full"
+                          size="sm"
+                        >
+                          {savingZone ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Plus className={`w-4 h-4 ${isRTL ? 'ml-1' : 'mr-1'}`} />
+                              {locale === 'ar' ? 'إضافة' : 'Add'}
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {availableDistricts.length === 0 && !loadingZones && (
+                    <div className="text-center p-4 text-sm text-amber-600 bg-amber-50 rounded-lg">
+                      {locale === 'ar'
+                        ? 'لا توجد أحياء مسجلة لمحافظتك. تواصل مع الإدارة لإضافة الأحياء.'
+                        : 'No districts registered for your governorate. Contact admin to add districts.'}
+                    </div>
+                  )}
+
+                  {/* Zones Message */}
+                  {zonesMessage && (
+                    <div
+                      className={`flex items-center gap-2 p-3 rounded-lg ${
+                        zonesMessage.type === 'error'
+                          ? 'bg-red-50 text-red-600 border border-red-200'
+                          : 'bg-green-50 text-green-600 border border-green-200'
+                      }`}
+                    >
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm">{zonesMessage.text}</span>
+                    </div>
+                  )}
+
+                  {/* Existing Zones List */}
+                  {loadingZones ? (
+                    <div className="flex justify-center p-4">
+                      <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+                    </div>
+                  ) : deliveryZones.length > 0 ? (
+                    <div className="space-y-2">
+                      {deliveryZones.map((zone) => (
+                        <div
+                          key={zone.id}
+                          className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg"
+                        >
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-slate-900">
+                              {locale === 'ar' ? zone.district_name_ar : zone.district_name_en}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                defaultValue={zone.delivery_fee}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val !== zone.delivery_fee) {
+                                    handleUpdateZoneFee(zone.id, val);
+                                  }
+                                }}
+                                className="w-20 h-8 text-sm bg-white border-slate-200"
+                              />
+                              <span className="text-xs text-slate-500">
+                                {locale === 'ar' ? 'ج.م' : 'EGP'}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => handleRemoveDeliveryZone(zone.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-4 text-sm text-slate-500">
+                      {locale === 'ar'
+                        ? 'لم يتم تحديد أسعار لأحياء بعد. سيتم استخدام السعر الافتراضي لجميع الأحياء.'
+                        : 'No district fees set yet. Default fee will be used for all districts.'}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
 
           {/* Pickup Tab */}

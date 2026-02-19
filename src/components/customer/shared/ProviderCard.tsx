@@ -25,6 +25,7 @@ interface Provider {
   is_featured?: boolean;
   is_verified?: boolean;
   business_hours?: BusinessHours | null;
+  has_delivery_zones?: boolean;
 }
 
 interface ProviderCardProps {
@@ -252,11 +253,15 @@ export function ProviderCard({
                 className={`w-3.5 h-3.5 ${provider.delivery_fee === 0 ? 'text-emerald-500' : 'text-primary'}`}
               />
               <span className="font-medium">
-                {provider.delivery_fee === 0
+                {provider.has_delivery_zones
                   ? locale === 'ar'
-                    ? 'مجاني'
-                    : 'Free'
-                  : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
+                    ? 'حسب الحي'
+                    : 'By district'
+                  : provider.delivery_fee === 0
+                    ? locale === 'ar'
+                      ? 'مجاني'
+                      : 'Free'
+                    : `${provider.delivery_fee} ${locale === 'ar' ? 'ج.م' : 'EGP'}`}
               </span>
             </div>
             {showDistance && distance && (

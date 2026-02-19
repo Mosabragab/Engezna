@@ -216,6 +216,9 @@ export default function CheckoutPage() {
   const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [selectedDistrictId, setSelectedDistrictId] = useState<string>('');
 
+  // District-based delivery fee
+  const [zoneDeliveryFee, setZoneDeliveryFee] = useState<number | null>(null);
+
   // Filter cities and districts based on selection using context helpers
   const cities = useMemo(() => {
     if (!selectedGovernorateId) return [];
@@ -227,11 +230,13 @@ export default function CheckoutPage() {
     return getDistrictsByCity(selectedCityId);
   }, [selectedCityId, getDistrictsByCity]);
 
-  // Calculate delivery fee based on order type
+  // Calculate delivery fee based on order type and district zone
   const calculatedDeliveryFee = useMemo(() => {
     if (orderType === 'pickup') return 0;
+    // Use zone-specific fee if available, otherwise fall back to provider default
+    if (zoneDeliveryFee !== null) return zoneDeliveryFee;
     return providerData?.delivery_fee || provider?.delivery_fee || 0;
-  }, [orderType, providerData, provider]);
+  }, [orderType, zoneDeliveryFee, providerData, provider]);
 
   // Available dates for scheduling (next 48 hours)
   const availableDates = useMemo(() => {
@@ -358,7 +363,55 @@ export default function CheckoutPage() {
   // Reset district when city changes
   useEffect(() => {
     setSelectedDistrictId('');
+    setZoneDeliveryFee(null);
   }, [selectedCityId]);
+
+  // Load zone-based delivery fee when district changes (new address mode)
+  useEffect(() => {
+    const loadZoneFee = async () => {
+      if (!provider?.id || !selectedDistrictId || addressMode !== 'new') {
+        if (addressMode === 'new') setZoneDeliveryFee(null);
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('provider_delivery_zones')
+        .select('delivery_fee')
+        .eq('provider_id', provider.id)
+        .eq('district_id', selectedDistrictId)
+        .eq('is_active', true)
+        .single();
+
+      setZoneDeliveryFee(data?.delivery_fee ?? null);
+    };
+    loadZoneFee();
+  }, [selectedDistrictId, provider?.id, addressMode]);
+
+  // Load zone-based delivery fee when saved address changes
+  useEffect(() => {
+    const loadZoneFeeForSavedAddress = async () => {
+      if (!provider?.id || !selectedAddressId || addressMode !== 'saved') {
+        if (addressMode === 'saved' && !selectedAddressId) setZoneDeliveryFee(null);
+        return;
+      }
+      const addr = savedAddresses.find((a) => a.id === selectedAddressId);
+      if (!addr?.district_id) {
+        setZoneDeliveryFee(null);
+        return;
+      }
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('provider_delivery_zones')
+        .select('delivery_fee')
+        .eq('provider_id', provider.id)
+        .eq('district_id', addr.district_id)
+        .eq('is_active', true)
+        .single();
+
+      setZoneDeliveryFee(data?.delivery_fee ?? null);
+    };
+    loadZoneFeeForSavedAddress();
+  }, [selectedAddressId, provider?.id, addressMode, savedAddresses]);
 
   // Reset scheduled time when order type or timing changes
   useEffect(() => {
@@ -712,6 +765,7 @@ export default function CheckoutPage() {
       // New address - use context helpers
       const selectedGov = getGovernorateById(selectedGovernorateId);
       const selectedCity = getCityById(selectedCityId);
+      const selectedDist = districts.find((d: District) => d.id === selectedDistrictId);
 
       return {
         // Geographic hierarchy with IDs and names
@@ -721,9 +775,9 @@ export default function CheckoutPage() {
         city_id: selectedCityId || null,
         city_ar: selectedCity?.name_ar || null,
         city_en: selectedCity?.name_en || null,
-        district_id: null, // DEPRECATED - always null for new addresses
-        district_ar: null,
-        district_en: null,
+        district_id: selectedDistrictId || null,
+        district_ar: selectedDist?.name_ar || null,
+        district_en: selectedDist?.name_en || null,
         // Address details
         address: addressLine1,
         address_line1: addressLine1,
@@ -779,11 +833,11 @@ export default function CheckoutPage() {
           return false;
         }
       } else {
-        if (!selectedGovernorateId || !selectedCityId || !addressLine1) {
+        if (!selectedGovernorateId || !selectedCityId || !selectedDistrictId || !addressLine1) {
           setError(
             locale === 'ar'
-              ? 'يرجى ملء المحافظة والمدينة والعنوان'
-              : 'Please fill governorate, city and address'
+              ? 'يرجى ملء المحافظة والمدينة والحي والعنوان'
+              : 'Please fill governorate, city, district and address'
           );
           return false;
         }
@@ -1546,8 +1600,8 @@ export default function CheckoutPage() {
                     {/* New Address Form */}
                     {addressMode === 'new' && (
                       <div className="space-y-4">
-                        {/* Geographic Hierarchy - Districts removed, using GPS instead */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Geographic Hierarchy - Governorate > City > District */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           {/* Governorate */}
                           <div>
                             <Label>{locale === 'ar' ? 'المحافظة' : 'Governorate'} *</Label>
@@ -1587,6 +1641,29 @@ export default function CheckoutPage() {
                                 {cities.map((city) => (
                                   <option key={city.id} value={city.id}>
                                     {locale === 'ar' ? city.name_ar : city.name_en}
+                                  </option>
+                                ))}
+                              </select>
+                              <ChevronDown className="absolute end-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            </div>
+                          </div>
+
+                          {/* District */}
+                          <div>
+                            <Label>{locale === 'ar' ? 'الحي' : 'District'} *</Label>
+                            <div className="relative">
+                              <select
+                                value={selectedDistrictId}
+                                onChange={(e) => setSelectedDistrictId(e.target.value)}
+                                className="w-full h-10 px-3 py-2 border border-input rounded-md bg-background text-sm appearance-none cursor-pointer pe-10"
+                                disabled={isLoading || !selectedCityId}
+                              >
+                                <option value="">
+                                  {locale === 'ar' ? 'اختر الحي' : 'Select District'}
+                                </option>
+                                {districts.map((dist: District) => (
+                                  <option key={dist.id} value={dist.id}>
+                                    {locale === 'ar' ? dist.name_ar : dist.name_en}
                                   </option>
                                 ))}
                               </select>
