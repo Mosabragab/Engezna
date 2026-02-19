@@ -41,6 +41,8 @@ interface FCMMessage {
       badge?: string;
       vibrate?: number[];
       requireInteraction?: boolean;
+      tag?: string;
+      renotify?: boolean;
     };
   };
   android?: {
@@ -49,6 +51,10 @@ interface FCMMessage {
       click_action?: string;
       icon?: string;
       color?: string;
+      sound?: string;
+      channel_id?: string;
+      default_sound?: boolean;
+      default_vibrate_timings?: boolean;
     };
   };
   apns?: {
@@ -56,6 +62,7 @@ interface FCMMessage {
       aps: {
         sound: string;
         badge?: number;
+        'mutable-content'?: number;
       };
     };
   };
@@ -152,11 +159,11 @@ async function getAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-// Send FCM message
-async function sendFCMMessage(
+// Send FCM message (single attempt)
+async function sendFCMMessageOnce(
   accessToken: string,
   message: FCMMessage
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; retryable?: boolean }> {
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
     {
@@ -171,17 +178,62 @@ async function sendFCMMessage(
 
   if (!response.ok) {
     const error = await response.json();
-    console.error('FCM Error:', error);
+    const errorCode = error.error?.details?.[0]?.errorCode;
+    const errorMessage = error.error?.message || 'Unknown FCM error';
+    const statusCode = response.status;
 
-    // Check if token is invalid
-    if (error.error?.details?.[0]?.errorCode === 'UNREGISTERED') {
-      return { success: false, error: 'UNREGISTERED' };
+    console.error(`[FCM] Error (HTTP ${statusCode}):`, JSON.stringify({
+      errorCode,
+      message: errorMessage,
+      token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
+    }));
+
+    // Permanent errors - don't retry
+    if (errorCode === 'UNREGISTERED') {
+      return { success: false, error: 'UNREGISTERED', retryable: false };
+    }
+    if (errorCode === 'INVALID_ARGUMENT' || statusCode === 400) {
+      return { success: false, error: errorMessage, retryable: false };
     }
 
-    return { success: false, error: error.error?.message || 'Unknown FCM error' };
+    // Transient errors - retry (500, 503, network issues)
+    if (statusCode >= 500 || statusCode === 429) {
+      return { success: false, error: errorMessage, retryable: true };
+    }
+
+    return { success: false, error: errorMessage, retryable: false };
   }
 
   return { success: true };
+}
+
+// Send FCM message with retry for transient errors
+async function sendFCMMessage(
+  accessToken: string,
+  message: FCMMessage,
+  maxRetries = 2
+): Promise<{ success: boolean; error?: string }> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const result = await sendFCMMessageOnce(accessToken, message);
+
+    if (result.success) return { success: true };
+
+    // Don't retry permanent errors
+    if (!result.retryable) {
+      return { success: false, error: result.error };
+    }
+
+    // Retry with exponential backoff for transient errors
+    if (attempt < maxRetries) {
+      const delay = 1000 * Math.pow(2, attempt); // 1s, 2s
+      console.warn(
+        `[FCM] Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`
+      );
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+
+  return { success: false, error: 'Max retries exceeded' };
 }
 
 // Mark token as invalid in database
@@ -220,7 +272,11 @@ serve(async (req) => {
       errors: [],
     };
 
-    // Build base message
+    // Determine notification tag based on type for notification grouping
+    const notificationType = payload.data?.type || 'default';
+    const notificationTag = `engezna-${notificationType}`;
+
+    // Build base message with sound enabled on ALL platforms
     const buildMessage = (token: string, locale: string = 'ar'): FCMMessage => ({
       token,
       notification: {
@@ -230,17 +286,19 @@ serve(async (req) => {
       },
       data: {
         ...payload.data,
-        click_action: payload.click_action || '/',
+        click_action: payload.click_action || '/ar/notifications',
       },
       webpush: {
         fcm_options: {
-          link: payload.click_action || '/',
+          link: payload.click_action || '/ar/notifications',
         },
         notification: {
           icon: '/icons/icon-192x192.png',
           badge: '/icons/badge-72x72.png',
           vibrate: [200, 100, 200],
-          requireInteraction: true,
+          requireInteraction: isImportantNotification(notificationType),
+          tag: notificationTag,
+          renotify: true,
         },
       },
       android: {
@@ -249,16 +307,34 @@ serve(async (req) => {
           click_action: payload.click_action || 'FLUTTER_NOTIFICATION_CLICK',
           icon: 'ic_notification',
           color: '#008B8B',
+          sound: 'default',
+          channel_id: 'engezna_notifications',
+          default_sound: true,
+          default_vibrate_timings: true,
         },
       },
       apns: {
         payload: {
           aps: {
             sound: 'default',
+            'mutable-content': 1,
           },
         },
       },
     });
+
+    // Determine if notification requires user interaction (won't auto-dismiss)
+    function isImportantNotification(type: string): boolean {
+      const importantTypes = [
+        'new_order',
+        'order_cancelled',
+        'refund_request',
+        'refund_escalated',
+        'new_ticket',
+        'new_custom_order',
+      ];
+      return importantTypes.includes(type);
+    }
 
     // Send to specific user(s)
     if (payload.user_id || payload.user_ids) {
@@ -369,7 +445,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[send-notification] Error:', JSON.stringify({
+      message: error.message,
+      stack: error.stack,
+      user_id: 'redacted',
+      has_title: !!error,
+    }));
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
