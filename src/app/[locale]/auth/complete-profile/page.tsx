@@ -115,8 +115,8 @@ export default function CompleteProfilePage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        // Not authenticated - redirect to login
-        router.push(`/${locale}/auth/login`);
+        // Not authenticated - use full page reload to ensure middleware processes correctly
+        window.location.href = `/${locale}/auth/login`;
         return;
       }
 
@@ -132,9 +132,10 @@ export default function CompleteProfilePage() {
 
       if (profile) {
         // If profile is already complete, redirect
+        // Use window.location.href to ensure auth cookies are sent to middleware
         if (profile.governorate_id && profile.phone && profile.full_name) {
           const destination = redirectTo || `/${locale}`;
-          router.push(destination);
+          window.location.href = destination;
           return;
         }
 

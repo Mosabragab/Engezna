@@ -155,11 +155,23 @@ export default function SignupPage() {
       return;
     }
 
-    // Always redirect to complete profile for new signups
-    const completeProfileUrl = redirectTo
-      ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
-      : `/${locale}/auth/complete-profile`;
-    window.location.href = completeProfileUrl;
+    // Re-fetch profile to check if it's complete (guest location may have been synced)
+    const { data: updatedProfile } = await supabase
+      .from('profiles')
+      .select('governorate_id, phone')
+      .eq('id', user.id)
+      .single();
+
+    if (updatedProfile?.governorate_id && updatedProfile?.phone) {
+      // Profile is already complete - redirect to destination
+      window.location.href = redirectTo || `/${locale}`;
+    } else {
+      // Profile incomplete - redirect to complete profile
+      const completeProfileUrl = redirectTo
+        ? `/${locale}/auth/complete-profile?redirect=${encodeURIComponent(redirectTo)}`
+        : `/${locale}/auth/complete-profile`;
+      window.location.href = completeProfileUrl;
+    }
   };
 
   const isRTL = locale === 'ar';
