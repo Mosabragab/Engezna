@@ -10,10 +10,7 @@ const corsHeaders = {
 // Build click_action URL based on notification type and table
 // This determines where the user navigates when clicking the push notification
 // ============================================================================
-function buildClickAction(
-  record: Record<string, unknown>,
-  tableName: string
-): string {
+function buildClickAction(record: Record<string, unknown>, tableName: string): string {
   const type = String(record.type || '');
   const relatedOrderId = record.related_order_id as string | undefined;
   const data = record.data as Record<string, unknown> | undefined;
@@ -32,10 +29,7 @@ function buildClickAction(
       return `/ar/orders/${orderId}`;
     }
     // Custom order notifications
-    if (
-      (type === 'custom_order_priced' || type === 'CUSTOM_ORDER_PRICED') &&
-      broadcastId
-    ) {
+    if ((type === 'custom_order_priced' || type === 'CUSTOM_ORDER_PRICED') && broadcastId) {
       return `/ar/orders/custom-review/${broadcastId}`;
     }
     if (type === 'custom_order_expired' || type === 'CUSTOM_ORDER_EXPIRED') {
@@ -106,9 +100,7 @@ function buildClickAction(
 // Extract FCM data payload from a notification record
 // Ensures order_id, conversation_id, etc. are included for deep linking
 // ============================================================================
-function extractNotificationData(
-  record: Record<string, unknown>
-): Record<string, string> {
+function extractNotificationData(record: Record<string, unknown>): Record<string, string> {
   const data: Record<string, string> = {
     notification_id: String(record.id || ''),
     type: String(record.type || ''),
@@ -214,9 +206,7 @@ serve(async (req) => {
 
         // Determine the target user/provider for FCM delivery
         const targetUserId =
-          notification.user_id ||
-          notification.customer_id ||
-          notification.admin_id;
+          notification.user_id || notification.customer_id || notification.admin_id;
         const targetProviderId = notification.provider_id;
 
         // For admin notifications table, get admin user IDs
@@ -326,10 +316,7 @@ serve(async (req) => {
       error_message: error.message,
       error_stack: error.stack,
     };
-    console.error(
-      '[handle-notification-trigger] Error:',
-      JSON.stringify(errorContext)
-    );
+    console.error('[handle-notification-trigger] Error:', JSON.stringify(errorContext));
 
     return new Response(
       JSON.stringify({

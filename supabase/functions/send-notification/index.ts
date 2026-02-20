@@ -182,11 +182,14 @@ async function sendFCMMessageOnce(
     const errorMessage = error.error?.message || 'Unknown FCM error';
     const statusCode = response.status;
 
-    console.error(`[FCM] Error (HTTP ${statusCode}):`, JSON.stringify({
-      errorCode,
-      message: errorMessage,
-      token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
-    }));
+    console.error(
+      `[FCM] Error (HTTP ${statusCode}):`,
+      JSON.stringify({
+        errorCode,
+        message: errorMessage,
+        token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
+      })
+    );
 
     // Permanent errors - don't retry
     if (errorCode === 'UNREGISTERED') {
@@ -226,9 +229,7 @@ async function sendFCMMessage(
     // Retry with exponential backoff for transient errors
     if (attempt < maxRetries) {
       const delay = 1000 * Math.pow(2, attempt); // 1s, 2s
-      console.warn(
-        `[FCM] Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`
-      );
+      console.warn(`[FCM] Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
       await new Promise((r) => setTimeout(r, delay));
     }
   }
@@ -445,12 +446,15 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('[send-notification] Error:', JSON.stringify({
-      message: error.message,
-      stack: error.stack,
-      user_id: 'redacted',
-      has_title: !!error,
-    }));
+    console.error(
+      '[send-notification] Error:',
+      JSON.stringify({
+        message: error.message,
+        stack: error.stack,
+        user_id: 'redacted',
+        has_title: !!error,
+      })
+    );
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
