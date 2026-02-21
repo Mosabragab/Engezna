@@ -478,7 +478,7 @@ const config = {
 
 | المهمة                                                          | الحالة | التاريخ |
 | --------------------------------------------------------------- | ------ | ------- |
-| [ ] بناء الـ Next.js static export: `next build && next export` | ⬜     |         |
+| [ ] بناء الـ Next.js: `next build` (Hybrid App - لا حاجة لـ static export) | ⬜     |         |
 | [ ] مزامنة: `npx cap sync android`                              | ⬜     |         |
 | [ ] اختبار على Android Emulator                                 | ⬜     |         |
 | [ ] اختبار على جهاز Android حقيقي                               | ⬜     |         |
@@ -530,7 +530,7 @@ const config = {
 | [ ] إعداد App Icons (1024x1024 + جميع الأحجام المطلوبة في Asset Catalog)               | ⬜     |         |
 | [ ] إعداد Launch Screen (Storyboard أو SwiftUI)                                      | ⬜     |         |
 | [ ] إضافة ملفات الصوت في iOS bundle (`notification.mp3`, `new-order.mp3`)             | ⬜     |         |
-| [ ] إعداد `Info.plist` بالأذونات المطلوبة (الكاميرا، الموقع، الإشعارات)                | ⬜     |         |
+| [ ] إعداد `Info.plist` بالأذونات المطلوبة (الكاميرا، الموقع، الإشعارات، ATT)           | ⬜     |         |
 
 **أذونات Info.plist المطلوبة:**
 
@@ -544,6 +544,8 @@ const config = {
 <string>يحتاج التطبيق لموقعك لتحديد منطقة التوصيل والمتاجر القريبة</string>
 <key>NSLocationAlwaysUsageDescription</key>
 <string>يحتاج التطبيق لتتبع موقعك أثناء التوصيل</string>
+<key>NSUserTrackingUsageDescription</key>
+<string>نستخدم هذا الإذن لتحسين تجربة التطبيق وتقديم محتوى يناسب اهتماماتك</string>
 ```
 
 ### 3B.4 تكييف الكود لـ iOS
@@ -728,6 +730,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | [ ] **IPv6 Compatibility:** التأكد من عمل التطبيق على شبكات IPv6-only                   | ⬜     |         |
 | [ ] **Minimum Functionality:** التأكد أن التطبيق ليس مجرد WebView wrapper (إضافة native features) | ⬜     |         |
 | [ ] **Permissions:** طلب كل إذن في سياقه الصحيح (لا تطلب الكاميرا عند فتح التطبيق)      | ⬜     |         |
+| [ ] **App Tracking Transparency (ATT):** إظهار رسالة ATT إذا Firebase Analytics مستخدم (iOS 14.5+) | ⬜     |         |
 | [ ] **Arabic RTL:** التأكد من عمل واجهة RTL بشكل كامل على iOS                           | ⬜     |         |
 
 ---

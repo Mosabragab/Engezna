@@ -419,6 +419,7 @@
 | WKWebView لا يدعم كل Service Worker APIs   | ⚠️ متوسط  | اختبار وإصلاح أي features تعتمد على SW داخل Capacitor       |
 | APNs إعداد منفصل عن FCM                    | ⚠️ متوسط  | رفع APNs key لـ Firebase + إعداد entitlements في Xcode     |
 | مراجعة Apple أشد صرامة                     | ⚠️ متوسط  | تحضير Demo Account + Notes for Reviewer مفصلة              |
+| App Tracking Transparency (ATT) مطلوب      | ⚠️ متوسط  | إضافة ATT prompt إذا Firebase Analytics مستخدم (iOS 14.5+)  |
 | macOS + Xcode مطلوب للبناء                 | ⚠️ متوسط  | توفير macOS أو استخدام CI/CD (Codemagic/Bitrise)            |
 
 ---
