@@ -363,16 +363,16 @@
 - `src/lib/` - Utilities and API functions
 - `src/lib/repositories/` - Data access layer
 - `supabase/migrations/` - Database migrations
-- `docs/GOOGLE_PLAY_RELEASE_ROADMAP.md` - خطة تفصيلية للنشر
+- `docs/APP_STORES_RELEASE_ROADMAP.md` - خطة تفصيلية للنشر على Google Play و App Store
 
 ### Key Documents
 
-| الملف                                 | المحتوى                           |
-| ------------------------------------- | --------------------------------- |
-| `docs/GOOGLE_PLAY_RELEASE_ROADMAP.md` | خطة النشر التفصيلية (المراحل 0-6) |
-| `docs/PRE_RELEASE_REVIEW_REPORT.md`   | تقرير مراجعة ما قبل النشر         |
-| `docs/MASTER_IMPLEMENTATION_PLAN.md`  | خطة التنفيذ الشاملة (المراحل 1-4) |
-| `docs/QUALITY_LAYERS_ROADMAP.md`      | خريطة طبقات الجودة                |
+| الملف                                | المحتوى                                                      |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `docs/APP_STORES_RELEASE_ROADMAP.md` | خطة النشر التفصيلية (المراحل 0-6B) - Google Play + App Store |
+| `docs/PRE_RELEASE_REVIEW_REPORT.md`  | تقرير مراجعة ما قبل النشر                                    |
+| `docs/MASTER_IMPLEMENTATION_PLAN.md` | خطة التنفيذ الشاملة (المراحل 1-4)                            |
+| `docs/QUALITY_LAYERS_ROADMAP.md`     | خريطة طبقات الجودة                                           |
 
 ### Pricing Types
 
