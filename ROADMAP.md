@@ -28,12 +28,12 @@
 
 ### مهام Edge Functions (الأولوية القصوى - إشعارات الموبايل):
 
-| #   | المهمة                                                               | النوع    | الحالة |
-| --- | -------------------------------------------------------------------- | -------- | ------ |
-| 1   | نشر `send-notification` و `handle-notification-trigger` على Supabase | Supabase | ⬜     |
-| 2   | إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                  | Supabase | ⬜     |
-| 3   | اختبار الدورة الكاملة: trigger → Edge Function → FCM → device        | اختبار   | ⬜     |
-| 4   | حذف Database Webhooks القديمة من Supabase Dashboard                  | Supabase | ⬜     |
+| #   | المهمة                                                               | النوع    | الحالة         |
+| --- | -------------------------------------------------------------------- | -------- | -------------- |
+| 1   | نشر `send-notification` و `handle-notification-trigger` على Supabase | Supabase | ✅ تم 2/19     |
+| 2   | إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                  | Supabase | ❓ يحتاج تأكيد |
+| 3   | اختبار الدورة الكاملة: trigger → Edge Function → FCM → device        | اختبار   | ⬜             |
+| 4   | حذف Database Webhooks القديمة من Supabase Dashboard                  | Supabase | ⬜             |
 
 ### مهام المرحلة 2 المتبقية (أداء):
 
@@ -59,8 +59,8 @@
 ### الخطوة 1: إكمال المرحلة 2 + Edge Functions (2-3 أيام)
 
 - **Edge Functions (أولوية قصوى):**
-  - نشر `send-notification` + `handle-notification-trigger` على Supabase
-  - إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret
+  - ~~نشر `send-notification` + `handle-notification-trigger` على Supabase~~ ✅ تم 2/19
+  - إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret ← **يحتاج تأكيد**
   - حذف Database Webhooks القديمة من Dashboard
   - اختبار الدورة الكاملة: trigger → Edge Function → FCM → device
 - **أداء (متبقي):**
@@ -132,8 +132,8 @@
 
 ### متبقي
 
-- [ ] نشر Edge Functions
-- [ ] إعداد FIREBASE_SERVICE_ACCOUNT
+- [x] نشر Edge Functions (تم 2/19 - تأكيد بالاختبار 2/21)
+- [ ] إعداد FIREBASE_SERVICE_ACCOUNT ← **يحتاج تأكيد**
 - [ ] حذف Database Webhooks القديمة
 - [ ] تفعيل cron job الطلبات المتأخرة (اختياري)
 
@@ -243,8 +243,8 @@
 - [x] Database triggers for all events (3 آمنة: customer/provider/admin)
 - [x] `call_notification_webhook()` function (HTTP POST to Edge Function)
 - [x] FCM tokens table with device_type support (web/android/ios)
-- [ ] نشر Edge Functions على Supabase (`send-notification` + `handle-notification-trigger`)
-- [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret
+- [x] نشر Edge Functions على Supabase (`send-notification` + `handle-notification-trigger`) (2/19)
+- [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret ← **يحتاج تأكيد**
 - [ ] اختبار FCM الدورة الكاملة: trigger → Edge Function → FCM → device
 
 ### 5. Admin Promo Code UI ✅

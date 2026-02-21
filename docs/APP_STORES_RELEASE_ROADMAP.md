@@ -180,14 +180,17 @@
 
 | المهمة                                                                      | الحالة | التاريخ |
 | --------------------------------------------------------------------------- | ------ | ------- |
-| [ ] نشر `send-notification` Edge Function على Supabase                      | ⬜     |         |
-| [ ] نشر `handle-notification-trigger` Edge Function على Supabase            | ⬜     |         |
+| [x] نشر `send-notification` Edge Function على Supabase                      | ✅     | 2/19    |
+| [x] نشر `handle-notification-trigger` Edge Function على Supabase            | ✅     | 2/19    |
 | [x] إعداد Database Triggers لربط جداول الإشعارات بالـ Edge Functions        | ✅     | 2/13    |
-| [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ⬜     |         |
+| [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ❓     |         |
 | [ ] اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ⬜     |         |
 
-**تحديث (2/21) - نتائج فحص قاعدة البيانات:**
+**تحديث (2/21) - نتائج الفحص والاختبار:**
 
+- ✅ **Edge Functions منشورة ومتاحة (تأكيد 2/21):**
+  - `handle-notification-trigger` → 200 OK (يتخطى الطلبات غير الصالحة بشكل صحيح)
+  - `send-notification` → 400 (validation يعمل: "title and body are required")
 - ✅ **Architecture مكتمل:** التدفق الكامل مبني وجاهز:
   ```
   INSERT into notification table
@@ -201,7 +204,7 @@
 - ✅ **FCM Tokens:** جدول `fcm_tokens` يدعم `device_type IN ('web', 'android', 'ios')` - جاهز لـ iOS
 - ✅ **Cron Jobs:** 5 من 6 jobs نشطة (embeddings, refunds, cleanup, custom orders, pending payments)
 - ⚠️ **`check_delayed_orders_and_notify`:** cron job معطل (jobid 1, active=false) - مراجعة مطلوبة
-- 🔴 **متبقي:** نشر Edge Functions + إعداد FIREBASE_SERVICE_ACCOUNT + اختبار الدورة الكاملة
+- ❓ **Blocker:** هل `FIREBASE_SERVICE_ACCOUNT` معد كـ Supabase Secret؟ بدونه لن تعمل الإشعارات
 - راجع `docs/EDGE_FUNCTIONS_DEPLOYMENT.md` لخطوات النشر الكاملة
 
 ### 1.8 إصلاح صوت إشعارات حالة الطلب للعميل
