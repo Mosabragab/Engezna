@@ -107,7 +107,7 @@ BEGIN
     OLD.description_ar IS DISTINCT FROM NEW.description_ar OR
     OLD.description_en IS DISTINCT FROM NEW.description_en OR
     OLD.price IS DISTINCT FROM NEW.price OR
-    OLD.provider_category_id IS DISTINCT FROM NEW.provider_category_id
+    OLD.category_id IS DISTINCT FROM NEW.category_id
   ) THEN
     -- Clear old embedding since content changed
     NEW.embedding := NULL;
