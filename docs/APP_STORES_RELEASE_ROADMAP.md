@@ -23,7 +23,7 @@
 | **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | ⬜ لم يبدأ |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ |
-| **المرحلة 5:** الاختبار والمراجعة النهائية (Android + iOS)  | عالي    | 3-4 أيام       | ⬜ لم يبدأ |
+| **المرحلة 5:** الاختبار والمراجعة النهائية (Android + iOS) | عالي    | 3-4 أيام       | ⬜ لم يبدأ |
 | **المرحلة 6:** النشر على Google Play                       | حرج     | 1-3 أيام       | ⬜ لم يبدأ |
 | **المرحلة 6B:** النشر على Apple App Store                  | حرج     | 1-7 أيام       | ⬜ لم يبدأ |
 
@@ -460,7 +460,7 @@ const config = {
 | [ ] تثبيت `@capacitor/app` لـ deep linking و app state         | ⬜     |         |
 | [ ] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ⬜     |         |
 | [ ] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ⬜     |         |
-| [ ] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS   | ⬜     |         |
+| [ ] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS  | ⬜     |         |
 
 ### 3.3 إعداد Android Project
 
@@ -476,16 +476,16 @@ const config = {
 
 ### 3.4 Build و Testing (Android)
 
-| المهمة                                                          | الحالة | التاريخ |
-| --------------------------------------------------------------- | ------ | ------- |
+| المهمة                                                                     | الحالة | التاريخ |
+| -------------------------------------------------------------------------- | ------ | ------- |
 | [ ] بناء الـ Next.js: `next build` (Hybrid App - لا حاجة لـ static export) | ⬜     |         |
-| [ ] مزامنة: `npx cap sync android`                              | ⬜     |         |
-| [ ] اختبار على Android Emulator                                 | ⬜     |         |
-| [ ] اختبار على جهاز Android حقيقي                               | ⬜     |         |
-| [ ] اختبار الإشعارات الصوتية على Android                        | ⬜     |         |
-| [ ] اختبار Deep Linking                                         | ⬜     |         |
-| [ ] اختبار Offline Mode                                         | ⬜     |         |
-| [ ] بناء Release AAB: `./gradlew bundleRelease`                 | ⬜     |         |
+| [ ] مزامنة: `npx cap sync android`                                         | ⬜     |         |
+| [ ] اختبار على Android Emulator                                            | ⬜     |         |
+| [ ] اختبار على جهاز Android حقيقي                                          | ⬜     |         |
+| [ ] اختبار الإشعارات الصوتية على Android                                   | ⬜     |         |
+| [ ] اختبار Deep Linking                                                    | ⬜     |         |
+| [ ] اختبار Offline Mode                                                    | ⬜     |         |
+| [ ] بناء Release AAB: `./gradlew bundleRelease`                            | ⬜     |         |
 
 ---
 
@@ -496,41 +496,41 @@ const config = {
 
 ### 3B.1 إعداد بيئة التطوير iOS
 
-| المهمة                                                                       | الحالة | التاريخ |
-| ---------------------------------------------------------------------------- | ------ | ------- |
-| [ ] التأكد من توفر macOS مع Xcode 15+ ومكوناته (Command Line Tools)           | ⬜     |         |
-| [ ] تثبيت CocoaPods: `sudo gem install cocoapods`                             | ⬜     |         |
-| [ ] إضافة iOS platform: `npx cap add ios`                                    | ⬜     |         |
-| [ ] مزامنة: `npx cap sync ios`                                               | ⬜     |         |
-| [ ] فتح المشروع في Xcode: `npx cap open ios`                                 | ⬜     |         |
+| المهمة                                                              | الحالة | التاريخ |
+| ------------------------------------------------------------------- | ------ | ------- |
+| [ ] التأكد من توفر macOS مع Xcode 15+ ومكوناته (Command Line Tools) | ⬜     |         |
+| [ ] تثبيت CocoaPods: `sudo gem install cocoapods`                   | ⬜     |         |
+| [ ] إضافة iOS platform: `npx cap add ios`                           | ⬜     |         |
+| [ ] مزامنة: `npx cap sync ios`                                      | ⬜     |         |
+| [ ] فتح المشروع في Xcode: `npx cap open ios`                        | ⬜     |         |
 
 ### 3B.2 Apple Developer Account والشهادات
 
-| المهمة                                                                                 | الحالة | التاريخ |
-| -------------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] تسجيل حساب Apple Developer ($99/سنة)                                               | ⬜     |         |
-| [ ] إنشاء App ID في Apple Developer Portal (`com.engezna.app`)                        | ⬜     |         |
-| [ ] إنشاء Distribution Certificate (iOS Distribution)                                  | ⬜     |         |
-| [ ] إنشاء Provisioning Profile (App Store Distribution)                                | ⬜     |         |
-| [ ] تفعيل Push Notifications capability في App ID                                     | ⬜     |         |
-| [ ] إنشاء APNs Authentication Key (p8) أو APNs Certificate (p12) من Apple Developer    | ⬜     |         |
-| [ ] رفع APNs Key لـ Firebase Console (Project Settings → Cloud Messaging → APNs)       | ⬜     |         |
+| المهمة                                                                              | الحالة | التاريخ |
+| ----------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] تسجيل حساب Apple Developer ($99/سنة)                                            | ⬜     |         |
+| [ ] إنشاء App ID في Apple Developer Portal (`com.engezna.app`)                      | ⬜     |         |
+| [ ] إنشاء Distribution Certificate (iOS Distribution)                               | ⬜     |         |
+| [ ] إنشاء Provisioning Profile (App Store Distribution)                             | ⬜     |         |
+| [ ] تفعيل Push Notifications capability في App ID                                   | ⬜     |         |
+| [ ] إنشاء APNs Authentication Key (p8) أو APNs Certificate (p12) من Apple Developer | ⬜     |         |
+| [ ] رفع APNs Key لـ Firebase Console (Project Settings → Cloud Messaging → APNs)    | ⬜     |         |
 
 ### 3B.3 إعداد iOS Project في Xcode
 
-| المهمة                                                                               | الحالة | التاريخ |
-| ------------------------------------------------------------------------------------ | ------ | ------- |
-| [ ] تحديث Bundle Identifier: `com.engezna.app`                                      | ⬜     |         |
-| [ ] تحديث Display Name: `إنجزنا`                                                     | ⬜     |         |
-| [ ] إعداد Minimum Deployment Target: iOS 14.0 (أو iOS 15.0 لدعم أوسع للميزات)       | ⬜     |         |
-| [ ] إضافة `GoogleService-Info.plist` من Firebase Console                              | ⬜     |         |
-| [ ] تفعيل Push Notifications Capability في Xcode                                     | ⬜     |         |
-| [ ] تفعيل Background Modes → Remote notifications                                    | ⬜     |         |
-| [ ] تفعيل Associated Domains لـ Universal Links (`applinks:app.engezna.com`)         | ⬜     |         |
-| [ ] إعداد App Icons (1024x1024 + جميع الأحجام المطلوبة في Asset Catalog)               | ⬜     |         |
-| [ ] إعداد Launch Screen (Storyboard أو SwiftUI)                                      | ⬜     |         |
-| [ ] إضافة ملفات الصوت في iOS bundle (`notification.mp3`, `new-order.mp3`)             | ⬜     |         |
-| [ ] إعداد `Info.plist` بالأذونات المطلوبة (الكاميرا، الموقع، الإشعارات، ATT)           | ⬜     |         |
+| المهمة                                                                        | الحالة | التاريخ |
+| ----------------------------------------------------------------------------- | ------ | ------- |
+| [ ] تحديث Bundle Identifier: `com.engezna.app`                                | ⬜     |         |
+| [ ] تحديث Display Name: `إنجزنا`                                              | ⬜     |         |
+| [ ] إعداد Minimum Deployment Target: iOS 14.0 (أو iOS 15.0 لدعم أوسع للميزات) | ⬜     |         |
+| [ ] إضافة `GoogleService-Info.plist` من Firebase Console                      | ⬜     |         |
+| [ ] تفعيل Push Notifications Capability في Xcode                              | ⬜     |         |
+| [ ] تفعيل Background Modes → Remote notifications                             | ⬜     |         |
+| [ ] تفعيل Associated Domains لـ Universal Links (`applinks:app.engezna.com`)  | ⬜     |         |
+| [ ] إعداد App Icons (1024x1024 + جميع الأحجام المطلوبة في Asset Catalog)      | ⬜     |         |
+| [ ] إعداد Launch Screen (Storyboard أو SwiftUI)                               | ⬜     |         |
+| [ ] إضافة ملفات الصوت في iOS bundle (`notification.mp3`, `new-order.mp3`)     | ⬜     |         |
+| [ ] إعداد `Info.plist` بالأذونات المطلوبة (الكاميرا، الموقع، الإشعارات، ATT)  | ⬜     |         |
 
 **أذونات Info.plist المطلوبة:**
 
@@ -550,30 +550,30 @@ const config = {
 
 ### 3B.4 تكييف الكود لـ iOS
 
-| المهمة                                                                                          | الحالة | التاريخ |
-| ----------------------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] التأكد من دعم Safe Area Insets (notch, Dynamic Island) في التصميم                           | ⬜     |         |
-| [ ] اختبار وتعديل سلوك الكيبورد (Keyboard plugin) لتجنب تغطية الحقول                            | ⬜     |         |
-| [ ] التأكد من عمل WKWebView بشكل سليم مع Next.js (CSP headers, cookies)                        | ⬜     |         |
+| المهمة                                                                                             | الحالة | التاريخ |
+| -------------------------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] التأكد من دعم Safe Area Insets (notch, Dynamic Island) في التصميم                              | ⬜     |         |
+| [ ] اختبار وتعديل سلوك الكيبورد (Keyboard plugin) لتجنب تغطية الحقول                               | ⬜     |         |
+| [ ] التأكد من عمل WKWebView بشكل سليم مع Next.js (CSP headers, cookies)                            | ⬜     |         |
 | [ ] إضافة platform detection: `import { Capacitor } from '@capacitor/core'` → `isNativePlatform()` | ⬜     |         |
-| [ ] معالجة الفرق بين APNs (iOS) و FCM (Android) في إدارة الإشعارات                              | ⬜     |         |
-| [ ] اختبار وإصلاح سلوك الـ StatusBar على iOS (light/dark content)                                | ⬜     |         |
-| [ ] التأكد من عمل gesture navigation (swipe back) بشكل صحيح                                     | ⬜     |         |
+| [ ] معالجة الفرق بين APNs (iOS) و FCM (Android) في إدارة الإشعارات                                 | ⬜     |         |
+| [ ] اختبار وإصلاح سلوك الـ StatusBar على iOS (light/dark content)                                  | ⬜     |         |
+| [ ] التأكد من عمل gesture navigation (swipe back) بشكل صحيح                                        | ⬜     |         |
 
 ### 3B.5 Build و Testing (iOS)
 
-| المهمة                                                                  | الحالة | التاريخ |
-| ----------------------------------------------------------------------- | ------ | ------- |
-| [ ] مزامنة: `npx cap sync ios`                                          | ⬜     |         |
-| [ ] بناء واختبار على iOS Simulator (iPhone 15, iPhone SE)                | ⬜     |         |
-| [ ] اختبار على جهاز iPhone حقيقي (يتطلب provisioning profile)           | ⬜     |         |
-| [ ] اختبار الإشعارات على iOS (لا تعمل على Simulator - جهاز حقيقي فقط)   | ⬜     |         |
-| [ ] اختبار Deep Linking / Universal Links                               | ⬜     |         |
-| [ ] اختبار الدفع عبر Kashier داخل WKWebView                            | ⬜     |         |
-| [ ] اختبار تحميل الصور والكاميرا                                        | ⬜     |         |
-| [ ] اختبار الموقع الجغرافي                                              | ⬜     |         |
-| [ ] بناء Release Archive: Product → Archive في Xcode                    | ⬜     |         |
-| [ ] التأكد من عدم وجود warnings في Xcode build                          | ⬜     |         |
+| المهمة                                                                | الحالة | التاريخ |
+| --------------------------------------------------------------------- | ------ | ------- |
+| [ ] مزامنة: `npx cap sync ios`                                        | ⬜     |         |
+| [ ] بناء واختبار على iOS Simulator (iPhone 15, iPhone SE)             | ⬜     |         |
+| [ ] اختبار على جهاز iPhone حقيقي (يتطلب provisioning profile)         | ⬜     |         |
+| [ ] اختبار الإشعارات على iOS (لا تعمل على Simulator - جهاز حقيقي فقط) | ⬜     |         |
+| [ ] اختبار Deep Linking / Universal Links                             | ⬜     |         |
+| [ ] اختبار الدفع عبر Kashier داخل WKWebView                           | ⬜     |         |
+| [ ] اختبار تحميل الصور والكاميرا                                      | ⬜     |         |
+| [ ] اختبار الموقع الجغرافي                                            | ⬜     |         |
+| [ ] بناء Release Archive: Product → Archive في Xcode                  | ⬜     |         |
+| [ ] التأكد من عدم وجود warnings في Xcode build                        | ⬜     |         |
 
 ---
 
@@ -643,43 +643,43 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ### 4B.1 إعداد App Store Connect
 
-| المهمة                                                                     | الحالة | التاريخ |
-| -------------------------------------------------------------------------- | ------ | ------- |
-| [ ] تسجيل الدخول على App Store Connect (بحساب Apple Developer)              | ⬜     |         |
-| [ ] إنشاء تطبيق جديد (New App) بالبيانات التالية:                          | ⬜     |         |
-| - Platform: iOS                                                             |        |         |
-| - Name: إنجزنا - Engezna                                                   |        |         |
-| - Primary Language: Arabic                                                  |        |         |
-| - Bundle ID: com.engezna.app                                                |        |         |
-| - SKU: engezna-ios-v1                                                       |        |         |
-| [ ] إعداد الإصدار الأول (Version 1.0.0)                                    | ⬜     |         |
+| المهمة                                                         | الحالة | التاريخ |
+| -------------------------------------------------------------- | ------ | ------- |
+| [ ] تسجيل الدخول على App Store Connect (بحساب Apple Developer) | ⬜     |         |
+| [ ] إنشاء تطبيق جديد (New App) بالبيانات التالية:              | ⬜     |         |
+| - Platform: iOS                                                |        |         |
+| - Name: إنجزنا - Engezna                                       |        |         |
+| - Primary Language: Arabic                                     |        |         |
+| - Bundle ID: com.engezna.app                                   |        |         |
+| - SKU: engezna-ios-v1                                          |        |         |
+| [ ] إعداد الإصدار الأول (Version 1.0.0)                        | ⬜     |         |
 
 ### 4B.2 تجهيز المحتوى المرئي (App Store)
 
 > **ملاحظة:** App Store يتطلب screenshots لكل حجم شاشة مدعوم. **يجب عرض أجهزة iPhone فقط** (لا Android mockups).
 
-| المهمة                                                                               | الحالة | التاريخ |
-| ------------------------------------------------------------------------------------ | ------ | ------- |
-| [ ] App Icon: 1024x1024 px (بدون شفافية، بدون زوايا مدورة - Apple تضيفها تلقائياً)    | ⬜     |         |
-| [ ] Screenshots لـ iPhone 6.7" (1290x2796 px) - **إلزامي** (min 3, max 10)           | ⬜     |         |
-| [ ] Screenshots لـ iPhone 6.5" (1284x2778 px أو 1242x2688 px)                        | ⬜     |         |
-| [ ] Screenshots لـ iPhone 5.5" (1242x2208 px) - مطلوب لدعم iPhone 8 Plus             | ⬜     |         |
-| [ ] Screenshots لـ iPad Pro 12.9" (2048x2732 px) - **إلزامي إذا دعم iPad**           | ⬜     |         |
-| [ ] App Preview Video (اختياري - 15-30 ثانية) - فيديو قصير يعرض التطبيق             | ⬜     |         |
-| [ ] التأكد إن كل الـ Screenshots بصيغة PNG أو JPEG (RGB, لا alpha)                   | ⬜     |         |
+| المهمة                                                                             | الحالة | التاريخ |
+| ---------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] App Icon: 1024x1024 px (بدون شفافية، بدون زوايا مدورة - Apple تضيفها تلقائياً) | ⬜     |         |
+| [ ] Screenshots لـ iPhone 6.7" (1290x2796 px) - **إلزامي** (min 3, max 10)         | ⬜     |         |
+| [ ] Screenshots لـ iPhone 6.5" (1284x2778 px أو 1242x2688 px)                      | ⬜     |         |
+| [ ] Screenshots لـ iPhone 5.5" (1242x2208 px) - مطلوب لدعم iPhone 8 Plus           | ⬜     |         |
+| [ ] Screenshots لـ iPad Pro 12.9" (2048x2732 px) - **إلزامي إذا دعم iPad**         | ⬜     |         |
+| [ ] App Preview Video (اختياري - 15-30 ثانية) - فيديو قصير يعرض التطبيق            | ⬜     |         |
+| [ ] التأكد إن كل الـ Screenshots بصيغة PNG أو JPEG (RGB, لا alpha)                 | ⬜     |         |
 
 ### 4B.3 كتابة محتوى App Store (عربي + إنجليزي)
 
-| المهمة                                                                      | الحالة | التاريخ |
-| --------------------------------------------------------------------------- | ------ | ------- |
-| [ ] Subtitle (حتى 30 حرف): مثال "توصيل سريع من محلات بلدك"                  | ⬜     |         |
-| [ ] Promotional Text (حتى 170 حرف) - يتغير بدون إرسال تحديث جديد            | ⬜     |         |
-| [ ] Description (حتى 4000 حرف) - لا يتغير إلا مع تحديث جديد                | ⬜     |         |
-| [ ] Keywords (حتى 100 حرف، مفصولة بفواصل) - مهمة جداً لـ ASO               | ⬜     |         |
-| [ ] What's New (Release Notes) للإصدار الأول                                | ⬜     |         |
-| [ ] Privacy Policy URL (نفس الرابط: `/ar/privacy`)                          | ⬜     |         |
-| [ ] Support URL (رابط الدعم)                                                | ⬜     |         |
-| [ ] Marketing URL (اختياري)                                                 | ⬜     |         |
+| المهمة                                                           | الحالة | التاريخ |
+| ---------------------------------------------------------------- | ------ | ------- |
+| [ ] Subtitle (حتى 30 حرف): مثال "توصيل سريع من محلات بلدك"       | ⬜     |         |
+| [ ] Promotional Text (حتى 170 حرف) - يتغير بدون إرسال تحديث جديد | ⬜     |         |
+| [ ] Description (حتى 4000 حرف) - لا يتغير إلا مع تحديث جديد      | ⬜     |         |
+| [ ] Keywords (حتى 100 حرف، مفصولة بفواصل) - مهمة جداً لـ ASO     | ⬜     |         |
+| [ ] What's New (Release Notes) للإصدار الأول                     | ⬜     |         |
+| [ ] Privacy Policy URL (نفس الرابط: `/ar/privacy`)               | ⬜     |         |
+| [ ] Support URL (رابط الدعم)                                     | ⬜     |         |
+| [ ] Marketing URL (اختياري)                                      | ⬜     |         |
 
 **مقترح Keywords (عربي):**
 
@@ -691,47 +691,47 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 > **ملاحظة:** Apple تتطلب إفصاح كامل عن البيانات المجمعة (App Privacy Labels) - يظهر للمستخدم قبل التحميل.
 
-| المهمة                                                                | الحالة | التاريخ |
-| --------------------------------------------------------------------- | ------ | ------- |
-| [ ] ملء App Privacy Labels في App Store Connect:                      | ⬜     |         |
-| - **Data Used to Track You:** لا (لا نستخدم tracking عبر تطبيقات)      |        |         |
-| - **Data Linked to You:**                                              |        |         |
-|   - Contact Info: الاسم، البريد، رقم الهاتف، العنوان                   |        |         |
-|   - Financial Info: معلومات الدفع (عبر Kashier)                        |        |         |
-|   - Location: الموقع الدقيق (للتوصيل)                                  |        |         |
-|   - Identifiers: User ID, Device ID (FCM token)                        |        |         |
-|   - Usage Data: تفاعل المنتج، سجل الطلبات                             |        |         |
-| - **Data Not Linked to You:** Crash Data, Performance Data             |        |         |
-| [ ] مراجعة التطابق مع صفحة `/ar/privacy`                              | ⬜     |         |
-| [ ] التأكد من وجود آلية حذف الحساب (مطلوب من Apple منذ 2022)           | ⬜     |         |
+| المهمة                                                            | الحالة | التاريخ |
+| ----------------------------------------------------------------- | ------ | ------- |
+| [ ] ملء App Privacy Labels في App Store Connect:                  | ⬜     |         |
+| - **Data Used to Track You:** لا (لا نستخدم tracking عبر تطبيقات) |        |         |
+| - **Data Linked to You:**                                         |        |         |
+| - Contact Info: الاسم، البريد، رقم الهاتف، العنوان                |        |         |
+| - Financial Info: معلومات الدفع (عبر Kashier)                     |        |         |
+| - Location: الموقع الدقيق (للتوصيل)                               |        |         |
+| - Identifiers: User ID, Device ID (FCM token)                     |        |         |
+| - Usage Data: تفاعل المنتج، سجل الطلبات                           |        |         |
+| - **Data Not Linked to You:** Crash Data, Performance Data        |        |         |
+| [ ] مراجعة التطابق مع صفحة `/ar/privacy`                          | ⬜     |         |
+| [ ] التأكد من وجود آلية حذف الحساب (مطلوب من Apple منذ 2022)      | ⬜     |         |
 
 ### 4B.5 إعداد Content Rating و التصنيف (App Store)
 
-| المهمة                                                                  | الحالة | التاريخ |
-| ----------------------------------------------------------------------- | ------ | ------- |
-| [ ] ملء استبيان Age Rating في App Store Connect                         | ⬜     |         |
-| [ ] اختيار Primary Category: Food & Drink                              | ⬜     |         |
-| [ ] اختيار Secondary Category: Shopping (اختياري)                       | ⬜     |         |
-| [ ] تحديد Availability: مصر (Egypt)                                     | ⬜     |         |
-| [ ] تحديد السعر: Free                                                   | ⬜     |         |
-| [ ] إعداد In-App Purchases: لا يوجد (الدفع عبر Kashier خارج IAP)        | ⬜     |         |
+| المهمة                                                           | الحالة | التاريخ |
+| ---------------------------------------------------------------- | ------ | ------- |
+| [ ] ملء استبيان Age Rating في App Store Connect                  | ⬜     |         |
+| [ ] اختيار Primary Category: Food & Drink                        | ⬜     |         |
+| [ ] اختيار Secondary Category: Shopping (اختياري)                | ⬜     |         |
+| [ ] تحديد Availability: مصر (Egypt)                              | ⬜     |         |
+| [ ] تحديد السعر: Free                                            | ⬜     |         |
+| [ ] إعداد In-App Purchases: لا يوجد (الدفع عبر Kashier خارج IAP) | ⬜     |         |
 
 ### 4B.6 متطلبات Apple الخاصة (App Review Guidelines)
 
 > **تحذير:** هذه النقاط هي أكثر أسباب رفض التطبيقات من Apple شيوعاً.
 
-| المهمة                                                                                  | الحالة | التاريخ |
-| --------------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] **حذف حساب المستخدم:** يجب توفير طريقة واضحة لحذف الحساب من داخل التطبيق (§5.1.1)  | ⬜     |         |
-| [ ] **Sign in with Apple:** إضافة زر تسجيل الدخول بحساب Apple إذا يوجد تسجيل اجتماعي    | ⬜     |         |
-| [ ] **الدفع:** التأكد من عدم استخدام IAP لخدمات فعلية (التوصيل معفى - §3.1.3(e))       | ⬜     |         |
-| [ ] **Demo Account:** تحضير حساب تجريبي لفريق مراجعة Apple (Review Information)         | ⬜     |         |
-| [ ] **App Transport Security:** التأكد من استخدام HTTPS فقط (ATS)                       | ⬜     |         |
-| [ ] **IPv6 Compatibility:** التأكد من عمل التطبيق على شبكات IPv6-only                   | ⬜     |         |
-| [ ] **Minimum Functionality:** التأكد أن التطبيق ليس مجرد WebView wrapper (إضافة native features) | ⬜     |         |
-| [ ] **Permissions:** طلب كل إذن في سياقه الصحيح (لا تطلب الكاميرا عند فتح التطبيق)      | ⬜     |         |
+| المهمة                                                                                             | الحالة | التاريخ |
+| -------------------------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] **حذف حساب المستخدم:** يجب توفير طريقة واضحة لحذف الحساب من داخل التطبيق (§5.1.1)              | ⬜     |         |
+| [ ] **Sign in with Apple:** إضافة زر تسجيل الدخول بحساب Apple إذا يوجد تسجيل اجتماعي               | ⬜     |         |
+| [ ] **الدفع:** التأكد من عدم استخدام IAP لخدمات فعلية (التوصيل معفى - §3.1.3(e))                   | ⬜     |         |
+| [ ] **Demo Account:** تحضير حساب تجريبي لفريق مراجعة Apple (Review Information)                    | ⬜     |         |
+| [ ] **App Transport Security:** التأكد من استخدام HTTPS فقط (ATS)                                  | ⬜     |         |
+| [ ] **IPv6 Compatibility:** التأكد من عمل التطبيق على شبكات IPv6-only                              | ⬜     |         |
+| [ ] **Minimum Functionality:** التأكد أن التطبيق ليس مجرد WebView wrapper (إضافة native features)  | ⬜     |         |
+| [ ] **Permissions:** طلب كل إذن في سياقه الصحيح (لا تطلب الكاميرا عند فتح التطبيق)                 | ⬜     |         |
 | [ ] **App Tracking Transparency (ATT):** إظهار رسالة ATT إذا Firebase Analytics مستخدم (iOS 14.5+) | ⬜     |         |
-| [ ] **Arabic RTL:** التأكد من عمل واجهة RTL بشكل كامل على iOS                           | ⬜     |         |
+| [ ] **Arabic RTL:** التأكد من عمل واجهة RTL بشكل كامل على iOS                                      | ⬜     |         |
 
 ---
 
@@ -741,56 +741,56 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ### 5.1 اختبار شامل قبل النشر (مشترك)
 
-| المهمة                                                         | الحالة | التاريخ |
-| -------------------------------------------------------------- | ------ | ------- |
-| [ ] تشغيل جميع Unit Tests (270 test)                           | ⬜     |         |
-| [ ] تشغيل Security Tests (76 test)                             | ⬜     |         |
-| [ ] تشغيل E2E Tests                                            | ⬜     |         |
-| [ ] اختبار يدوي لكل flow أساسي:                                | ⬜     |         |
-| - تسجيل حساب جديد → تصفح المتاجر → إضافة للسلة → طلب           |        |         |
-| - تسجيل دخول مزود → استقبال طلب → قبول → تحضير → توصيل         |        |         |
-| - إرسال رسالة محادثة → استقبال إشعار                           |        |         |
-| - طلب استرجاع → الموافقة عليه                                  |        |         |
-| [ ] اختبار الإشعارات بالصوت على 3 أجهزة مختلفة على الأقل       | ⬜     |         |
-| [ ] اختبار Offline mode والعودة للاتصال                        | ⬜     |         |
-| [ ] اختبار Deep Links / Universal Links                        | ⬜     |         |
+| المهمة                                                   | الحالة | التاريخ |
+| -------------------------------------------------------- | ------ | ------- |
+| [ ] تشغيل جميع Unit Tests (270 test)                     | ⬜     |         |
+| [ ] تشغيل Security Tests (76 test)                       | ⬜     |         |
+| [ ] تشغيل E2E Tests                                      | ⬜     |         |
+| [ ] اختبار يدوي لكل flow أساسي:                          | ⬜     |         |
+| - تسجيل حساب جديد → تصفح المتاجر → إضافة للسلة → طلب     |        |         |
+| - تسجيل دخول مزود → استقبال طلب → قبول → تحضير → توصيل   |        |         |
+| - إرسال رسالة محادثة → استقبال إشعار                     |        |         |
+| - طلب استرجاع → الموافقة عليه                            |        |         |
+| [ ] اختبار الإشعارات بالصوت على 3 أجهزة مختلفة على الأقل | ⬜     |         |
+| [ ] اختبار Offline mode والعودة للاتصال                  | ⬜     |         |
+| [ ] اختبار Deep Links / Universal Links                  | ⬜     |         |
 
 ### 5.2 اختبار خاص بـ Android
 
-| المهمة                                                                 | الحالة | التاريخ |
-| ---------------------------------------------------------------------- | ------ | ------- |
-| [ ] اختبار على Android 10+ (API 29+)                                   | ⬜     |         |
-| [ ] اختبار على أحجام شاشات مختلفة (small, normal, large, xlarge)        | ⬜     |         |
-| [ ] اختبار Back Button behavior                                        | ⬜     |         |
-| [ ] اختبار Split Screen / Multi-window                                 | ⬜     |         |
-| [ ] اختبار بدون Google Play Services (Huawei devices)                  | ⬜     |         |
+| المهمة                                                           | الحالة | التاريخ |
+| ---------------------------------------------------------------- | ------ | ------- |
+| [ ] اختبار على Android 10+ (API 29+)                             | ⬜     |         |
+| [ ] اختبار على أحجام شاشات مختلفة (small, normal, large, xlarge) | ⬜     |         |
+| [ ] اختبار Back Button behavior                                  | ⬜     |         |
+| [ ] اختبار Split Screen / Multi-window                           | ⬜     |         |
+| [ ] اختبار بدون Google Play Services (Huawei devices)            | ⬜     |         |
 
 ### 5.3 اختبار خاص بـ iOS
 
-| المهمة                                                                             | الحالة | التاريخ |
-| ---------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] اختبار على iOS 14+ (أو الحد الأدنى المختار)                                    | ⬜     |         |
-| [ ] اختبار على iPhone SE (شاشة صغيرة 4.7")                                        | ⬜     |         |
-| [ ] اختبار على iPhone 15 Pro (Dynamic Island)                                      | ⬜     |         |
-| [ ] اختبار على iPad (إذا التطبيق يدعم iPad)                                        | ⬜     |         |
-| [ ] اختبار Dark Mode على iOS                                                       | ⬜     |         |
-| [ ] اختبار VoiceOver accessibility                                                 | ⬜     |         |
-| [ ] اختبار Swipe Back gesture                                                      | ⬜     |         |
-| [ ] اختبار الإشعارات مع التطبيق مغلق / في الخلفية / في المقدمة                      | ⬜     |         |
-| [ ] اختبار الدفع عبر Kashier على Safari / WKWebView                                | ⬜     |         |
+| المهمة                                                                                | الحالة | التاريخ |
+| ------------------------------------------------------------------------------------- | ------ | ------- |
+| [ ] اختبار على iOS 14+ (أو الحد الأدنى المختار)                                       | ⬜     |         |
+| [ ] اختبار على iPhone SE (شاشة صغيرة 4.7")                                            | ⬜     |         |
+| [ ] اختبار على iPhone 15 Pro (Dynamic Island)                                         | ⬜     |         |
+| [ ] اختبار على iPad (إذا التطبيق يدعم iPad)                                           | ⬜     |         |
+| [ ] اختبار Dark Mode على iOS                                                          | ⬜     |         |
+| [ ] اختبار VoiceOver accessibility                                                    | ⬜     |         |
+| [ ] اختبار Swipe Back gesture                                                         | ⬜     |         |
+| [ ] اختبار الإشعارات مع التطبيق مغلق / في الخلفية / في المقدمة                        | ⬜     |         |
+| [ ] اختبار الدفع عبر Kashier على Safari / WKWebView                                   | ⬜     |         |
 | [ ] اختبار عند رفض الأذونات (الكاميرا / الموقع / الإشعارات) - لا يجب أن يتوقف التطبيق | ⬜     |         |
 
 ### 5.4 مراجعة الأداء النهائية
 
-| المهمة                                          | الحالة | التاريخ |
-| ----------------------------------------------- | ------ | ------- |
-| [ ] Lighthouse Performance Score > 80           | ⬜     |         |
-| [ ] Lighthouse Accessibility Score > 90         | ⬜     |         |
-| [ ] Lighthouse Best Practices Score > 90        | ⬜     |         |
-| [ ] Lighthouse SEO Score > 90                   | ⬜     |         |
-| [ ] APK/AAB Size < 50MB (الأمثل < 30MB)         | ⬜     |         |
-| [ ] IPA Size < 200MB (حد App Store)              | ⬜     |         |
-| [ ] App Launch Time < 3 ثوانٍ على الجهازين       | ⬜     |         |
+| المهمة                                     | الحالة | التاريخ |
+| ------------------------------------------ | ------ | ------- |
+| [ ] Lighthouse Performance Score > 80      | ⬜     |         |
+| [ ] Lighthouse Accessibility Score > 90    | ⬜     |         |
+| [ ] Lighthouse Best Practices Score > 90   | ⬜     |         |
+| [ ] Lighthouse SEO Score > 90              | ⬜     |         |
+| [ ] APK/AAB Size < 50MB (الأمثل < 30MB)    | ⬜     |         |
+| [ ] IPA Size < 200MB (حد App Store)        | ⬜     |         |
+| [ ] App Launch Time < 3 ثوانٍ على الجهازين | ⬜     |         |
 
 ### 5.5 مراجعة أمنية نهائية
 
@@ -843,33 +843,33 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 ### 6B.1 رفع Build على App Store Connect
 
-| المهمة                                                                        | الحالة | التاريخ |
-| ----------------------------------------------------------------------------- | ------ | ------- |
-| [ ] بناء Archive نهائي من Xcode (Product → Archive)                           | ⬜     |         |
-| [ ] رفع الـ Archive عبر Xcode Organizer أو `xcrun altool` أو Transporter      | ⬜     |         |
-| [ ] انتظار معالجة Apple للـ build (5-30 دقيقة)                                | ⬜     |         |
-| [ ] التأكد من عدم وجود errors في App Store Connect → Activity                 | ⬜     |         |
+| المهمة                                                                   | الحالة | التاريخ |
+| ------------------------------------------------------------------------ | ------ | ------- |
+| [ ] بناء Archive نهائي من Xcode (Product → Archive)                      | ⬜     |         |
+| [ ] رفع الـ Archive عبر Xcode Organizer أو `xcrun altool` أو Transporter | ⬜     |         |
+| [ ] انتظار معالجة Apple للـ build (5-30 دقيقة)                           | ⬜     |         |
+| [ ] التأكد من عدم وجود errors في App Store Connect → Activity            | ⬜     |         |
 
 ### 6B.2 TestFlight (اختبار تجريبي - مطلوب قبل النشر)
 
-| المهمة                                                                              | الحالة | التاريخ |
-| ----------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إضافة Build للـ TestFlight في App Store Connect                                 | ⬜     |         |
-| [ ] إضافة Internal Testers (حتى 100 مختبر من الفريق)                                | ⬜     |         |
-| [ ] إرسال دعوات TestFlight                                                          | ⬜     |         |
-| [ ] اختبار التثبيت عبر TestFlight على أجهزة حقيقية                                  | ⬜     |         |
-| [ ] إضافة External Testers (حتى 10,000 - يتطلب مراجعة مختصرة من Apple)               | ⬜     |         |
-| [ ] جمع feedback وإصلاح المشاكل المكتشفة                                            | ⬜     |         |
-| [ ] مراقبة Crashes في TestFlight → Crashes                                           | ⬜     |         |
+| المهمة                                                                 | الحالة | التاريخ |
+| ---------------------------------------------------------------------- | ------ | ------- |
+| [ ] إضافة Build للـ TestFlight في App Store Connect                    | ⬜     |         |
+| [ ] إضافة Internal Testers (حتى 100 مختبر من الفريق)                   | ⬜     |         |
+| [ ] إرسال دعوات TestFlight                                             | ⬜     |         |
+| [ ] اختبار التثبيت عبر TestFlight على أجهزة حقيقية                     | ⬜     |         |
+| [ ] إضافة External Testers (حتى 10,000 - يتطلب مراجعة مختصرة من Apple) | ⬜     |         |
+| [ ] جمع feedback وإصلاح المشاكل المكتشفة                               | ⬜     |         |
+| [ ] مراقبة Crashes في TestFlight → Crashes                             | ⬜     |         |
 
 ### 6B.3 إعداد Review Information
 
-| المهمة                                                                           | الحالة | التاريخ |
-| -------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إضافة Demo Account (بريد + كلمة مرور) لفريق Apple Review                     | ⬜     |         |
-| [ ] كتابة Notes for Reviewer (شرح وظيفة التطبيق + كيفية الاختبار)                | ⬜     |         |
-| [ ] إضافة Contact Information للتواصل أثناء المراجعة                              | ⬜     |         |
-| [ ] التأكد من إتاحة التطبيق في مصر (حتى يتمكن المراجع من الاختبار)               | ⬜     |         |
+| المهمة                                                             | الحالة | التاريخ |
+| ------------------------------------------------------------------ | ------ | ------- |
+| [ ] إضافة Demo Account (بريد + كلمة مرور) لفريق Apple Review       | ⬜     |         |
+| [ ] كتابة Notes for Reviewer (شرح وظيفة التطبيق + كيفية الاختبار)  | ⬜     |         |
+| [ ] إضافة Contact Information للتواصل أثناء المراجعة               | ⬜     |         |
+| [ ] التأكد من إتاحة التطبيق في مصر (حتى يتمكن المراجع من الاختبار) | ⬜     |         |
 
 **مقترح Notes for Reviewer:**
 
@@ -894,9 +894,9 @@ Password: [كلمة المرور]
 
 | المهمة                                                                              | الحالة | التاريخ |
 | ----------------------------------------------------------------------------------- | ------ | ------- |
-| [ ] اختيار Build المعتمد من TestFlight                                               | ⬜     |         |
+| [ ] اختيار Build المعتمد من TestFlight                                              | ⬜     |         |
 | [ ] مراجعة كل بيانات التطبيق مرة أخيرة                                              | ⬜     |         |
-| [ ] إرسال للمراجعة (Submit for Review)                                               | ⬜     |         |
+| [ ] إرسال للمراجعة (Submit for Review)                                              | ⬜     |         |
 | [ ] متابعة حالة المراجعة (Waiting for Review → In Review → Ready for Sale/Rejected) | ⬜     |         |
 | [ ] في حالة الرفض: قراءة السبب بعناية وإصلاحه وإعادة التقديم                        | ⬜     |         |
 | [ ] تفعيل Phased Release (إصدار تدريجي على 7 أيام) - اختياري                        | ⬜     |         |
@@ -905,16 +905,16 @@ Password: [كلمة المرور]
 
 ### 6B.5 أسباب الرفض الشائعة وكيفية تجنبها
 
-| السبب الشائع للرفض                     | الحل                                                              |
-| -------------------------------------- | ----------------------------------------------------------------- |
-| لا يوجد زر حذف حساب                   | إضافة خيار "حذف حسابي" في صفحة الإعدادات                         |
-| التطبيق مجرد WebView                   | إضافة native features (إشعارات، كاميرا، haptics)                  |
-| Crash عند الفتح                        | اختبار شامل على TestFlight قبل التقديم                            |
-| الأذونات تُطلب فوراً عند الفتح          | طلب الأذونات عند الحاجة الفعلية فقط (lazy permission request)     |
-| الوصف لا يطابق وظيفة التطبيق           | مراجعة الوصف ومطابقته مع التطبيق الفعلي                          |
-| لا يعمل في بلد المراجع                  | التأكد من إتاحة الخدمة أو إضافة demo mode                        |
-| Sign in with Apple مفقود               | إضافته إذا يوجد أي تسجيل دخول اجتماعي (Google/Facebook)          |
-| معلومات الخصوصية غير مكتملة            | ملء كل حقول Privacy Labels بدقة                                   |
+| السبب الشائع للرفض             | الحل                                                          |
+| ------------------------------ | ------------------------------------------------------------- |
+| لا يوجد زر حذف حساب            | إضافة خيار "حذف حسابي" في صفحة الإعدادات                      |
+| التطبيق مجرد WebView           | إضافة native features (إشعارات، كاميرا، haptics)              |
+| Crash عند الفتح                | اختبار شامل على TestFlight قبل التقديم                        |
+| الأذونات تُطلب فوراً عند الفتح | طلب الأذونات عند الحاجة الفعلية فقط (lazy permission request) |
+| الوصف لا يطابق وظيفة التطبيق   | مراجعة الوصف ومطابقته مع التطبيق الفعلي                       |
+| لا يعمل في بلد المراجع         | التأكد من إتاحة الخدمة أو إضافة demo mode                     |
+| Sign in with Apple مفقود       | إضافته إذا يوجد أي تسجيل دخول اجتماعي (Google/Facebook)       |
+| معلومات الخصوصية غير مكتملة    | ملء كل حقول Privacy Labels بدقة                               |
 
 ---
 
@@ -922,21 +922,21 @@ Password: [كلمة المرور]
 
 ### مقارنة متطلبات المتجرين
 
-| المتطلب                    | Google Play                       | Apple App Store                            |
-| -------------------------- | --------------------------------- | ------------------------------------------ |
-| رسوم المطور                | $25 (مرة واحدة)                   | $99/سنة                                    |
-| مدة المراجعة               | 1-7 أيام                          | 1-7 أيام (المتوسط 1-3)                     |
-| صيغة التطبيق               | AAB (Android App Bundle)          | IPA (عبر Xcode Archive)                    |
-| الحد الأدنى للـ OS         | Android 8.0+ (API 26)             | iOS 14.0+                                  |
-| Screenshots المطلوبة        | Min 2 (phone)                     | Min 3 (لكل حجم شاشة مدعوم)                |
-| حذف الحساب                 | مطلوب (Data Deletion Policy)      | **إلزامي صارم** (§5.1.1)                   |
-| Sign in with Apple          | غير مطلوب                        | **إلزامي** إذا يوجد login اجتماعي          |
-| In-App Purchase             | غير مطلوب (منتجات فعلية)          | غير مطلوب (منتجات فعلية - §3.1.3(e))       |
-| Privacy Labels              | Data Safety Form                  | App Privacy Labels (أكثر تفصيلاً)          |
-| Demo Account للمراجع        | اختياري                          | **مطلوب بشدة**                             |
-| Native Features             | WebView مقبول                    | **يجب إضافة ميزات native** (ليس WebView فقط)|
-| Staged Rollout              | نعم (نسب مئوية)                  | نعم (Phased Release - 7 أيام)              |
-| حساب اختباري                | Internal → Closed → Open         | TestFlight (Internal + External)           |
+| المتطلب              | Google Play                  | Apple App Store                              |
+| -------------------- | ---------------------------- | -------------------------------------------- |
+| رسوم المطور          | $25 (مرة واحدة)              | $99/سنة                                      |
+| مدة المراجعة         | 1-7 أيام                     | 1-7 أيام (المتوسط 1-3)                       |
+| صيغة التطبيق         | AAB (Android App Bundle)     | IPA (عبر Xcode Archive)                      |
+| الحد الأدنى للـ OS   | Android 8.0+ (API 26)        | iOS 14.0+                                    |
+| Screenshots المطلوبة | Min 2 (phone)                | Min 3 (لكل حجم شاشة مدعوم)                   |
+| حذف الحساب           | مطلوب (Data Deletion Policy) | **إلزامي صارم** (§5.1.1)                     |
+| Sign in with Apple   | غير مطلوب                    | **إلزامي** إذا يوجد login اجتماعي            |
+| In-App Purchase      | غير مطلوب (منتجات فعلية)     | غير مطلوب (منتجات فعلية - §3.1.3(e))         |
+| Privacy Labels       | Data Safety Form             | App Privacy Labels (أكثر تفصيلاً)            |
+| Demo Account للمراجع | اختياري                      | **مطلوب بشدة**                               |
+| Native Features      | WebView مقبول                | **يجب إضافة ميزات native** (ليس WebView فقط) |
+| Staged Rollout       | نعم (نسب مئوية)              | نعم (Phased Release - 7 أيام)                |
+| حساب اختباري         | Internal → Closed → Open     | TestFlight (Internal + External)             |
 
 ### مشاكل يجب مراقبتها بعد النشر
 
@@ -975,58 +975,58 @@ Password: [كلمة المرور]
 
 ### ملاحظات iOS خاصة يجب مراقبتها
 
-| الملاحظة                                              | التفاصيل                                                           |
-| ----------------------------------------------------- | ------------------------------------------------------------------ |
-| WKWebView لا يدعم Service Workers بالكامل              | اختبار PWA features داخل Capacitor iOS - بعضها قد لا يعمل          |
-| APNs vs FCM                                            | iOS يستخدم APNs بينما FCM يعمل كـ wrapper - التأكد من إعداد كليهما |
-| iOS لا يدعم Background Fetch بنفس حرية Android          | استخدام Silent Push Notifications بدلاً منه                        |
-| WKWebView Cookie handling                              | قد يحتاج إعداد خاص لـ session cookies مع Supabase Auth             |
-| Safe Area / Dynamic Island                             | اختبار التصميم على أحدث أجهزة iPhone                                |
-| iOS App Store Review أبطأ في الإصدار الأول              | التقديم مبكراً وتحضير ردود سريعة على أسئلة المراجع                  |
+| الملاحظة                                       | التفاصيل                                                           |
+| ---------------------------------------------- | ------------------------------------------------------------------ |
+| WKWebView لا يدعم Service Workers بالكامل      | اختبار PWA features داخل Capacitor iOS - بعضها قد لا يعمل          |
+| APNs vs FCM                                    | iOS يستخدم APNs بينما FCM يعمل كـ wrapper - التأكد من إعداد كليهما |
+| iOS لا يدعم Background Fetch بنفس حرية Android | استخدام Silent Push Notifications بدلاً منه                        |
+| WKWebView Cookie handling                      | قد يحتاج إعداد خاص لـ session cookies مع Supabase Auth             |
+| Safe Area / Dynamic Island                     | اختبار التصميم على أحدث أجهزة iPhone                               |
+| iOS App Store Review أبطأ في الإصدار الأول     | التقديم مبكراً وتحضير ردود سريعة على أسئلة المراجع                 |
 
 ### ملفات مرجعية
 
-| الملف                                               | المحتوى                                            |
-| --------------------------------------------------- | -------------------------------------------------- |
-| `docs/PRE_RELEASE_REVIEW_REPORT.md`                 | تقرير مراجعة ما قبل النشر الشامل (2/12)            |
-| `docs/LAUNCH_READINESS_CHECKLIST.md`                | قائمة جاهزية الإطلاق العامة                        |
-| `docs/SECURITY_ISSUES_FOUND.md`                     | تقرير الثغرات الأمنية المكتشفة                     |
-| `docs/features/FIREBASE_PUSH_NOTIFICATIONS_PLAN.md` | خطة Firebase المفصلة                               |
-| `docs/MONITORING_SETUP.md`                          | إعداد المراقبة                                     |
-| `docs/QUALITY_LAYERS_ROADMAP.md`                    | خريطة طبقات الجودة                                 |
+| الملف                                               | المحتوى                                 |
+| --------------------------------------------------- | --------------------------------------- |
+| `docs/PRE_RELEASE_REVIEW_REPORT.md`                 | تقرير مراجعة ما قبل النشر الشامل (2/12) |
+| `docs/LAUNCH_READINESS_CHECKLIST.md`                | قائمة جاهزية الإطلاق العامة             |
+| `docs/SECURITY_ISSUES_FOUND.md`                     | تقرير الثغرات الأمنية المكتشفة          |
+| `docs/features/FIREBASE_PUSH_NOTIFICATIONS_PLAN.md` | خطة Firebase المفصلة                    |
+| `docs/MONITORING_SETUP.md`                          | إعداد المراقبة                          |
+| `docs/QUALITY_LAYERS_ROADMAP.md`                    | خريطة طبقات الجودة                      |
 
 ### روابط مرجعية مهمة
 
-| الرابط                                                              | الوصف                                   |
-| ------------------------------------------------------------------- | --------------------------------------- |
-| https://developer.apple.com/app-store/review/guidelines/            | إرشادات مراجعة Apple App Store          |
-| https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases | توزيع التطبيق عبر TestFlight            |
-| https://capacitorjs.com/docs/ios                                    | توثيق Capacitor لـ iOS                  |
-| https://play.google.com/console/about/guides/releasewithconfidence/ | إرشادات Google Play للنشر               |
+| الرابط                                                                                              | الوصف                          |
+| --------------------------------------------------------------------------------------------------- | ------------------------------ |
+| https://developer.apple.com/app-store/review/guidelines/                                            | إرشادات مراجعة Apple App Store |
+| https://developer.apple.com/documentation/xcode/distributing-your-app-for-beta-testing-and-releases | توزيع التطبيق عبر TestFlight   |
+| https://capacitorjs.com/docs/ios                                                                    | توثيق Capacitor لـ iOS         |
+| https://play.google.com/console/about/guides/releasewithconfidence/                                 | إرشادات Google Play للنشر      |
 
 ---
 
 ## سجل التحديثات
 
-| التاريخ    | التحديث                                                                                         | بواسطة |
-| ---------- | ----------------------------------------------------------------------------------------------- | ------ |
-| 2026-02-08 | إنشاء الخطة الشاملة                                                                             | Claude |
-| 2026-02-08 | اعتماد الخطة + إضافة ملاحظات المراجعة (Screenshots, Data Safety)                                | Owner  |
-| 2026-02-08 | تنفيذ المرحلة 0 بالكامل (أمان Firebase, jspdf, test accounts, RBAC)                             | Claude |
-| 2026-02-08 | تنفيذ المرحلة 1 بالكامل (AudioManager, VAPID, notifications, preferences UI)                    | Claude |
-| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync                              | Claude |
-| 2026-02-09 | إصلاح نظام الطلبات الخاصة: auto-archive, RLS, حالات, أصناف, إشعارات (1.9)                       | Claude |
-| 2026-02-09 | تناسق تصميم كروت الطلبات الخاصة + زر تأكيد الدفع على الكارت (1.10)                              | Claude |
-| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor                                  | Claude |
-| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md                     | Claude |
-| 2026-02-12 | تأكيد تسريب Service Role JWT في 7 triggers (من SQL حقيقي) + دمج اكتشافات Codex                  | Claude |
-| 2026-02-13 | تنفيذ 1.5.0 (حذف triggers) + 1.5.5 + 1.5.7 + 1.5.8 + 1.5.9 (إصلاحات كود حرجة)                   | Claude |
-| 2026-02-13 | تنفيذ 1.5.1 (إصلاح Phantom Orders) + 1.5.6 (cron تنظيف الطلبات المعلقة)                         | Claude |
-| 2026-02-13 | تنفيذ 1.5.2 (Refund API) + 1.5.3 (Webhook idempotency) + 1.5.4 (CSRF) + 1.5.5 (console cleanup) | Claude |
-| 2026-02-13 | تم Rotate Service Role Key + تحديث Supabase Dashboard + Vercel + GitHub Secrets                 | Owner  |
-| 2026-02-14 | إكمال المرحلة 1.5: Refund webhook + CSRF enforce + CSP enforce + CSRF headers لـ 27 endpoint    | Claude |
-| 2026-02-14 | المرحلة 2: إزالة unoptimized من الصور + تحويل img لـ next/image + skeleton loaders              | Claude |
-| 2026-02-14 | المرحلة 2: lazy loading لـ 5 أقسام homepage + preconnect hints + تحسينات accessibility          | Claude |
-| 2026-02-16 | مراجعة شاملة: صلاحيات الإدارة + المتاجر + المهام + تسجيل المتاجر الجديدة                        | Claude |
-| 2026-02-16 | إصلاح 6 مشاكل في نظام المهام: تفاصيل المهمة + cc_to + N+1 + إشعارات + أخطاء + فلتر مهامي        | Claude |
+| التاريخ    | التحديث                                                                                                 | بواسطة |
+| ---------- | ------------------------------------------------------------------------------------------------------- | ------ |
+| 2026-02-08 | إنشاء الخطة الشاملة                                                                                     | Claude |
+| 2026-02-08 | اعتماد الخطة + إضافة ملاحظات المراجعة (Screenshots, Data Safety)                                        | Owner  |
+| 2026-02-08 | تنفيذ المرحلة 0 بالكامل (أمان Firebase, jspdf, test accounts, RBAC)                                     | Claude |
+| 2026-02-08 | تنفيذ المرحلة 1 بالكامل (AudioManager, VAPID, notifications, preferences UI)                            | Claude |
+| 2026-02-09 | إصلاح صوت إشعارات حالة الطلب + إزالة double polling + webhook sync                                      | Claude |
+| 2026-02-09 | إصلاح نظام الطلبات الخاصة: auto-archive, RLS, حالات, أصناف, إشعارات (1.9)                               | Claude |
+| 2026-02-09 | تناسق تصميم كروت الطلبات الخاصة + زر تأكيد الدفع على الكارت (1.10)                                      | Claude |
+| 2026-02-12 | مراجعة عميقة شاملة: أمان، كود، تدفقات تجارية، جاهزية Capacitor                                          | Claude |
+| 2026-02-12 | إضافة المرحلة 1.5 (8 مهام حرجة مكتشفة) + تقرير PRE_RELEASE_REVIEW_REPORT.md                             | Claude |
+| 2026-02-12 | تأكيد تسريب Service Role JWT في 7 triggers (من SQL حقيقي) + دمج اكتشافات Codex                          | Claude |
+| 2026-02-13 | تنفيذ 1.5.0 (حذف triggers) + 1.5.5 + 1.5.7 + 1.5.8 + 1.5.9 (إصلاحات كود حرجة)                           | Claude |
+| 2026-02-13 | تنفيذ 1.5.1 (إصلاح Phantom Orders) + 1.5.6 (cron تنظيف الطلبات المعلقة)                                 | Claude |
+| 2026-02-13 | تنفيذ 1.5.2 (Refund API) + 1.5.3 (Webhook idempotency) + 1.5.4 (CSRF) + 1.5.5 (console cleanup)         | Claude |
+| 2026-02-13 | تم Rotate Service Role Key + تحديث Supabase Dashboard + Vercel + GitHub Secrets                         | Owner  |
+| 2026-02-14 | إكمال المرحلة 1.5: Refund webhook + CSRF enforce + CSP enforce + CSRF headers لـ 27 endpoint            | Claude |
+| 2026-02-14 | المرحلة 2: إزالة unoptimized من الصور + تحويل img لـ next/image + skeleton loaders                      | Claude |
+| 2026-02-14 | المرحلة 2: lazy loading لـ 5 أقسام homepage + preconnect hints + تحسينات accessibility                  | Claude |
+| 2026-02-16 | مراجعة شاملة: صلاحيات الإدارة + المتاجر + المهام + تسجيل المتاجر الجديدة                                | Claude |
+| 2026-02-16 | إصلاح 6 مشاكل في نظام المهام: تفاصيل المهمة + cc_to + N+1 + إشعارات + أخطاء + فلتر مهامي                | Claude |
 | 2026-02-21 | **تحديث شامل:** إعادة تسمية الملف + دمج خطة iOS App Store (المراحل 3B, 4B, 6B) + تحديث المراحل المشتركة | Claude |

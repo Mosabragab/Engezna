@@ -367,12 +367,12 @@
 
 ### Key Documents
 
-| الملف                                 | المحتوى                           |
-| ------------------------------------- | --------------------------------- |
-| `docs/APP_STORES_RELEASE_ROADMAP.md`  | خطة النشر التفصيلية (المراحل 0-6B) - Google Play + App Store |
-| `docs/PRE_RELEASE_REVIEW_REPORT.md`   | تقرير مراجعة ما قبل النشر         |
-| `docs/MASTER_IMPLEMENTATION_PLAN.md`  | خطة التنفيذ الشاملة (المراحل 1-4) |
-| `docs/QUALITY_LAYERS_ROADMAP.md`      | خريطة طبقات الجودة                |
+| الملف                                | المحتوى                                                      |
+| ------------------------------------ | ------------------------------------------------------------ |
+| `docs/APP_STORES_RELEASE_ROADMAP.md` | خطة النشر التفصيلية (المراحل 0-6B) - Google Play + App Store |
+| `docs/PRE_RELEASE_REVIEW_REPORT.md`  | تقرير مراجعة ما قبل النشر                                    |
+| `docs/MASTER_IMPLEMENTATION_PLAN.md` | خطة التنفيذ الشاملة (المراحل 1-4)                            |
+| `docs/QUALITY_LAYERS_ROADMAP.md`     | خريطة طبقات الجودة                                           |
 
 ### Pricing Types
 
