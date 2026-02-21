@@ -14,7 +14,7 @@ interface MenuItem {
   description_en: string | null;
   price: number;
   provider_id: string;
-  provider_category_id: string | null;
+  category_id: string | null;
   providers?: { name_ar: string };
   provider_categories?: { name_ar: string };
 }
@@ -120,9 +120,9 @@ serve(async (req) => {
         .from('menu_items')
         .select(
           `
-          id, name_ar, name_en, description_ar, description_en, price, provider_id, provider_category_id,
+          id, name_ar, name_en, description_ar, description_en, price, provider_id, category_id,
           providers(name_ar),
-          provider_categories(name_ar)
+          provider_categories!category_id(name_ar)
         `
         )
         .is('embedding', null)
@@ -138,9 +138,9 @@ serve(async (req) => {
         .from('menu_items')
         .select(
           `
-          id, name_ar, name_en, description_ar, description_en, price, provider_id, provider_category_id,
+          id, name_ar, name_en, description_ar, description_en, price, provider_id, category_id,
           providers(name_ar),
-          provider_categories(name_ar)
+          provider_categories!category_id(name_ar)
         `
         )
         .in('id', item_ids);
@@ -154,9 +154,9 @@ serve(async (req) => {
         .from('menu_items')
         .select(
           `
-          id, name_ar, name_en, description_ar, description_en, price, provider_id, provider_category_id,
+          id, name_ar, name_en, description_ar, description_en, price, provider_id, category_id,
           providers(name_ar),
-          provider_categories(name_ar)
+          provider_categories!category_id(name_ar)
         `
         )
         .eq('id', item_id)
