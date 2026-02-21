@@ -1,8 +1,8 @@
 # Roadmap - Engezna Platform
 
-## آخر تحديث: 2026-02-13
+## آخر تحديث: 2026-02-21
 
-## حالة المشروع: MVP مكتمل 100% - جاري التجهيز لـ Google Play
+## حالة المشروع: MVP مكتمل 100% - جاري التجهيز لـ Google Play و App Store
 
 ---
 
@@ -12,78 +12,130 @@
 | ------------------------------------------ | ---------- | ------ |
 | المرحلة 0: إصلاحات أمنية عاجلة             | ✅ مكتمل   | 100%   |
 | المرحلة 1: نظام الإشعارات والأصوات         | ✅ مكتمل   | 100%   |
-| المرحلة 1.5: إصلاحات حرجة من المراجعة      | 🔄 جاري    | 85%    |
-| المرحلة 2: تحسين الأداء (Lighthouse)       | ⬜ لم يبدأ | 0%     |
+| المرحلة 1.5: إصلاحات حرجة من المراجعة      | ✅ مكتمل   | 100%   |
+| المرحلة 2: تحسين الأداء (Lighthouse)       | 🔄 جاري    | 75%    |
 | المرحلة 3: إعداد Capacitor + Android Build | ⬜ لم يبدأ | 0%     |
+| المرحلة 3B: إعداد Capacitor + iOS Build    | ⬜ لم يبدأ | 0%     |
 | المرحلة 4: تجهيز Google Play Store Listing | ⬜ لم يبدأ | 0%     |
+| المرحلة 4B: تجهيز Apple App Store Listing  | ⬜ لم يبدأ | 0%     |
 | المرحلة 5: الاختبار والمراجعة النهائية     | ⬜ لم يبدأ | 0%     |
 | المرحلة 6: النشر على Google Play           | ⬜ لم يبدأ | 0%     |
+| المرحلة 6B: النشر على Apple App Store      | ⬜ لم يبدأ | 0%     |
 
 ---
 
-## 🔴 المطلوب الآن: إكمال المرحلة 1.5 (متبقي 7 مهام)
+## 🔴 المطلوب الآن: إكمال المرحلة 2 + تنشيط Edge Functions
 
-### مهام تحتاج تنفيذ المالك (Supabase Dashboard + Vercel):
+### مهام Edge Functions (الأولوية القصوى - إشعارات الموبايل):
 
-| #   | المهمة                                                           | النوع         |
-| --- | ---------------------------------------------------------------- | ------------- |
-| 1   | عمل Rotate للـ Service Role Key من Supabase Dashboard            | Supabase      |
-| 2   | تحديث المفتاح الجديد في Vercel + GitHub Secrets + كل البيئات     | Vercel/GitHub |
-| 3   | التأكد أن triggers الآمنة (`on_*`) تغطي كل الحالات               | Supabase SQL  |
-| 4   | حذف Database Webhooks القديمة من Supabase Dashboard لمنع التكرار | Supabase      |
+| #   | المهمة                                                               | النوع    | الحالة       |
+| --- | -------------------------------------------------------------------- | -------- | ------------ |
+| 1   | نشر `send-notification` و `handle-notification-trigger` على Supabase | Supabase | ✅ تم 2/19   |
+| 2   | إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                  | Supabase | ✅ تم تأكيده |
+| 3   | اختبار الدورة الكاملة: trigger → Edge Function → FCM → device        | اختبار   | ⬜           |
+| 4   | حذف Database Webhooks القديمة من Supabase Dashboard                  | Supabase | ⬜           |
 
-### مهام تحتاج تنفيذ كود:
+### مهام المرحلة 2 المتبقية (أداء):
 
-| #   | المهمة                                                  | الأولوية |
-| --- | ------------------------------------------------------- | -------- |
-| 5   | إضافة webhook handler لتأكيد الاسترجاع من Kashier       | متوسط    |
-| 6   | تحويل CSRF من log-only لـ enforce (`CSRF_ENFORCE=true`) | متوسط    |
-| 7   | تحويل CSP من report-only لـ enforce بعد اختبار التوافق  | متوسط    |
+| #   | المهمة                                 | الأولوية |
+| --- | -------------------------------------- | -------- |
+| 5   | ضغط البانر الرئيسي (938KB → < 200KB)   | عالي     |
+| 6   | تحسين Speed Index (ISR, streaming SSR) | متوسط    |
+| 7   | تفعيل gzip/brotli compression          | متوسط    |
+| 8   | تشغيل Lighthouse audit ومقارنة النتائج | متوسط    |
+
+### تم إنجازه من المرحلة 1.5 (2/13 - 2/14): ✅
+
+- ✅ حذف 7 triggers مكشوفة + Rotate Service Role Key + تحديث كل البيئات
+- ✅ triggers الآمنة (`on_*`) تغطي كل الحالات (تأكيد من فحص DB مباشر 2/21)
+- ✅ إصلاح Phantom Orders + Kashier Refund API + webhook idempotency
+- ✅ تفعيل CSRF (enforce) + CSP (enforce) + RLS tightening
+- ✅ تنظيف console.log + Kashier webhook signature enforcement
 
 ---
 
 ## الخطوات الجاية بالترتيب
 
-### الخطوة 1: إكمال المرحلة 1.5 (يوم واحد)
+### الخطوة 1: إكمال المرحلة 2 + Edge Functions (2-3 أيام)
 
-- تنفيذ الـ 4 مهام اللي محتاجة المالك (rotate key, update envs, verify triggers, delete webhooks)
-- تحويل CSRF و CSP لـ enforce mode
+- **Edge Functions (أولوية قصوى):**
+  - ~~نشر `send-notification` + `handle-notification-trigger` على Supabase~~ ✅ تم 2/19
+  - إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret ← ✅ تم تأكيده
+  - حذف Database Webhooks القديمة من Dashboard
+  - اختبار الدورة الكاملة: trigger → Edge Function → FCM → device
+- **أداء (متبقي):**
+  - ضغط البانر الرئيسي (938KB → < 200KB)
+  - تحسين Speed Index (ISR, streaming SSR)
+  - الهدف: Lighthouse Performance > 80
 
-### الخطوة 2: المرحلة 2 - تحسين الأداء (2-3 أيام)
+### الخطوة 2: المرحلة 3 + 3B - Capacitor + Android + iOS (4-6 أيام)
 
-- تحسين LCP من 7.9s لأقل من 2.5s
-- ضغط البانر الرئيسي (938KB → < 200KB)
-- إصلاح CLS و FCP
-- تحويل الصور لـ WebP/AVIF
-- إضافة Skeleton Loaders
-- الهدف: Lighthouse Performance > 80
+- تثبيت وإعداد Capacitor (مشترك)
+- إعداد Android project + native plugins + `google-services.json`
+- إعداد iOS project + Xcode + `GoogleService-Info.plist`
+- APNs key setup + Firebase integration
+- اختبار على emulators وأجهزة حقيقية
+- بناء Release AAB (Android) + Archive (iOS)
 
-### الخطوة 3: المرحلة 3 - Capacitor + Android (2-3 أيام)
-
-- تثبيت وإعداد Capacitor
-- إعداد Android project + native plugins
-- إعداد `google-services.json` من Firebase
-- اختبار على emulator وجهاز حقيقي
-- بناء Release AAB
-
-### الخطوة 4: المرحلة 4 - Google Play Store Listing (1-2 يوم)
+### الخطوة 3: المرحلة 4 + 4B - Store Listings (2-3 أيام)
 
 - تسجيل حساب Google Play Developer ($25)
-- تصميم Feature Graphic + Screenshots (PNG)
+- تسجيل حساب Apple Developer ($99/سنة)
+- تصميم Feature Graphic + Screenshots (PNG) لكلا المتجرين
 - كتابة وصف المتجر (عربي/إنجليزي)
-- ملء Content Rating + Data Safety Form
+- ملء Content Rating + Data Safety + App Privacy Labels
+- إعداد Sign in with Apple (إلزامي لـ App Store)
 
-### الخطوة 5: المرحلة 5 - الاختبار النهائي (2-3 أيام)
+### الخطوة 4: المرحلة 5 - الاختبار النهائي (3-4 أيام)
 
 - تشغيل جميع Tests (Unit + Security + E2E)
-- اختبار يدوي لكل flow
+- اختبار يدوي لكل flow على Android و iOS
 - Lighthouse audit نهائي
 - مراجعة أمنية نهائية
+- اختبار الإشعارات على كلا النظامين
 
-### الخطوة 6: المرحلة 6 - النشر (1-3 أيام)
+### الخطوة 5: المرحلة 6 + 6B - النشر (1-7 أيام)
 
-- Internal Testing → Closed Testing → Production
-- Staged Rollout: 10% → 25% → 50% → 100%
+- **Android:** Internal Testing → Closed Testing → Production (Staged Rollout)
+- **iOS:** TestFlight → App Store Review → Phased Release
+
+---
+
+## نتائج فحص قاعدة البيانات (2026-02-21)
+
+> **الهدف:** التحقق من سلامة نظام الإشعارات والأمان قبل مرحلة Capacitor
+
+### Triggers الآمنة ✅
+
+| Trigger                             | Table                    | Event        | Status  |
+| ----------------------------------- | ------------------------ | ------------ | ------- |
+| `on_customer_notification_fcm_sync` | `customer_notifications` | AFTER INSERT | ✅ يعمل |
+| `on_provider_notification_fcm_sync` | `provider_notifications` | AFTER INSERT | ✅ يعمل |
+| `on_admin_notification_fcm_sync`    | `admin_notifications`    | AFTER INSERT | ✅ يعمل |
+
+### FCM Architecture ✅
+
+- `trigger_notification_fcm_sync()` → `call_notification_webhook()` → HTTP POST to Edge Function
+- `fcm_tokens` table: يدعم `web`, `android`, `ios` device types
+- آخر إشعار: 2026-02-19 (يعمل بشكل طبيعي)
+
+### Cron Jobs (5/6 نشط)
+
+| Job                                  | الجدول      | الحالة      |
+| ------------------------------------ | ----------- | ----------- |
+| `process_missing_embeddings`         | كل 5 دقائق  | ✅ نشط      |
+| `auto_confirm_expired_refunds`       | كل ساعة     | ✅ نشط      |
+| `trigger_cleanup_custom_order_files` | أسبوعياً    | ✅ نشط      |
+| `expire_all_custom_orders`           | كل 30 دقيقة | ✅ نشط      |
+| `expire_pending_payment_orders`      | كل 15 دقيقة | ✅ نشط      |
+| `check_delayed_orders_and_notify`    | كل 30 دقيقة | ⚠️ **معطل** |
+
+### متبقي
+
+- [x] نشر Edge Functions (تم 2/19 - تأكيد بالاختبار 2/21)
+- [ ] إعداد FIREBASE_SERVICE_ACCOUNT ← ✅ تم تأكيده
+- [ ] حذف Database Webhooks القديمة
+- [ ] تفعيل cron job الطلبات المتأخرة (اختياري)
 
 ---
 
@@ -122,10 +174,13 @@
 - [x] cron job لتنظيف الطلبات المعلقة بالدفع (pg_cron) (2/13)
 - [x] إصلاح Kashier credentials validation (throw بدل fallback) (2/13)
 - [x] نقل cron من Vercel لـ Supabase pg_cron (2/13)
-- [ ] عمل Rotate للـ Service Role Key ← **محتاج المالك**
-- [ ] تحديث المفتاح في كل البيئات ← **محتاج المالك**
+- [x] عمل Rotate للـ Service Role Key (2/13)
+- [x] تحديث المفتاح في كل البيئات (2/13)
 - [ ] حذف Database Webhooks القديمة ← **محتاج المالك**
-- [ ] تحويل CSRF و CSP لـ enforce mode
+- [x] تحويل CSRF لـ enforce mode (2/14)
+- [x] تحويل CSP لـ enforce mode (2/14)
+- [x] إضافة webhook handler لتأكيد الاسترجاع من Kashier (2/14)
+- [x] تأكيد triggers الآمنة تغطي كل الحالات (فحص DB مباشر 2/21)
 
 ### إصلاحات إضافية (2/10 - 2/11)
 
@@ -158,12 +213,14 @@
 ### 2. App Store Preparation ⬜
 
 - [ ] Generate app screenshots (PNG format - Arabic/English)
-- [ ] Write app store descriptions
-- [ ] Complete Data Safety Form
+- [x] Write app store descriptions (docs/app-store/APP_STORE_METADATA.md)
+- [ ] Complete Data Safety Form (Google) + App Privacy Labels (Apple)
 - [x] Privacy Policy URL in manifest
 - [ ] Test PWA installation on Android/iOS
 - [ ] Design Feature Graphic (1024x500 px)
-- [ ] Capacitor setup + Android build
+- [ ] Capacitor setup + Android + iOS build
+- [x] Apple Review Notes prepared (docs/app-store/APPLE_REVIEW_NOTES.md)
+- [ ] Sign in with Apple (إلزامي لـ App Store)
 
 ### 3. Testing & QA ⬜
 
@@ -183,9 +240,11 @@
 - [x] Service worker integration (dynamic)
 - [x] Notification preferences UI
 - [x] Audio Manager with fallback
-- [x] Database triggers for all events
-- [ ] نشر Edge Functions على Supabase
-- [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret
+- [x] Database triggers for all events (3 آمنة: customer/provider/admin)
+- [x] `call_notification_webhook()` function (HTTP POST to Edge Function)
+- [x] FCM tokens table with device_type support (web/android/ios)
+- [x] نشر Edge Functions على Supabase (`send-notification` + `handle-notification-trigger`) (2/19)
+- [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret ← ✅ تم تأكيده
 - [ ] اختبار FCM الدورة الكاملة: trigger → Edge Function → FCM → device
 
 ### 5. Admin Promo Code UI ✅
@@ -202,7 +261,7 @@
 - [x] Admin approval process
 - [x] Kashier Refund API endpoint
 - [x] Refund notifications
-- [ ] Kashier refund webhook handler (تأكيد الاسترجاع)
+- [x] Kashier refund webhook handler (تأكيد الاسترجاع) (2/14)
 
 ### 7. SMS Notifications ⬜
 
