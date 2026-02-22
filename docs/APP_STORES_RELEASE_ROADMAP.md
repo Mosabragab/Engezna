@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-02-21 (فحص قاعدة البيانات + تحديث حالة المراحل + توثيق نتائج التحقق)
+**آخر تحديث:** 2026-02-22 (إصلاح FCM Pipeline + تأكيد عمل الإشعارات بالكامل)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -183,8 +183,8 @@
 | [x] نشر `send-notification` Edge Function على Supabase                      | ✅     | 2/19    |
 | [x] نشر `handle-notification-trigger` Edge Function على Supabase            | ✅     | 2/19    |
 | [x] إعداد Database Triggers لربط جداول الإشعارات بالـ Edge Functions        | ✅     | 2/13    |
-| [ ] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ✅     | سابق    |
-| [ ] اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ⬜     |         |
+| [x] إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ✅     | سابق    |
+| [x] اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ✅     | 2/22    |
 
 **تحديث (2/21) - نتائج الفحص والاختبار:**
 
@@ -198,7 +198,6 @@
     → trigger_notification_fcm_sync() function
     → call_notification_webhook() → HTTP POST
     → handle-notification-trigger Edge Function
-    → send-notification Edge Function
     → Firebase Cloud Messaging API → Device
   ```
 - ✅ **FCM Tokens:** جدول `fcm_tokens` يدعم `device_type IN ('web', 'android', 'ios')` - جاهز لـ iOS
@@ -206,6 +205,23 @@
 - ⚠️ **`check_delayed_orders_and_notify`:** cron job معطل (jobid 1, active=false) - مراجعة مطلوبة
 - ✅ **`FIREBASE_SERVICE_ACCOUNT`:** معد كـ Supabase Secret + IAM roles صحيحة (Firebase Admin SDK + Token Creator)
 - راجع `docs/EDGE_FUNCTIONS_DEPLOYMENT.md` لخطوات النشر الكاملة
+
+**تحديث (2/22) - إصلاح FCM Pipeline وتأكيد العمل بالكامل:**
+
+- ✅ **تم إصلاح مشكلة 401 Unauthorized:** كان JWT Verification مفعّل على `handle-notification-trigger` - تم تعطيله من Dashboard (الـ webhook يرسل service_role_key كـ Bearer token وليس JWT عادي)
+- ✅ **تم تحديث الكود:** `handle-notification-trigger` أصبح يرسل FCM مباشرة لـ Google بدون استدعاء `send-notification` (تقليل latency + تبسيط)
+- ✅ **تم اختبار الدورة الكاملة بنجاح:** INSERT → Trigger → Webhook → Edge Function (200 OK) → FCM → Google
+- ✅ **تم التأكد من تعطيل التوكنات غير الصالحة تلقائياً:** 7 tokens بحالة UNREGISTERED تم تحديثها لـ `is_active=false` تلقائياً
+- ✅ **Architecture النهائي (مبسّط):**
+  ```
+  INSERT into notification table
+    → on_*_notification_fcm_sync trigger (AFTER INSERT)
+    → trigger_notification_fcm_sync() function
+    → call_notification_webhook() → HTTP POST
+    → handle-notification-trigger Edge Function (يرسل FCM مباشرة)
+    → Firebase Cloud Messaging API → Device
+  ```
+- ⚠️ **ملاحظة:** `send-notification` لا يزال منشوراً كـ standalone API لكن لم يعد جزءاً من الـ pipeline التلقائي
 
 ### 1.8 إصلاح صوت إشعارات حالة الطلب للعميل
 
