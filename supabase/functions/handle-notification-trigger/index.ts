@@ -154,15 +154,21 @@ async function sendFCMMessageOnce(
     const errorMessage = error.error?.message || 'Unknown FCM error';
     const statusCode = response.status;
 
-    console.error(`[FCM] Error (HTTP ${statusCode}):`, JSON.stringify({
-      errorCode,
-      message: errorMessage,
-      token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
-    }));
+    console.error(
+      `[FCM] Error (HTTP ${statusCode}):`,
+      JSON.stringify({
+        errorCode,
+        message: errorMessage,
+        token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
+      })
+    );
 
-    if (errorCode === 'UNREGISTERED') return { success: false, error: 'UNREGISTERED', retryable: false };
-    if (errorCode === 'INVALID_ARGUMENT' || statusCode === 400) return { success: false, error: errorMessage, retryable: false };
-    if (statusCode >= 500 || statusCode === 429) return { success: false, error: errorMessage, retryable: true };
+    if (errorCode === 'UNREGISTERED')
+      return { success: false, error: 'UNREGISTERED', retryable: false };
+    if (errorCode === 'INVALID_ARGUMENT' || statusCode === 400)
+      return { success: false, error: errorMessage, retryable: false };
+    if (statusCode >= 500 || statusCode === 429)
+      return { success: false, error: errorMessage, retryable: true };
     return { success: false, error: errorMessage, retryable: false };
   }
 
@@ -196,8 +202,12 @@ async function markTokenInvalid(supabase: ReturnType<typeof createClient>, token
 // Determine if notification requires user interaction (won't auto-dismiss)
 function isImportantNotification(type: string): boolean {
   const importantTypes = [
-    'new_order', 'order_cancelled', 'refund_request',
-    'refund_escalated', 'new_ticket', 'new_custom_order',
+    'new_order',
+    'order_cancelled',
+    'refund_request',
+    'refund_escalated',
+    'new_ticket',
+    'new_custom_order',
   ];
   return importantTypes.includes(type);
 }
@@ -267,7 +277,14 @@ async function sendPushNotifications(
   const results = { sent: 0, failed: 0, errors: [] as string[] };
 
   const sendToToken = async (token: string) => {
-    const message = buildFCMMessage(token, params.title, params.body, params.data, params.clickAction, params.imageUrl);
+    const message = buildFCMMessage(
+      token,
+      params.title,
+      params.body,
+      params.data,
+      params.clickAction,
+      params.imageUrl
+    );
     const result = await sendFCMMessage(accessToken, message);
     if (result.success) {
       results.sent++;
@@ -538,7 +555,11 @@ serve(async (req) => {
         );
 
         // Get Firebase access token and send directly
-        let fcmResult: { sent: number; failed: number; errors: string[] } = { sent: 0, failed: 0, errors: [] };
+        let fcmResult: { sent: number; failed: number; errors: string[] } = {
+          sent: 0,
+          failed: 0,
+          errors: [],
+        };
         try {
           const accessToken = await getFirebaseAccessToken();
 
