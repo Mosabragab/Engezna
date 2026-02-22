@@ -14,15 +14,15 @@
 
 ## التقييم العام: الخطة متماسكة
 
-| الجانب              | التقييم  | ملاحظات                                                                    |
-| ------------------- | -------- | -------------------------------------------------------------------------- |
-| ترتيب المراحل       | ممتاز    | أمان → إشعارات → أداء → native → نشر - ترتيب منطقي وصحيح                   |
-| تغطية المتطلبات     | ممتاز    | كل متطلبات Google Play و Apple مذكورة بالتفصيل مع أمثلة كود               |
-| دقة التوثيق         | جيد جداً | المعلومات مطابقة للكود الفعلي مع استثناءات بسيطة موضحة أدناه               |
-| الواقعية            | جيد      | بعض المهام ستكون أصعب مما هو مُقدّر (خاصة iOS)                             |
-| المتابعة والتحديث   | ممتاز    | كل مهمة موثقة بتاريخ الإنجاز والتفاصيل التقنية                            |
-| بروتوكول Supabase   | ممتاز    | يمنع الافتراضات الخاطئة حول حالة قاعدة البيانات                            |
-| مقارنة المتجرين     | ممتاز    | جدول مفصل يوضح الفرق بين متطلبات Google Play و Apple                      |
+| الجانب            | التقييم  | ملاحظات                                                      |
+| ----------------- | -------- | ------------------------------------------------------------ |
+| ترتيب المراحل     | ممتاز    | أمان → إشعارات → أداء → native → نشر - ترتيب منطقي وصحيح     |
+| تغطية المتطلبات   | ممتاز    | كل متطلبات Google Play و Apple مذكورة بالتفصيل مع أمثلة كود  |
+| دقة التوثيق       | جيد جداً | المعلومات مطابقة للكود الفعلي مع استثناءات بسيطة موضحة أدناه |
+| الواقعية          | جيد      | بعض المهام ستكون أصعب مما هو مُقدّر (خاصة iOS)               |
+| المتابعة والتحديث | ممتاز    | كل مهمة موثقة بتاريخ الإنجاز والتفاصيل التقنية               |
+| بروتوكول Supabase | ممتاز    | يمنع الافتراضات الخاطئة حول حالة قاعدة البيانات              |
+| مقارنة المتجرين   | ممتاز    | جدول مفصل يوضح الفرق بين متطلبات Google Play و Apple         |
 
 ---
 
@@ -32,21 +32,21 @@
 
 تم التأكد من أن كل المهام المعلمة كمكتملة **موجودة فعلاً في الكود:**
 
-| المهمة المعلمة كمكتملة                    | التحقق من الكود                                                                       |
-| ---------------------------------------- | ------------------------------------------------------------------------------------- |
-| CSRF middleware enforce                  | ✅ `src/middleware.ts:31` - `CSRF_ENFORCE !== 'false'` (enforce by default)            |
-| CSP header                               | ✅ `next.config.ts:87` - `Content-Security-Policy` (enforce mode)                     |
-| Kashier signature validation إلزامية     | ✅ `src/app/api/payment/kashier/webhook/route.ts:34` - يرفض بـ 403 بدون signature     |
-| Idempotency check في webhook             | ✅ `src/app/api/payment/kashier/webhook/route.ts:60-72` - يتحقق من `payment_status`   |
-| Refund API endpoint                      | ✅ `src/app/api/payment/kashier/refund/route.ts` (179 سطر)                            |
-| Refund webhook handler                   | ✅ `src/app/api/payment/kashier/refund-webhook/route.ts` (173 سطر)                    |
-| Cron تنظيف pending_payment               | ✅ `src/app/api/cron/expire-pending-payments/route.ts` (153 سطر)                      |
-| console.log إزالة من API routes          | ✅ 0 matches في `src/app/api/` (تم التنظيف بالكامل)                                  |
-| pending_payment flow                     | ✅ موجود في 8 ملفات تشمل checkout, payment-result, webhook, cron                      |
-| Security lib (CSRF, XSS, rate limiting)  | ✅ `src/lib/security/` يحتوي csrf.ts, csrf-client.ts, xss.ts, rate-limit-middleware.ts |
-| Edge Functions                           | ✅ `supabase/functions/handle-notification-trigger/` + `send-notification/`            |
-| Migrations                               | ✅ 20+ migration files آخرها `20260221000002`                                         |
-| logger بدل console.log في API            | ✅ `src/lib/logger/` + استخدامه في كل API routes                                     |
+| المهمة المعلمة كمكتملة                  | التحقق من الكود                                                                        |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| CSRF middleware enforce                 | ✅ `src/middleware.ts:31` - `CSRF_ENFORCE !== 'false'` (enforce by default)            |
+| CSP header                              | ✅ `next.config.ts:87` - `Content-Security-Policy` (enforce mode)                      |
+| Kashier signature validation إلزامية    | ✅ `src/app/api/payment/kashier/webhook/route.ts:34` - يرفض بـ 403 بدون signature      |
+| Idempotency check في webhook            | ✅ `src/app/api/payment/kashier/webhook/route.ts:60-72` - يتحقق من `payment_status`    |
+| Refund API endpoint                     | ✅ `src/app/api/payment/kashier/refund/route.ts` (179 سطر)                             |
+| Refund webhook handler                  | ✅ `src/app/api/payment/kashier/refund-webhook/route.ts` (173 سطر)                     |
+| Cron تنظيف pending_payment              | ✅ `src/app/api/cron/expire-pending-payments/route.ts` (153 سطر)                       |
+| console.log إزالة من API routes         | ✅ 0 matches في `src/app/api/` (تم التنظيف بالكامل)                                    |
+| pending_payment flow                    | ✅ موجود في 8 ملفات تشمل checkout, payment-result, webhook, cron                       |
+| Security lib (CSRF, XSS, rate limiting) | ✅ `src/lib/security/` يحتوي csrf.ts, csrf-client.ts, xss.ts, rate-limit-middleware.ts |
+| Edge Functions                          | ✅ `supabase/functions/handle-notification-trigger/` + `send-notification/`            |
+| Migrations                              | ✅ 20+ migration files آخرها `20260221000002`                                          |
+| logger بدل console.log في API           | ✅ `src/lib/logger/` + استخدامه في كل API routes                                       |
 
 **الخلاصة:** المراحل المكتملة مطابقة للكود. لا يوجد checkmarks وهمية.
 
@@ -58,15 +58,15 @@
 
 التقرير يذكر "متبقي: بعض console.log في client-side" وهذا صحيح:
 
-| الملف                                           | عدد المرات | الأولوية |
-| ----------------------------------------------- | ---------- | -------- |
-| `src/lib/ai/agentTools.ts`                      | 26         | منخفض    |
-| `src/lib/utils/excel-import.ts`                 | 17         | منخفض    |
-| `src/lib/ai/agentHandler.ts`                    | 12         | منخفض    |
-| `src/hooks/useBadge.ts`                         | 4          | منخفض    |
-| `src/app/sw.ts`                                 | 4          | منخفض    |
-| `src/components/customer/support/RefundRequestModal.tsx` | 4  | منخفض    |
-| باقي الملفات (6 ملفات)                           | 9          | منخفض    |
+| الملف                                                    | عدد المرات | الأولوية |
+| -------------------------------------------------------- | ---------- | -------- |
+| `src/lib/ai/agentTools.ts`                               | 26         | منخفض    |
+| `src/lib/utils/excel-import.ts`                          | 17         | منخفض    |
+| `src/lib/ai/agentHandler.ts`                             | 12         | منخفض    |
+| `src/hooks/useBadge.ts`                                  | 4          | منخفض    |
+| `src/app/sw.ts`                                          | 4          | منخفض    |
+| `src/components/customer/support/RefundRequestModal.tsx` | 4          | منخفض    |
+| باقي الملفات (6 ملفات)                                   | 9          | منخفض    |
 
 **التوصية:** تنظيف `agentTools.ts` و `agentHandler.ts` على الأقل (38 console.log مجتمعة). ليست حاجزة للنشر لكن تحسينية.
 
@@ -105,6 +105,7 @@
 ### Hybrid App approach: قرار صحيح ✅
 
 المشروع يعتمد على:
+
 - **39 API route** تحتاج server
 - **Middleware** للمصادقة وCSRF
 - **ISR** في صفحات المزودين
@@ -126,6 +127,7 @@
 ### 1. لا يوجد ذكر لـ CI/CD Pipeline
 
 الخطة لا تتضمن إعداد بناء تلقائي للتطبيقات. يُوصى بإضافة:
+
 - GitHub Actions لبناء AAB (Android)
 - Codemagic أو Bitrise لبناء IPA (iOS) - يحتاج macOS
 - أو على الأقل توثيق خطوات البناء اليدوي
@@ -133,6 +135,7 @@
 ### 2. خطة Rollback غير مذكورة
 
 ماذا يحدث إذا تم اكتشاف مشكلة حرجة بعد النشر على المتجر؟ يُفضل إضافة:
+
 - خطة rollback واضحة
 - آلية feature flags للميزات الجديدة
 - monitoring alerts بعد النشر
@@ -140,6 +143,7 @@
 ### 3. App Update Strategy
 
 لا يوجد ذكر لكيفية إجبار المستخدمين على التحديث عند وجود تحديث حرج:
+
 - Force Update dialog عند وجود تحديث إلزامي
 - Graceful Update prompt عند وجود تحديث اختياري
 - Version check endpoint على الـ backend
@@ -147,6 +151,7 @@
 ### 4. iOS: التحدي الأكبر لم يتم التأكيد عليه كفاية
 
 Apple قد ترفض التطبيق لأسباب متعددة. يُوصى بـ:
+
 - **البدء فوراً** بتسجيل Apple Developer Account (يأخذ وقت للتحقق من الهوية)
 - تطبيق Sign in with Apple مبكراً (إلزامي لأن المشروع يدعم login اجتماعي)
 - إضافة آلية حذف الحساب (إلزامي صارم من Apple §5.1.1)
