@@ -3,7 +3,7 @@
 ## Engezna - Pre-Release Deep Review Report
 
 **تاريخ المراجعة:** 2026-02-12
-**آخر تحديث:** 2026-02-21 (إضافة متطلبات iOS App Store)
+**آخر تحديث:** 2026-02-22 (تحديث حالة Edge Functions + إصلاح FCM Pipeline)
 **نطاق المراجعة:** أمان، جودة الكود، التدفقات التجارية، جاهزية Capacitor/Google Play/App Store
 **الحالة:** تقرير شامل - يتطلب إجراءات قبل النشر
 
@@ -188,18 +188,24 @@
 
 ---
 
-### 1.4 🔴 Edge Functions غير منشورة (Push Notifications لن تعمل فعلياً)
+### 1.4 ✅ ~~Edge Functions غير منشورة (Push Notifications لن تعمل فعلياً)~~ (تم الإصلاح 2/22)
 
 **الموقع:** خارطة الطريق - المرحلة 1.7
 
-**المشكلة (من الخارطة نفسها):**
+**تم الإصلاح بالكامل (2026-02-22):**
 
-- `send-notification` Edge Function **غير منشورة** على Supabase
-- `handle-notification-trigger` Edge Function **غير منشورة**
-- `FIREBASE_SERVICE_ACCOUNT` **غير معد** كـ Supabase Secret
-- الإشعارات تُسجل في قاعدة البيانات لكن **لا تصل فعلياً** للجهاز عبر FCM
+- ✅ `handle-notification-trigger` Edge Function **منشورة وتعمل** (200 OK) - ترسل FCM مباشرة لـ Google
+- ✅ `send-notification` Edge Function **منشورة** كـ standalone API
+- ✅ `FIREBASE_SERVICE_ACCOUNT` **معد** كـ Supabase Secret مع IAM roles صحيحة
+- ✅ الإشعارات تُسجل في قاعدة البيانات **وتصل فعلياً** للجهاز عبر FCM
+- ✅ تم اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → Google
+- ✅ التوكنات غير الصالحة تُعطّل تلقائياً (`is_active=false`)
 
-**الحل:** نشر Edge Functions حسب `docs/EDGE_FUNCTIONS_DEPLOYMENT.md`
+**تفاصيل الإصلاح:**
+
+- كانت المشكلة الرئيسية: JWT Verification كان مفعّلاً على `handle-notification-trigger` بينما الـ webhook يرسل service_role_key كـ Bearer token
+- تم تعطيل JWT Verification من Supabase Dashboard
+- تم تحديث الكود ليرسل FCM مباشرة بدون استدعاء `send-notification` (تبسيط + تقليل latency)
 
 ---
 
@@ -275,15 +281,15 @@
 
 ### المرحلة 1 - مهام متبقية:
 
-| المهمة                                                                  | الحالة      |
-| ----------------------------------------------------------------------- | ----------- |
-| اختبار الصوت على Chrome Android, Safari iOS, Chrome Desktop             | ⬜ لم يُنفذ |
-| اختبار FCM token generation على بيئة staging                            | ⬜ لم يُنفذ |
-| إضافة صوت مميز للطلبات الجديدة (persistent alert حتى يقبل المزود)       | ⬜ لم يُنفذ |
-| نشر `send-notification` Edge Function على Supabase                      | ⬜ لم يُنفذ |
-| نشر `handle-notification-trigger` Edge Function على Supabase            | ⬜ لم يُنفذ |
-| إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ⬜ لم يُنفذ |
-| اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ⬜ لم يُنفذ |
+| المهمة                                                                  | الحالة       |
+| ----------------------------------------------------------------------- | ------------ |
+| اختبار الصوت على Chrome Android, Safari iOS, Chrome Desktop             | ⬜ لم يُنفذ  |
+| اختبار FCM token generation على بيئة staging                            | ⬜ لم يُنفذ  |
+| إضافة صوت مميز للطلبات الجديدة (persistent alert حتى يقبل المزود)       | ⬜ لم يُنفذ  |
+| نشر `send-notification` Edge Function على Supabase                      | ✅ تم (2/19) |
+| نشر `handle-notification-trigger` Edge Function على Supabase            | ✅ تم (2/19) |
+| إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ✅ تم (سابق) |
+| اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ✅ تم (2/22) |
 
 ### المرحلة 2 - تحسين الأداء (لم تبدأ):
 
@@ -541,9 +547,14 @@
 - ✅ المرحلة 2 (جزئي): lazy loading لـ 5 أقسام homepage + skeleton loaders
 - ✅ المرحلة 2 (جزئي): تحسينات Accessibility (aria-labels, contrast, alt text)
 
+**تم إنجازه في 2/22:**
+
+- ✅ إصلاح FCM Pipeline: تعطيل JWT Verification + تحديث كود Edge Function ليرسل FCM مباشرة
+- ✅ اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → Google (ناجح)
+- ✅ تعطيل التوكنات غير الصالحة تلقائياً (7 tokens UNREGISTERED → is_active=false)
+
 **المتبقي:**
 
-- نشر Edge Functions (1.7) - الإشعارات لا تصل عبر FCM فعلياً
 - حذف Database Webhooks من Dashboard
 - ضغط البانر الرئيسي (< 200KB)
 - تشغيل Lighthouse audit ومقارنة النتائج
