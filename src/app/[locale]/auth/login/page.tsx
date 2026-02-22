@@ -331,7 +331,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'أهلاً بك في إنجزنا' : 'Welcome to Engezna'}
           </h1>
-          <p className="text-slate-500">
+          <p className="text-slate-600">
             {locale === 'ar' ? 'سجّل دخولك للمتابعة' : 'Sign in to continue'}
           </p>
         </div>
@@ -418,7 +418,16 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+                  aria-label={
+                    showPassword
+                      ? isRTL
+                        ? 'إخفاء كلمة المرور'
+                        : 'Hide password'
+                      : isRTL
+                        ? 'إظهار كلمة المرور'
+                        : 'Show password'
+                  }
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-500 hover:text-slate-700`}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -452,7 +461,7 @@ export default function LoginPage() {
 
         {/* Create Account Link */}
         <div className="text-center mt-8">
-          <p className="text-slate-500">
+          <p className="text-slate-600">
             {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
             <Link
               href={
@@ -472,7 +481,7 @@ export default function LoginPage() {
 
         {/* Provider/Admin Links */}
         <div className="text-center">
-          <p className="text-xs text-slate-400 mb-3">
+          <p className="text-xs text-slate-500 mb-3">
             {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
           </p>
           <div className="flex justify-center gap-6 text-sm">
@@ -484,7 +493,7 @@ export default function LoginPage() {
             </Link>
             <Link
               href={`/${locale}/admin/login`}
-              className="text-slate-500 font-medium hover:underline"
+              className="text-slate-600 font-medium hover:underline"
             >
               {locale === 'ar' ? 'المشرفين' : 'Admins'}
             </Link>
@@ -492,7 +501,7 @@ export default function LoginPage() {
         </div>
 
         {/* Terms Notice */}
-        <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
+        <p className="text-xs text-slate-500 text-center mt-8 leading-relaxed">
           {locale === 'ar' ? (
             <>
               بالمتابعة، أنت توافق على{' '}
@@ -522,7 +531,7 @@ export default function LoginPage() {
       {/* Back to Home */}
       <Link
         href={`/${locale}`}
-        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        className="mt-12 inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}

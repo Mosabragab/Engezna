@@ -47,7 +47,7 @@ export function HeroSection({ onSearch, onSearchClick, className = '' }: HeroSec
           <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
             {isRTL ? 'عايز تطلب إيه؟' : 'What do you want to order?'}
           </h2>
-          <p className="text-slate-500 text-sm md:text-base">
+          <p className="text-slate-600 text-sm md:text-base">
             {isRTL
               ? 'ابحث في المطاعم، السوبر ماركت، الصيدليات، وأكتر'
               : 'Search restaurants, supermarkets, pharmacies & more'}
@@ -60,7 +60,7 @@ export function HeroSection({ onSearch, onSearchClick, className = '' }: HeroSec
           <div className="relative bg-white rounded-2xl shadow-elegant border border-slate-100/80 focus-within:border-primary/30 focus-within:shadow-elegant-lg transition-all duration-300">
             <div className="flex items-center px-5 py-4">
               <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center flex-shrink-0">
-                <Search className="w-5 h-5 text-slate-400" />
+                <Search className="w-5 h-5 text-slate-500" />
               </div>
               <input
                 type="text"

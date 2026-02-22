@@ -198,7 +198,7 @@ function CountdownTimer({
 
   const formatNum = (n: number) => n.toString().padStart(2, '0');
 
-  const textColor = isDarkText ? 'text-slate-700' : 'text-white/90';
+  const textColor = isDarkText ? 'text-slate-700' : 'text-white';
   const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20';
 
   return (
@@ -214,7 +214,7 @@ function CountdownTimer({
       <span className={`${bgColor} backdrop-blur-sm rounded px-1.5 py-0.5`}>
         {formatNum(timeLeft.seconds)}
       </span>
-      <span className="ms-1 opacity-75">{locale === 'ar' ? 'متبقي' : 'left'}</span>
+      <span className="ms-1">{locale === 'ar' ? 'متبقي' : 'left'}</span>
     </div>
   );
 }
@@ -273,7 +273,7 @@ function BannerCard({
 
   // Text color classes
   const textColorClass = isDarkText ? 'text-slate-800' : 'text-white';
-  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white/85';
+  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white';
   const badgeBgClass = isDarkText
     ? banner.has_glassmorphism
       ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20'
