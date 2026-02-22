@@ -24,10 +24,10 @@ module.exports = {
         'http://localhost:3000/ar/provider/login',
       ],
 
-      // Start the server before running
-      startServerCommand: 'npm run build && npm run start',
+      // Start the server (build is done separately in CI)
+      startServerCommand: 'npm run start',
       startServerReadyPattern: 'Ready',
-      startServerReadyTimeout: 90000,
+      startServerReadyTimeout: 30000,
 
       // Chrome settings for mobile simulation
       settings: {
