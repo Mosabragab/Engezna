@@ -6,6 +6,333 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Firebase project configuration
+const FIREBASE_PROJECT_ID = 'engezna-6edd0';
+
+interface FCMMessage {
+  token?: string;
+  topic?: string;
+  notification: {
+    title: string;
+    body: string;
+    image?: string;
+  };
+  data?: Record<string, string>;
+  webpush?: {
+    fcm_options?: { link?: string };
+    notification?: {
+      icon?: string;
+      badge?: string;
+      vibrate?: number[];
+      requireInteraction?: boolean;
+      tag?: string;
+      renotify?: boolean;
+    };
+  };
+  android?: {
+    priority: string;
+    notification: {
+      click_action?: string;
+      icon?: string;
+      color?: string;
+      sound?: string;
+      channel_id?: string;
+      default_sound?: boolean;
+      default_vibrate_timings?: boolean;
+    };
+  };
+  apns?: {
+    payload: {
+      aps: {
+        sound: string;
+        badge?: number;
+        'mutable-content'?: number;
+      };
+    };
+  };
+}
+
+// ============================================================================
+// FCM Direct Integration (avoids function-to-function HTTP call)
+// ============================================================================
+
+// Get OAuth2 access token using Firebase service account
+async function getFirebaseAccessToken(): Promise<string> {
+  const serviceAccountJson = Deno.env.get('FIREBASE_SERVICE_ACCOUNT');
+  if (!serviceAccountJson) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not set');
+  }
+
+  const serviceAccount = JSON.parse(serviceAccountJson);
+
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+  };
+
+  const encoder = new TextEncoder();
+  const headerB64 = btoa(JSON.stringify(header))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+  const claimsB64 = btoa(JSON.stringify(claims))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const signatureInput = `${headerB64}.${claimsB64}`;
+
+  const privateKeyPem = serviceAccount.private_key;
+  const pemContents = privateKeyPem
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '');
+  const binaryDer = Uint8Array.from(atob(pemContents), (c: string) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    encoder.encode(signatureInput)
+  );
+
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const jwt = `${signatureInput}.${signatureB64}`;
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text();
+    throw new Error(`Failed to get Firebase access token: ${error}`);
+  }
+
+  const tokenData = await tokenResponse.json();
+  return tokenData.access_token;
+}
+
+// Send a single FCM message
+async function sendFCMMessageOnce(
+  accessToken: string,
+  message: FCMMessage
+): Promise<{ success: boolean; error?: string; retryable?: boolean }> {
+  const response = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    const errorCode = error.error?.details?.[0]?.errorCode;
+    const errorMessage = error.error?.message || 'Unknown FCM error';
+    const statusCode = response.status;
+
+    console.error(
+      `[FCM] Error (HTTP ${statusCode}):`,
+      JSON.stringify({
+        errorCode,
+        message: errorMessage,
+        token: message.token ? `${message.token.substring(0, 10)}...` : 'topic',
+      })
+    );
+
+    if (errorCode === 'UNREGISTERED')
+      return { success: false, error: 'UNREGISTERED', retryable: false };
+    if (errorCode === 'INVALID_ARGUMENT' || statusCode === 400)
+      return { success: false, error: errorMessage, retryable: false };
+    if (statusCode >= 500 || statusCode === 429)
+      return { success: false, error: errorMessage, retryable: true };
+    return { success: false, error: errorMessage, retryable: false };
+  }
+
+  return { success: true };
+}
+
+// Send FCM message with retry
+async function sendFCMMessage(
+  accessToken: string,
+  message: FCMMessage,
+  maxRetries = 2
+): Promise<{ success: boolean; error?: string }> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const result = await sendFCMMessageOnce(accessToken, message);
+    if (result.success) return { success: true };
+    if (!result.retryable) return { success: false, error: result.error };
+    if (attempt < maxRetries) {
+      const delay = 1000 * Math.pow(2, attempt);
+      console.warn(`[FCM] Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})...`);
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+  return { success: false, error: 'Max retries exceeded' };
+}
+
+// Mark token as invalid in database
+async function markTokenInvalid(supabase: ReturnType<typeof createClient>, token: string) {
+  await supabase.rpc('mark_fcm_token_invalid', { p_token: token });
+}
+
+// Determine if notification requires user interaction (won't auto-dismiss)
+function isImportantNotification(type: string): boolean {
+  const importantTypes = [
+    'new_order',
+    'order_cancelled',
+    'refund_request',
+    'refund_escalated',
+    'new_ticket',
+    'new_custom_order',
+  ];
+  return importantTypes.includes(type);
+}
+
+// Build FCM message for a token
+function buildFCMMessage(
+  token: string,
+  title: string,
+  body: string,
+  data: Record<string, string>,
+  clickAction: string,
+  imageUrl?: string
+): FCMMessage {
+  const notificationType = data?.type || 'default';
+  const notificationTag = `engezna-${notificationType}`;
+
+  return {
+    token,
+    notification: { title, body, image: imageUrl },
+    data: { ...data, click_action: clickAction },
+    webpush: {
+      fcm_options: { link: clickAction },
+      notification: {
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/badge-72x72.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: isImportantNotification(notificationType),
+        tag: notificationTag,
+        renotify: true,
+      },
+    },
+    android: {
+      priority: 'high',
+      notification: {
+        click_action: clickAction || 'FLUTTER_NOTIFICATION_CLICK',
+        icon: 'ic_notification',
+        color: '#008B8B',
+        sound: 'default',
+        channel_id: 'engezna_notifications',
+        default_sound: true,
+        default_vibrate_timings: true,
+      },
+    },
+    apns: {
+      payload: {
+        aps: { sound: 'default', 'mutable-content': 1 },
+      },
+    },
+  };
+}
+
+// Send FCM push to user(s) or provider directly
+async function sendPushNotifications(
+  supabase: ReturnType<typeof createClient>,
+  accessToken: string,
+  params: {
+    userId?: string;
+    userIds?: string[];
+    providerId?: string;
+    title: string;
+    body: string;
+    data: Record<string, string>;
+    clickAction: string;
+    imageUrl?: string;
+  }
+): Promise<{ sent: number; failed: number; errors: string[] }> {
+  const results = { sent: 0, failed: 0, errors: [] as string[] };
+
+  const sendToToken = async (token: string) => {
+    const message = buildFCMMessage(
+      token,
+      params.title,
+      params.body,
+      params.data,
+      params.clickAction,
+      params.imageUrl
+    );
+    const result = await sendFCMMessage(accessToken, message);
+    if (result.success) {
+      results.sent++;
+    } else {
+      results.failed++;
+      results.errors.push(result.error || 'Unknown error');
+      if (result.error === 'UNREGISTERED') {
+        await markTokenInvalid(supabase, token);
+      }
+    }
+  };
+
+  // Send to specific user(s)
+  if (params.userId || params.userIds) {
+    const userIds = params.userIds || [params.userId!];
+    const { data: tokens, error: tokensError } = await supabase
+      .from('fcm_tokens')
+      .select('token, user_id')
+      .in('user_id', userIds)
+      .eq('is_active', true);
+
+    if (tokensError) {
+      console.error('Error fetching tokens:', tokensError);
+    } else if (tokens && tokens.length > 0) {
+      for (const { token } of tokens) {
+        await sendToToken(token);
+      }
+    }
+  }
+
+  // Send to provider staff
+  if (params.providerId) {
+    const { data: tokens, error: tokensError } = await supabase.rpc('get_provider_staff_tokens', {
+      p_provider_id: params.providerId,
+    });
+
+    if (tokensError) {
+      console.error('Error fetching provider tokens:', tokensError);
+    } else if (tokens && tokens.length > 0) {
+      for (const tokenData of tokens) {
+        await sendToToken(tokenData.token);
+      }
+    }
+  }
+
+  return results;
+}
+
 // ============================================================================
 // Build click_action URL based on notification type and table
 // This determines where the user navigates when clicking the push notification
@@ -165,13 +492,10 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const sendNotificationUrl = `${supabaseUrl}/functions/v1/send-notification`;
-
     // ========================================================================
-    // PRIMARY PATH: Notification tables → FCM Push Sync
-    // This is the ONLY path for FCM push delivery.
-    // DB triggers (notify_customer_order_status, notify_provider_new_order, etc.)
-    // INSERT into notification tables → this trigger fires → FCM push is sent.
+    // PRIMARY PATH: Notification tables → FCM Push (Direct)
+    // DB triggers INSERT into notification tables → this trigger fires →
+    // FCM push is sent directly (no function-to-function HTTP call).
     // ========================================================================
     if (
       payload.table === 'customer_notifications' ||
@@ -223,38 +547,37 @@ serve(async (req) => {
           }
         }
 
-        const fcmPayload = {
-          user_id: targetUserId || undefined,
-          user_ids: targetUserIds,
-          provider_id: targetProviderId || undefined,
-          title: notification.title || notification.title_en || '',
-          title_ar: notification.title_ar || notification.title || '',
-          body: notification.body || notification.body_en || '',
-          body_ar: notification.body_ar || notification.body || '',
-          data: fcmData,
-          click_action: clickAction,
-        };
+        const title = notification.title_ar || notification.title || '';
+        const body = notification.body_ar || notification.body || '';
 
         console.log(
           `[handle-notification-trigger] Sending FCM for ${payload.table} id=${notification.id} type=${notification.type} click_action=${clickAction}`
         );
 
-        const response = await fetch(sendNotificationUrl, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${supabaseServiceKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(fcmPayload),
-        });
+        // Get Firebase access token and send directly
+        let fcmResult: { sent: number; failed: number; errors: string[] } = {
+          sent: 0,
+          failed: 0,
+          errors: [],
+        };
+        try {
+          const accessToken = await getFirebaseAccessToken();
 
-        const result = await response.json();
-
-        if (!response.ok) {
+          fcmResult = await sendPushNotifications(supabase, accessToken, {
+            userId: targetUserId || undefined,
+            userIds: targetUserIds,
+            providerId: targetProviderId || undefined,
+            title,
+            body,
+            data: fcmData,
+            clickAction,
+          });
+        } catch (fcmError) {
           console.error(
-            `[handle-notification-trigger] FCM send failed for ${payload.table} id=${notification.id}:`,
-            JSON.stringify(result)
+            `[handle-notification-trigger] FCM error for ${payload.table} id=${notification.id}:`,
+            fcmError.message
           );
+          fcmResult.errors.push(fcmError.message);
         }
 
         return new Response(
@@ -265,7 +588,7 @@ serve(async (req) => {
             notification_id: notification.id,
             notification_type: notification.type,
             click_action: clickAction,
-            fcm_result: result,
+            fcm_result: fcmResult,
           }),
           {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
