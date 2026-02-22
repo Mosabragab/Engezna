@@ -74,6 +74,7 @@ export default function LoginPage() {
   const urlError = searchParams.get('error');
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale));
 
@@ -137,6 +138,32 @@ export default function LoginPage() {
       setIsGoogleLoading(false);
     },
   });
+
+  // Handle Apple Sign In via Supabase OAuth
+  const handleAppleLogin = async () => {
+    setIsAppleLoading(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback?redirect=${redirectTo || `/${locale}`}`,
+          scopes: 'name email',
+        },
+      });
+
+      if (signInError) {
+        setError(locale === 'ar' ? 'فشل تسجيل الدخول بحساب Apple' : 'Apple sign-in failed');
+        setIsAppleLoading(false);
+      }
+      // If no error, user is redirected to Apple's OAuth page
+    } catch {
+      setError(locale === 'ar' ? 'فشل تسجيل الدخول بحساب Apple' : 'Apple sign-in failed');
+      setIsAppleLoading(false);
+    }
+  };
 
   // Handle Email + Password Login
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -288,7 +315,7 @@ export default function LoginPage() {
   };
 
   const isRTL = locale === 'ar';
-  const isLoading = isGoogleLoading || isEmailLoading;
+  const isLoading = isGoogleLoading || isAppleLoading || isEmailLoading;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -331,6 +358,25 @@ export default function LoginPage() {
               <>
                 <GoogleIcon />
                 <span>{locale === 'ar' ? 'المتابعة بحساب Google' : 'Continue with Google'}</span>
+              </>
+            )}
+          </button>
+
+          {/* Apple Button */}
+          <button
+            type="button"
+            onClick={handleAppleLogin}
+            disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-black border border-black rounded-xl text-white font-medium transition-all hover:bg-black/90 active:scale-[0.98] disabled:opacity-50"
+          >
+            {isAppleLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white/70" />
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                </svg>
+                <span>{locale === 'ar' ? 'المتابعة بحساب Apple' : 'Continue with Apple'}</span>
               </>
             )}
           </button>

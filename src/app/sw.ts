@@ -14,7 +14,6 @@ declare const self: ServiceWorkerGlobalScope;
 // Listen for SKIP_WAITING message from the client to trigger update
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'SKIP_WAITING') {
-    console.log('[SW] Received SKIP_WAITING message, activating new service worker...');
     self.skipWaiting();
   }
 });
@@ -181,7 +180,6 @@ async function updateAppBadge(count: number): Promise<void> {
   try {
     if ('setAppBadge' in navigator) {
       await (navigator as any).setAppBadge(count);
-      console.log(`[SW] Badge set to ${count}`);
     }
   } catch (error) {
     console.warn('[SW] Badge API not supported:', error);
@@ -192,7 +190,6 @@ async function clearAppBadge(): Promise<void> {
   try {
     if ('clearAppBadge' in navigator) {
       await (navigator as any).clearAppBadge();
-      console.log('[SW] Badge cleared');
     }
   } catch (error) {
     console.warn('[SW] Badge clear not supported:', error);
@@ -208,7 +205,6 @@ self.addEventListener('sync', (event) => {
 
 async function syncOfflineRequests() {
   // This will be implemented to sync any offline requests when connection returns
-  console.log('[SW] Background sync triggered for offline requests');
 }
 
 serwist.addEventListeners();

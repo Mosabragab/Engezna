@@ -173,7 +173,6 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   const seemsLikeOrdering = orderingKeywords.some((kw) => lastUserMessage.includes(kw));
 
   if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
-    console.log('[runAgent] No category selected - returning prompt BEFORE calling AI');
     return {
       content: 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇',
       suggestions: ['🍔 مطاعم', '🛒 سوبر ماركت', '🍌 خضروات وفواكه', '☕ البن والحلويات'],
@@ -192,7 +191,6 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
   let effectiveMessages = messages;
   if (isCategorySelection) {
     const categoryCode = lastUserMessage.replace('category:', '');
-    console.log('[runAgent] Category selected:', categoryCode, '- transforming for AI');
 
     const categoryNames: Record<string, string> = {
       restaurant_cafe: 'مطاعم',
@@ -217,8 +215,6 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
       ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
       : `اخترت قسم ${categoryName}. ورّيني المتاح`;
 
-    console.log('[runAgent] Transformed message:', transformedMessage);
-
     effectiveMessages = messages.map((m, i) => {
       if (i === messages.length - 1 && m.role === 'user') {
         return { ...m, content: transformedMessage };
@@ -233,10 +229,6 @@ export async function runAgent(options: AgentHandlerOptions): Promise<AgentRespo
     try {
       const insights = await loadCustomerInsights(context.customerId);
       if (insights) {
-        console.log(
-          '[runAgent] Loaded customer insights:',
-          insights.conversation_style?.customer_type
-        );
         enrichedContext = {
           ...context,
           customerMemory: {
@@ -552,9 +544,6 @@ export async function* runAgentStream(
   const seemsLikeOrdering = orderingKeywords.some((kw) => lastUserMessage.includes(kw));
 
   if (!hasCategorySelected && !hasProviderContext && !isCategorySelection && seemsLikeOrdering) {
-    console.log('[runAgentStream] No category selected - returning prompt BEFORE calling AI');
-    console.log('[runAgentStream] User message:', lastUserMessage);
-
     const categoryPromptContent = 'عشان أقدر أساعدك، اختار القسم اللي عايز تطلب منه الأول 👇';
 
     // Stream the content
@@ -587,7 +576,6 @@ export async function* runAgentStream(
   let effectiveMessages = messages;
   if (isCategorySelection) {
     const categoryCode = lastUserMessage.replace('category:', '');
-    console.log('[runAgentStream] Category selected:', categoryCode, '- transforming for AI');
 
     // Category name mapping
     const categoryNames: Record<string, string> = {
@@ -615,8 +603,6 @@ export async function* runAgentStream(
       ? `اخترت قسم ${categoryName}. دور لي على: "${originalRequest}"`
       : `اخترت قسم ${categoryName}. ورّيني المتاح`;
 
-    console.log('[runAgentStream] Transformed message:', transformedMessage);
-
     // Replace the last user message with transformed version
     effectiveMessages = messages.map((m, i) => {
       if (i === messages.length - 1 && m.role === 'user') {
@@ -632,10 +618,6 @@ export async function* runAgentStream(
     try {
       const insights = await loadCustomerInsights(context.customerId);
       if (insights) {
-        console.log(
-          '[runAgentStream] Loaded customer insights:',
-          insights.conversation_style?.customer_type
-        );
         enrichedContext = {
           ...context,
           customerMemory: {
@@ -1332,11 +1314,6 @@ function parseAgentOutput(
       if (result.discovered_provider_id && !response.discoveredProviderId) {
         response.discoveredProviderId = result.discovered_provider_id;
         response.discoveredProviderName = result.discovered_provider_name;
-        console.log(
-          '[parseAgentOutput] Discovered provider (root):',
-          result.discovered_provider_id,
-          result.discovered_provider_name
-        );
       }
 
       if (result.success && result.data) {
@@ -1346,11 +1323,6 @@ function parseAgentOutput(
         if (data.discovered_provider_id && !response.discoveredProviderId) {
           response.discoveredProviderId = data.discovered_provider_id as string;
           response.discoveredProviderName = data.discovered_provider_name as string | undefined;
-          console.log(
-            '[parseAgentOutput] Discovered provider (data):',
-            data.discovered_provider_id,
-            data.discovered_provider_name
-          );
         }
 
         // Check for cart_action (from add_to_cart tool)
@@ -1420,12 +1392,6 @@ function parseAgentOutput(
               pending_items: pendingItems,
               pending_item: pendingItems[0],
             };
-            console.log(
-              '[parseAgentOutput] Stored',
-              pendingItems.length,
-              'pending items:',
-              pendingItems.map((i) => i.name_ar).join(', ')
-            );
           }
         }
       }
