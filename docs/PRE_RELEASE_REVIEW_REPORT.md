@@ -202,6 +202,7 @@
 - ✅ التوكنات غير الصالحة تُعطّل تلقائياً (`is_active=false`)
 
 **تفاصيل الإصلاح:**
+
 - كانت المشكلة الرئيسية: JWT Verification كان مفعّلاً على `handle-notification-trigger` بينما الـ webhook يرسل service_role_key كـ Bearer token
 - تم تعطيل JWT Verification من Supabase Dashboard
 - تم تحديث الكود ليرسل FCM مباشرة بدون استدعاء `send-notification` (تبسيط + تقليل latency)
@@ -280,15 +281,15 @@
 
 ### المرحلة 1 - مهام متبقية:
 
-| المهمة                                                                  | الحالة          |
-| ----------------------------------------------------------------------- | --------------- |
-| اختبار الصوت على Chrome Android, Safari iOS, Chrome Desktop             | ⬜ لم يُنفذ     |
-| اختبار FCM token generation على بيئة staging                            | ⬜ لم يُنفذ     |
-| إضافة صوت مميز للطلبات الجديدة (persistent alert حتى يقبل المزود)       | ⬜ لم يُنفذ     |
-| نشر `send-notification` Edge Function على Supabase                      | ✅ تم (2/19)    |
-| نشر `handle-notification-trigger` Edge Function على Supabase            | ✅ تم (2/19)    |
-| إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ✅ تم (سابق)    |
-| اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ✅ تم (2/22)    |
+| المهمة                                                                  | الحالة       |
+| ----------------------------------------------------------------------- | ------------ |
+| اختبار الصوت على Chrome Android, Safari iOS, Chrome Desktop             | ⬜ لم يُنفذ  |
+| اختبار FCM token generation على بيئة staging                            | ⬜ لم يُنفذ  |
+| إضافة صوت مميز للطلبات الجديدة (persistent alert حتى يقبل المزود)       | ⬜ لم يُنفذ  |
+| نشر `send-notification` Edge Function على Supabase                      | ✅ تم (2/19) |
+| نشر `handle-notification-trigger` Edge Function على Supabase            | ✅ تم (2/19) |
+| إعداد `FIREBASE_SERVICE_ACCOUNT` كـ Supabase Secret                     | ✅ تم (سابق) |
+| اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → device | ✅ تم (2/22) |
 
 ### المرحلة 2 - تحسين الأداء (لم تبدأ):
 
@@ -546,9 +547,14 @@
 - ✅ المرحلة 2 (جزئي): lazy loading لـ 5 أقسام homepage + skeleton loaders
 - ✅ المرحلة 2 (جزئي): تحسينات Accessibility (aria-labels, contrast, alt text)
 
+**تم إنجازه في 2/22:**
+
+- ✅ إصلاح FCM Pipeline: تعطيل JWT Verification + تحديث كود Edge Function ليرسل FCM مباشرة
+- ✅ اختبار الدورة الكاملة: trigger → webhook → Edge Function → FCM → Google (ناجح)
+- ✅ تعطيل التوكنات غير الصالحة تلقائياً (7 tokens UNREGISTERED → is_active=false)
+
 **المتبقي:**
 
-- نشر Edge Functions (1.7) - الإشعارات لا تصل عبر FCM فعلياً
 - حذف Database Webhooks من Dashboard
 - ضغط البانر الرئيسي (< 200KB)
 - تشغيل Lighthouse audit ومقارنة النتائج
