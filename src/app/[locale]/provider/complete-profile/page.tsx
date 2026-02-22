@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useTranslations, useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -615,10 +616,12 @@ export default function CompleteProfilePage() {
 
                     {logoPreview ? (
                       <div className="space-y-3">
-                        <img
+                        <Image
                           src={logoPreview}
                           alt="Logo preview"
-                          className="w-24 h-24 object-cover rounded-xl mx-auto"
+                          width={96}
+                          height={96}
+                          className="object-cover rounded-xl mx-auto"
                         />
                         <p className="text-sm text-muted-foreground">
                           {locale === 'ar' ? 'انقر لتغيير الصورة' : 'Click to change image'}

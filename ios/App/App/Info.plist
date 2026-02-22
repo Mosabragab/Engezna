@@ -47,5 +47,28 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- Camera Permission -->
+	<key>NSCameraUsageDescription</key>
+	<string>نحتاج الوصول للكاميرا لتصوير المنتجات والطلبات المخصصة</string>
+	<!-- Photo Library Permission -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج الوصول لمعرض الصور لاختيار صور المنتجات</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>نحتاج الإذن لحفظ الصور في معرض الصور</string>
+	<!-- Location Permission -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>نحتاج موقعك لعرض المتاجر والمنتجات القريبة منك</string>
+	<!-- Deep Links -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.engezna.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>engezna</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

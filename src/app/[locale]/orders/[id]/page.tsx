@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -775,9 +776,11 @@ export default function OrderTrackingPage() {
           <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
             <div className="flex items-center gap-3">
               {provider.logo_url ? (
-                <img
+                <Image
                   src={provider.logo_url}
                   alt={locale === 'ar' ? provider.name_ar : provider.name_en}
+                  width={56}
+                  height={56}
                   className="w-14 h-14 rounded-xl object-cover"
                 />
               ) : (
@@ -1405,9 +1408,11 @@ export default function OrderTrackingPage() {
               {provider && (
                 <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
                   {provider.logo_url ? (
-                    <img
+                    <Image
                       src={provider.logo_url}
                       alt={locale === 'ar' ? provider.name_ar : provider.name_en}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-lg object-cover"
                     />
                   ) : (

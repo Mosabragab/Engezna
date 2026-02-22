@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   Plus,
@@ -317,12 +318,14 @@ export default function CartPage() {
         {provider && (
           <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-primary/10">
+              <div className="relative w-10 h-10 rounded-full flex items-center justify-center overflow-hidden bg-primary/10">
                 {provider.logo_url ? (
-                  <img
+                  <Image
                     src={provider.logo_url}
                     alt={getName(provider)}
-                    className="w-full h-full object-cover"
+                    fill
+                    sizes="40px"
+                    className="object-cover"
                   />
                 ) : (
                   <Store className="w-5 h-5 text-primary" />
@@ -370,10 +373,12 @@ export default function CartPage() {
                   {/* Image */}
                   <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                     {item.menuItem.image_url ? (
-                      <img
+                      <Image
                         src={item.menuItem.image_url}
                         alt={getName(item.menuItem)}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="80px"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-2xl">
@@ -513,10 +518,12 @@ export default function CartPage() {
                   {/* Image */}
                   <div className="h-20 bg-slate-100 relative">
                     {item.image_url ? (
-                      <img
+                      <Image
                         src={item.image_url}
                         alt={getName(item)}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 768px) 50vw, 200px"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-2xl">

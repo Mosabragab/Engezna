@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -783,8 +784,8 @@ export default function EditProductPage() {
               {/* Image Preview - Square */}
               {imagePreview ? (
                 <div className="relative max-w-xs mx-auto">
-                  <div className="aspect-square rounded-xl overflow-hidden border-2 border-slate-200 shadow-sm">
-                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                  <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-200 shadow-sm">
+                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
                   </div>
                   <Button
                     type="button"

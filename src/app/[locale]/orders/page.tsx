@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -565,11 +566,13 @@ export default function OrderHistoryPage() {
                         <div className="flex items-start gap-4">
                           {/* Provider Logo */}
                           {order.provider?.logo_url ? (
-                            <img
+                            <Image
                               src={order.provider.logo_url}
                               alt={
                                 locale === 'ar' ? order.provider.name_ar : order.provider.name_en
                               }
+                              width={56}
+                              height={56}
                               className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
                             />
                           ) : (
