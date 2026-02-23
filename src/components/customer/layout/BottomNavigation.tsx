@@ -105,7 +105,7 @@ export const BottomNavigation = memo(function BottomNavigation() {
                 key={item.id}
                 href={item.href}
                 className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 rounded-xl mx-0.5 active:scale-95 ${
-                  active ? 'text-primary' : 'text-slate-400 hover:text-slate-600'
+                  active ? 'text-primary-dark' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 <div
@@ -133,7 +133,7 @@ export const BottomNavigation = memo(function BottomNavigation() {
                 </div>
                 <span
                   className={`text-[10px] mt-0.5 transition-all duration-200 ${
-                    active ? 'font-bold text-primary' : 'font-medium'
+                    active ? 'font-bold text-primary-dark' : 'font-medium'
                   }`}
                 >
                   {t(item.labelKey)}

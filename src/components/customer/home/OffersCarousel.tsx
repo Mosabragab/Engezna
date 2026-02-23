@@ -770,7 +770,7 @@ export function OffersCarousel({
           {showViewAll && onViewAll && (
             <button
               onClick={onViewAll}
-              className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
+              className="text-sm font-semibold text-primary-dark hover:text-primary transition-colors flex items-center gap-1"
             >
               {locale === 'ar' ? 'عرض الكل' : 'View All'}
             </button>

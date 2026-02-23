@@ -60,7 +60,7 @@ export function TopRatedSection({
           <button
             onClick={onViewAll}
             aria-label={isRTL ? 'عرض جميع المتاجر الأعلى تقييماً' : 'View all top rated stores'}
-            className="flex items-center gap-1 text-primary text-sm font-medium hover:underline min-h-[44px] min-w-[44px] justify-center"
+            className="flex items-center gap-1 text-primary-dark text-sm font-medium hover:underline min-h-[44px] min-w-[44px] justify-center"
           >
             {isRTL ? 'عرض الكل' : 'View All'}
           </button>

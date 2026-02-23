@@ -74,7 +74,7 @@ export function CategoriesSection({
           <button
             onClick={onViewAll}
             aria-label={locale === 'ar' ? 'عرض جميع الأقسام' : 'View all categories'}
-            className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
+            className="text-sm font-semibold text-primary-dark hover:text-primary transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
           >
             {locale === 'ar' ? 'عرض الكل' : 'View All'}
           </button>
@@ -120,7 +120,7 @@ export function CategoriesSection({
                 className={cn(
                   'mt-2 text-[10px] sm:text-xs font-semibold text-center leading-tight',
                   'min-h-[28px] sm:min-h-[32px] flex items-start justify-center',
-                  isSelected ? 'text-primary' : 'text-slate-700'
+                  isSelected ? 'text-primary-dark' : 'text-slate-700'
                 )}
               >
                 {categoryName}

@@ -370,7 +370,7 @@ export default function LoginPage() {
             className="w-full h-[52px] flex items-center justify-center gap-3 bg-black border border-black rounded-xl text-white font-medium transition-all hover:bg-black/90 active:scale-[0.98] disabled:opacity-50"
           >
             {isAppleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-white/70" />
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
             ) : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -401,7 +401,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
-                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 autoFocus
               />
 
@@ -413,7 +413,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
                   disabled={isEmailLoading}
-                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
                 <button
                   type="button"
@@ -437,7 +437,7 @@ export default function LoginPage() {
               <div className="text-end">
                 <Link
                   href={`/${locale}/auth/forgot-password`}
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary-dark hover:underline"
                 >
                   {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                 </Link>
@@ -469,7 +469,7 @@ export default function LoginPage() {
                   ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
                   : `/${locale}/auth/register`
               }
-              className="text-primary font-medium hover:underline"
+              className="text-primary-dark font-medium hover:underline"
             >
               {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
             </Link>
@@ -487,7 +487,7 @@ export default function LoginPage() {
           <div className="flex justify-center gap-6 text-sm">
             <Link
               href={`/${locale}/provider/login`}
-              className="text-primary font-medium hover:underline"
+              className="text-primary-dark font-medium hover:underline"
             >
               {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
             </Link>
@@ -505,22 +505,22 @@ export default function LoginPage() {
           {locale === 'ar' ? (
             <>
               بالمتابعة، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary-dark hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary-dark hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By continuing, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary-dark hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary-dark hover:underline">
                 Privacy Policy
               </Link>
             </>
