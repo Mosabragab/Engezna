@@ -100,7 +100,7 @@ export function ReorderSection({
                 (isRTL ? ` +${items.length - 3} أخرى` : ` +${items.length - 3} more`)}
             </p>
             <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span className="font-medium text-primary">
+              <span className="font-medium text-primary-dark">
                 {lastOrder.total} {isRTL ? 'ج.م' : 'EGP'}
               </span>
               <span>•</span>

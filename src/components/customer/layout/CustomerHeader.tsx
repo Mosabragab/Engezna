@@ -258,7 +258,7 @@ export const CustomerHeader = memo(function CustomerHeader({
       case 'support_message':
         return <AlertCircle className="h-4 w-4 text-blue-600" />;
       default:
-        return <Bell className="h-4 w-4 text-slate-400" />;
+        return <Bell className="h-4 w-4 text-slate-500" />;
     }
   }
 

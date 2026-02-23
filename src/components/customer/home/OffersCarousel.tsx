@@ -10,31 +10,39 @@ import { createClient } from '@/lib/supabase/client';
 import { csrfHeaders } from '@/lib/security/csrf-client';
 import { useUserLocation } from '@/lib/contexts/LocationContext';
 
-// Helper function to calculate color luminance and determine if text should be dark or light
-function getContrastTextColor(hexColor: string): 'light' | 'dark' {
-  // Remove # if present
+// WCAG 2.1 relative luminance calculation (proper sRGB linearization)
+function getRelativeLuminance(hexColor: string): number {
   const hex = hexColor.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
 
-  // Parse RGB values
-  const r = parseInt(hex.substring(0, 2), 16);
-  const g = parseInt(hex.substring(2, 4), 16);
-  const b = parseInt(hex.substring(4, 6), 16);
+  const [sR, sG, sB] = [r, g, b].map((c) =>
+    c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  );
 
-  // Calculate relative luminance using the formula
-  // Higher values = lighter color
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // If luminance > 0.6, background is light, so use dark text
-  return luminance > 0.6 ? 'dark' : 'light';
+  return 0.2126 * sR + 0.7152 * sG + 0.0722 * sB;
 }
 
-// Get average luminance of gradient (checks both start and end colors)
-function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
-  const startLuminance = getContrastTextColor(startColor);
-  const endLuminance = getContrastTextColor(endColor);
+// WCAG contrast ratio between a hex color and white (#FFFFFF)
+function getWhiteContrastRatio(hexColor: string): number {
+  const bgLum = getRelativeLuminance(hexColor);
+  return (1.0 + 0.05) / (bgLum + 0.05);
+}
 
-  // If either color is light, use dark text for safety
-  if (startLuminance === 'dark' || endLuminance === 'dark') {
+// Determine if text should be dark or light based on WCAG AA (4.5:1 for normal text)
+function getContrastTextColor(hexColor: string): 'light' | 'dark' {
+  const whiteContrast = getWhiteContrastRatio(hexColor);
+  return whiteContrast >= 4.5 ? 'light' : 'dark';
+}
+
+// Check both gradient endpoints - text must be accessible across the entire gradient
+function getGradientTextColor(startColor: string, endColor: string): 'light' | 'dark' {
+  const startResult = getContrastTextColor(startColor);
+  const endResult = getContrastTextColor(endColor);
+
+  // If either endpoint doesn't support white text, use dark text
+  if (startResult === 'dark' || endResult === 'dark') {
     return 'dark';
   }
   return 'light';
@@ -110,8 +118,8 @@ const fallbackOffers: HomepageBanner[] = [
     description_en: '30% off all pizzas',
     badge_text_ar: 'خصم ٣٠٪',
     badge_text_en: '30% OFF',
-    gradient_start: '#009DE0',
-    gradient_end: '#0077B6',
+    gradient_start: '#006B9F',
+    gradient_end: '#004D7A',
     cta_text_ar: 'اطلب الآن',
     cta_text_en: 'Order Now',
     link_url: '/providers?category=restaurants',
@@ -127,8 +135,8 @@ const fallbackOffers: HomepageBanner[] = [
     description_en: 'On orders over 100 EGP',
     badge_text_ar: 'توصيل مجاني',
     badge_text_en: 'Free Delivery',
-    gradient_start: '#0088CC',
-    gradient_end: '#005A8C',
+    gradient_start: '#006699',
+    gradient_end: '#004466',
     cta_text_ar: 'اطلب الآن',
     cta_text_en: 'Order Now',
     link_url: '/providers?category=coffee_desserts',
@@ -144,8 +152,8 @@ const fallbackOffers: HomepageBanner[] = [
     description_en: 'Buy 1 Get 1 Free',
     badge_text_ar: 'اشتري ١ واحصل ١',
     badge_text_en: 'Buy 1 Get 1',
-    gradient_start: '#0077B6',
-    gradient_end: '#005580',
+    gradient_start: '#005580',
+    gradient_end: '#003D5C',
     cta_text_ar: 'اطلب الآن',
     cta_text_en: 'Order Now',
     link_url: '/providers?category=vegetables_fruits',
@@ -198,8 +206,8 @@ function CountdownTimer({
 
   const formatNum = (n: number) => n.toString().padStart(2, '0');
 
-  const textColor = isDarkText ? 'text-slate-700' : 'text-white';
-  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-white/20';
+  const textColor = isDarkText ? 'text-slate-900' : 'text-white';
+  const bgColor = isDarkText ? 'bg-slate-800/10' : 'bg-black/20';
 
   return (
     <div className={`flex items-center gap-1 ${textColor} text-xs font-medium`}>
@@ -271,20 +279,20 @@ function BannerCard({
   const textMode = getGradientTextColor(gradientStart, gradientEnd);
   const isDarkText = textMode === 'dark';
 
-  // Text color classes
-  const textColorClass = isDarkText ? 'text-slate-800' : 'text-white';
-  const textColorSecondary = isDarkText ? 'text-slate-600' : 'text-white';
+  // Text color classes (slate-900 ensures 4.5:1+ on mid-tone backgrounds)
+  const textColorClass = isDarkText ? 'text-slate-900' : 'text-white';
+  const textColorSecondary = isDarkText ? 'text-slate-700' : 'text-white';
   const badgeBgClass = isDarkText
     ? banner.has_glassmorphism
-      ? 'bg-slate-800/15 backdrop-blur-md border border-slate-800/20'
-      : 'bg-slate-800/20'
+      ? 'bg-slate-900/15 backdrop-blur-md border border-slate-900/20'
+      : 'bg-slate-900/20'
     : banner.has_glassmorphism
-      ? 'bg-white/20 backdrop-blur-md border border-white/30'
-      : 'bg-white/25';
-  const badgeTextClass = isDarkText ? 'text-slate-800' : 'text-white';
-  const decorativeCircleClass = isDarkText ? 'bg-slate-800/5' : 'bg-white/10';
+      ? 'bg-black/30 backdrop-blur-md border border-white/20'
+      : 'bg-black/25';
+  const badgeTextClass = isDarkText ? 'text-slate-900' : 'text-white';
+  const decorativeCircleClass = isDarkText ? 'bg-slate-900/5' : 'bg-white/10';
   const ctaButtonClass = isDarkText
-    ? 'bg-slate-800 text-white hover:bg-slate-700'
+    ? 'bg-slate-900 text-white hover:bg-slate-800'
     : 'bg-white text-slate-900 hover:bg-white/95';
 
   const imagePosition = banner.image_position || 'end';
@@ -319,6 +327,11 @@ function BannerCard({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         </div>
+      )}
+
+      {/* Dark overlay for white text contrast (WCAG AA compliance) */}
+      {!isDarkText && (
+        <div className="absolute inset-0 bg-black/25 rounded-2xl pointer-events-none" />
       )}
 
       {/* Decorative Circles */}
