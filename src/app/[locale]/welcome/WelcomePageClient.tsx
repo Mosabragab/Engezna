@@ -83,6 +83,13 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
       emoji: '💊',
       gradient: 'linear-gradient(145deg, rgba(252,231,243,0.9) 0%, rgba(249,168,212,0.7) 100%)',
     },
+    {
+      id: 'home_cooked',
+      name_ar: 'أكل بيتي',
+      name_en: 'Home Food',
+      emoji: '🍲',
+      gradient: 'linear-gradient(145deg, rgba(255,237,213,0.9) 0%, rgba(254,215,170,0.75) 100%)',
+    },
   ];
 
   const features = [
@@ -225,7 +232,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
                 {categoriesContent.title || (isRTL ? 'ماذا نقدم؟' : 'What We Offer')}
               </h2>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 max-w-3xl mx-auto">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
                 {categories.map((category, index) => (
                   <div
                     key={category.id}

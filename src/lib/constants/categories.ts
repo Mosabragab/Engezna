@@ -16,7 +16,7 @@
  * 2. Optionally add a Lucide icon mapping in CATEGORY_ICONS below
  */
 
-import { UtensilsCrossed, Coffee, ShoppingCart, Apple, Pill } from 'lucide-react';
+import { UtensilsCrossed, Coffee, ShoppingCart, Apple, Pill, Soup } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export const BUSINESS_CATEGORIES = {
@@ -65,6 +65,15 @@ export const BUSINESS_CATEGORIES = {
     icon: '💊',
     color: '#E91E63',
   },
+  home_cooked: {
+    code: 'home_cooked' as const,
+    name_ar: 'أكل بيتي',
+    name_en: 'Home Food',
+    description_ar: 'أطباق منزلية طازجة يومية',
+    description_en: 'Fresh daily home-cooked meals',
+    icon: '🍲',
+    color: '#FF9D5C',
+  },
 } as const;
 
 export type BusinessCategoryCode = keyof typeof BUSINESS_CATEGORIES;
@@ -90,6 +99,7 @@ export const CATEGORY_ICONS: Record<BusinessCategoryCode, LucideIcon> = {
   grocery: ShoppingCart,
   vegetables_fruits: Apple,
   pharmacy: Pill,
+  home_cooked: Soup,
 };
 
 // For forms and selectors
@@ -99,6 +109,7 @@ export const BUSINESS_CATEGORY_OPTIONS = [
   { value: 'grocery', labelAr: 'سوبر ماركت', labelEn: 'Supermarket' },
   { value: 'vegetables_fruits', labelAr: 'خضروات وفواكه', labelEn: 'Fruits & Vegetables' },
   { value: 'pharmacy', labelAr: 'صيدليات', labelEn: 'Pharmacies' },
+  { value: 'home_cooked', labelAr: 'أكل بيتي', labelEn: 'Home Food' },
 ] as const;
 
 // Filter categories for provider browsing
@@ -109,4 +120,5 @@ export const PROVIDER_FILTER_CATEGORIES = [
   { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
   { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
   { id: 'pharmacy', name_ar: 'صيدليات', name_en: 'Pharmacies' },
+  { id: 'home_cooked', name_ar: 'أكل بيتي', name_en: 'Home Food' },
 ] as const;

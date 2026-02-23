@@ -318,9 +318,8 @@ export function BroadcastComparison({
     broadcastId: initialBroadcast.id,
     enabled: true,
     callbacks: {
-      onPricingReceived: (request) => {
+      onPricingReceived: () => {
         // Could show a toast notification here
-        console.log('New pricing received:', request);
       },
     },
   });

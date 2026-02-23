@@ -160,7 +160,6 @@ export function RefundRequestModal({
   }, [isOpen]);
 
   const handleIssueSelect = (issueId: string) => {
-    console.log('Selected issue:', issueId);
     setSelectedIssue(issueId);
   };
 
@@ -249,7 +248,6 @@ export function RefundRequestModal({
           }
         } catch {
           // Continue without images if storage fails
-          console.log('Image upload skipped - bucket may not exist');
         }
       }
 
@@ -315,7 +313,6 @@ export function RefundRequestModal({
         });
       } catch {
         // Support ticket is optional, continue if fails
-        console.log('Support ticket creation skipped');
       }
 
       // Create provider notification
@@ -332,7 +329,6 @@ export function RefundRequestModal({
         });
       } catch {
         // Notification is optional
-        console.log('Provider notification skipped');
       }
 
       // Show success screen - set loading false BEFORE step change to ensure render

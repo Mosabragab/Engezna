@@ -136,11 +136,9 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
       cartClearedRef.current = true;
       clearCart();
       clearPendingOnlineOrder();
-      console.log('Payment successful - cart cleared');
     } else if (paymentStatus === 'failed') {
       // Payment failed - clear pending order but keep cart for retry
       clearPendingOnlineOrder();
-      console.log('Payment failed - pending order cleared, cart preserved for retry');
     }
   }, [paymentStatus, clearCart, clearPendingOnlineOrder]);
 

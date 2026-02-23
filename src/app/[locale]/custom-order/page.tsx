@@ -126,7 +126,7 @@ function CustomOrderPageContent() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-slate-500">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
+          <p className="text-slate-600">{isRTL ? 'جاري التحميل...' : 'Loading...'}</p>
         </div>
       </div>
     );
@@ -142,7 +142,7 @@ function CustomOrderPageContent() {
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">{isRTL ? 'حدث خطأ' : 'Error'}</h2>
-          <p className="text-slate-500 text-center mb-6">{error}</p>
+          <p className="text-slate-600 text-center mb-6">{error}</p>
           <Link
             href={`/${locale}/providers`}
             className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
@@ -167,7 +167,7 @@ function CustomOrderPageContent() {
           <h2 className="text-xl font-bold text-slate-800 mb-2">
             {isRTL ? 'اختر متجراً' : 'Select a Provider'}
           </h2>
-          <p className="text-slate-500 text-center mb-6">
+          <p className="text-slate-600 text-center mb-6">
             {isRTL
               ? 'يرجى اختيار متجر يدعم الطلب الخاص للبدء'
               : 'Please select a provider that supports custom orders to begin'}
@@ -191,6 +191,7 @@ function CustomOrderPageContent() {
         <div className="flex items-center h-14 px-4">
           <button
             onClick={handleCancel}
+            aria-label={isRTL ? 'رجوع' : 'Go back'}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
           >
             {isRTL ? (

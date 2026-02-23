@@ -758,8 +758,6 @@ export async function executeAgentTool(
           };
         }
 
-        console.log('[get_provider_categories] Using provider:', effectiveProviderId);
-
         const { data, error } = await supabase
           .from('provider_categories')
           .select('id, name_ar, name_en, description_ar, icon, display_order')
@@ -774,8 +772,6 @@ export async function executeAgentTool(
         // Some providers don't have categories, so show items directly
         // ═══════════════════════════════════════════════════════════════════
         if (!data || data.length === 0) {
-          console.log('[get_provider_categories] No categories found, fetching items directly');
-
           const { data: items, error: itemsError } = await supabase
             .from('menu_items')
             .select(
@@ -834,14 +830,6 @@ export async function executeAgentTool(
           };
         }
 
-        console.log('[get_menu_items] Using provider:', {
-          param: param_provider_id,
-          context: context.providerId,
-          cart: context.cartProviderId,
-          effective: effectiveProviderId,
-          search_query,
-        });
-
         // ═══════════════════════════════════════════════════════════════════
         // FIX: Use simple_search_menu for search queries to get Arabic
         // normalization and synonym expansion
@@ -873,10 +861,6 @@ export async function executeAgentTool(
           });
 
           if (searchResult.error) {
-            console.log(
-              '[get_menu_items] Search function error, falling back:',
-              searchResult.error
-            );
             // Fallback to basic search
             const fallbackResult = await supabase
               .from('menu_items')
@@ -1038,17 +1022,6 @@ export async function executeAgentTool(
           city_id?: string;
         };
 
-        // CRITICAL: Log search parameters at entry point
-        console.log('[search_menu] === SEARCH STARTED ===', {
-          query,
-          provider_id_param: provider_id,
-          city_id_param: city_id,
-          context_cityId: context.cityId,
-          context_providerId: context.providerId,
-          context_cartProviderId: context.cartProviderId,
-          context_selectedCategory: context.selectedCategory,
-        });
-
         // NOTE: Arabic normalization is handled by the DB function (normalize_arabic)
         // Don't normalize here as fallback ILIKE queries need the original text
 
@@ -1060,9 +1033,6 @@ export async function executeAgentTool(
         let queryEmbedding: number[] | null = null;
 
         if (isLatinText) {
-          console.log(
-            '[search_menu] Latin text detected, generating embedding for semantic search'
-          );
           try {
             queryEmbedding = await getEmbeddingCached(query);
           } catch (embeddingError) {
@@ -1150,7 +1120,6 @@ export async function executeAgentTool(
 
           // FIX #4 CONTINUED: Use hybrid_search_menu with embedding for Latin text
           if (queryEmbedding) {
-            console.log('[search_menu] Using hybrid_search_menu with embedding');
             const result = await supabase.rpc('hybrid_search_menu', {
               p_query: query,
               p_query_embedding: JSON.stringify(queryEmbedding),
@@ -1171,22 +1140,6 @@ export async function executeAgentTool(
             hybridResults = result.data;
             hybridError = result.error;
           }
-
-          // Log for debugging - ENHANCED
-          console.log('[search_menu] === HYBRID SEARCH RESULT ===', {
-            query,
-            hybridError: hybridError?.message,
-            resultCount: hybridResults?.length || 0,
-            effectiveCityId,
-            contextCityId: context.cityId,
-            cityIdParam: city_id,
-            firstResults: hybridResults
-              ?.slice(0, 3)
-              .map((r: { name_ar: string; provider_name: string }) => ({
-                item: r.name_ar,
-                provider: r.provider_name,
-              })),
-          });
 
           if (!hybridError && hybridResults && hybridResults.length > 0) {
             // Transform results to expected format
@@ -1301,7 +1254,6 @@ export async function executeAgentTool(
           }
         } catch {
           // Hybrid search function might not exist yet, fall back to standard search
-          console.log('[search_menu] Hybrid search not available, using fallback');
         }
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1418,15 +1370,6 @@ export async function executeAgentTool(
           // If query matches items in 3+ providers, ask user to choose provider first
           // ═══════════════════════════════════════════════════════════════════
 
-          // CRITICAL DEBUG: Log at very start of fallback
-          console.log('[search_menu] === FALLBACK START ===', {
-            query,
-            effectiveCityId,
-            effectiveProviderId,
-            contextCityId: context.cityId,
-            cityIdParam: city_id,
-          });
-
           // First get active providers in the city with full details for smart suggestions
           let providersQuery = supabase
             .from('providers')
@@ -1438,19 +1381,9 @@ export async function executeAgentTool(
           // RE-ENABLED city filter - was causing issues when disabled
           if (effectiveCityId) {
             providersQuery = providersQuery.eq('city_id', effectiveCityId);
-            console.log('[search_menu] City filter ENABLED:', effectiveCityId);
-          } else {
-            console.log('[search_menu] ⚠️ No city_id - searching ALL cities!');
           }
 
           const { data: providers, error: providersError } = await providersQuery.limit(50);
-
-          // Log for debugging
-          console.log('[search_menu] Fallback - providers found:', {
-            providerCount: providers?.length || 0,
-            providerIds: providers?.slice(0, 3).map((p) => p.id),
-            providersError: providersError?.message,
-          });
 
           if (!providers?.length) {
             return {
@@ -1486,19 +1419,6 @@ export async function executeAgentTool(
             )
             .limit(5);
 
-          console.log('[search_menu] DEBUG - Raw items check (no filter):', {
-            query,
-            foundAnyItems: allItemsCheck?.length || 0,
-            samples: allItemsCheck?.map((i) => `${i.name_ar}(${i.is_available})`),
-          });
-
-          // Log the search filter
-          console.log('[search_menu] Fallback - searching with filter:', {
-            searchFilter,
-            query,
-            providerCount: providers.length,
-          });
-
           // Try simpler approach - use ilike directly instead of .or()
           const { data: itemCounts, error: itemsError } = await supabase
             .from('menu_items')
@@ -1510,19 +1430,6 @@ export async function executeAgentTool(
             .eq('is_available', true)
             .ilike('name_ar', `%${query}%`);
 
-          // Log what we found
-          console.log('[search_menu] Fallback - ilike result:', {
-            itemCount: itemCounts?.length || 0,
-            itemsError: itemsError?.message,
-            sampleItems: itemCounts?.slice(0, 3).map((i) => i.name_ar),
-          });
-
-          // Log items result
-          console.log('[search_menu] Fallback - items result:', {
-            itemCount: itemCounts?.length || 0,
-            itemsError: itemsError?.message,
-          });
-
           // Group by provider and count
           const providerItemCounts = new Map<string, number>();
           itemCounts?.forEach((item) => {
@@ -1533,11 +1440,6 @@ export async function executeAgentTool(
           // Get providers that have matching items
           const providersWithItems = providers.filter((p) => providerItemCounts.has(p.id));
           const totalItems = itemCounts?.length || 0;
-
-          console.log('[search_menu] Fallback - final result:', {
-            providersWithItems: providersWithItems.length,
-            totalItems,
-          });
 
           // ═══════════════════════════════════════════════════════════════════
           // DECISION: ALWAYS guide user to provider first!
@@ -1684,24 +1586,6 @@ export async function executeAgentTool(
           context.sessionMemory?.pending_item?.provider_id ||
           context.cartProviderId ||
           context.providerId;
-
-        // ═══════════════════════════════════════════════════════════════
-        // DETAILED LOGGING: Track why add_to_cart fails
-        // ═══════════════════════════════════════════════════════════════
-        console.log('[add_to_cart] Request:', {
-          item_id,
-          item_name,
-          param_provider_id,
-          provider_id,
-          price,
-          quantity,
-          variant_id,
-          variant_name,
-          contextProviderId: context.providerId,
-          contextCartProviderId: context.cartProviderId,
-          sessionMemoryProviderId: context.sessionMemory?.pending_item?.provider_id,
-          usedFallback: !param_provider_id && !!provider_id,
-        });
 
         // ═══════════════════════════════════════════════════════════════
         // VALIDATE REQUIRED PARAMS & UUID FORMAT
@@ -1916,12 +1800,6 @@ export async function executeAgentTool(
           // This fixes AI mistakes where it confirms "عادي" but passes "سوبر" variant_id
           // ═══════════════════════════════════════════════════════════════
           if (variant_name && variant.name_ar !== variant_name) {
-            console.log('[add_to_cart] Variant mismatch detected!', {
-              requested_name: variant_name,
-              actual_name: variant.name_ar,
-              variant_id,
-            });
-
             // Find the correct variant by name
             const { data: correctVariant } = await supabase
               .from('product_variants')
@@ -1932,18 +1810,8 @@ export async function executeAgentTool(
               .single();
 
             if (correctVariant) {
-              console.log('[add_to_cart] Auto-corrected variant:', {
-                from: { id: variant_id, name: variant.name_ar, price: variant.price },
-                to: {
-                  id: correctVariant.id,
-                  name: correctVariant.name_ar,
-                  price: correctVariant.price,
-                },
-              });
               corrected_variant_id = correctVariant.id;
               corrected_variant_price = correctVariant.price;
-            } else {
-              console.log('[add_to_cart] Could not find variant matching name:', variant_name);
             }
           } else {
             // Use the correct price from the variant (in case AI passed wrong price)
@@ -2308,7 +2176,6 @@ export async function executeAgentTool(
 
           if (partialMatches.length === 1) {
             const provider = partialMatches[0];
-            console.log('[lookup_provider] Found by partial match:', provider.name_ar, provider.id);
             return {
               success: true,
               data: {
@@ -2346,7 +2213,6 @@ export async function executeAgentTool(
 
         // Return the best match (first one, or only one if exact)
         const provider = matches[0];
-        console.log('[lookup_provider] Found:', provider.name_ar, provider.id);
 
         return {
           success: true,
@@ -2381,12 +2247,14 @@ export async function executeAgentTool(
             success: true,
             data: [
               { code: 'restaurant_cafe', name_ar: 'مطاعم', icon: '🍔' },
-              { code: 'coffee_sweets', name_ar: 'البن والحلويات', icon: '☕' },
+              { code: 'coffee_patisserie', name_ar: 'البن والحلويات', icon: '☕' },
               { code: 'grocery', name_ar: 'سوبر ماركت', icon: '🛒' },
               { code: 'vegetables_fruits', name_ar: 'خضروات وفواكه', icon: '🍌' },
+              { code: 'pharmacy', name_ar: 'صيدليات', icon: '💊' },
+              { code: 'home_cooked', name_ar: 'أكل بيتي', icon: '🍲' },
             ],
             message:
-              'إنجزنا عندها 4 أقسام:\n🍔 مطاعم\n☕ البن والحلويات\n🛒 سوبر ماركت\n🍌 خضروات وفواكه\nاختار القسم اللي عايز تطلب منه!',
+              'إنجزنا عندها 6 أقسام:\n🍔 مطاعم\n☕ البن والحلويات\n🛒 سوبر ماركت\n🍌 خضروات وفواكه\n💊 صيدليات\n🍲 أكل بيتي\nاختار القسم اللي عايز تطلب منه!',
           };
         }
 
@@ -3110,7 +2978,6 @@ export async function loadCustomerInsights(customerId: string): Promise<Customer
     .single();
 
   if (error || !data) {
-    console.log('[loadCustomerInsights] No insights found for customer:', customerId);
     return null;
   }
 
@@ -3169,7 +3036,6 @@ export async function saveCustomerInsights(
     return false;
   }
 
-  console.log('[saveCustomerInsights] Saved insights for customer:', customerId);
   return true;
 }
 

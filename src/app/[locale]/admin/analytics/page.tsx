@@ -367,8 +367,11 @@ export default function AdminAnalyticsPage() {
     const labels: Record<string, { ar: string; en: string }> = {
       restaurant: { ar: 'مطاعم', en: 'Restaurants' },
       restaurant_cafe: { ar: 'مطاعم', en: 'Restaurants' }, // Alias for restaurant
+      coffee_patisserie: { ar: 'البن والحلويات', en: 'Coffee & Patisserie' },
       grocery: { ar: 'بقالة', en: 'Grocery' },
+      vegetables_fruits: { ar: 'خضروات وفواكه', en: 'Fruits & Vegetables' },
       pharmacy: { ar: 'صيدلية', en: 'Pharmacy' },
+      home_cooked: { ar: 'أكل بيتي', en: 'Home Food' },
       electronics: { ar: 'إلكترونيات', en: 'Electronics' },
       fashion: { ar: 'أزياء', en: 'Fashion' },
       other: { ar: 'أخرى', en: 'Other' },

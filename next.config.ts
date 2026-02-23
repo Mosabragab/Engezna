@@ -22,8 +22,8 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  // Middleware runs at edge and bundles its dependencies automatically
-  // Do not use serverExternalPackages for packages used in middleware
+  // Standalone output for Capacitor native builds and Docker deployments
+  output: 'standalone',
 
   // Image optimization configuration
   images: {

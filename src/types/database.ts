@@ -6,14 +6,15 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 export type UserRole = 'customer' | 'provider_owner' | 'provider_staff' | 'admin';
 
-// Business Categories - Updated January 2026
-// Added pharmacy category
+// Business Categories - Updated February 2026
+// Added pharmacy and home_cooked categories
 export type ProviderCategory =
   | 'restaurant_cafe'
   | 'coffee_patisserie'
   | 'grocery'
   | 'vegetables_fruits'
-  | 'pharmacy';
+  | 'pharmacy'
+  | 'home_cooked';
 
 // Updated: Added 'active', 'approved', 'rejected', 'incomplete' for consistency across the app
 export type ProviderStatus =

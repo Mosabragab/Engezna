@@ -207,7 +207,11 @@ export default function ProviderLoginPage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        <div
+          className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"
+          role="status"
+          aria-label={isRTL ? 'جاري التحميل' : 'Loading'}
+        ></div>
       </div>
     );
   }
@@ -234,7 +238,7 @@ export default function ProviderLoginPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">{t('title')}</h1>
-                <p className="text-sm text-white/80">{t('description')}</p>
+                <p className="text-sm text-white">{t('description')}</p>
               </div>
             </div>
           </div>
@@ -293,7 +297,16 @@ export default function ProviderLoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600`}
+                  aria-label={
+                    showPassword
+                      ? isRTL
+                        ? 'إخفاء كلمة المرور'
+                        : 'Hide password'
+                      : isRTL
+                        ? 'إظهار كلمة المرور'
+                        : 'Show password'
+                  }
+                  className={`absolute ${isRTL ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700`}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>

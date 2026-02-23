@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -649,10 +650,11 @@ export default function ProviderProductsPage() {
                     {/* Product Image */}
                     <div className="relative h-40 bg-slate-100">
                       {product.image_url ? (
-                        <img
+                        <Image
                           src={product.image_url}
                           alt={locale === 'ar' ? product.name_ar : product.name_en}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

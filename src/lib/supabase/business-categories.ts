@@ -30,6 +30,7 @@ export const CATEGORY_GRADIENTS: Record<string, string> = {
   vegetables_fruits:
     'linear-gradient(145deg, rgba(209,250,229,0.85) 0%, rgba(167,243,208,0.7) 100%)',
   pharmacy: 'linear-gradient(145deg, rgba(252,231,243,0.9) 0%, rgba(249,168,212,0.7) 100%)',
+  home_cooked: 'linear-gradient(145deg, rgba(255,237,213,0.9) 0%, rgba(254,215,170,0.75) 100%)',
 };
 
 // Default gradient for new categories

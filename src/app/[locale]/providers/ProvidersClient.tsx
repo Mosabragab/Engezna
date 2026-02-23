@@ -19,7 +19,13 @@ export type Provider = {
   name_en: string;
   description_ar: string | null;
   description_en: string | null;
-  category: 'restaurant_cafe' | 'coffee_patisserie' | 'grocery' | 'vegetables_fruits';
+  category:
+    | 'restaurant_cafe'
+    | 'coffee_patisserie'
+    | 'grocery'
+    | 'vegetables_fruits'
+    | 'pharmacy'
+    | 'home_cooked';
   logo_url: string | null;
   cover_image_url: string | null;
   rating: number;
@@ -320,7 +326,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     }
   }
 
-  // Updated January 2026 - Added pharmacy category
+  // Updated February 2026 - Added home_cooked category
   const categories = [
     { id: 'all', name_ar: 'الكل', name_en: 'All' },
     { id: 'restaurant_cafe', name_ar: 'مطاعم', name_en: 'Restaurants' },
@@ -328,6 +334,7 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     { id: 'grocery', name_ar: 'سوبر ماركت', name_en: 'Supermarket' },
     { id: 'vegetables_fruits', name_ar: 'خضروات وفواكه', name_en: 'Fruits & Vegetables' },
     { id: 'pharmacy', name_ar: 'صيدليات', name_en: 'Pharmacies' },
+    { id: 'home_cooked', name_ar: 'أكل بيتي', name_en: 'Home Food' },
   ];
 
   const handleSortToggle = (option: SortOption) => {

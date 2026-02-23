@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { GoogleOAuthProvider } from '@/components/providers/GoogleOAuthProvider';
 
 export const metadata: Metadata = {
+  title: 'تسجيل الدخول | إنجزنا',
+  description: 'سجّل دخولك في إنجزنا للمتابعة وطلب احتياجات بيتك اليومية.',
   robots: 'noindex, nofollow',
 };
 

@@ -74,7 +74,6 @@ export function useBadge(): BadgeAPI {
           const Badge = await loadCapacitorBadge();
           if (Badge) {
             await Badge.set({ count });
-            console.log(`[Badge] Set to ${count} via Capacitor`);
             return;
           }
         } catch (e) {
@@ -85,7 +84,6 @@ export function useBadge(): BadgeAPI {
       // Fallback to PWA Badge API (Android/Desktop)
       if (isBadgeSupported()) {
         await (navigator as any).setAppBadge(count);
-        console.log(`[Badge] Set to ${count} via PWA API`);
         return;
       }
 
@@ -117,7 +115,6 @@ async function clearBadgeInternal(): Promise<void> {
       const Badge = await loadCapacitorBadge();
       if (Badge) {
         await Badge.clear();
-        console.log('[Badge] Cleared via Capacitor');
         return;
       }
     }
@@ -125,7 +122,6 @@ async function clearBadgeInternal(): Promise<void> {
     // Fallback to PWA Badge API
     if (isBadgeSupported()) {
       await (navigator as any).clearAppBadge();
-      console.log('[Badge] Cleared via PWA API');
       return;
     }
   } catch (error) {

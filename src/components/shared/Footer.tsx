@@ -67,7 +67,7 @@ export function Footer() {
             <Link href={`/${locale}`}>
               <EngeznaLogo size="md" static showPen={false} />
             </Link>
-            <p className="text-slate-500 text-sm text-center lg:text-start max-w-xs">
+            <p className="text-slate-600 text-sm text-center lg:text-start max-w-xs">
               {t('tagline')}
             </p>
             {/* Social - Inline */}
@@ -109,19 +109,19 @@ export function Footer() {
               </span>
               <Link
                 href={`/${locale}`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {t('home')}
               </Link>
               <Link
                 href={`/${locale}/orders`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {t('myOrders')}
               </Link>
               <Link
                 href={`/${locale}/help`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {locale === 'ar' ? 'المساعدة' : 'Help'}
               </Link>
@@ -134,13 +134,13 @@ export function Footer() {
               </span>
               <Link
                 href={`/${locale}/partner`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {t('becomePartner')}
               </Link>
               <Link
                 href={`/${locale}/provider/login`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {t('partnerLogin')}
               </Link>
@@ -153,13 +153,13 @@ export function Footer() {
               </span>
               <a
                 href="mailto:support@engezna.com"
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 support@engezna.com
               </a>
               <Link
                 href={`/${locale}/contact`}
-                className="text-slate-500 hover:text-primary transition-colors"
+                className="text-slate-600 hover:text-primary transition-colors"
               >
                 {locale === 'ar' ? 'راسلنا' : 'Contact Form'}
               </Link>
@@ -171,7 +171,7 @@ export function Footer() {
       {/* Bottom Bar - Governorates + Copyright */}
       <div className="border-t border-slate-200 bg-white">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-slate-600">
             {/* Governorates */}
             <div className="flex items-center gap-2 flex-wrap justify-center">
               <MapPin className="w-3.5 h-3.5 text-primary" />
@@ -180,11 +180,15 @@ export function Footer() {
                 governorates.map((gov, i) => (
                   <span key={gov.id}>
                     {locale === 'ar' ? gov.name_ar : gov.name_en}
-                    {i < governorates.length - 1 && <span className="text-slate-300 mx-1">•</span>}
+                    {i < governorates.length - 1 && (
+                      <span className="text-slate-400 mx-1" aria-hidden="true">
+                        •
+                      </span>
+                    )}
                   </span>
                 ))
               ) : (
-                <span className="text-slate-400">{locale === 'ar' ? 'قريباً' : 'Coming soon'}</span>
+                <span className="text-slate-600">{locale === 'ar' ? 'قريباً' : 'Coming soon'}</span>
               )}
             </div>
 
@@ -211,7 +215,7 @@ export function Footer() {
                 <Globe className="w-3.5 h-3.5" />
                 <span>{locale === 'ar' ? 'English' : 'العربية'}</span>
               </button>
-              <span className="text-slate-400">
+              <span className="text-slate-600">
                 © 2026 {locale === 'ar' ? 'إنجزنا' : 'Engezna'}
               </span>
             </div>

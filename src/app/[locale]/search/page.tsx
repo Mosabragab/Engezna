@@ -9,6 +9,7 @@ import { ProviderCard, ProductCard, EmptyState } from '@/components/customer/sha
 import { useUserLocation } from '@/lib/contexts';
 import { useFavorites } from '@/hooks/customer';
 import { Search, X, Store, ShoppingBag, Loader2, Plus, Minus, ShoppingCart } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '@/lib/store/cart';
 import { useSDUI } from '@/hooks/sdui';
@@ -624,17 +625,19 @@ export default function SearchPage() {
                           {/* Product Image - Clickable to navigate */}
                           <div
                             onClick={() => handleProductClick(product)}
-                            className="w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 cursor-pointer"
+                            className="relative w-20 h-20 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 cursor-pointer"
                           >
                             {product.image_url ? (
-                              <img
+                              <Image
                                 src={product.image_url}
                                 alt={
                                   locale === 'ar'
                                     ? product.name_ar
                                     : product.name_en || product.name_ar
                                 }
-                                className="w-full h-full object-cover"
+                                fill
+                                sizes="80px"
+                                className="object-cover"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -676,9 +679,11 @@ export default function SearchPage() {
                             {/* Provider Info */}
                             <div className="flex items-center gap-1.5 mt-1.5">
                               {product.provider.logo_url ? (
-                                <img
+                                <Image
                                   src={product.provider.logo_url}
                                   alt=""
+                                  width={16}
+                                  height={16}
                                   className="w-4 h-4 rounded-full object-cover"
                                 />
                               ) : (

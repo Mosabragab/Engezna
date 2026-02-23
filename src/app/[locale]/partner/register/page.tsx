@@ -25,6 +25,7 @@ import {
   Apple,
   UtensilsCrossed,
   Pill,
+  Soup,
   User,
   Briefcase,
   ArrowLeft,
@@ -75,6 +76,7 @@ const categoryIconMap: Record<string, React.ComponentType<{ className?: string }
   grocery: ShoppingCart,
   vegetables_fruits: Apple,
   pharmacy: Pill,
+  home_cooked: Soup,
 };
 
 // Partner role options

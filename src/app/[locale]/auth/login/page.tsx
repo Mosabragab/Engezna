@@ -74,6 +74,7 @@ export default function LoginPage() {
   const urlError = searchParams.get('error');
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [error, setError] = useState<string | null>(() => getErrorMessage(urlError, locale));
 
@@ -137,6 +138,32 @@ export default function LoginPage() {
       setIsGoogleLoading(false);
     },
   });
+
+  // Handle Apple Sign In via Supabase OAuth
+  const handleAppleLogin = async () => {
+    setIsAppleLoading(true);
+    setError(null);
+
+    try {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'apple',
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback?redirect=${redirectTo || `/${locale}`}`,
+          scopes: 'name email',
+        },
+      });
+
+      if (signInError) {
+        setError(locale === 'ar' ? 'فشل تسجيل الدخول بحساب Apple' : 'Apple sign-in failed');
+        setIsAppleLoading(false);
+      }
+      // If no error, user is redirected to Apple's OAuth page
+    } catch {
+      setError(locale === 'ar' ? 'فشل تسجيل الدخول بحساب Apple' : 'Apple sign-in failed');
+      setIsAppleLoading(false);
+    }
+  };
 
   // Handle Email + Password Login
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -288,7 +315,7 @@ export default function LoginPage() {
   };
 
   const isRTL = locale === 'ar';
-  const isLoading = isGoogleLoading || isEmailLoading;
+  const isLoading = isGoogleLoading || isAppleLoading || isEmailLoading;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6 py-12">
@@ -304,7 +331,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-primary mb-2">
             {locale === 'ar' ? 'أهلاً بك في إنجزنا' : 'Welcome to Engezna'}
           </h1>
-          <p className="text-slate-500">
+          <p className="text-slate-600">
             {locale === 'ar' ? 'سجّل دخولك للمتابعة' : 'Sign in to continue'}
           </p>
         </div>
@@ -335,6 +362,25 @@ export default function LoginPage() {
             )}
           </button>
 
+          {/* Apple Button */}
+          <button
+            type="button"
+            onClick={handleAppleLogin}
+            disabled={isLoading}
+            className="w-full h-[52px] flex items-center justify-center gap-3 bg-black border border-black rounded-xl text-white font-medium transition-all hover:bg-black/90 active:scale-[0.98] disabled:opacity-50"
+          >
+            {isAppleLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin text-white" />
+            ) : (
+              <>
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                </svg>
+                <span>{locale === 'ar' ? 'المتابعة بحساب Apple' : 'Continue with Apple'}</span>
+              </>
+            )}
+          </button>
+
           {/* Email Button / Form */}
           {!showEmailForm ? (
             <button
@@ -355,7 +401,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
                 disabled={isEmailLoading}
-                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 autoFocus
               />
 
@@ -367,12 +413,21 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
                   disabled={isEmailLoading}
-                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-400 hover:text-slate-600`}
+                  aria-label={
+                    showPassword
+                      ? isRTL
+                        ? 'إخفاء كلمة المرور'
+                        : 'Hide password'
+                      : isRTL
+                        ? 'إظهار كلمة المرور'
+                        : 'Show password'
+                  }
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-500 hover:text-slate-700`}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -382,7 +437,7 @@ export default function LoginPage() {
               <div className="text-end">
                 <Link
                   href={`/${locale}/auth/forgot-password`}
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary-dark hover:underline"
                 >
                   {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
                 </Link>
@@ -406,7 +461,7 @@ export default function LoginPage() {
 
         {/* Create Account Link */}
         <div className="text-center mt-8">
-          <p className="text-slate-500">
+          <p className="text-slate-600">
             {locale === 'ar' ? 'ليس لديك حساب؟' : "Don't have an account?"}{' '}
             <Link
               href={
@@ -414,7 +469,7 @@ export default function LoginPage() {
                   ? `/${locale}/auth/register?redirect=${encodeURIComponent(redirectTo)}`
                   : `/${locale}/auth/register`
               }
-              className="text-primary font-medium hover:underline"
+              className="text-primary-dark font-medium hover:underline"
             >
               {locale === 'ar' ? 'إنشاء حساب جديد' : 'Create Account'}
             </Link>
@@ -426,19 +481,19 @@ export default function LoginPage() {
 
         {/* Provider/Admin Links */}
         <div className="text-center">
-          <p className="text-xs text-slate-400 mb-3">
+          <p className="text-xs text-slate-500 mb-3">
             {locale === 'ar' ? 'لست عميلاً؟' : 'Not a customer?'}
           </p>
           <div className="flex justify-center gap-6 text-sm">
             <Link
               href={`/${locale}/provider/login`}
-              className="text-primary font-medium hover:underline"
+              className="text-primary-dark font-medium hover:underline"
             >
               {locale === 'ar' ? 'مقدمي الخدمة' : 'Providers'}
             </Link>
             <Link
               href={`/${locale}/admin/login`}
-              className="text-slate-500 font-medium hover:underline"
+              className="text-slate-600 font-medium hover:underline"
             >
               {locale === 'ar' ? 'المشرفين' : 'Admins'}
             </Link>
@@ -446,26 +501,26 @@ export default function LoginPage() {
         </div>
 
         {/* Terms Notice */}
-        <p className="text-xs text-slate-400 text-center mt-8 leading-relaxed">
+        <p className="text-xs text-slate-500 text-center mt-8 leading-relaxed">
           {locale === 'ar' ? (
             <>
               بالمتابعة، أنت توافق على{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary-dark hover:underline">
                 الشروط والأحكام
               </Link>{' '}
               و{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary-dark hover:underline">
                 سياسة الخصوصية
               </Link>
             </>
           ) : (
             <>
               By continuing, you agree to our{' '}
-              <Link href={`/${locale}/terms`} className="text-primary hover:underline">
+              <Link href={`/${locale}/terms`} className="text-primary-dark hover:underline">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href={`/${locale}/privacy`} className="text-primary hover:underline">
+              <Link href={`/${locale}/privacy`} className="text-primary-dark hover:underline">
                 Privacy Policy
               </Link>
             </>
@@ -476,7 +531,7 @@ export default function LoginPage() {
       {/* Back to Home */}
       <Link
         href={`/${locale}`}
-        className="mt-12 inline-flex items-center gap-2 text-slate-400 hover:text-slate-600 transition-colors text-sm"
+        className="mt-12 inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 transition-colors text-sm"
       >
         {isRTL ? <ArrowRight className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
         {locale === 'ar' ? 'العودة للرئيسية' : 'Back to Home'}

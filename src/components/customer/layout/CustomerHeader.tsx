@@ -258,7 +258,7 @@ export const CustomerHeader = memo(function CustomerHeader({
       case 'support_message':
         return <AlertCircle className="h-4 w-4 text-blue-600" />;
       default:
-        return <Bell className="h-4 w-4 text-slate-400" />;
+        return <Bell className="h-4 w-4 text-slate-500" />;
     }
   }
 
@@ -413,7 +413,7 @@ export const CustomerHeader = memo(function CustomerHeader({
                                 {locale === 'ar' ? notification.body_ar : notification.body_en}
                               </p>
                               <div className="flex items-center gap-2 mt-1.5">
-                                <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <span className="text-[10px] text-slate-500 flex items-center gap-1">
                                   <Clock className="h-3 w-3" />
                                   {formatDistanceToNow(new Date(notification.created_at), {
                                     addSuffix: true,
@@ -540,7 +540,7 @@ export const CustomerHeader = memo(function CustomerHeader({
                   {recentNotifications.length > 0 && (
                     <Link
                       href={`/${locale}/notifications`}
-                      className="block px-4 py-2.5 text-center text-sm font-medium text-primary hover:bg-slate-50 border-t border-slate-100"
+                      className="block px-4 py-2.5 text-center text-sm font-medium text-primary-dark hover:bg-slate-50 border-t border-slate-100"
                     >
                       {locale === 'ar' ? 'عرض كل الإشعارات' : 'View All Notifications'}
                     </Link>

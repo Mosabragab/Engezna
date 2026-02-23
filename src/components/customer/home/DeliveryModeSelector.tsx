@@ -133,7 +133,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                 'flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200',
                 isDelivery
                   ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  : 'text-slate-600 hover:text-slate-800'
               )}
             >
               <Truck className={cn('w-5 h-5', isDelivery ? 'text-primary' : '')} />
@@ -147,7 +147,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                 'flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium text-sm transition-all duration-200',
                 !isDelivery
                   ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                  : 'text-slate-600 hover:text-slate-800'
               )}
             >
               <Store className={cn('w-5 h-5', !isDelivery ? 'text-primary' : '')} />
@@ -185,7 +185,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                   </div>
                   <ChevronDown
                     className={cn(
-                      'w-5 h-5 text-slate-400 transition-transform',
+                      'w-5 h-5 text-slate-500 transition-transform',
                       showAddressDropdown && 'rotate-180'
                     )}
                   />
@@ -213,7 +213,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                           <div className="flex items-center gap-2">
                             <p className="font-medium text-slate-900">{address.label}</p>
                             {address.is_default && (
-                              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
+                              <span className="text-[10px] bg-primary/10 text-primary-dark px-1.5 py-0.5 rounded-full">
                                 {isRTL ? 'افتراضي' : 'Default'}
                               </span>
                             )}
@@ -231,7 +231,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                     {/* Add New Address */}
                     <Link
                       href={`/${locale}/profile/addresses`}
-                      className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-primary"
+                      className="w-full p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors text-primary-dark"
                     >
                       <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
                         <Plus className="w-4 h-4" />
@@ -250,10 +250,10 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                 className="p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
               >
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-primary" />
+                  <Plus className="w-5 h-5 text-primary-dark" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-primary">
+                  <p className="font-medium text-primary-dark">
                     {isRTL ? 'إضافة عنوان توصيل' : 'Add delivery address'}
                   </p>
                   <p className="text-xs text-slate-500">
@@ -268,7 +268,7 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
                 className="p-3 flex items-center gap-3 hover:bg-slate-50 transition-colors"
               >
                 <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-slate-400" />
+                  <MapPin className="w-5 h-5 text-slate-500" />
                 </div>
                 <div className="flex-1">
                   <p className="font-medium text-slate-700">

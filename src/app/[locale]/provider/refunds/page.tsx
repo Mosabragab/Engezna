@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -530,9 +531,9 @@ export default function ProviderRefundsPage() {
                                     href={img}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-16 h-16 rounded-lg overflow-hidden border hover:opacity-80"
+                                    className="relative w-16 h-16 rounded-lg overflow-hidden border hover:opacity-80"
                                   >
-                                    <img src={img} alt="" className="w-full h-full object-cover" />
+                                    <Image src={img} alt="" fill className="object-cover" />
                                   </a>
                                 ))}
                               </div>
