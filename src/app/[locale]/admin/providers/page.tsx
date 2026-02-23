@@ -358,7 +358,7 @@ export default function AdminProvidersPage() {
     return labels[status]?.[locale === 'ar' ? 'ar' : 'en'] || status;
   };
 
-  // Updated December 2025 - New categories
+  // Updated February 2026 - Added home_cooked category
   const getCategoryLabel = (category: string) => {
     const labels: Record<string, { ar: string; en: string }> = {
       restaurant_cafe: { ar: 'مطاعم', en: 'Restaurants' },
@@ -366,6 +366,7 @@ export default function AdminProvidersPage() {
       grocery: { ar: 'سوبر ماركت', en: 'Supermarket' },
       vegetables_fruits: { ar: 'خضروات وفواكه', en: 'Fruits & Vegetables' },
       pharmacy: { ar: 'صيدليات', en: 'Pharmacies' },
+      home_cooked: { ar: 'أكل بيتي', en: 'Home Food' },
       // Legacy support
       restaurant: { ar: 'مطعم', en: 'Restaurant' },
       coffee_shop: { ar: 'كافيه', en: 'Coffee Shop' },
@@ -503,7 +504,7 @@ export default function AdminProvidersPage() {
               </option>
             </select>
 
-            {/* Category Filter - Updated January 2026 */}
+            {/* Category Filter - Updated February 2026 */}
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
@@ -519,6 +520,7 @@ export default function AdminProvidersPage() {
                 {locale === 'ar' ? 'خضروات وفواكه' : 'Fruits & Vegetables'}
               </option>
               <option value="pharmacy">{locale === 'ar' ? 'صيدليات' : 'Pharmacies'}</option>
+              <option value="home_cooked">{locale === 'ar' ? 'أكل بيتي' : 'Home Food'}</option>
             </select>
 
             {/* Geographic Filter - Only show for non-regional admins */}
