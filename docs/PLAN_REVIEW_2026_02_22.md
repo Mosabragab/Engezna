@@ -164,3 +164,45 @@ Apple قد ترفض التطبيق لأسباب متعددة. يُوصى بـ:
 **الخطة متماسكة ومبنية باحترافية عالية.** الوثائق دقيقة ومطابقة للكود الفعلي. المراحل المكتملة حقيقية وليست وهمية. الخطة تغطي كل المتطلبات التقنية والتنظيمية لكلا المتجرين.
 
 **التوصية:** المضي قدماً في إكمال المرحلة 2 (الأداء) ثم البدء في المرحلة 3 (Capacitor) مع الأخذ بعين الاعتبار التوصيات الإضافية أعلاه (CI/CD, Rollback, App Update, iOS challenges).
+
+---
+
+## تحديث 2026-02-23: تقدم المرحلة 2 (Lighthouse CI + WCAG AA)
+
+### ما تم تنفيذه
+
+| المهمة                    | التفاصيل                                                                                                                                  |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| إعداد Lighthouse CI       | إنشاء `lighthouserc.js` مع 6 صفحات + `lighthouse.yml` GitHub Actions workflow                                                             |
+| إصلاح color-contrast      | WCAG AA compliance على جميع الصفحات (6/6): `/ar`, `/ar/providers`, `/ar/cart`, `/ar/auth/login`, `/ar/custom-order`, `/ar/provider/login` |
+| تحسين SEO                 | إضافة metadata لـ auth layout و custom-order layout                                                                                       |
+| تحسين Accessibility       | إضافة aria-labels لأزرار password toggle, loading spinners, back buttons                                                                  |
+| إضافة `primary-dark`      | لون جديد `hsl(198 100% 34%)` يحقق 4.78:1 contrast ratio مع الأبيض                                                                         |
+| WCAG contrast calculation | استبدال حساب luminance البسيط بحساب WCAG 2.1 الرسمي في OffersCarousel                                                                     |
+| Dark overlay للبانرات     | إضافة `bg-black/25` overlay لضمان 4.5:1+ contrast للنص الأبيض على أي gradient                                                             |
+
+### الملفات المعدلة (المرحلة 2 - جلسة 2/23)
+
+- `lighthouserc.js` - إعداد Lighthouse CI
+- `.github/workflows/lighthouse.yml` - GitHub Actions workflow
+- `tailwind.config.ts` - إضافة `primary-dark` color
+- `src/components/customer/home/OffersCarousel.tsx` - WCAG contrast + overlay + darker fallback gradients
+- `src/components/customer/home/HeroSection.tsx` - contrast fixes
+- `src/components/customer/home/CategoriesSection.tsx` - contrast fixes
+- `src/components/customer/home/TopRatedSection.tsx` - contrast fixes
+- `src/components/customer/home/NearbySection.tsx` - contrast fixes
+- `src/components/customer/home/DeliveryModeSelector.tsx` - contrast fixes
+- `src/components/customer/home/ReorderSection.tsx` - contrast fixes
+- `src/components/customer/layout/BottomNavigation.tsx` - contrast fixes
+- `src/components/customer/layout/CustomerHeader.tsx` - contrast fixes
+- `src/app/[locale]/auth/login/page.tsx` - contrast + aria-labels + SEO
+- `src/app/[locale]/auth/layout.tsx` - SEO metadata
+- `src/app/[locale]/custom-order/page.tsx` - contrast + aria-labels
+- `src/app/[locale]/custom-order/layout.tsx` - SEO metadata (ملف جديد)
+- `src/app/[locale]/provider/login/page.tsx` - contrast + aria-labels
+
+### حالة المرحلة 2 الحالية: ~90%
+
+**مكتمل:** LCP/FCP/CLS optimizations, skeleton loaders, lazy loading, preconnect, image optimization, Lighthouse CI setup, WCAG AA color-contrast, SEO metadata, accessibility fixes
+
+**متبقي:** Performance score target >80 (يحتاج اختبار نهائي), Speed Index optimization (SSR/ISR/streaming), gzip/brotli compression
