@@ -2276,12 +2276,8 @@ export default function CheckoutPage() {
             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
               <AlertCircle className="h-7 w-7 text-destructive" />
             </div>
-            <DialogTitle>
-              {locale === 'ar' ? 'المتجر مغلق' : 'Store Closed'}
-            </DialogTitle>
-            <DialogDescription className="text-base">
-              {closedDialogMessage}
-            </DialogDescription>
+            <DialogTitle>{locale === 'ar' ? 'المتجر مغلق' : 'Store Closed'}</DialogTitle>
+            <DialogDescription className="text-base">{closedDialogMessage}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="sm:justify-center gap-2 mt-2">
             <Button
@@ -2294,10 +2290,7 @@ export default function CheckoutPage() {
               <Calendar className="w-4 h-4 me-2" />
               {locale === 'ar' ? 'جدولة الطلب' : 'Schedule Order'}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowClosedDialog(false)}
-            >
+            <Button variant="outline" onClick={() => setShowClosedDialog(false)}>
               {locale === 'ar' ? 'إغلاق' : 'Close'}
             </Button>
           </DialogFooter>
