@@ -64,79 +64,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   const [onHoldOrders, setOnHoldOrders] = useState(0); // الطلبات المعلقة - on_hold في المحرك المالي
   const [permissions, setPermissions] = useState<StaffPermissions>(defaultPermissions);
 
-  // Load unread notifications count from provider_notifications table
-  const loadUnreadCount = useCallback(async (providerId: string) => {
-    const supabase = createClient();
-
-    // Get unread notifications count
-    const { count } = await supabase
-      .from('provider_notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('provider_id', providerId)
-      .eq('is_read', false);
-
-    setUnreadCount(count || 0);
-
-    // Also get pending orders for sidebar badge
-    // IMPORTANT: Match the same filter as orders page - exclude unpaid online payment orders
-    // Cash orders (payment_method = 'cash') are always visible
-    // Online payment orders only visible when payment_status = 'paid' or 'completed'
-    const { data: pendingOrdersData } = await supabase
-      .from('orders')
-      .select('id, payment_method, payment_status')
-      .eq('provider_id', providerId)
-      .eq('status', 'pending')
-      .or('order_flow.is.null,order_flow.eq.standard'); // Exclude custom orders
-
-    // Filter to match page logic
-    const visiblePendingOrders = (pendingOrdersData || []).filter((order) => {
-      if (order.payment_method === 'cash') return true;
-      return order.payment_status === 'paid' || order.payment_status === 'completed';
-    });
-
-    setPendingOrders(visiblePendingOrders.length);
-
-    // Get pending refunds count (refunds awaiting provider response)
-    const { count: refundsCount } = await supabase
-      .from('refunds')
-      .select('*', { count: 'exact', head: true })
-      .eq('provider_id', providerId)
-      .eq('status', 'pending')
-      .eq('provider_action', 'pending');
-
-    setPendingRefunds(refundsCount || 0);
-
-    // Get pending complaints count (open or in_progress support tickets)
-    const { count: complaintsCount } = await supabase
-      .from('support_tickets')
-      .select('*', { count: 'exact', head: true })
-      .eq('provider_id', providerId)
-      .in('status', ['open', 'in_progress']);
-
-    setPendingComplaints(complaintsCount || 0);
-
-    // Get on_hold orders count (orders with settlement_status = 'on_hold')
-    // مرتبط بالمحرك المالي - الطلبات المعلقة بسبب نزاعات أو استردادات
-    const { count: onHoldCount } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('provider_id', providerId)
-      .eq('settlement_status', 'on_hold');
-
-    setOnHoldOrders(onHoldCount || 0);
-
-    // Get active custom orders count using live view (طلبات تحتاج متابعة)
-    // Uses custom_order_requests_live view to exclude expired-but-not-yet-updated requests
-    // - 'pending' = بانتظار التسعير (يحتاج التاجر يسعّر)
-    // - 'priced' = بانتظار موافقة العميل (يحتاج متابعة) - NOT expired per live_status
-    const { count: customOrdersCount } = await supabase
-      .from('custom_order_requests_live')
-      .select('*', { count: 'exact', head: true })
-      .eq('provider_id', providerId)
-      .in('live_status', ['pending', 'priced']);
-
-    setPendingCustomOrders(customOrdersCount || 0);
-  }, []);
+  // Badge counts are loaded by the unified polling effect (runs on mount + every 60s)
+  // No separate loadUnreadCount needed - the polling effect handles initial + periodic fetches
 
   const checkAuth = useCallback(async () => {
     const supabase = createClient();
@@ -165,7 +94,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           canManageOffers: true,
           canManageTeam: true,
         });
-        await loadUnreadCount(providerData[0].id);
+        // Badge counts loaded by unified polling effect when provider.id is set
       } else {
         // Check if user is a staff member
         const { data: staffData } = await supabase
@@ -207,13 +136,13 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             canManageOffers: staffData.can_manage_offers ?? false,
             canManageTeam: false, // Staff cannot manage team
           });
-          await loadUnreadCount(providerInfo.id);
+          // Badge counts loaded by unified polling effect when provider.id is set
         }
       }
     }
 
     setLoading(false);
-  }, [loadUnreadCount]);
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -472,9 +401,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   }, [provider?.id]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // POLLING: Non-critical badges updated every 30 seconds
-  // refunds, complaints, on_hold orders - less time-sensitive
-  // This reduces Realtime load significantly while keeping UI updated
+  // POLLING: All badge counts updated every 60 seconds (unified poll)
+  // Includes: notifications, pending orders, refunds, complaints, on_hold
+  // Realtime handles immediate updates; polling is a drift-correction fallback
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!provider?.id) return;
@@ -482,77 +411,81 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     const supabase = createClient();
     const providerId = provider.id;
 
-    // Function to fetch badge counts (including pending orders as realtime fallback)
-    const fetchBadgeCounts = async () => {
-      // Fetch pending orders count (fallback for realtime)
-      // IMPORTANT: Match the same filter as orders page
-      const { data: pendingOrdersData } = await supabase
-        .from('orders')
-        .select('id, payment_method, payment_status')
-        .eq('provider_id', providerId)
-        .eq('status', 'pending')
-        .or('order_flow.is.null,order_flow.eq.standard');
+    // Unified function to fetch ALL badge counts in parallel
+    const fetchAllBadgeCounts = async () => {
+      try {
+        const [
+          pendingOrdersResult,
+          customOrdersResult,
+          refundsResult,
+          complaintsResult,
+          onHoldResult,
+          notifResult,
+        ] = await Promise.all([
+          // Pending orders
+          supabase
+            .from('orders')
+            .select('id, payment_method, payment_status')
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .or('order_flow.is.null,order_flow.eq.standard'),
+          // Custom orders
+          supabase
+            .from('custom_order_requests_live')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .in('live_status', ['pending', 'priced']),
+          // Refunds
+          supabase
+            .from('refunds')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .eq('provider_action', 'pending'),
+          // Complaints
+          supabase
+            .from('support_tickets')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .in('status', ['open', 'in_progress']),
+          // On-hold orders
+          supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('settlement_status', 'on_hold'),
+          // Notification count (merged from the old 5s poll)
+          supabase
+            .from('provider_notifications')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('is_read', false),
+        ]);
 
-      const visiblePendingOrders = (pendingOrdersData || []).filter((order) => {
-        if (order.payment_method === 'cash') return true;
-        return order.payment_status === 'paid' || order.payment_status === 'completed';
-      });
-      setPendingOrders(visiblePendingOrders.length);
-
-      // Fetch pending custom orders count using live view (excludes expired-but-not-updated)
-      const { count: customOrdersCount } = await supabase
-        .from('custom_order_requests_live')
-        .select('*', { count: 'exact', head: true })
-        .eq('provider_id', providerId)
-        .in('live_status', ['pending', 'priced']);
-      setPendingCustomOrders(customOrdersCount || 0);
-
-      // Fetch pending refunds count
-      const { count: refundsCount } = await supabase
-        .from('refunds')
-        .select('*', { count: 'exact', head: true })
-        .eq('provider_id', providerId)
-        .eq('status', 'pending')
-        .eq('provider_action', 'pending');
-      setPendingRefunds(refundsCount || 0);
-
-      // Fetch pending complaints count
-      const { count: complaintsCount } = await supabase
-        .from('support_tickets')
-        .select('*', { count: 'exact', head: true })
-        .eq('provider_id', providerId)
-        .in('status', ['open', 'in_progress']);
-      setPendingComplaints(complaintsCount || 0);
-
-      // Fetch on_hold orders count
-      const { count: onHoldCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('provider_id', providerId)
-        .eq('settlement_status', 'on_hold');
-      setOnHoldOrders(onHoldCount || 0);
+        // Update pending orders (filter for visibility)
+        const visiblePendingOrders = (pendingOrdersResult.data || []).filter((order) => {
+          if (order.payment_method === 'cash') return true;
+          return order.payment_status === 'paid' || order.payment_status === 'completed';
+        });
+        setPendingOrders(visiblePendingOrders.length);
+        setPendingCustomOrders(customOrdersResult.count || 0);
+        setPendingRefunds(refundsResult.count || 0);
+        setPendingComplaints(complaintsResult.count || 0);
+        setOnHoldOrders(onHoldResult.count || 0);
+        setUnreadCount(notifResult.count || 0);
+      } catch {
+        // Silently ignore polling errors - realtime is the primary source
+      }
     };
 
     // Initial fetch
-    fetchBadgeCounts();
+    fetchAllBadgeCounts();
 
-    // Poll every 30 seconds for non-critical updates
-    const pollingInterval = setInterval(fetchBadgeCounts, 30000);
-
-    // Fast notification count sync every 5 seconds
-    // Catches missed Realtime events (Supabase can miss rapid INSERTs)
-    const notifSyncInterval = setInterval(async () => {
-      const { count } = await supabase
-        .from('provider_notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('provider_id', providerId)
-        .eq('is_read', false);
-      setUnreadCount(count || 0);
-    }, 5000);
+    // Single unified poll every 60 seconds (was 5s + 30s = ~7 queries/5s, now 6 queries/60s)
+    const pollingInterval = setInterval(fetchAllBadgeCounts, 60000);
 
     return () => {
       clearInterval(pollingInterval);
-      clearInterval(notifSyncInterval);
     };
   }, [provider?.id]);
 

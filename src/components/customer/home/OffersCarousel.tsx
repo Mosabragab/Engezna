@@ -572,6 +572,8 @@ export function OffersCarousel({
   }, []);
 
   // Fetch banners from database - filtered by user's location
+  // Start fetching immediately without waiting for location (use fallbacks)
+  // This reduces LCP by eliminating the location → banner waterfall
   useEffect(() => {
     if (propBanners) {
       setBanners(propBanners);
@@ -579,9 +581,8 @@ export function OffersCarousel({
       return;
     }
 
-    // Wait for location to load before fetching banners
-    if (isLocationLoading) return;
-
+    // Don't block on location loading - fetch with whatever location info is available
+    // If location is still loading, pass null and get national banners first
     async function fetchBanners() {
       try {
         const supabase = createClient();
@@ -640,7 +641,7 @@ export function OffersCarousel({
     }
 
     fetchBanners();
-  }, [propBanners, isLocationLoading, governorateId, cityId]);
+  }, [propBanners, governorateId, cityId]);
 
   // Auto-play logic - RTL aware
   useEffect(() => {
@@ -740,16 +741,23 @@ export function OffersCarousel({
         <div className="flex items-center justify-between mb-5">
           <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse" />
         </div>
-        <div className="flex gap-4 overflow-hidden">
+        {/* Skeleton matches final layout: mobile shows scroll container, desktop shows grid */}
+        <div className={isDesktop ? 'grid grid-cols-3 gap-4' : 'flex gap-4 overflow-hidden -mx-4 px-4'}>
           {[1, 2, 3].map((i) => (
             <div
               key={i}
               className={`
                 flex-shrink-0 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 animate-pulse
-                ${isDesktop ? 'w-[calc(33.333%-11px)]' : 'w-[85%]'}
+                ${isDesktop ? '' : 'w-[85%]'}
                 aspect-[16/9]
               `}
             />
+          ))}
+        </div>
+        {/* Skeleton for progress indicator to prevent CLS */}
+        <div className="flex items-center justify-center gap-1.5 mt-4 h-1.5">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-1.5 w-2 rounded-full bg-slate-200" />
           ))}
         </div>
       </section>
