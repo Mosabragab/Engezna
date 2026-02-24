@@ -14,6 +14,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   useLocation,
   type Governorate,
   type City,
@@ -146,6 +154,8 @@ export default function CheckoutPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showClosedDialog, setShowClosedDialog] = useState(false);
+  const [closedDialogMessage, setClosedDialogMessage] = useState('');
   const [orderPlaced, setOrderPlaced] = useState(false); // Prevent redirect after order is placed
 
   // Extended provider data with pickup settings
@@ -973,11 +983,12 @@ export default function CheckoutPage() {
     // Check if store is currently open for orders
     // Provider status must be 'open' for any orders
     if (providerData && providerData.status !== 'open') {
-      setError(
+      setClosedDialogMessage(
         locale === 'ar'
           ? 'المتجر غير متاح حالياً لاستقبال الطلبات.'
           : 'The store is currently not accepting orders.'
       );
+      setShowClosedDialog(true);
       return;
     }
 
@@ -986,11 +997,12 @@ export default function CheckoutPage() {
     if (deliveryTiming === 'asap' && providerData?.business_hours) {
       const isStoreOpen = isWithinBusinessHours(new Date(), providerData.business_hours);
       if (!isStoreOpen) {
-        setError(
+        setClosedDialogMessage(
           locale === 'ar'
             ? 'المتجر مغلق حالياً. يمكنك تحديد موعد لاستلام/توصيل طلبك لاحقاً.'
             : 'The store is currently closed. You can schedule your order for later.'
         );
+        setShowClosedDialog(true);
         return;
       }
     }
@@ -2257,6 +2269,40 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      {/* Store Closed Popup Dialog */}
+      <Dialog open={showClosedDialog} onOpenChange={setShowClosedDialog}>
+        <DialogContent className="text-center">
+          <DialogHeader className="items-center">
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="h-7 w-7 text-destructive" />
+            </div>
+            <DialogTitle>
+              {locale === 'ar' ? 'المتجر مغلق' : 'Store Closed'}
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              {closedDialogMessage}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center gap-2 mt-2">
+            <Button
+              variant="default"
+              onClick={() => {
+                setShowClosedDialog(false);
+                setDeliveryTiming('scheduled');
+              }}
+            >
+              <Calendar className="w-4 h-4 me-2" />
+              {locale === 'ar' ? 'جدولة الطلب' : 'Schedule Order'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowClosedDialog(false)}
+            >
+              {locale === 'ar' ? 'إغلاق' : 'Close'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </CustomerLayout>
   );
 }
