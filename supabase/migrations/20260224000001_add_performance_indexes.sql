@@ -92,3 +92,18 @@ CREATE INDEX IF NOT EXISTS idx_providers_city_status
 CREATE INDEX IF NOT EXISTS idx_providers_governorate_status
   ON public.providers (governorate_id, status)
   WHERE status IN ('open', 'closed');
+
+-- ============================================================================
+-- 12. menu_items - 3,553 calls with lateral join, 25ms avg
+-- Composite index for provider_id + display_order (main query pattern)
+-- ============================================================================
+CREATE INDEX IF NOT EXISTS idx_menu_items_provider_display
+  ON public.menu_items (provider_id, display_order ASC);
+
+-- ============================================================================
+-- 13. product_variants - Covering index for lateral join from menu_items
+-- Eliminates heap fetches by including all selected columns in the index
+-- ============================================================================
+CREATE INDEX IF NOT EXISTS idx_product_variants_product_covering
+  ON public.product_variants (product_id)
+  INCLUDE (id, variant_type, name_ar, name_en, price, original_price, is_default, display_order, is_available);

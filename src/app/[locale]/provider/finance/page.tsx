@@ -391,6 +391,7 @@ export default function ProviderFinanceDashboard() {
 
     const supabase = createClient();
 
+    // Only subscribe to orders changes via Realtime (settlements use polling to reduce WAL pressure)
     const subscription = supabase
       .channel(`provider-finance-${providerId}`)
       .on(
@@ -405,22 +406,16 @@ export default function ProviderFinanceDashboard() {
           loadFinanceData(providerId, periodFilter);
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'settlements',
-          filter: `provider_id=eq.${providerId}`,
-        },
-        () => {
-          loadFinanceData(providerId, periodFilter);
-        }
-      )
       .subscribe();
+
+    // Poll for settlement changes every 60 seconds
+    const settlementPoll = setInterval(() => {
+      loadFinanceData(providerId, periodFilter);
+    }, 60000);
 
     return () => {
       supabase.removeChannel(subscription);
+      clearInterval(settlementPoll);
     };
   }, [providerId, loadFinanceData, periodFilter]);
 
