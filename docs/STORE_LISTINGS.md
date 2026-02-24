@@ -10,7 +10,7 @@
 اطلب أكل ومنتجات من أقرب المتاجر ليك. توصيل سريع وأسعار مناسبة.
 
 **Full Description:**
-إنجزنا - تطبيق توصيل الطلبات الأول في مصر
+إنجزنا - منصة احتياجات البيت اليومية الأولى في مصر
 
 اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا يوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
 
@@ -42,7 +42,7 @@
 Order food & products from nearby stores. Fast delivery at great prices.
 
 **Full Description:**
-Engezna - Your Local Delivery App in Egypt
+Engezna - Your Local Marketplace in Egypt
 
 Order from nearby stores and restaurants and get your delivery fast. Engezna connects you with local service providers and shops in your area.
 
@@ -79,7 +79,7 @@ food delivery, order delivery, online orders, nearby stores, restaurants, fast d
 اطلب أكل ومنتجات من المتاجر القريبة منك. عروض يومية وتوصيل سريع. حمّل إنجزنا دلوقتي!
 
 **Description:**
-إنجزنا - تطبيق توصيل الطلبات الأول في مصر
+إنجزنا - منصة احتياجات البيت اليومية الأولى في مصر
 
 اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا يوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
 
@@ -112,7 +112,7 @@ Fast delivery from nearby stores
 Order food & products from nearby stores. Daily deals and fast delivery. Download Engezna now!
 
 **Description:**
-Engezna - Your Local Delivery App in Egypt
+Engezna - Your Local Marketplace in Egypt
 
 Order from nearby stores and restaurants and get your delivery fast. Engezna connects you with local service providers and shops in your area.
 

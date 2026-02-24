@@ -2,7 +2,7 @@
 
 ## 📋 Project Context
 
-**Project:** Engezna (إنجزنا) - Delivery Marketplace for Egypt
+**Project:** Engezna (إنجزنا) - Local Marketplace for Egypt
 **Target Market:** جمهورية مصر العربية (All of Egypt, starting from Upper Egypt)
 **Repository:** Private GitHub repo  
 **Tech Stack:** Next.js 16, TypeScript 5.9.3, React 19.2.1, Supabase, Tailwind CSS 3.4.17, shadcn/ui

@@ -16,8 +16,8 @@
 
 ## Subtitle (30 characters max)
 
-- **English:** Food & Grocery Delivery
-- **Arabic:** توصيل طعام وبقالة
+- **English:** Local Stores & Orders
+- **Arabic:** متاجر محلية وطلبات
 
 ---
 
@@ -25,14 +25,14 @@
 
 ### English (4000 characters max)
 
-**Engezna - Your Local Delivery Platform**
+**Engezna - Your Local Marketplace**
 
-Discover the easiest way to order food, groceries, and more from your favorite local stores in Egypt. Engezna connects you with trusted merchants in your neighborhood for fast, reliable delivery.
+Discover the easiest way to order food, groceries, and more from your favorite local stores in Egypt. Engezna connects you with trusted merchants in your neighborhood — browse, order, and get everything your home needs.
 
 **KEY FEATURES:**
 
 • **Browse Local Stores**
-Find restaurants, grocery stores, bakeries, and specialty shops in your area. Filter by category, rating, or delivery time.
+Find restaurants, grocery stores, bakeries, and specialty shops in your area. Filter by category, rating, or location.
 
 • **Easy Ordering**
 Browse menus, customize your order, and checkout in just a few taps. Save your favorite items for quick reordering.
@@ -41,13 +41,13 @@ Browse menus, customize your order, and checkout in just a few taps. Save your f
 Need something special? Submit custom order requests to multiple stores and choose the best offer. Perfect for events, bulk orders, or hard-to-find items.
 
 • **Real-Time Updates**
-Track your order status from preparation to delivery. Get notified when your order is ready or on its way.
+Track your order status from preparation to pickup. Get notified when your order is ready or on its way.
 
 • **Multiple Payment Options**
-Pay securely with cash on delivery or through our integrated online payment system.
+Pay securely with cash on receipt or through our integrated online payment system.
 
 • **Order History**
-Access your complete order history, reorder favorites, and manage your delivery addresses easily.
+Access your complete order history, reorder favorites, and manage your addresses easily.
 
 • **Arabic & English**
 Full support for both Arabic and English languages with RTL layout optimization.
@@ -69,20 +69,20 @@ Are you a store owner? Join Engezna to reach more customers and grow your busine
 - Secure payment processing
 - Available in multiple Egyptian governorates
 
-Download Engezna today and experience hassle-free local delivery!
+Download Engezna today and get everything your home needs from local stores!
 
 ---
 
 ### Arabic (4000 characters max)
 
-**إنجزنا - منصة التوصيل المحلية**
+**إنجزنا - منصة احتياجات البيت اليومية**
 
-اكتشف أسهل طريقة لطلب الطعام والبقالة والمزيد من متاجرك المحلية المفضلة في مصر. إنجزنا تربطك بالتجار الموثوقين في منطقتك للتوصيل السريع والموثوق.
+اكتشف أسهل طريقة لطلب الطعام والبقالة والمزيد من متاجرك المحلية المفضلة في مصر. إنجزنا تربطك بالتجار الموثوقين في منطقتك — تصفّح واطلب وكل اللي بيتك محتاجه هيوصلك.
 
 **المميزات الرئيسية:**
 
 • **تصفح المتاجر المحلية**
-اعثر على المطاعم ومتاجر البقالة والمخابز والمتاجر المتخصصة في منطقتك. فلتر حسب الفئة أو التقييم أو وقت التوصيل.
+اعثر على المطاعم ومتاجر البقالة والمخابز والمتاجر المتخصصة في منطقتك. فلتر حسب الفئة أو التقييم أو الموقع.
 
 • **طلب سهل**
 تصفح القوائم، خصص طلبك، وأتمم الشراء بنقرات قليلة. احفظ عناصرك المفضلة لإعادة الطلب السريع.
@@ -91,13 +91,13 @@ Download Engezna today and experience hassle-free local delivery!
 تحتاج شيئاً خاصاً؟ قدم طلبات مخصصة لعدة متاجر واختر أفضل عرض. مثالي للمناسبات والطلبات بالجملة أو العناصر النادرة.
 
 • **تحديثات فورية**
-تابع حالة طلبك من التحضير حتى التوصيل. استلم إشعارات عندما يكون طلبك جاهزاً أو في الطريق.
+تابع حالة طلبك من التحضير حتى الاستلام. استلم إشعارات عندما يكون طلبك جاهزاً أو في الطريق.
 
 • **خيارات دفع متعددة**
 ادفع بأمان نقداً عند التسليم أو من خلال نظام الدفع الإلكتروني المتكامل.
 
 • **سجل الطلبات**
-اطلع على سجل طلباتك الكامل، أعد طلب المفضلات، وأدر عناوين التوصيل بسهولة.
+اطلع على سجل طلباتك الكامل، أعد طلب المفضلات، وأدر عناوينك بسهولة.
 
 • **عربي وإنجليزي**
 دعم كامل للغتين العربية والإنجليزية مع تحسين التخطيط من اليمين لليسار.
@@ -119,7 +119,7 @@ Download Engezna today and experience hassle-free local delivery!
 - معالجة دفع آمنة
 - متاح في عدة محافظات مصرية
 
-حمّل إنجزنا اليوم واستمتع بتجربة توصيل محلي بدون عناء!
+حمّل إنجزنا اليوم واطلب كل اللي بيتك محتاجه من المتاجر المحلية!
 
 ---
 
@@ -128,13 +128,13 @@ Download Engezna today and experience hassle-free local delivery!
 ### English
 
 ```
-food delivery,grocery,local stores,Egypt,توصيل,طلبات,restaurant,order food,beni suef,egyptian food
+local stores,grocery,food order,Egypt,طلبات,متاجر,restaurant,order food,beni suef,egyptian food
 ```
 
 ### Arabic
 
 ```
-توصيل طعام,بقالة,متاجر محلية,مصر,delivery,طلبات,مطاعم,إنجزنا,بني سويف,توصيل سريع
+متاجر محلية,بقالة,طلب طعام,مصر,طلبات,مطاعم,إنجزنا,بني سويف,احتياجات البيت,منصة محلية
 ```
 
 ---
@@ -153,7 +153,7 @@ Welcome to Engezna!
 • Multiple payment options
 • Full Arabic and English support
 
-Thank you for choosing Engezna for your local deliveries!
+Thank you for choosing Engezna for your local needs!
 ```
 
 ### Arabic
@@ -168,7 +168,7 @@ Thank you for choosing Engezna for your local deliveries!
 • خيارات دفع متعددة
 • دعم كامل للعربية والإنجليزية
 
-شكراً لاختيارك إنجزنا لتوصيلاتك المحلية!
+شكراً لاختيارك إنجزنا لاحتياجات بيتك!
 ```
 
 ---
@@ -265,11 +265,11 @@ Duration: 15-30 seconds showing:
 ### English
 
 ```
-Order food and groceries from local stores in Egypt. Fast delivery, custom orders, and secure payments. Download now!
+Order food and groceries from local stores in Egypt. Custom orders, secure payments, and trusted merchants. Download now!
 ```
 
 ### Arabic
 
 ```
-اطلب طعام وبقالة من المتاجر المحلية في مصر. توصيل سريع، طلبات مخصصة، ودفع آمن. حمّل الآن!
+اطلب طعام وبقالة من المتاجر المحلية في مصر. طلبات مخصصة، دفع آمن، وتجار موثوقين. حمّل الآن!
 ```

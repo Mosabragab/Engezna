@@ -118,8 +118,8 @@ INSERT INTO public.homepage_banners (
   is_active, banner_type
 ) VALUES
 (
-  'انضم لأكبر منصة توصيل',
-  'Join the Largest Delivery Platform',
+  'انضم لأكبر منصة محلية',
+  'Join the Largest Local Marketplace',
   'سجل متجرك الآن واحصل على شهر مجاني بدون عمولة',
   'Register your store now and get one month free without commission',
   'شهر مجاني',

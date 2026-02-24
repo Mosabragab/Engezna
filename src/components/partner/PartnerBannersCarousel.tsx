@@ -51,8 +51,8 @@ interface PartnerBanner {
 const fallbackPartnerBanners: PartnerBanner[] = [
   {
     id: 'p1',
-    title_ar: 'انضم لأكبر منصة توصيل',
-    title_en: 'Join the Largest Delivery Platform',
+    title_ar: 'انضم لأكبر منصة محلية',
+    title_en: 'Join the Largest Local Marketplace',
     description_ar: 'سجل متجرك الآن واحصل على شهر مجاني',
     description_en: 'Register your store and get one month free',
     badge_text_ar: 'شهر مجاني',

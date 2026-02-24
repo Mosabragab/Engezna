@@ -19,7 +19,7 @@
 
 ##### 1.1 About Engezna
 
-Engezna ("the Platform," "we," "us," or "our") is a delivery marketplace that connects customers with local service providers (stores, restaurants, supermarkets, groceries, pharmacies, and other merchants) across Egypt.
+Engezna ("the Platform," "we," "us," or "our") is a local marketplace for daily home needs that connects customers with local service providers (stores, restaurants, supermarkets, groceries, pharmacies, and other merchants) across Egypt. Delivery is handled by the merchants themselves — Engezna does not provide delivery services.
 
 ##### 1.2 Acceptance of Terms
 
@@ -41,7 +41,7 @@ Engezna reserves the right to modify these Terms at any time. Continued use of t
 
 Engezna is **NOT**:
 
-- A restaurant, store, or delivery service
+- A restaurant, store, or delivery service provider
 - Responsible for food preparation or product quality
 - The employer of service providers or their delivery staff
 

@@ -1,6 +1,6 @@
 # Apple Review Notes
 
-## Engezna - Food & Grocery Delivery App
+## Engezna - Local Marketplace App
 
 ---
 
@@ -9,7 +9,7 @@
 ```
 Thank you for reviewing Engezna!
 
-Engezna is a local delivery platform connecting customers with restaurants and grocery stores in Egypt. The app allows users to browse local stores, place orders, and track deliveries.
+Engezna is a local marketplace connecting customers with restaurants and grocery stores in Egypt. The app allows users to browse local stores, place orders, and track order status. Delivery is handled by the merchants themselves.
 
 DEMO ACCOUNT:
 - Email: reviewer@engezna.com

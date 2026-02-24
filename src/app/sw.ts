@@ -18,7 +18,7 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Initialize Serwist with custom caching strategies for Engezna delivery marketplace
+// Initialize Serwist with custom caching strategies for Engezna local marketplace
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: false, // Changed to false to allow user-controlled updates

@@ -15,7 +15,7 @@ Last Updated: 2026-01-13
 - **What we do:**
   Connect customers with local service providers across all Egyptian governorates, replacing phone-based ordering with app-based ordering.
 
-**Target Categories (5):**
+**Target Categories (6):**
 | Arabic | English |
 | -------------------- | ------------------- |
 | المطاعم | Restaurants |
@@ -23,6 +23,7 @@ Last Updated: 2026-01-13
 | السوبر ماركت | Supermarkets |
 | الخضراوات والفاكهه | Vegetables & Fruits |
 | البن والحلويات | Coffee & Patisserie |
+| أكل بيتي | Home Food |
 
 **Expansion Strategy:**
 
@@ -33,8 +34,8 @@ Last Updated: 2026-01-13
 
 ## 2. Who We Serve
 
-- **Merchants (5 categories):**
-  - المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات
+- **Merchants (6 categories):**
+  - المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات، أكل بيتي
   - **Phase 1-2:** Secondary governorates (all Egypt except Cairo/Giza/Alex/North Coast)
   - **Phase 3-4:** Cairo, Giza, Alexandria, North Coast
 - **Customers:**
@@ -152,13 +153,14 @@ Last Updated: 2026-01-13
 - **الاسم:** إنجزنا / Engezna
 - **الشعار:** عايز تطلب؟ إنجزنا
 
-**الفئات المستهدفة (5 فئات):**
+**الفئات المستهدفة (6 فئات):**
 
 1. المطاعم
 2. الصيدليات
 3. السوبر ماركت
 4. الخضراوات والفاكهه
 5. البن والحلويات
+6. أكل بيتي
 
 **نموذج العمل:**
 

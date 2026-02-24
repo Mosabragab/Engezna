@@ -79,7 +79,9 @@
 
 ### Business Model
 
-- B2C delivery marketplace — Egypt, starting from Upper Egypt
+- B2C local marketplace for daily home needs — Egypt, starting from Upper Egypt
+- Engezna is NOT a delivery app — delivery is always the merchant's responsibility
+- Engezna connects local stores with customers; it does not provide delivery services
 - 3 months 0% commission, then max 7% (vs competitors' 25-30%)
 - 6 business categories: Restaurant, Cafe, Supermarket, Juice, Pharmacy, Vegetables
 
