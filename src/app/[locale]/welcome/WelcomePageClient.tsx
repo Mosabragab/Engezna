@@ -234,8 +234,9 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
 
               <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
                 {categories.map((category, index) => (
-                  <div
+                  <Link
                     key={category.id}
+                    href={`/${locale}/profile/governorate`}
                     className="flex flex-col items-center p-4 text-center animate-slide-up opacity-0"
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
@@ -253,7 +254,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
                     <h3 className="font-semibold text-slate-900 text-sm md:text-base">
                       {isRTL ? category.name_ar : category.name_en}
                     </h3>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -315,7 +316,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
                   {steps.map((step, index) => (
                     <div key={index} className="text-center relative">
                       {index < steps.length - 1 && (
-                        <div className="hidden md:block absolute top-8 left-1/2 w-full h-0.5 bg-gradient-to-r from-primary/30 to-primary/10" />
+                        <div className="hidden md:block absolute top-8 ltr:left-1/2 rtl:right-1/2 w-full h-0.5 ltr:bg-gradient-to-r rtl:bg-gradient-to-l from-primary/30 to-primary/10" />
                       )}
 
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 relative z-10 shadow-elegant-lg">
