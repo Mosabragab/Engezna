@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useFavorites } from '@/hooks/customer';
 import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
+import { isWithinBusinessHours, BusinessHours } from '@/lib/utils/business-hours';
 import { Button } from '@/components/ui/button';
 import { ProductCard, RatingStars, StatusBadge, EmptyState } from '@/components/customer/shared';
 
@@ -69,6 +70,7 @@ export type ProviderData = {
   city_id: string | null;
   is_featured?: boolean;
   is_verified?: boolean;
+  business_hours?: BusinessHours | null;
   operation_mode?: 'standard' | 'custom' | 'hybrid';
   custom_order_settings?: {
     accepts_text?: boolean;
@@ -510,10 +512,18 @@ export default function ProviderDetailClient({
     }
   };
 
+  // Check if store is truly open: status must be 'open' AND within business hours
+  const isProviderOpen = useMemo(() => {
+    if (provider.status !== 'open') return false;
+    if (!provider.business_hours) return true;
+    return isWithinBusinessHours(new Date(), provider.business_hours);
+  }, [provider.status, provider.business_hours]);
+
   const mapProviderStatus = (status: string): 'open' | 'closed' | 'busy' | 'paused' | 'pending' => {
     switch (status) {
       case 'open':
-        return 'open';
+        // If status is 'open' but outside business hours, show as closed
+        return isProviderOpen ? 'open' : 'closed';
       case 'closed':
         return 'closed';
       case 'temporarily_paused':

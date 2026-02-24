@@ -11,7 +11,7 @@ import { useSDUI } from '@/hooks/sdui';
 import { Star, Clock, Percent, ArrowUpDown, MapPin, Navigation } from 'lucide-react';
 import { useUserLocation } from '@/lib/contexts';
 import Link from 'next/link';
-import { BusinessHours } from '@/lib/utils/business-hours';
+import { BusinessHours, isWithinBusinessHours } from '@/lib/utils/business-hours';
 
 export type Provider = {
   id: string;
@@ -232,9 +232,13 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       });
     }
 
-    // Open only filter
+    // Open only filter - check both status AND business hours
     if (showOpenOnly) {
-      result = result.filter((p) => p.status === 'open');
+      result = result.filter((p) => {
+        if (p.status !== 'open') return false;
+        if (!p.business_hours) return true;
+        return isWithinBusinessHours(new Date(), p.business_hours);
+      });
     }
 
     // Offers filter (featured providers)
