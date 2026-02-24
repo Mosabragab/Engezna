@@ -234,8 +234,9 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
 
               <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
                 {categories.map((category, index) => (
-                  <div
+                  <Link
                     key={category.id}
+                    href={`/${locale}/profile/governorate`}
                     className="flex flex-col items-center p-4 text-center animate-slide-up opacity-0"
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
@@ -253,7 +254,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
                     <h3 className="font-semibold text-slate-900 text-sm md:text-base">
                       {isRTL ? category.name_ar : category.name_en}
                     </h3>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
