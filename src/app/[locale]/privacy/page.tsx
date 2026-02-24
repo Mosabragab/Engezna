@@ -246,15 +246,15 @@ export default function PrivacyPage() {
         {
           icon: Plane,
           title: '١٥. نقل البيانات الدولي',
-          content: `قد تُعالج بياناتك خارج جمهورية مصر العربية عبر مزودي الخدمة التالين:
+          content: `لتقديم خدماتنا بأفضل شكل، نستعين بشركات تقنية موثوقة قد تُعالج بعض بياناتك خارج مصر. هذه الشركات تشمل:
 
-• Supabase (الاتحاد الأوروبي/الولايات المتحدة) - قاعدة البيانات والمصادقة
-• Vercel (الولايات المتحدة) - استضافة الموقع والتحليلات
-• Sentry (الولايات المتحدة) - تتبع الأخطاء وتقارير الأداء
-• Firebase (الولايات المتحدة) - خدمة الإشعارات
-• Kashier (مصر) - معالجة المدفوعات
+• خدمات تخزين وإدارة الحسابات (Supabase)
+• خدمات تشغيل الموقع (Vercel)
+• خدمات تحسين الأداء ومعالجة الأخطاء (Sentry)
+• خدمات الإشعارات (Firebase)
+• خدمات الدفع الإلكتروني (Kashier - داخل مصر)
 
-نتخذ الإجراءات المناسبة لضمان حماية بياناتك وفقاً للمعايير الدولية، بما في ذلك التشفير والتعاقدات القياسية لحماية البيانات.`,
+جميع هذه الشركات ملتزمة بمعايير حماية البيانات الدولية. بياناتك مشفرة أثناء النقل والتخزين، ولا يتم مشاركتها مع أي جهة أخرى بدون إذنك.`,
         },
         {
           icon: ShieldAlert,
@@ -451,15 +451,15 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         {
           icon: Plane,
           title: '15. International Data Transfer',
-          content: `Your data may be processed outside the Arab Republic of Egypt by the following service providers:
+          content: `To provide our services effectively, we work with trusted technology companies that may process some of your data outside Egypt. These include:
 
-• Supabase (EU/US) - Database and authentication
-• Vercel (US) - Website hosting and analytics
-• Sentry (US) - Error tracking and performance reporting
-• Firebase (US) - Push notification service
-• Kashier (Egypt) - Payment processing
+• Account storage and management services (Supabase)
+• Website hosting services (Vercel)
+• Performance and error monitoring services (Sentry)
+• Notification services (Firebase)
+• Electronic payment services (Kashier - within Egypt)
 
-We take appropriate measures to ensure your data is protected in accordance with international standards, including encryption and standard data protection contractual clauses.`,
+All these companies comply with international data protection standards. Your data is encrypted during transfer and storage, and is never shared with any other party without your consent.`,
         },
         {
           icon: ShieldAlert,
