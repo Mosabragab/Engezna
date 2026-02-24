@@ -84,7 +84,7 @@ export default function AboutPage() {
       numbersTitle: 'إنجزنا بالأرقام',
       numbers: [
         { value: '7%', label: 'عمولة كحد أقصى' },
-        { value: '0', label: 'رسوم تسجيل' },
+        { value: '0%', label: 'رسوم خدمة للعملاء' },
         { value: '3', label: 'شهور بدون عمولة' },
         { value: '24/7', label: 'خدمة متاحة' },
       ],
@@ -149,7 +149,7 @@ export default function AboutPage() {
       numbersTitle: 'Engezna by Numbers',
       numbers: [
         { value: '7%', label: 'Maximum Commission' },
-        { value: '0', label: 'Registration Fees' },
+        { value: '0%', label: 'Customer Service Fees' },
         { value: '3', label: 'Months Zero Commission' },
         { value: '24/7', label: 'Service Available' },
       ],
