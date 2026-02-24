@@ -19,6 +19,11 @@ import {
   ChevronUp,
   RefreshCw,
   Wallet,
+  UserPlus,
+  Copyright,
+  ShieldOff,
+  CloudLightning,
+  Gavel,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,12 +43,29 @@ export default function TermsPage() {
   const content = {
     ar: {
       title: 'الشروط والأحكام',
-      lastUpdated: 'آخر تحديث: ديسمبر 2025',
+      lastUpdated: 'آخر تحديث: يناير 2026',
       tabs: {
         customer: 'شروط العميل',
         provider: 'شروط المتاجر',
       },
       customerSections: [
+        {
+          id: 'registration',
+          icon: UserPlus,
+          title: 'تسجيل الحساب',
+          content: `لاستخدام إنجزنا، يجب أن:
+• يكون عمرك ١٦ عاماً على الأقل
+• تقدم معلومات تسجيل دقيقة وكاملة
+• تحافظ على أمان بيانات حسابك
+• يكون لديك رقم هاتف مصري صالح
+
+🔒 أنت مسؤول عن:
+• الحفاظ على سرية كلمة المرور
+• جميع الأنشطة التي تحدث تحت حسابك
+• إخطارنا فوراً بأي وصول غير مصرح به
+
+⚠️ تحتفظ إنجزنا بالحق في تعليق أو إنهاء الحسابات التي تنتهك الشروط أو تمارس سلوكاً احتيالياً أو تقدم معلومات كاذبة.`,
+        },
         {
           id: 'general',
           icon: FileText,
@@ -126,7 +148,9 @@ export default function TermsPage() {
 • تُتخذ القرارات بناءً على الأدلة المتاحة
 • يتم إصدار المبالغ المستردة وفقاً لتقدير المنصة
 
-مقدمو الخدمات الذين تتكرر الشكاوى ضدهم قد يواجهون التعليق أو الإزالة الدائمة.`,
+مقدمو الخدمات الذين تتكرر الشكاوى ضدهم قد يواجهون التعليق أو الإزالة الدائمة.
+
+📌 ملاحظة: لا شيء في هذه الشروط يمنع حقك في تقديم شكوى لجهاز حماية المستهلك المصري وفقاً لقانون حماية المستهلك (القانون رقم ١٨١ لسنة ٢٠١٨).`,
         },
         {
           id: 'refunds',
@@ -162,6 +186,45 @@ export default function TermsPage() {
 • طرق الدفع المتاحة (نقدي/إلكتروني)
 • طبيعة المنتجات والخدمات
 • المتطلبات القانونية والتنظيمية`,
+        },
+        {
+          id: 'ip',
+          icon: Copyright,
+          title: 'الملكية الفكرية',
+          content: `جميع المحتوى على المنصة (الشعارات، التصاميم، البرمجيات، إلخ) مملوك لإنجزنا أو مرخصيها. الاستخدام غير المصرح به ممنوع.
+
+بتقديم محتوى (مراجعات، صور)، فإنك تمنح إنجزنا ترخيصاً غير حصري لاستخدام وعرض وتوزيع هذا المحتوى على المنصة.`,
+        },
+        {
+          id: 'liability',
+          icon: ShieldOff,
+          title: 'تحديد المسؤولية',
+          content: `مسؤولية إنجزنا محدودة بالحد الأقصى المسموح به بموجب القانون المصري. نحن غير مسؤولين عن:
+
+• أفعال أو إغفالات مقدمي الخدمات
+• مشاكل جودة المنتجات أو سلامتها
+• تأخيرات أو فشل التوصيل
+• الأضرار غير المباشرة أو العرضية أو التبعية`,
+        },
+        {
+          id: 'force-majeure',
+          icon: CloudLightning,
+          title: 'القوة القاهرة',
+          content: `لا يكون أي طرف مسؤولاً عن الإخفاقات الناجمة عن ظروف خارجة عن السيطرة المعقولة، بما في ذلك:
+• الكوارث الطبيعية
+• الإضرابات والاضطرابات
+• الإجراءات الحكومية والتنظيمية
+• انقطاع الإنترنت أو الاتصالات`,
+        },
+        {
+          id: 'governing-law',
+          icon: Gavel,
+          title: 'القانون الحاكم والاختصاص القضائي',
+          content: `تخضع هذه الشروط لقوانين جمهورية مصر العربية.
+
+تخضع أي نزاعات للاختصاص القضائي الحصري للمحاكم المصرية.
+
+⚖️ لا شيء في هذه الشروط يؤثر على حقوقك القانونية بموجب قانون حماية المستهلك المصري (القانون رقم ١٨١ لسنة ٢٠١٨). يحق لك دائماً تقديم شكوى لجهاز حماية المستهلك.`,
         },
       ],
       providerSections: [
@@ -284,12 +347,29 @@ export default function TermsPage() {
     },
     en: {
       title: 'Terms & Conditions',
-      lastUpdated: 'Last Updated: December 2025',
+      lastUpdated: 'Last Updated: January 2026',
       tabs: {
         customer: 'Customer Terms',
         provider: 'Store Terms',
       },
       customerSections: [
+        {
+          id: 'registration',
+          icon: UserPlus,
+          title: 'Account Registration',
+          content: `To use Engezna, you must:
+• Be at least 16 years of age
+• Provide accurate and complete registration information
+• Maintain the security of your account credentials
+• Have a valid Egyptian phone number
+
+🔒 You are responsible for:
+• Maintaining the confidentiality of your password
+• All activities that occur under your account
+• Notifying us immediately of any unauthorized access
+
+⚠️ Engezna reserves the right to suspend or terminate accounts that violate these Terms, engage in fraudulent behavior, or provide false information.`,
+        },
         {
           id: 'general',
           icon: FileText,
@@ -372,7 +452,9 @@ When a dispute is escalated to the Resolution Center:
 • Decisions are made based on available evidence
 • Refunds are issued at the Platform's discretion
 
-Service providers with repeated complaints may face suspension or permanent removal.`,
+Service providers with repeated complaints may face suspension or permanent removal.
+
+📌 Note: Nothing in these Terms prevents your right to file a complaint with the Egyptian Consumer Protection Agency in accordance with the Consumer Protection Law (Law No. 181 of 2018).`,
         },
         {
           id: 'refunds',
@@ -408,6 +490,45 @@ Engezna reserves the right to modify the refund policy based on:
 • Available payment methods (cash/electronic)
 • Nature of products and services
 • Legal and regulatory requirements`,
+        },
+        {
+          id: 'ip',
+          icon: Copyright,
+          title: 'Intellectual Property',
+          content: `All content on the Platform (logos, designs, software, etc.) is owned by Engezna or its licensors. Unauthorized use is prohibited.
+
+By submitting content (reviews, images), you grant Engezna a non-exclusive license to use, display, and distribute such content on the Platform.`,
+        },
+        {
+          id: 'liability',
+          icon: ShieldOff,
+          title: 'Limitation of Liability',
+          content: `Engezna's liability is limited to the maximum extent permitted by Egyptian law. We are not liable for:
+
+• Actions or omissions of service providers
+• Product quality or safety issues
+• Delivery delays or failures
+• Indirect, incidental, or consequential damages`,
+        },
+        {
+          id: 'force-majeure',
+          icon: CloudLightning,
+          title: 'Force Majeure',
+          content: `Neither party is liable for failures due to circumstances beyond reasonable control, including:
+• Natural disasters
+• Strikes and civil unrest
+• Government and regulatory actions
+• Internet or communication outages`,
+        },
+        {
+          id: 'governing-law',
+          icon: Gavel,
+          title: 'Governing Law and Jurisdiction',
+          content: `These Terms are governed by the laws of the Arab Republic of Egypt.
+
+Any disputes shall be subject to the exclusive jurisdiction of the Egyptian courts.
+
+⚖️ Nothing in these Terms affects your statutory rights under the Egyptian Consumer Protection Law (Law No. 181 of 2018). You always have the right to file a complaint with the Consumer Protection Agency.`,
         },
       ],
       providerSections: [

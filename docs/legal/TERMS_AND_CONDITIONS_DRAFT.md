@@ -4,7 +4,7 @@
 
 > **Status:** DRAFT - For Review Before Implementation
 > **Version:** 1.0
-> **Last Updated:** December 2025
+> **Last Updated:** January 2026
 > **Effective Date:** [To be determined upon approval]
 
 ---
@@ -206,18 +206,62 @@ Customers may file complaints through:
 - Decisions are made based on available evidence
 - Refunds or credits are issued at the Platform's discretion
 
-##### 8.4 Provider Accountability
+##### 8.4 Consumer Rights Preservation
+
+Nothing in these Terms prevents your right to file a complaint with the Egyptian Consumer Protection Agency in accordance with the Consumer Protection Law (Law No. 181 of 2018).
+
+##### 8.5 Provider Accountability
 
 - Service providers with repeated valid complaints may face:
   - Warning and mandatory improvement period
   - Temporary suspension
   - Permanent removal from the Platform
 
+#### 9. Refund and Return Policy
+
+##### 9.1 Eligible Refund Cases
+
+Customers may request a refund in the following cases:
+
+- Missing or incorrect product
+- Damaged or defective product
+- Order not received despite payment
+- Order cancelled by the store
+
+##### 9.2 Refund Request Deadline
+
+- Within 24 hours of receiving the order
+- With supporting photos (if applicable)
+
+##### 9.3 Refund Methods
+
+- **Cash on Delivery:** Refund is made in cash by the store via delivery
+- **Electronic Payment (future):** Refund to the same payment method used
+
+##### 9.4 Confirming Receipt of Refund
+
+- When refunded in cash, you will receive a confirmation notification
+- You must click "Confirm Receipt" within 48 hours
+- Failure to confirm within the deadline is considered automatic acceptance
+
+##### 9.5 Non-Eligible Cases
+
+The following are not eligible for refund:
+
+- Change of mind after receiving the order
+- Consumable products after opening
+- Custom or made-to-order items
+- Fake orders or intentional non-receipt
+
+##### 9.6 Platform Rights
+
+Engezna reserves the right to modify the refund policy based on available payment methods, nature of products, and legal/regulatory requirements.
+
 ---
 
 ### PART THREE: SERVICE PROVIDER (MERCHANT) TERMS
 
-#### 9. Partnership Agreement
+#### 10. Partnership Agreement
 
 ##### 9.1 Scope of Agreement
 
@@ -433,7 +477,7 @@ For questions about these Terms:
 
 ##### ١.١ عن إنجزنا
 
-إنجزنا ("المنصة" أو "نحن") هي سوق توصيل إلكتروني يربط العملاء بمقدمي الخدمات المحليين (المتاجر، المطاعم، السوبر ماركت، البقالة، الصيدليات، وغيرها من التجار) في جميع أنحاء مصر.
+إنجزنا ("المنصة" أو "نحن") هي سوق محلي لتلبية احتياجات البيت اليومية يربط العملاء بمقدمي الخدمات المحليين (المتاجر، المطاعم، السوبر ماركت، البقالة، الصيدليات، وغيرها من التجار) في جميع أنحاء مصر. التوصيل مسؤولية التجار أنفسهم — إنجزنا لا تقدم خدمات توصيل.
 
 ##### ١.٢ قبول الشروط
 
@@ -620,18 +664,60 @@ For questions about these Terms:
 - تُتخذ القرارات بناءً على الأدلة المتاحة
 - يتم إصدار المبالغ المستردة أو الأرصدة وفقاً لتقدير المنصة
 
-##### ٨.٤ مساءلة مقدمي الخدمات
+##### ٨.٤ حفظ حقوق المستهلك
+
+لا شيء في هذه الشروط يمنع حقك في تقديم شكوى لجهاز حماية المستهلك المصري وفقاً لقانون حماية المستهلك (القانون رقم ١٨١ لسنة ٢٠١٨).
+
+##### ٨.٥ مساءلة مقدمي الخدمات
 
 - مقدمو الخدمات الذين تتكرر الشكاوى الصحيحة ضدهم قد يواجهون:
   - تحذير وفترة تحسين إلزامية
   - تعليق مؤقت
   - إزالة دائمة من المنصة
 
+#### ٩. سياسة الاسترداد والإرجاع
+
+##### ٩.١ حالات الاسترداد المؤهلة
+
+يحق للعملاء طلب الاسترداد في الحالات التالية:
+
+- منتج ناقص أو مختلف عما تم طلبه
+- منتج تالف أو غير صالح
+- عدم استلام الطلب رغم الدفع
+- إلغاء الطلب من قبل المتجر
+
+##### ٩.٢ مهلة تقديم طلب الاسترداد
+
+- خلال ٢٤ ساعة من استلام الطلب
+- مع صور توضيحية للمشكلة (إن وجدت)
+
+##### ٩.٣ طرق الاسترداد
+
+- **الدفع عند الاستلام:** يتم رد المبلغ نقداً من المتجر عبر المندوب
+- **الدفع الإلكتروني (مستقبلاً):** يتم رد المبلغ لنفس وسيلة الدفع المستخدمة
+
+##### ٩.٤ تأكيد استلام المبلغ المسترد
+
+- عند رد المبلغ نقداً، ستصلك رسالة تأكيد
+- يجب الضغط على "تأكيد الاستلام" خلال ٤٨ ساعة
+- عدم التأكيد خلال المهلة يُعتبر موافقة تلقائية على استلام المبلغ
+
+##### ٩.٥ حالات غير مؤهلة للاسترداد
+
+- تغيير الرأي بعد استلام الطلب
+- المنتجات الاستهلاكية بعد فتحها
+- الطلبات الخاصة أو المُعدّة حسب الطلب
+- الطلبات الوهمية أو عدم الاستلام المتعمد
+
+##### ٩.٦ حقوق المنصة
+
+تحتفظ إنجزنا بالحق في تعديل سياسة الاسترداد بما يتناسب مع طرق الدفع المتاحة وطبيعة المنتجات والمتطلبات القانونية والتنظيمية.
+
 ---
 
 ### الجزء الثالث: شروط مقدم الخدمة (المتجر)
 
-#### ٩. اتفاقية الشراكة
+#### ١٠. اتفاقية الشراكة
 
 ##### ٩.١ نطاق الاتفاقية
 

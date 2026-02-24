@@ -22,6 +22,10 @@ import {
   Baby,
   FileText,
   Loader2,
+  Target,
+  Plane,
+  Scale,
+  ShieldAlert,
 } from 'lucide-react';
 
 export default function PrivacyPage() {
@@ -103,8 +107,28 @@ export default function PrivacyPage() {
 ⚠️ هام: إنجزنا لا تستخدم تتبع الموقع الجغرافي اللحظي (GPS). نحن لا نتتبع موقعك المباشر ولا نراقب تحركاتك.`,
         },
         {
+          icon: Target,
+          title: '٣. كيف نستخدم معلوماتك',
+          content: `نستخدم المعلومات المجمعة من أجل:
+
+١. معالجة الطلبات:
+• إنشاء وإدارة حسابك
+• معالجة وتنفيذ طلباتك
+• إرسال تأكيدات وتحديثات الطلبات
+
+٢. تحسين الخدمة:
+• تحليل أنماط الاستخدام لتحسين المنصة
+• معالجة المشكلات التقنية
+• تطوير ميزات جديدة
+
+٣. التواصل:
+• إرسال العروض الترويجية (بموافقتك)
+• الرد على استفسارات الدعم الفني
+• تقديم إعلانات الخدمة المهمة`,
+        },
+        {
           icon: Share2,
-          title: '٣. مشاركة المعلومات',
+          title: '٤. مشاركة المعلومات',
           content: `نشارك المعلومات التالية مع المتاجر لتنفيذ طلباتك:
 • اسمك وعنوان التوصيل ورقم الهاتف وتفاصيل الطلب
 
@@ -114,7 +138,7 @@ export default function PrivacyPage() {
         },
         {
           icon: Lock,
-          title: '٤. أمان البيانات',
+          title: '٥. أمان البيانات',
           content: `نطبق إجراءات أمنية مناسبة لحماية معلوماتك:
 
 • التشفير: جميع البيانات مشفرة باستخدام SSL/TLS
@@ -124,7 +148,7 @@ export default function PrivacyPage() {
         },
         {
           icon: UserCheck,
-          title: '٥. حقوقك',
+          title: '٦. حقوقك',
           content: `لديك الحق في:
 
 • الوصول: طلب نسخة من بياناتك الشخصية
@@ -136,13 +160,13 @@ export default function PrivacyPage() {
         },
         {
           icon: Baby,
-          title: '٦. خصوصية الأطفال',
+          title: '٧. خصوصية الأطفال',
           content: `إنجزنا غير مخصصة للأطفال دون ١٦ عاماً. نحن لا نجمع معلومات شخصية من الأطفال عن قصد. إذا كنت والداً وتعتقد أن طفلك قدم لنا معلومات شخصية، يُرجى التواصل معنا.`,
         },
         {
           icon: Cookie,
           id: 'cookies',
-          title: '٧. الكوكيز والتقنيات المشابهة',
+          title: '٨. الكوكيز والتقنيات المشابهة',
           content: `نستخدم ملفات تعريف الارتباط (الكوكيز) لتحسين تجربتك:
 
 🔹 أنواع الكوكيز:
@@ -155,7 +179,7 @@ export default function PrivacyPage() {
         },
         {
           icon: Globe,
-          title: '٨. عناوين IP وبيانات التصفح',
+          title: '٩. عناوين IP وبيانات التصفح',
           content: `عند استخدامك للخدمة، نجمع تلقائياً:
 
 • عنوان IP - لأغراض الأمان
@@ -166,7 +190,7 @@ export default function PrivacyPage() {
         },
         {
           icon: CreditCard,
-          title: '٩. معلومات الدفع',
+          title: '١٠. معلومات الدفع',
           content: `ندعم الدفع الإلكتروني عبر Kashier والدفع عند الاستلام.
 
 🔐 أمان الدفع:
@@ -179,7 +203,7 @@ export default function PrivacyPage() {
         },
         {
           icon: Trash2,
-          title: '١٠. كيفية حذف حسابك',
+          title: '١١. كيفية حذف حسابك',
           content: `🔹 خطوات الحذف:
 ١. افتح تطبيق إنجزنا
 ٢. اذهب إلى الإعدادات → الحساب
@@ -197,7 +221,7 @@ export default function PrivacyPage() {
         {
           icon: Download,
           id: 'data-export',
-          title: '١١. تصدير البيانات',
+          title: '١٢. تصدير البيانات',
           content: `لديك الحق في الحصول على نسخة من بياناتك بتنسيق منظم.
 
 📦 يتضمن التصدير: الملف الشخصي، الطلبات، العناوين، المفضلة، التقييمات
@@ -206,12 +230,47 @@ export default function PrivacyPage() {
         },
         {
           icon: Clock,
-          title: '١٢. الاحتفاظ بالبيانات',
+          title: '١٣. الاحتفاظ بالبيانات',
           content: `نحتفظ بمعلوماتك طالما حسابك نشط. يمكنك طلب حذف حسابك في أي وقت.`,
         },
         {
+          icon: Scale,
+          title: '١٤. الأساس القانوني للمعالجة',
+          content: `نعالج بياناتك الشخصية وفقاً لقانون حماية البيانات الشخصية المصري (القانون رقم ١٥١ لسنة ٢٠٢٠) على الأسس التالية:
+
+• تنفيذ العقد: معالجة الطلبات وتقديم الخدمة
+• الموافقة: الرسائل الترويجية والتسويقية (يمكنك إلغاء الاشتراك في أي وقت)
+• المصلحة المشروعة: تحسين الخدمة ومنع الاحتيال وضمان أمان المنصة
+• الالتزام القانوني: الاحتفاظ بالسجلات المالية وفقاً للقانون التجاري المصري`,
+        },
+        {
+          icon: Plane,
+          title: '١٥. نقل البيانات الدولي',
+          content: `قد تُعالج بياناتك خارج جمهورية مصر العربية عبر مزودي الخدمة التالين:
+
+• Supabase (الاتحاد الأوروبي/الولايات المتحدة) - قاعدة البيانات والمصادقة
+• Vercel (الولايات المتحدة) - استضافة الموقع والتحليلات
+• Sentry (الولايات المتحدة) - تتبع الأخطاء وتقارير الأداء
+• Firebase (الولايات المتحدة) - خدمة الإشعارات
+• Kashier (مصر) - معالجة المدفوعات
+
+نتخذ الإجراءات المناسبة لضمان حماية بياناتك وفقاً للمعايير الدولية، بما في ذلك التشفير والتعاقدات القياسية لحماية البيانات.`,
+        },
+        {
+          icon: ShieldAlert,
+          title: '١٦. إخطار الاختراق الأمني',
+          content: `في حالة حدوث اختراق أمني يؤثر على بياناتك الشخصية:
+
+• سنقوم بإخطارك خلال ٧٢ ساعة من اكتشاف الاختراق
+• سنبلغ الجهات الرقابية المختصة وفقاً للقانون المصري
+• سنوضح طبيعة البيانات المتأثرة والإجراءات المتخذة
+• سنقدم توصيات لحماية نفسك
+
+📧 للإبلاغ عن مشكلة أمنية: security@engezna.com`,
+        },
+        {
           icon: FileText,
-          title: '١٣. التغييرات على السياسة',
+          title: '١٧. التغييرات على السياسة',
           content: `قد نحدّث هذه السياسة من وقت لآخر. سنُخطرك بالتغييرات عبر:
 • نشر السياسة الجديدة هنا
 • تحديث تاريخ "آخر تحديث"
@@ -219,7 +278,7 @@ export default function PrivacyPage() {
         },
         {
           icon: Mail,
-          title: '١٤. تواصل معنا',
+          title: '١٨. تواصل معنا',
           content: `🏢 الشركة: سويفكم للتجارة والتصدير (ذ.م.م)
 📍 العنوان: ش صالح حمام، بني سويف، مصر
 📋 السجل التجاري: 2767
@@ -253,8 +312,28 @@ By using Engezna, you agree to the collection and use of information in accordan
 ⚠️ Important: Engezna does NOT use real-time GPS tracking. We do not track your live location.`,
         },
         {
+          icon: Target,
+          title: '3. How We Use Your Information',
+          content: `We use the collected information for:
+
+1. Order Processing:
+• Creating and managing your account
+• Processing and fulfilling your orders
+• Sending order confirmations and updates
+
+2. Service Improvement:
+• Analyzing usage patterns to improve our platform
+• Troubleshooting technical issues
+• Developing new features
+
+3. Communication:
+• Sending promotional offers (with your consent)
+• Responding to customer support inquiries
+• Providing important service announcements`,
+        },
+        {
           icon: Share2,
-          title: '3. Information Sharing',
+          title: '4. Information Sharing',
           content: `We share with stores to fulfill your orders:
 • Your name, delivery address, phone number, order details
 
@@ -264,7 +343,7 @@ Service providers are contractually obligated to use this information solely for
         },
         {
           icon: Lock,
-          title: '4. Data Security',
+          title: '5. Data Security',
           content: `We implement appropriate security measures:
 
 • Encryption: All data encrypted using SSL/TLS
@@ -274,7 +353,7 @@ Service providers are contractually obligated to use this information solely for
         },
         {
           icon: UserCheck,
-          title: '5. Your Rights',
+          title: '6. Your Rights',
           content: `You have the right to:
 
 • Access: Request a copy of your personal data
@@ -286,13 +365,13 @@ Service providers are contractually obligated to use this information solely for
         },
         {
           icon: Baby,
-          title: "6. Children's Privacy",
+          title: "7. Children's Privacy",
           content: `Engezna is not intended for children under 16 years of age. We do not knowingly collect personal information from children. If you are a parent and believe your child has provided us with personal information, please contact us.`,
         },
         {
           icon: Cookie,
           id: 'cookies',
-          title: '7. Cookies and Similar Technologies',
+          title: '8. Cookies and Similar Technologies',
           content: `We use cookies to enhance your experience:
 
 🔹 Cookie Types:
@@ -305,7 +384,7 @@ Service providers are contractually obligated to use this information solely for
         },
         {
           icon: Globe,
-          title: '8. IP Addresses and Browsing Data',
+          title: '9. IP Addresses and Browsing Data',
           content: `When you use our Service, we automatically collect:
 
 • IP Address - For security purposes
@@ -316,7 +395,7 @@ Service providers are contractually obligated to use this information solely for
         },
         {
           icon: CreditCard,
-          title: '9. Payment Information',
+          title: '10. Payment Information',
           content: `We support online payment via Kashier and Cash on Delivery.
 
 🔐 Payment Security:
@@ -329,7 +408,7 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         },
         {
           icon: Trash2,
-          title: '10. How to Delete Your Account',
+          title: '11. How to Delete Your Account',
           content: `🔹 Deletion Steps:
 1. Open Engezna app
 2. Go to Settings → Account
@@ -347,7 +426,7 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         {
           icon: Download,
           id: 'data-export',
-          title: '11. Data Export',
+          title: '12. Data Export',
           content: `You have the right to receive a copy of your data in a structured format.
 
 📦 Export includes: Profile, orders, addresses, favorites, reviews
@@ -356,12 +435,47 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         },
         {
           icon: Clock,
-          title: '12. Data Retention',
+          title: '13. Data Retention',
           content: `We retain your information as long as your account is active. You may request deletion at any time.`,
         },
         {
+          icon: Scale,
+          title: '14. Legal Basis for Processing',
+          content: `We process your personal data in accordance with the Egyptian Personal Data Protection Law (Law No. 151 of 2020) on the following bases:
+
+• Contract Performance: Processing orders and providing the service
+• Consent: Promotional and marketing communications (you can opt out at any time)
+• Legitimate Interest: Service improvement, fraud prevention, and platform security
+• Legal Obligation: Maintaining financial records as required by Egyptian commercial law`,
+        },
+        {
+          icon: Plane,
+          title: '15. International Data Transfer',
+          content: `Your data may be processed outside the Arab Republic of Egypt by the following service providers:
+
+• Supabase (EU/US) - Database and authentication
+• Vercel (US) - Website hosting and analytics
+• Sentry (US) - Error tracking and performance reporting
+• Firebase (US) - Push notification service
+• Kashier (Egypt) - Payment processing
+
+We take appropriate measures to ensure your data is protected in accordance with international standards, including encryption and standard data protection contractual clauses.`,
+        },
+        {
+          icon: ShieldAlert,
+          title: '16. Data Breach Notification',
+          content: `In the event of a security breach affecting your personal data:
+
+• We will notify you within 72 hours of discovering the breach
+• We will report to the relevant regulatory authorities as required by Egyptian law
+• We will explain the nature of the affected data and the measures taken
+• We will provide recommendations to protect yourself
+
+📧 To report a security concern: security@engezna.com`,
+        },
+        {
           icon: FileText,
-          title: '13. Changes to This Policy',
+          title: '17. Changes to This Policy',
           content: `We may update this policy from time to time. We will notify you by:
 • Posting the new policy here
 • Updating the "Last Updated" date
@@ -369,7 +483,7 @@ We only receive: Transaction confirmation and last 4 card digits.`,
         },
         {
           icon: Mail,
-          title: '14. Contact Us',
+          title: '18. Contact Us',
           content: `🏢 Company: Sweifcom for Trade and Export (LLC)
 📍 Address: Saleh Hammam St., Beni Suef, Egypt
 📋 Commercial Registry: 2767
