@@ -505,7 +505,7 @@ export default function CompleteProfilePage() {
 
       {/* Footer */}
       <p className="text-center mt-6 text-sm text-slate-400">
-        {locale === 'ar' ? 'انجزنا - منصة توصيل' : 'Engezna - Delivery Platform'}
+        {locale === 'ar' ? 'إنجزنا - منصة احتياجات البيت اليومية' : 'Engezna - Local Marketplace'}
       </p>
     </div>
   );

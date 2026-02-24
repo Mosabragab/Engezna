@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-## Engezna - إنجزنا | Delivery Marketplace Platform
+## Engezna - إنجزنا | Local Marketplace Platform
 
 **Version:** 6.1 (Production Ready)
 **Last Updated:** January 13, 2026 (Session 27)
@@ -13,9 +13,9 @@
 
 ## 📋 Executive Summary
 
-**Engezna (إنجزنا)** is a B2C delivery marketplace platform designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers, enabling fast and reliable delivery in underserved markets.
+**Engezna (إنجزنا)** is a B2C local marketplace platform for daily home needs, designed to serve all of Egypt, starting from Upper Egypt governorates. The platform connects local stores (restaurants, supermarkets, groceries, pharmacies, and more) with customers in underserved markets. Delivery is always the merchant's responsibility — Engezna does not provide delivery services.
 
-**Mission:** To bring modern delivery services to all Egyptian governorates,
+**Mission:** To bring a modern local marketplace to all Egyptian governorates,
 starting from secondary cities (beginning with Beni Suef) and expanding to reach
 Cairo, Giza, Alexandria, and North Coast as the final phase – while supporting
 local businesses and creating economic opportunities through fair, transparent pricing.
@@ -577,15 +577,15 @@ local businesses and creating economic opportunities through fair, transparent p
 
 ### **Problem Statement**
 
-Egyptian governorates outside major cities lack modern delivery infrastructure. Existing national platforms (Talabat, Noon) don't serve these regions adequately with their high 15-20% commission rates, leaving a gap for:
+Egyptian governorates outside major cities lack modern digital marketplace infrastructure. Existing national platforms (Talabat, Noon) don't serve these regions adequately with their high 15-20% commission rates, leaving a gap for:
 
-- Customers who want convenient delivery services
+- Customers who want easy access to local stores and their products
 - Local stores seeking online presence and affordable platform fees
 - Local economy needing digital transformation
 
 ### **Solution**
 
-A localized, bilingual (Arabic/English) delivery marketplace that:
+A localized, bilingual (Arabic/English) local marketplace platform that:
 
 - Connects customers with local stores (restaurants, supermarkets, groceries, pharmacies, and more)
 - **Providers use their existing delivery staff** (no driver app needed)
@@ -594,7 +594,7 @@ A localized, bilingual (Arabic/English) delivery marketplace that:
 - Offers simple, transparent pricing
 - Keeps providers' existing operations intact
 
-**Key Differentiator:** By letting providers manage their own delivery (which most already have), we offer the lowest commission in the market while maintaining simplicity.
+**Key Differentiator:** Merchants handle their own delivery (which most already have). Engezna is a marketplace, not a delivery service — this allows us to offer the lowest commission in the market while maintaining simplicity.
 
 ### **Success Metrics**
 
@@ -1762,15 +1762,15 @@ reviews (
    - Qena
 
 2. **Regional Hub:**
-   - Establish Engezna as the food delivery leader in Upper Egypt
+   - Establish Engezna as the leading local marketplace in Upper Egypt
    - 10+ cities covered
    - 500+ partner restaurants
 
 ### **Product Expansion**
 
-1. **Engezna Groceries** - Full supermarket delivery
+1. **Engezna Groceries** - Full supermarket marketplace
 2. **Engezna Pharmacy** - Medicine and health products
-3. **Engezna Express** - Package delivery service
+3. **Engezna Express** - Express ordering service
 4. **Engezna Business** - B2B catering and supplies
 
 ### **Technology Innovation**
@@ -1818,7 +1818,7 @@ reviews (
 
 ### **Long-term Success (Year 3)**
 
-- 🎯 Market leader in Upper Egypt food delivery
+- 🎯 Market leader in Upper Egypt local marketplace
 - 🎯 10,000+ monthly active users
 - 🎯 50,000+ orders per month
 - 🎯 2.5M+ EGP monthly revenue

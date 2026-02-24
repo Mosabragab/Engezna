@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Initial Database Schema for Engezna (إنجزنا)
--- Food Delivery Platform - Beni Suef, Egypt
+-- Local Marketplace Platform - Beni Suef, Egypt
 -- ============================================================================
 -- Version: 1.0
 -- Created: 2025-01-22

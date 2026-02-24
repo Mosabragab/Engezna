@@ -435,7 +435,7 @@
 | #   | المشكلة           | الخطأ (STORE_LISTINGS القديم)      | الصحيح (من البراندينج)                                                                      |
 | --- | ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
 | 1   | اسم التطبيق       | "إنجزنا - توصيل طلبات وأكل"        | **"إنجزنا"** فقط                                                                            |
-| 2   | التوصيف           | "تطبيق توصيل الطلبات الأول في مصر" | **"أول تطبيق بيخدم المحافظات"**                                                             |
+| 2   | التوصيف           | "تطبيق توصيل الطلبات الأول في مصر" | **"أول منصة لاحتياجات البيت بتخدم المحافظات"**                                              |
 | 3   | الأقسام           | "متاجر ومطاعم" فقط                 | **6 أقسام:** المطاعم، الصيدليات، السوبر ماركت، الخضراوات والفاكهه، البن والحلويات، أكل بيتي |
 | 4   | Brand Voice       | فصحى رسمية                         | **عامية مصرية** بسيطة                                                                       |
 | 5   | المميزات          | غير مذكورة                         | **Custom Pricing، Triple Broadcast، 0% عمولة عملاء، السائق بتاع التاجر**                    |
@@ -461,7 +461,7 @@
 ```
 عايز تطلب؟ إنجزنا! 💙
 
-إنجزنا هو أول تطبيق توصيل مصري بيخدم المحافظات.
+إنجزنا هو أول منصة مصرية لاحتياجات البيت اليومية بتخدم المحافظات.
 بدل ما تفضل على التليفون والخط مشغول، اطلب من موبايلك في ثانية.
 
 محلات بلدك كلها في مكان واحد:
@@ -514,7 +514,7 @@ Order from local stores in your city. Restaurants, pharmacies, supermarkets!
 ```
 Want to order? Engezna! 💙
 
-Engezna is Egypt's first delivery app serving the governorates.
+Engezna is Egypt's first local marketplace for daily home needs, serving the governorates.
 No more busy phone lines - order from your phone in seconds.
 
 All your local stores in one place:
@@ -641,8 +641,8 @@ delivery,food,pharmacy,grocery,stores,Egypt,local,orders,compare,engezna,fast
 ```
 Thank you for reviewing Engezna!
 
-Engezna is a local delivery platform connecting customers with
-restaurants and grocery stores in Egypt.
+Engezna is a local marketplace connecting customers with
+restaurants and grocery stores in Egypt. Delivery is handled by merchants.
 
 DEMO ACCOUNT:
 - Email: reviewer@engezna.com

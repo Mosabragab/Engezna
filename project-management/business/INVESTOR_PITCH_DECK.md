@@ -1,7 +1,7 @@
 # Investor Pitch Deck | عرض المستثمرين
 
 **إنجزنا - Engezna**
-**Delivery Marketplace for Egypt's Underserved Markets**
+**Local Marketplace for Egypt's Underserved Markets**
 
 ---
 
@@ -14,8 +14,8 @@
 │                         إنجزنا                                  │
 │                        ENGEZNA                                  │
 │                                                                 │
-│           سوق التوصيل الأول للمحافظات المصرية                   │
-│       Egypt's First Delivery Marketplace for Governorates       │
+│      أول منصة لاحتياجات البيت للمحافظات المصرية                 │
+│       Egypt's First Local Marketplace for Governorates          │
 │                                                                 │
 │                                                                 │
 │                     يناير 2026                                  │

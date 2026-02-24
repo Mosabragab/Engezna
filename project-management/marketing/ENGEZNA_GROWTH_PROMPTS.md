@@ -14,7 +14,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 
 **Key Context for All Prompts:**
 
-- **Product:** Food & grocery delivery platform (app-based ordering replacing phone calls)
+- **Product:** Local marketplace for daily home needs (app-based ordering replacing phone calls)
 - **Target Market:** All Egyptian governorates with **phased expansion strategy**
   - **Phase 1-2 (الأولوية):** Secondary cities and governorates (المحافظات الثانوية)
   - **Phase 3-4 (المرحلة النهائية):** Cairo, Giza, Alexandria, North Coast
@@ -43,7 +43,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 ```
 أنت خبير تسويق متخصص في أسواق الشرق الأوسط وشمال أفريقيا.
 
-أنشئ ملف عميل مثالي (ICP) تفصيلي لـ Engezna - منصة توصيل محلية تستهدف التجار في جميع محافظات مصر.
+أنشئ ملف عميل مثالي (ICP) تفصيلي لـ Engezna - منصة محلية لاحتياجات البيت اليومية تستهدف التجار في جميع محافظات مصر.
 
 **استراتيجية التوسع المرحلية:**
 - **المرحلة الأولى (الآن):** المحافظات الثانوية (بني سويف، المنيا، أسيوط، الفيوم، سوهاج، قنا، الأقصر، أسوان، الشرقية، الدقهلية، كفر الشيخ، الغربية، المنوفية، البحيرة، دمياط، بورسعيد، الإسماعيلية، السويس، شمال وجنوب سيناء، البحر الأحمر، الوادي الجديد، مطروح)
