@@ -9,11 +9,23 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
 };
 
+// Check if Firebase is properly configured (required env vars are set)
+function isFirebaseConfigured(): boolean {
+  return !!(firebaseConfig.projectId && firebaseConfig.apiKey && firebaseConfig.appId);
+}
+
 // Firebase app instance (lazy loaded)
 let firebaseApp: import('firebase/app').FirebaseApp | null = null;
 
 // Get Firebase app (lazy loads Firebase SDK)
-export async function getFirebaseApp(): Promise<import('firebase/app').FirebaseApp> {
+export async function getFirebaseApp(): Promise<import('firebase/app').FirebaseApp | null> {
+  if (!isFirebaseConfigured()) {
+    console.warn(
+      'Firebase not configured: missing required environment variables (NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_APP_ID)'
+    );
+    return null;
+  }
+
   if (!firebaseApp) {
     const { initializeApp, getApps } = await import('firebase/app');
     firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
@@ -31,6 +43,10 @@ export async function getFirebaseMessaging(): Promise<
     return null;
   }
 
+  if (!isFirebaseConfigured()) {
+    return null;
+  }
+
   // Dynamic import Firebase Messaging
   const { getMessaging, isSupported } = await import('firebase/messaging');
 
@@ -43,6 +59,7 @@ export async function getFirebaseMessaging(): Promise<
 
   if (!messagingInstance) {
     const app = await getFirebaseApp();
+    if (!app) return null;
     messagingInstance = getMessaging(app);
   }
 
