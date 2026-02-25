@@ -742,7 +742,9 @@ export function OffersCarousel({
           <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse" />
         </div>
         {/* Skeleton matches final layout: mobile shows scroll container, desktop shows grid */}
-        <div className={isDesktop ? 'grid grid-cols-3 gap-4' : 'flex gap-4 overflow-hidden -mx-4 px-4'}>
+        <div
+          className={isDesktop ? 'grid grid-cols-3 gap-4' : 'flex gap-4 overflow-hidden -mx-4 px-4'}
+        >
           {[1, 2, 3].map((i) => (
             <div
               key={i}

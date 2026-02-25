@@ -89,9 +89,7 @@ export const CustomerHeader = memo(function CustomerHeader({
       // so we don't need to query profiles+governorates+cities tables here.
       // This eliminates redundant profile queries with joins on every header mount.
       if (guestLocation.cityName) {
-        setCurrentLocation(
-          locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en
-        );
+        setCurrentLocation(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en);
       } else if (guestLocation.governorateName) {
         setCurrentLocation(
           locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en
