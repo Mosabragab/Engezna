@@ -381,82 +381,84 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Email Button / Form */}
-          {!showEmailForm ? (
-            <button
-              type="button"
-              onClick={() => setShowEmailForm(true)}
-              disabled={isLoading}
-              className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
-            >
-              <Mail className="w-5 h-5" />
-              <span>{locale === 'ar' ? 'الدخول عبر الإيميل' : 'Continue with Email'}</span>
-            </button>
-          ) : (
-            <form onSubmit={handleEmailLogin} className="space-y-3">
-              {/* Email Input */}
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
-                disabled={isEmailLoading}
-                className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
-                autoFocus
-              />
-
-              {/* Password Input */}
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
-                  disabled={isEmailLoading}
-                  className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={
-                    showPassword
-                      ? isRTL
-                        ? 'إخفاء كلمة المرور'
-                        : 'Hide password'
-                      : isRTL
-                        ? 'إظهار كلمة المرور'
-                        : 'Show password'
-                  }
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-500 hover:text-slate-700`}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-
-              {/* Forgot Password Link */}
-              <div className="text-end">
-                <Link
-                  href={`/${locale}/auth/forgot-password`}
-                  className="text-sm text-primary-dark hover:underline"
-                >
-                  {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
-                </Link>
-              </div>
-
-              {/* Submit Button */}
+          {/* Email Button / Form - min-height prevents CLS when toggling */}
+          <div className="min-h-[52px]">
+            {!showEmailForm ? (
               <button
-                type="submit"
-                disabled={isEmailLoading || !email || !password}
+                type="button"
+                onClick={() => setShowEmailForm(true)}
+                disabled={isLoading}
                 className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
               >
-                {isEmailLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span>
-                )}
+                <Mail className="w-5 h-5" />
+                <span>{locale === 'ar' ? 'الدخول عبر الإيميل' : 'Continue with Email'}</span>
               </button>
-            </form>
-          )}
+            ) : (
+              <form onSubmit={handleEmailLogin} className="space-y-3">
+                {/* Email Input */}
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={locale === 'ar' ? 'أدخل الإيميل' : 'Enter your email'}
+                  disabled={isEmailLoading}
+                  className={`w-full h-[52px] px-4 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                  autoFocus
+                />
+
+                {/* Password Input */}
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={locale === 'ar' ? 'كلمة المرور' : 'Password'}
+                    disabled={isEmailLoading}
+                    className={`w-full h-[52px] px-4 pe-12 bg-white border border-slate-300 rounded-xl text-[#0F172A] placeholder:text-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all disabled:opacity-50 ${isRTL ? 'text-right' : 'text-left'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword
+                        ? isRTL
+                          ? 'إخفاء كلمة المرور'
+                          : 'Hide password'
+                        : isRTL
+                          ? 'إظهار كلمة المرور'
+                          : 'Show password'
+                    }
+                    className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} text-slate-500 hover:text-slate-700`}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+
+                {/* Forgot Password Link */}
+                <div className="text-end">
+                  <Link
+                    href={`/${locale}/auth/forgot-password`}
+                    className="text-sm text-primary-dark hover:underline"
+                  >
+                    {locale === 'ar' ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+                  </Link>
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={isEmailLoading || !email || !password}
+                  className="w-full h-[52px] flex items-center justify-center gap-3 bg-primary border border-primary rounded-xl text-white font-medium transition-all hover:bg-primary/90 hover:border-primary/90 active:scale-[0.98] disabled:opacity-50"
+                >
+                  {isEmailLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <span>{locale === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
         {/* Create Account Link */}

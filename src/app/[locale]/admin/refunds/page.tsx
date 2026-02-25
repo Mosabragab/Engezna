@@ -173,7 +173,31 @@ export default function AdminRefundsPage() {
         .from('refunds')
         .select(
           `
-          *,
+          id,
+          order_id,
+          customer_id,
+          provider_id,
+          amount,
+          reason,
+          reason_ar,
+          status,
+          refund_method,
+          refund_type,
+          provider_action,
+          customer_confirmed,
+          confirmation_deadline,
+          escalated_to_admin,
+          escalation_reason,
+          provider_notes,
+          processed_amount,
+          processing_notes,
+          request_source,
+          reviewed_by,
+          reviewed_at,
+          review_notes,
+          processed_by,
+          processed_at,
+          created_at,
           order:orders(order_number, total),
           customer:profiles!customer_id(full_name, phone),
           provider:providers(name_ar, name_en, governorate_id)
@@ -186,7 +210,7 @@ export default function AdminRefundsPage() {
         return;
       }
 
-      setRefunds(data || []);
+      setRefunds((data as unknown as Refund[]) || []);
 
       // Calculate stats
       const pending = (data || []).filter((r) => r.status === 'pending').length;

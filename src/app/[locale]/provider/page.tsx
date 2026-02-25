@@ -233,13 +233,13 @@ export default function ProviderDashboard() {
         // Count unread messages from customers
         supabase
           .from('order_messages')
-          .select('id, orders!inner(provider_id)')
+          .select('id, order_id, orders!inner(provider_id)')
           .eq('sender_type', 'customer')
           .eq('is_read', false),
         // Count pending refunds for this provider
         supabase
           .from('refunds')
-          .select('*', { count: 'exact', head: true })
+          .select('id', { count: 'exact', head: true })
           .eq('provider_id', providerId)
           .eq('status', 'pending')
           .eq('provider_action', 'pending'),
