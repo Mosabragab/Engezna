@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -121,29 +121,16 @@ export default function ProviderComplaintsPage() {
     (t) => t.status === 'resolved' || t.status === 'closed'
   ).length;
 
+  // Poll for ticket updates instead of Realtime (reduces WAL pressure)
   useEffect(() => {
     loadData();
 
-    // Set up realtime subscription
-    const supabase = createClient();
-    const subscription = supabase
-      .channel('provider_tickets_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'support_tickets' }, () =>
-        loadData()
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'ticket_messages' },
-        () => {
-          if (selectedTicket) {
-            loadTicketMessages(selectedTicket.id);
-          }
-        }
-      )
-      .subscribe();
+    const pollInterval = setInterval(() => {
+      loadData();
+    }, 30000); // Poll every 30 seconds
 
     return () => {
-      subscription.unsubscribe();
+      clearInterval(pollInterval);
     };
   }, []);
 

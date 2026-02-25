@@ -231,7 +231,7 @@ export function useNotifications() {
           callback: async () => {
             await loadNotifications(userId, true);
           },
-          intervalMs: 10000, // Poll every 10 seconds when realtime fails
+          intervalMs: 30000, // Poll every 30 seconds when realtime fails
         },
         maxRetries: 3,
         retryDelayMs: 2000,

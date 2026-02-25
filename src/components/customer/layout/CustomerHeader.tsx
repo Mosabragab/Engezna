@@ -84,53 +84,16 @@ export const CustomerHeader = memo(function CustomerHeader({
       } = await supabase.auth.getUser();
       setUser(user);
 
-      if (user) {
-        // Logged-in user - get location from profile
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select(
-              `
-              governorate_id,
-              city_id,
-              governorates:governorate_id (name_ar, name_en),
-              cities:city_id (name_ar, name_en)
-            `
-            )
-            .eq('id', user.id)
-            .single();
-
-          if (!error && profile) {
-            // Supabase returns joined data as the object directly
-            const govData = profile.governorates as unknown as {
-              name_ar: string;
-              name_en: string;
-            } | null;
-            const cityData = profile.cities as unknown as {
-              name_ar: string;
-              name_en: string;
-            } | null;
-
-            if (cityData && cityData.name_ar) {
-              setCurrentLocation(locale === 'ar' ? cityData.name_ar : cityData.name_en);
-            } else if (govData && govData.name_ar) {
-              setCurrentLocation(locale === 'ar' ? govData.name_ar : govData.name_en);
-            }
-          }
-        } catch {
-          // Error handled silently
-        }
-      } else {
-        // Guest user - get location from localStorage
-        if (guestLocation.cityName) {
-          setCurrentLocation(
-            locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en
-          );
-        } else if (guestLocation.governorateName) {
-          setCurrentLocation(
-            locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en
-          );
-        }
+      // For both logged-in and guest users, use guest storage for location display
+      // LocationContext already syncs profile location to guest storage,
+      // so we don't need to query profiles+governorates+cities tables here.
+      // This eliminates redundant profile queries with joins on every header mount.
+      if (guestLocation.cityName) {
+        setCurrentLocation(locale === 'ar' ? guestLocation.cityName.ar : guestLocation.cityName.en);
+      } else if (guestLocation.governorateName) {
+        setCurrentLocation(
+          locale === 'ar' ? guestLocation.governorateName.ar : guestLocation.governorateName.en
+        );
       }
     } catch {
       // Error handled silently
@@ -296,8 +259,9 @@ export const CustomerHeader = memo(function CustomerHeader({
   }
 
   // Display text for location button
+  // Use non-breaking space placeholder during loading to prevent CLS
   const locationDisplayText = locationLoading
-    ? '...'
+    ? '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'
     : currentLocation || (locale === 'ar' ? 'اختر موقعك' : 'Select location');
 
   // Get recent notifications (last 5)
@@ -314,9 +278,9 @@ export const CustomerHeader = memo(function CustomerHeader({
             {!title ? (
               <button
                 onClick={() => router.push(`/${locale}/profile/governorate`)}
-                className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98]"
+                className="group flex items-center gap-1.5 rounded-xl px-2 py-1.5 transition-all duration-200 hover:bg-slate-100 active:scale-[0.98] min-w-[120px]"
               >
-                <MapPin className="h-5 w-5 text-primary" />
+                <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
                 <span className="font-medium max-w-[100px] truncate text-sm text-slate-700">
                   {locationDisplayText}
                 </span>

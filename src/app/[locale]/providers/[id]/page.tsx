@@ -8,9 +8,10 @@ import ProviderDetailClient, {
   type MenuCategory,
 } from './ProviderDetailClient';
 
-// ISR: Revalidate every 60 seconds for fresh data
-// Provider details (menu, reviews) change more frequently
-export const revalidate = 60;
+// ISR: Revalidate every 5 minutes for fresh data
+// Menu/reviews don't change frequently enough to justify 60s revalidation
+// which was causing excessive database queries across all cached provider pages
+export const revalidate = 300;
 
 // Generate metadata for SEO
 export async function generateMetadata({

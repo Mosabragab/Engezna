@@ -236,33 +236,17 @@ export function useStaffPermissions(): UseStaffPermissionsReturn {
     fetchPermissions();
   }, [fetchPermissions]);
 
-  // Subscribe to realtime changes in provider_staff
+  // Poll for staff permission changes (instead of Realtime to reduce WAL pressure)
+  // Staff permissions rarely change, so 5-minute polling is sufficient
   useEffect(() => {
     if (!permissions.userId) return;
 
-    const supabase = createClient();
-
-    const channel = supabase
-      .channel(`staff-permissions-${permissions.userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'provider_staff',
-          filter: `user_id=eq.${permissions.userId}`,
-        },
-        (payload) => {
-          // If staff record was updated or deleted, refetch permissions
-          if (payload.eventType === 'UPDATE' || payload.eventType === 'DELETE') {
-            fetchPermissions();
-          }
-        }
-      )
-      .subscribe();
+    const pollInterval = setInterval(() => {
+      fetchPermissions();
+    }, 300000); // 5 minutes
 
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
   }, [permissions.userId, fetchPermissions]);
 

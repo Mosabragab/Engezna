@@ -317,41 +317,46 @@ export async function updateSession(request: NextRequest) {
   // ============================================================================
   // ROLE-BASED ACCESS CONTROL (RBAC)
   // ============================================================================
-  // If user is authenticated, check their role for admin/provider routes
+  // Only query profiles table for admin and provider routes (not customer routes)
+  // This eliminates ~366K unnecessary sequential scans on the profiles table
   if (user && !isPublicRoute && isProtectedRoute) {
-    // Get user role from profiles table
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    const userRole: UserRole | null = profile?.role as UserRole | null;
-
-    // Check admin routes - only 'admin' role allowed
-    if (pathWithoutLocale.startsWith('/admin') && !pathWithoutLocale.startsWith('/admin/login')) {
-      if (userRole !== 'admin') {
-        console.warn(
-          `[RBAC] User ${user.id} with role '${userRole}' tried to access admin route: ${pathname}`
-        );
-        return createRedirect(`/${locale}/admin/login`);
-      }
-    }
-
-    // Check provider dashboard routes - only 'provider_owner' and 'provider_staff' allowed
-    // NOTE: /providers (public list) is NOT protected, only /provider (dashboard) is
+    const isAdminAccessCheck =
+      pathWithoutLocale.startsWith('/admin') && !pathWithoutLocale.startsWith('/admin/login');
     const isProviderDashboard =
       pathWithoutLocale === '/provider' || pathWithoutLocale.startsWith('/provider/');
     const isProviderPublicPage =
       pathWithoutLocale.startsWith('/provider/login') ||
       pathWithoutLocale.startsWith('/provider/register');
+    const needsProviderCheck = isProviderDashboard && !isProviderPublicPage;
 
-    if (isProviderDashboard && !isProviderPublicPage) {
-      if (userRole !== 'provider_owner' && userRole !== 'provider_staff') {
-        console.warn(
-          `[RBAC] User ${user.id} with role '${userRole}' tried to access provider route: ${pathname}`
-        );
-        return createRedirect(`/${locale}/provider/login`);
+    // Only query the profiles table when accessing admin or provider routes
+    if (isAdminAccessCheck || needsProviderCheck) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      const userRole: UserRole | null = profile?.role as UserRole | null;
+
+      // Check admin routes - only 'admin' role allowed
+      if (isAdminAccessCheck) {
+        if (userRole !== 'admin') {
+          console.warn(
+            `[RBAC] User ${user.id} with role '${userRole}' tried to access admin route: ${pathname}`
+          );
+          return createRedirect(`/${locale}/admin/login`);
+        }
+      }
+
+      // Check provider dashboard routes - only 'provider_owner' and 'provider_staff' allowed
+      if (needsProviderCheck) {
+        if (userRole !== 'provider_owner' && userRole !== 'provider_staff') {
+          console.warn(
+            `[RBAC] User ${user.id} with role '${userRole}' tried to access provider route: ${pathname}`
+          );
+          return createRedirect(`/${locale}/provider/login`);
+        }
       }
     }
   }
