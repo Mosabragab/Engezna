@@ -102,9 +102,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
         'max-snippet': -1,
       },
     },
-    // Alternate language versions
+    // Alternate language versions (canonical set per-page, not here)
     alternates: {
-      canonical: `https://www.engezna.com/${locale}`,
       languages: {
         ar: 'https://www.engezna.com/ar',
         en: 'https://www.engezna.com/en',
