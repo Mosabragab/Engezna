@@ -179,7 +179,7 @@ export default function ProviderRefundsPage() {
 
     if (refundsData) {
       setRefunds(
-        refundsData.map((r) => ({
+        (refundsData as unknown as Refund[]).map((r) => ({
           ...r,
           order: r.order as Refund['order'],
           customer: r.customer as Refund['customer'],

@@ -210,7 +210,7 @@ export default function AdminRefundsPage() {
         return;
       }
 
-      setRefunds(data || []);
+      setRefunds((data as Refund[]) || []);
 
       // Calculate stats
       const pending = (data || []).filter((r) => r.status === 'pending').length;
