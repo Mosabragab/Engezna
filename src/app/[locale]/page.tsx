@@ -481,7 +481,7 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <CustomerLayout showHeader={false} showBottomNav={false}>
+      <CustomerLayout showHeader={true} showBottomNav={true}>
         <div className="min-h-screen">
           {/* Skeleton hero */}
           <div className="px-4 pt-12 pb-6">
@@ -514,7 +514,7 @@ export default function HomePage() {
   // If no location after loading, the useEffect will redirect - show loading in meantime
   if (!userLocation.governorateId) {
     return (
-      <CustomerLayout showHeader={false} showBottomNav={false}>
+      <CustomerLayout showHeader={true} showBottomNav={true}>
         <div className="min-h-screen flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>

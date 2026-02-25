@@ -155,7 +155,21 @@ export default function ProviderRefundsPage() {
       .from('refunds')
       .select(
         `
-        *,
+        id,
+        order_id,
+        customer_id,
+        amount,
+        reason,
+        reason_ar,
+        issue_type,
+        status,
+        provider_action,
+        customer_confirmed,
+        confirmation_deadline,
+        evidence_images,
+        metadata,
+        refund_type,
+        created_at,
         order:orders(order_number, total, delivery_address),
         customer:profiles!customer_id(full_name, phone)
       `

@@ -158,7 +158,7 @@ export default function NotificationsPage() {
     }
   };
 
-  // Loading state
+  // Loading state - skeleton matches notification card layout to prevent CLS
   if (isLoading) {
     return (
       <CustomerLayout
@@ -166,8 +166,20 @@ export default function NotificationsPage() {
         showBackButton={false}
         showBottomNav={true}
       >
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="px-4 py-4 space-y-3">
+          <div className="h-7 w-32 bg-slate-100 rounded animate-pulse mb-4" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-slate-100 p-4">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-slate-100 animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-3/4 bg-slate-100 rounded animate-pulse" />
+                  <div className="h-3 w-full bg-slate-100 rounded animate-pulse" />
+                  <div className="h-3 w-1/3 bg-slate-100 rounded animate-pulse" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </CustomerLayout>
     );

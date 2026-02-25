@@ -295,8 +295,23 @@ export default function AdminLoginPage() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#009DE0] border-t-transparent"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <div className="h-12 w-40 bg-slate-200 rounded animate-pulse mx-auto" />
+            <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mx-auto mt-2" />
+          </div>
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+            <div className="bg-gradient-to-r from-[#009DE0]/20 to-[#0080b8]/10 px-6 py-5">
+              <div className="h-6 w-32 bg-white/30 rounded animate-pulse" />
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="h-12 bg-[#009DE0]/20 rounded-xl animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
