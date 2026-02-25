@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { Button } from '@/components/ui/button';
-import { Footer } from '@/components/shared/Footer';
-import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { WelcomeClientWrapper } from '@/components/welcome/WelcomeClientWrapper';
 import { GovernoratesList } from '@/components/welcome/GovernoratesList';
 import { useSDUI } from '@/hooks/sdui';
+
+// Lazy load below-fold components
+const Footer = dynamic(() => import('@/components/shared/Footer').then((mod) => mod.Footer));
+const InstallPrompt = dynamic(
+  () => import('@/components/pwa/InstallPrompt').then((mod) => mod.InstallPrompt),
+  { ssr: false }
+);
 import {
   ListChecks,
   Star,
@@ -233,12 +239,11 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
               </h2>
 
               <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
-                {categories.map((category, index) => (
+                {categories.map((category) => (
                   <Link
                     key={category.id}
                     href={`/${locale}/profile/governorate`}
-                    className="flex flex-col items-center p-4 text-center animate-slide-up opacity-0"
-                    style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
+                    className="flex flex-col items-center p-4 text-center"
                   >
                     <div
                       className="w-20 h-20 md:w-24 md:h-24 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 hover:scale-105 hover:-translate-y-1 shadow-elegant hover:shadow-elegant-lg"

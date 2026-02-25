@@ -703,13 +703,17 @@ export function useSDUI(options: UseSDUIOptions = {}) {
         }
       }
     } catch (error: any) {
-      console.error('SDUI fetch error:', error);
+      // Suppress known type-casting errors (42883) - fallback to defaults silently
+      const isTypeCastError = error?.code === '42883' || error?.code === 'PGRST202';
+      if (!isTypeCastError) {
+        console.error('SDUI fetch error:', error);
+      }
 
       if (mounted.current) {
         setState((prev) => ({
           ...prev,
           isLoading: false,
-          error: error.message || 'Failed to load sections',
+          error: isTypeCastError ? null : error.message || 'Failed to load sections',
         }));
       }
     } finally {

@@ -59,8 +59,8 @@ class NotificationAudioManager {
     document.addEventListener('keydown', unlockHandler, { passive: true });
     this.listenerAttached = true;
 
-    // Pre-load audio elements
-    this.preload();
+    // Defer audio preloading to avoid AudioContext autoplay warning.
+    // Audio elements are preloaded after a short delay or on first user interaction.
   }
 
   /**
@@ -71,7 +71,7 @@ class NotificationAudioManager {
     if (this.unlocked) return;
 
     try {
-      // Create or resume AudioContext
+      // Create or resume AudioContext (only on user interaction, avoids autoplay warning)
       if (!this.audioContext) {
         this.audioContext = new (
           window.AudioContext ||
@@ -90,7 +90,10 @@ class NotificationAudioManager {
       source.connect(this.audioContext.destination);
       source.start(0);
 
-      // Also "warm up" each audio element with a silent play
+      // Pre-load audio elements now that user has interacted
+      this.preload();
+
+      // "Warm up" each audio element with a silent play
       this.audioElements.forEach((audio) => {
         audio.volume = 0;
         audio
