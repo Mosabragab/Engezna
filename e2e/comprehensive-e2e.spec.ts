@@ -265,7 +265,9 @@ test.describe('Phase 1: Customer Journey', () => {
         ).toBeTruthy();
       } else {
         // Redirected to cart or providers (empty cart)
-        expect(url.includes('/cart') || url.includes('/providers') || content.length > 50).toBeTruthy();
+        expect(
+          url.includes('/cart') || url.includes('/providers') || content.length > 50
+        ).toBeTruthy();
       }
     });
 
