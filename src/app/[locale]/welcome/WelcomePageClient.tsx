@@ -175,7 +175,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
 
   return (
     <WelcomeClientWrapper>
-      <div className="min-h-screen bg-white">
+      <main className="min-h-screen bg-white">
         {/* Hero Section - SDUI Controlled */}
         {isSectionVisible('welcome_hero') && (
           <section className="relative bg-gradient-to-b from-[#E0F4FF] via-[#F0FAFF] to-white overflow-hidden">
@@ -439,7 +439,7 @@ export function WelcomePageClient({ locale }: WelcomePageClientProps) {
 
         {/* PWA Install Prompt */}
         <InstallPrompt />
-      </div>
+      </main>
     </WelcomeClientWrapper>
   );
 }

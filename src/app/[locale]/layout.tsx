@@ -26,7 +26,8 @@ export const viewport: Viewport = {
   themeColor: '#0F172A',
 };
 
-export function generateMetadata() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   return {
     // SEO: Include both Arabic variations (with/without hamza) for better search coverage
     title: 'إنجزنا | احتياجات بيتك اليومية',
@@ -103,7 +104,7 @@ export function generateMetadata() {
     },
     // Alternate language versions
     alternates: {
-      canonical: 'https://www.engezna.com',
+      canonical: `https://www.engezna.com/${locale}`,
       languages: {
         ar: 'https://www.engezna.com/ar',
         en: 'https://www.engezna.com/en',
@@ -139,8 +140,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
         {/* Preconnect to external resources for faster loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Note: Google Fonts preconnects removed - fonts loaded via next/font/google */}
         <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         {/* Preconnect to Supabase storage for faster image loading */}

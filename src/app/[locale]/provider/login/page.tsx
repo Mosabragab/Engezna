@@ -206,7 +206,7 @@ export default function ProviderLoginPage() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="h-12 w-40 bg-slate-200 rounded animate-pulse mx-auto" />
@@ -214,21 +214,33 @@ export default function ProviderLoginPage() {
           </div>
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
             <div className="bg-gradient-to-r from-primary/20 to-primary/10 px-6 py-5">
-              <div className="h-6 w-32 bg-white/30 rounded animate-pulse" />
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/30 rounded-xl animate-pulse" />
+                <div>
+                  <div className="h-6 w-32 bg-white/30 rounded animate-pulse" />
+                  <div className="h-4 w-48 bg-white/20 rounded animate-pulse mt-1" />
+                </div>
+              </div>
             </div>
-            <div className="p-6 space-y-4">
-              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
-              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <div className="h-4 w-20 bg-slate-100 rounded animate-pulse" />
+                <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-24 bg-slate-100 rounded animate-pulse" />
+                <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              </div>
               <div className="h-12 bg-primary/20 rounded-xl animate-pulse" />
             </div>
           </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -380,6 +392,6 @@ export default function ProviderLoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
