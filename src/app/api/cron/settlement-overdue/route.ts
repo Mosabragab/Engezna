@@ -12,6 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSettlementOverdueEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
+import { withErrorHandler } from '@/lib/api/error-handler';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -216,38 +217,40 @@ async function processOverdueSettlements(): Promise<OverdueResult> {
 // API Route Handlers
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function GET(request: NextRequest): Promise<NextResponse<OverdueResult>> {
-  if (!verifyCronSecret(request)) {
-    return NextResponse.json(
-      {
-        success: false,
-        timestamp: new Date().toISOString(),
-        overdueFound: 0,
-        emailsSent: 0,
-        statusUpdated: 0,
-        errors: ['Unauthorized: Invalid or missing CRON_SECRET'],
-      },
-      { status: 401 }
-    );
+export const GET = withErrorHandler(
+  async (request: NextRequest): Promise<NextResponse<OverdueResult>> => {
+    if (!verifyCronSecret(request)) {
+      return NextResponse.json(
+        {
+          success: false,
+          timestamp: new Date().toISOString(),
+          overdueFound: 0,
+          emailsSent: 0,
+          statusUpdated: 0,
+          errors: ['Unauthorized: Invalid or missing CRON_SECRET'],
+        },
+        { status: 401 }
+      );
+    }
+
+    logger.info('[Overdue Cron] Starting overdue settlement check...');
+
+    const result = await processOverdueSettlements();
+
+    if (result.success) {
+      logger.info(
+        `[Overdue Cron] Completed: ${result.overdueFound} overdue found, ${result.statusUpdated} updated, ${result.emailsSent} emails sent`
+      );
+    } else {
+      logger.error('[Overdue Cron] Failed with errors', { error: result.errors });
+    }
+
+    return NextResponse.json(result, {
+      status: result.success ? 200 : 500,
+    });
   }
+);
 
-  logger.info('[Overdue Cron] Starting overdue settlement check...');
-
-  const result = await processOverdueSettlements();
-
-  if (result.success) {
-    logger.info(
-      `[Overdue Cron] Completed: ${result.overdueFound} overdue found, ${result.statusUpdated} updated, ${result.emailsSent} emails sent`
-    );
-  } else {
-    logger.error('[Overdue Cron] Failed with errors', { error: result.errors });
-  }
-
-  return NextResponse.json(result, {
-    status: result.success ? 200 : 500,
-  });
-}
-
-export async function POST(request: NextRequest): Promise<NextResponse<OverdueResult>> {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   return GET(request);
-}
+});

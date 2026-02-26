@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withErrorHandler } from '@/lib/api/error-handler';
 
 /**
  * App Version Check API
@@ -12,7 +13,7 @@ import { NextResponse } from 'next/server';
  * - updateUrl.android: Google Play Store URL
  * - updateUrl.ios: Apple App Store URL
  */
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   return NextResponse.json({
     latestVersion: '1.0.0',
     minimumVersion: '1.0.0',
@@ -21,4 +22,4 @@ export async function GET() {
       ios: 'https://apps.apple.com/app/engezna/id0000000000',
     },
   });
-}
+});

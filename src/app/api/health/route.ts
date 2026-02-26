@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { withErrorHandler } from '@/lib/api/error-handler';
 
 /**
  * Health Check API Endpoint
@@ -177,7 +178,7 @@ async function getQuotaStatus(): Promise<QuotaStatus> {
  * - Detailed: GET /api/health?detailed=true
  * - With quotas: GET /api/health?quotas=true
  */
-export async function GET(request: Request): Promise<NextResponse> {
+export const GET = withErrorHandler(async (request: Request): Promise<NextResponse> => {
   const { searchParams } = new URL(request.url);
   const detailed = searchParams.get('detailed') === 'true';
   const includeQuotas = searchParams.get('quotas') === 'true';
@@ -234,18 +235,18 @@ export async function GET(request: Request): Promise<NextResponse> {
       Expires: '0',
     },
   });
-}
+});
 
 /**
  * HEAD /api/health
  *
  * Lightweight health check (no body)
  */
-export async function HEAD(): Promise<NextResponse> {
+export const HEAD = withErrorHandler(async (): Promise<NextResponse> => {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'X-Health-Status': 'healthy',
     },
   });
-}
+});

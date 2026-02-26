@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { withErrorHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
 
 interface ValidateRequest {
@@ -52,76 +53,76 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse<ValidateResponse>> {
-  // Rate limiting
-  const ip =
-    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-  if (!checkRateLimit(ip)) {
-    return NextResponse.json(
-      {
-        valid: false,
-        error: 'Too many requests. Please try again later.',
-        error_code: 'RATE_LIMITED',
-      },
-      { status: 429 }
-    );
-  }
+export const POST = withErrorHandler(
+  async (request: NextRequest): Promise<NextResponse<ValidateResponse>> => {
+    // Rate limiting
+    const ip =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    if (!checkRateLimit(ip)) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'Too many requests. Please try again later.',
+          error_code: 'RATE_LIMITED',
+        },
+        { status: 429 }
+      );
+    }
 
-  // Parse request body
-  let body: ValidateRequest;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { valid: false, error: 'Invalid request body', error_code: 'INVALID_REQUEST' },
-      { status: 400 }
-    );
-  }
+    // Parse request body
+    let body: ValidateRequest;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { valid: false, error: 'Invalid request body', error_code: 'INVALID_REQUEST' },
+        { status: 400 }
+      );
+    }
 
-  const { code, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
+    const { code, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
 
-  if (!code || !provider_id || subtotal === undefined) {
-    return NextResponse.json(
-      {
-        valid: false,
-        error: 'Missing required fields: code, provider_id, subtotal',
-        error_code: 'MISSING_FIELDS',
-      },
-      { status: 400 }
-    );
-  }
+    if (!code || !provider_id || subtotal === undefined) {
+      return NextResponse.json(
+        {
+          valid: false,
+          error: 'Missing required fields: code, provider_id, subtotal',
+          error_code: 'MISSING_FIELDS',
+        },
+        { status: 400 }
+      );
+    }
 
-  // SECURITY: Get user identity from session, NOT from request body
-  // This prevents identity spoofing attacks
-  const serverSupabase = await createServerClient();
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
+    // SECURITY: Get user identity from session, NOT from request body
+    // This prevents identity spoofing attacks
+    const serverSupabase = await createServerClient();
+    const {
+      data: { user },
+    } = await serverSupabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json(
-      { valid: false, error: 'Authentication required', error_code: 'UNAUTHORIZED' },
-      { status: 401 }
-    );
-  }
+    if (!user) {
+      return NextResponse.json(
+        { valid: false, error: 'Authentication required', error_code: 'UNAUTHORIZED' },
+        { status: 401 }
+      );
+    }
 
-  const user_id = user.id;
+    const user_id = user.id;
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json(
-      { valid: false, error: 'Server configuration error', error_code: 'SERVER_ERROR' },
-      { status: 500 }
-    );
-  }
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { valid: false, error: 'Server configuration error', error_code: 'SERVER_ERROR' },
+        { status: 500 }
+      );
+    }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false },
-  });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
-  try {
     // Fetch promo code
     const { data: promoCode, error: fetchError } = await supabase
       .from('promo_codes')
@@ -280,11 +281,5 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateR
       discount_value: promoCode.discount_value,
       promo_code_id: promoCode.id,
     });
-  } catch (err) {
-    logger.error('[Promo Validate] Error validating promo code', { error: err });
-    return NextResponse.json(
-      { valid: false, error: 'Internal server error', error_code: 'SERVER_ERROR' },
-      { status: 500 }
-    );
   }
-}
+);
