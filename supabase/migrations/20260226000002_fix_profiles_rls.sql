@@ -14,6 +14,12 @@ DROP POLICY IF EXISTS "profiles_select_authenticated" ON public.profiles;
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.profiles;
 
+-- Drop our own policies too (in case of partial previous run)
+DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_provider_customers" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_staff_customers" ON public.profiles;
+
 -- 1. Users can always read their own profile
 CREATE POLICY "profiles_select_own"
   ON public.profiles
@@ -21,15 +27,13 @@ CREATE POLICY "profiles_select_own"
   USING (auth.uid() = id);
 
 -- 2. Admins can read all profiles
+-- IMPORTANT: Uses is_admin() SECURITY DEFINER function to avoid infinite recursion.
+-- A self-referential sub-query on profiles here would cause RLS recursion because
+-- evaluating this policy would trigger another evaluation of the same policy.
 CREATE POLICY "profiles_select_admin"
   ON public.profiles
   FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.role = 'admin'
-    )
-  );
+  USING (is_admin(auth.uid()));
 
 -- 3. Provider owners can read profiles of their customers (for order display)
 CREATE POLICY "profiles_select_provider_customers"
