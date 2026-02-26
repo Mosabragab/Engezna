@@ -1102,7 +1102,7 @@ export default function CheckoutPage() {
           p_estimated_delivery_time: estimatedDeliveryTime,
           p_promo_code: appliedPromoCode?.code || null,
           p_promo_code_id: appliedPromoCode?.id || null,
-          p_promo_usage_count: appliedPromoCode?.usage_count || null,
+          p_promo_usage_count: appliedPromoCode?.usage_count ?? null,
           p_items: itemsPayload,
         });
 
@@ -1151,7 +1151,7 @@ export default function CheckoutPage() {
         estimated_delivery_time: estimatedDeliveryTime,
         promo_code: appliedPromoCode?.code || null,
         promo_code_id: appliedPromoCode?.id || null,
-        promo_code_usage_count: appliedPromoCode?.usage_count || null,
+        promo_code_usage_count: appliedPromoCode?.usage_count ?? null,
         cart_items: cart.map((item) => {
           const itemPrice = item.selectedVariant?.price ?? item.menuItem.price;
           const variantName = item.selectedVariant ? ` (${item.selectedVariant.name_ar})` : '';
