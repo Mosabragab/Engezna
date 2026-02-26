@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { ProviderLayout, SoundTestDebug } from '@/components/provider';
-import { useProviderOrderNotifications } from '@/hooks/customer';
+
 import type { User } from '@supabase/supabase-js';
 import {
   Package,
@@ -127,15 +127,11 @@ export default function ProviderDashboard() {
   });
   const [commissionInfo, setCommissionInfo] = useState<CommissionInfo | null>(null);
 
-  // Real-time order notifications
-  const { newOrderCount } = useProviderOrderNotifications(provider?.id || null);
-
-  // Update stats when real-time count changes
-  useEffect(() => {
-    if (newOrderCount !== stats.pendingOrders && provider) {
-      setStats((prev) => ({ ...prev, pendingOrders: newOrderCount }));
-    }
-  }, [newOrderCount, provider, stats.pendingOrders]);
+  // NOTE: Removed useProviderOrderNotifications hook here because ProviderLayout
+  // already maintains a unified Realtime channel for pending orders. Having two
+  // channels created conflicting counts (this hook counted ALL pending orders
+  // while ProviderLayout correctly filtered by payment visibility).
+  // The loadStats function below fetches the correct initial count on mount.
 
   // Realtime subscription for new chat messages
   useEffect(() => {
@@ -204,7 +200,7 @@ export default function ProviderDashboard() {
       // Run all queries in parallel for faster loading
       const [
         { data: todayOrdersData },
-        { data: pendingData },
+        { count: pendingOrdersCount },
         { data: productsData },
         { data: allOrdersData },
         { data: unrespondedReviewsData },
@@ -218,7 +214,27 @@ export default function ProviderDashboard() {
           .select('id, total, status, payment_status, payment_method')
           .eq('provider_id', providerId)
           .gte('created_at', today.toISOString()),
-        supabase.from('orders').select('id').eq('provider_id', providerId).eq('status', 'pending'),
+        // Pending orders: count cash + paid online orders (matches ProviderLayout logic)
+        Promise.all([
+          supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .eq('payment_method', 'cash')
+            .or('order_flow.is.null,order_flow.eq.standard'),
+          supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .neq('payment_method', 'cash')
+            .in('payment_status', ['paid', 'completed'])
+            .or('order_flow.is.null,order_flow.eq.standard'),
+        ]).then(([cash, online]) => ({
+          data: null,
+          count: (cash.count || 0) + (online.count || 0),
+        })),
         supabase
           .from('menu_items')
           .select('id')
@@ -311,7 +327,7 @@ export default function ProviderDashboard() {
       setStats({
         todayOrders: todayOrdersData?.length || 0,
         todayRevenue: Math.max(0, grossRevenue - totalRefundsToday),
-        pendingOrders: pendingData?.length || 0,
+        pendingOrders: pendingOrdersCount || 0,
         activeProducts: productsData?.length || 0,
         totalOrders: allOrdersData?.length || 0,
         totalCustomers: uniqueCustomers.size,
