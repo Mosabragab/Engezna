@@ -23,7 +23,9 @@ export function Footer() {
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
 
   useEffect(() => {
-    getCachedGovernorates().then(setGovernorates).catch(() => {});
+    getCachedGovernorates()
+      .then(setGovernorates)
+      .catch(() => {});
   }, []);
 
   const switchLanguage = useCallback(() => {

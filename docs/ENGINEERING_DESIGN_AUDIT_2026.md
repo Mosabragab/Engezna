@@ -9,23 +9,23 @@
 
 ## الملخص التنفيذي
 
-| المقياس | القيمة |
-|---|---|
-| **التقييم العام** | **61/100** |
-| **مشاكل حرجة (CRITICAL)** | 8 |
-| **مشاكل عالية (HIGH)** | 11 |
-| **مشاكل متوسطة (MEDIUM)** | 14 |
+| المقياس                    | القيمة                              |
+| -------------------------- | ----------------------------------- |
+| **التقييم العام**          | **61/100**                          |
+| **مشاكل حرجة (CRITICAL)**  | 8                                   |
+| **مشاكل عالية (HIGH)**     | 11                                  |
+| **مشاكل متوسطة (MEDIUM)**  | 14                                  |
 | **الجاهزية لـ 10K متزامن** | **غير جاهز — سيسقط خلال 2-4 ساعات** |
 
 ### التصنيف حسب المحور
 
-| المحور | الدرجة | الحالة |
-|---|---|---|
-| Infrastructure Efficiency & Cost | 45/100 | خطر — نزيف موارد مستمر |
-| Data Integrity & Concurrency | 50/100 | خطر — عمليات غير ذرية |
-| Resiliency & Error Handling | 62/100 | متوسط — فجوات حرجة في Validation |
-| Security & Observability | 72/100 | جيد — مع تسرب بيانات في profiles |
-| Frontend Architecture | 40/100 | ضعيف — 95.7% client-rendered |
+| المحور                           | الدرجة | الحالة                           |
+| -------------------------------- | ------ | -------------------------------- |
+| Infrastructure Efficiency & Cost | 45/100 | خطر — نزيف موارد مستمر           |
+| Data Integrity & Concurrency     | 50/100 | خطر — عمليات غير ذرية            |
+| Resiliency & Error Handling      | 62/100 | متوسط — فجوات حرجة في Validation |
+| Security & Observability         | 72/100 | جيد — مع تسرب بيانات في profiles |
+| Frontend Architecture            | 40/100 | ضعيف — 95.7% client-rendered     |
 
 ---
 
@@ -64,14 +64,14 @@ SELECT id, name_ar, name_en, is_active FROM governorates
 
 ### 1.3 Polling بدون ذكاء: تكلفة القرار الحالي
 
-| المكون | الاستعلامات/دورة | الفترة | المستخدمين المتوقعين | الاستعلامات/ثانية |
-|---|---|---|---|---|
-| ProviderLayout | 6 استعلامات | 60 ثانية | 200 تاجر | 20/ث |
-| BottomNavigation | 2 استعلامات | 30 ثانية | 5,000 عميل | 333/ث |
-| Admin Layout | 5 استعلامات | 30 ثانية | 10 مدير | 1.7/ث |
-| getUser() مكرر | 1 استعلام | كل poll | 5,200 | 173/ث |
-| Middleware | 1-3 استعلامات | كل request | كل الطلبات | ~500/ث |
-| **المجموع** | | | | **~1,028/ث** |
+| المكون           | الاستعلامات/دورة | الفترة     | المستخدمين المتوقعين | الاستعلامات/ثانية |
+| ---------------- | ---------------- | ---------- | -------------------- | ----------------- |
+| ProviderLayout   | 6 استعلامات      | 60 ثانية   | 200 تاجر             | 20/ث              |
+| BottomNavigation | 2 استعلامات      | 30 ثانية   | 5,000 عميل           | 333/ث             |
+| Admin Layout     | 5 استعلامات      | 30 ثانية   | 10 مدير              | 1.7/ث             |
+| getUser() مكرر   | 1 استعلام        | كل poll    | 5,200                | 173/ث             |
+| Middleware       | 1-3 استعلامات    | كل request | كل الطلبات           | ~500/ث            |
+| **المجموع**      |                  |            |                      | **~1,028/ث**      |
 
 **المشاكل الهندسية:**
 
@@ -82,13 +82,13 @@ SELECT id, name_ar, name_en, is_active FROM governorates
 
 ### 1.4 أنظمة مبنية لكن غير مُستخدمة
 
-| النظام | الملف | الحالة |
-|---|---|---|
-| **Cache Layer (LRU + TTL)** | `src/lib/cache/index.ts` | مكتمل البناء، **صفر استخدام في Production** |
-| **Realtime Manager** | `src/lib/supabase/realtime-manager.ts` | مبني مع error handling + exponential backoff + polling fallback، **غير مستخدم** |
-| **`withErrorHandler`** | `src/lib/api/index.ts` | معالج أخطاء موحد، مستخدم في **0 من 45** API route |
-| **`withValidation`** | `src/lib/api/index.ts` | مُصادق Zod للـ API، مستخدم في **2 من 45** route |
-| **`strongPasswordSchema`** | `src/lib/validations/common.ts` | كلمة سر قوية مع uppercase/lowercase/number، **لا يُستخدم في auth** |
+| النظام                      | الملف                                  | الحالة                                                                          |
+| --------------------------- | -------------------------------------- | ------------------------------------------------------------------------------- |
+| **Cache Layer (LRU + TTL)** | `src/lib/cache/index.ts`               | مكتمل البناء، **صفر استخدام في Production**                                     |
+| **Realtime Manager**        | `src/lib/supabase/realtime-manager.ts` | مبني مع error handling + exponential backoff + polling fallback، **غير مستخدم** |
+| **`withErrorHandler`**      | `src/lib/api/index.ts`                 | معالج أخطاء موحد، مستخدم في **0 من 45** API route                               |
+| **`withValidation`**        | `src/lib/api/index.ts`                 | مُصادق Zod للـ API، مستخدم في **2 من 45** route                                 |
+| **`strongPasswordSchema`**  | `src/lib/validations/common.ts`        | كلمة سر قوية مع uppercase/lowercase/number، **لا يُستخدم في auth**              |
 
 > **هذا أخطر ما في المشروع من الناحية الهندسية:** تم استثمار وقت في بناء أنظمة حماية ممتازة ثم لم يتم تفعيلها. هذا أسوأ من عدم بنائها — لأنه يعطي إحساساً زائفاً بالأمان.
 
@@ -128,6 +128,7 @@ SELECT id, name_ar, name_en, is_active FROM governorates
 هذه أربع عمليات DB منفصلة **بدون أي transaction wrapper**. لا يوجد `BEGIN`/`COMMIT`/`ROLLBACK` في المشروع بالكامل.
 
 **سيناريو الفشل الواقعي:**
+
 - العميل يطلب 15 صنف مع promo code
 - الخطوات 1-3 تنجح
 - الخطوة 4 تفشل (timeout، RLS error، constraint violation)
@@ -152,11 +153,13 @@ const finalTotal = subtotal + calculatedDeliveryFee - discountAmount;
 ```
 
 **لا يوجد أي تحقق Server-Side** من أن:
+
 - `subtotal` = مجموع (سعر_الوحدة × الكمية) لكل صنف
 - `delivery_fee` يطابق القيمة الحقيقية للمحافظة
 - `discount` لا يتجاوز الخصم الفعلي للكود
 
 **المخاطر:**
+
 - عميل خبيث يمكنه تعديل `subtotal` من 500 لـ 50 جنيه
 - الـ `platform_commission` trigger يحسب العمولة صحيحاً... لكن على أساس خاطئ
 - لا يوجد audit trail يكشف التلاعب
@@ -169,6 +172,7 @@ storage: createJSONStorage(() => localStorage),
 ```
 
 سيناريو:
+
 1. العميل يضيف وجبة بسعر 100 جنيه الساعة 2:00 PM
 2. التاجر يرفع السعر لـ 150 جنيه الساعة 3:00 PM
 3. العميل يطلب الساعة 6:00 PM بالسعر القديم (100 جنيه)
@@ -200,12 +204,12 @@ const handlePlaceOrder = async () => {
 
 ### 2.6 نقاط القوة في Data Integrity
 
-| الميزة | التقييم |
-|---|---|
-| Commission Calculation | ممتاز — PostgreSQL trigger يمنع التلاعب |
-| Payment Webhook Idempotency | ممتاز — 5 طبقات حماية (terminal state, cancelled check, duplicate txn, status guard, empty result) |
-| Promo Code Optimistic Locking | جيد — compare-and-swap على `usage_count` |
-| Financial Views as Source of Truth | ممتاز — `financial_settlement_engine` و `admin_financial_summary` |
+| الميزة                             | التقييم                                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Commission Calculation             | ممتاز — PostgreSQL trigger يمنع التلاعب                                                            |
+| Payment Webhook Idempotency        | ممتاز — 5 طبقات حماية (terminal state, cancelled check, duplicate txn, status guard, empty result) |
+| Promo Code Optimistic Locking      | جيد — compare-and-swap على `usage_count`                                                           |
+| Financial Views as Source of Truth | ممتاز — `financial_settlement_engine` و `admin_financial_summary`                                  |
 
 ---
 
@@ -213,18 +217,19 @@ const handlePlaceOrder = async () => {
 
 ### 3.1 Error Boundaries: جيد
 
-| الحد | الملف | Sentry | Recovery |
-|---|---|---|---|
-| Global (fatal) | `src/app/global-error.tsx` | نعم، level: `fatal` | Reset |
-| Locale | `src/app/[locale]/error.tsx` | نعم، tag: `locale` | Reset + Home |
-| Admin | `src/app/[locale]/admin/error.tsx` | نعم، tag: `admin` | Reset + Dashboard |
-| Provider | `src/app/[locale]/provider/error.tsx` | نعم، tag: `provider` | Reset + Dashboard + Support |
+| الحد           | الملف                                 | Sentry               | Recovery                    |
+| -------------- | ------------------------------------- | -------------------- | --------------------------- |
+| Global (fatal) | `src/app/global-error.tsx`            | نعم، level: `fatal`  | Reset                       |
+| Locale         | `src/app/[locale]/error.tsx`          | نعم، tag: `locale`   | Reset + Home                |
+| Admin          | `src/app/[locale]/admin/error.tsx`    | نعم، tag: `admin`    | Reset + Dashboard           |
+| Provider       | `src/app/[locale]/provider/error.tsx` | نعم، tag: `provider` | Reset + Dashboard + Support |
 
 **مشكلة:** جميع error boundaries تحتوي على روابط hardcoded لـ `/ar` — المستخدم الإنجليزي يُرسل لصفحة عربية.
 
 ### 3.2 SDUI Graceful Degradation: ممتاز
 
 نظام 3 طبقات في `src/hooks/sdui/useSDUI.ts`:
+
 1. **الطبقة 1:** Hardcoded defaults — التطبيق يعمل فوراً
 2. **الطبقة 2:** LocalStorage cache بـ TTL 30 دقيقة
 3. **الطبقة 3:** Supabase RPC fetch — إذا فشل، يستمر مع الطبقة الأقل
@@ -254,14 +259,14 @@ const handlePlaceOrder = async () => {
 
 ### 3.5 CRITICAL: Silent Failures في مسارات حرجة
 
-| الملف | السطر | السياق | الخطورة |
-|---|---|---|---|
-| `ProvidersClient.tsx` | 326 | صفحة عرض المحلات — `catch {}` بدون أي رسالة خطأ أو Sentry | **حرج** |
-| `delete-account/route.ts` | 62-80 | حذف الحساب — 6 عمليات delete بدون فحص نتيجة أي منها | **حرج** |
-| `RefundRequestModal.tsx` | 249, 314, 330 | 3 فشل صامت: رفع صورة، إنشاء تذكرة، إشعار | **عالي** |
-| `useHereMaps.ts` | 55-167 | 4 fetch calls بدون `response.ok` check | **عالي** |
-| `AppUpdateDialog.tsx` | 59 | فحص التحديثات يفشل بصمت — المستخدم لن يعرف بتحديث أمني | **متوسط** |
-| `middleware.ts` | 50 | maintenance mode check يفشل بصمت — يتخطى وضع الصيانة | **متوسط** |
+| الملف                     | السطر         | السياق                                                    | الخطورة   |
+| ------------------------- | ------------- | --------------------------------------------------------- | --------- |
+| `ProvidersClient.tsx`     | 326           | صفحة عرض المحلات — `catch {}` بدون أي رسالة خطأ أو Sentry | **حرج**   |
+| `delete-account/route.ts` | 62-80         | حذف الحساب — 6 عمليات delete بدون فحص نتيجة أي منها       | **حرج**   |
+| `RefundRequestModal.tsx`  | 249, 314, 330 | 3 فشل صامت: رفع صورة، إنشاء تذكرة، إشعار                  | **عالي**  |
+| `useHereMaps.ts`          | 55-167        | 4 fetch calls بدون `response.ok` check                    | **عالي**  |
+| `AppUpdateDialog.tsx`     | 59            | فحص التحديثات يفشل بصمت — المستخدم لن يعرف بتحديث أمني    | **متوسط** |
+| `middleware.ts`           | 50            | maintenance mode check يفشل بصمت — يتخطى وضع الصيانة      | **متوسط** |
 
 ### 3.6 Sentry Configuration: جيد
 
@@ -294,16 +299,16 @@ USING (auth.uid() IS NOT NULL)
 
 ### 4.2 Endpoint Protection Matrix
 
-| Endpoint | Auth | Rate Limit | المشكلة |
-|---|---|---|---|
-| `POST /api/banners/track` | **لا** | **لا** | يستخدم service role key بدون أي auth — يقبل `user_id` تعسفي |
-| `POST /api/contact` | **لا** | **لا** | يستخدم admin client — spam risk |
-| `POST /api/auth/register` | لا (public) | **لا** | إنشاء حسابات جماعي ممكن |
-| `POST /api/webhooks/menu-item` | **اختياري** | **لا** | إذا env var مفقود، الـ webhook مفتوح |
-| `POST /api/promo/validate` | نعم | **in-memory فقط** | لا يعمل عبر serverless instances |
-| `POST /api/admin/*` | نعم (admin) | **لا** | حساب admin مخترق = data exfiltration بدون حدود |
-| `POST /api/chat` | نعم | نعم (Upstash) | **محمي بشكل صحيح** |
-| `POST /api/payment/kashier/webhook` | Signature | N/A | **ممتاز** |
+| Endpoint                            | Auth        | Rate Limit        | المشكلة                                                     |
+| ----------------------------------- | ----------- | ----------------- | ----------------------------------------------------------- |
+| `POST /api/banners/track`           | **لا**      | **لا**            | يستخدم service role key بدون أي auth — يقبل `user_id` تعسفي |
+| `POST /api/contact`                 | **لا**      | **لا**            | يستخدم admin client — spam risk                             |
+| `POST /api/auth/register`           | لا (public) | **لا**            | إنشاء حسابات جماعي ممكن                                     |
+| `POST /api/webhooks/menu-item`      | **اختياري** | **لا**            | إذا env var مفقود، الـ webhook مفتوح                        |
+| `POST /api/promo/validate`          | نعم         | **in-memory فقط** | لا يعمل عبر serverless instances                            |
+| `POST /api/admin/*`                 | نعم (admin) | **لا**            | حساب admin مخترق = data exfiltration بدون حدود              |
+| `POST /api/chat`                    | نعم         | نعم (Upstash)     | **محمي بشكل صحيح**                                          |
+| `POST /api/payment/kashier/webhook` | Signature   | N/A               | **ممتاز**                                                   |
 
 ### 4.3 RBAC (Role-Based Access Control): جيد
 
@@ -331,30 +336,30 @@ In-Memory (لا يعمل عبر instances):
 
 ### 4.5 Monitoring & Alerting: ناقص
 
-| الأداة | الحالة |
-|---|---|
-| Sentry Error Tracking | مُفعّل |
-| Sentry Session Replay | مُفعّل (1%) |
-| Vercel Analytics | مُفعّل |
-| Vercel Speed Insights | مُفعّل |
-| **Alerting Rules** | **غير موجود** — لا PagerDuty, لا Slack alerts |
-| **Suspicious Activity Detection** | **غير موجود** |
-| **Rate Limit Violation Alerts** | **غير موجود** |
-| **Log Aggregation** | **غير موجود** — لا Datadog, لا CloudWatch |
+| الأداة                            | الحالة                                        |
+| --------------------------------- | --------------------------------------------- |
+| Sentry Error Tracking             | مُفعّل                                        |
+| Sentry Session Replay             | مُفعّل (1%)                                   |
+| Vercel Analytics                  | مُفعّل                                        |
+| Vercel Speed Insights             | مُفعّل                                        |
+| **Alerting Rules**                | **غير موجود** — لا PagerDuty, لا Slack alerts |
+| **Suspicious Activity Detection** | **غير موجود**                                 |
+| **Rate Limit Violation Alerts**   | **غير موجود**                                 |
+| **Log Aggregation**               | **غير موجود** — لا Datadog, لا CloudWatch     |
 
 **يعني:** إذا حدث هجوم أو خلل في الساعة 3 صباحاً، لن يعرف أحد حتى يشتكي المستخدمون.
 
 ### 4.6 Security Strengths
 
-| الميزة | التقييم |
-|---|---|
-| CSP Headers | ممتاز — شامل ومفصل |
-| CSRF Protection | ممتاز — double-submit cookie |
-| Zod Client Validation | ممتاز — شامل |
-| Secret Management | ممتاز — لا secrets مكشوفة |
-| XSS Protection | ممتاز — enterprise-grade headers |
-| HSTS | ممتاز — 2 سنة مع includeSubDomains |
-| Webhook Signature | ممتاز — Kashier webhook محمي |
+| الميزة                | التقييم                            |
+| --------------------- | ---------------------------------- |
+| CSP Headers           | ممتاز — شامل ومفصل                 |
+| CSRF Protection       | ممتاز — double-submit cookie       |
+| Zod Client Validation | ممتاز — شامل                       |
+| Secret Management     | ممتاز — لا secrets مكشوفة          |
+| XSS Protection        | ممتاز — enterprise-grade headers   |
+| HSTS                  | ممتاز — 2 سنة مع includeSubDomains |
+| Webhook Signature     | ممتاز — Kashier webhook محمي       |
 
 ---
 
@@ -378,24 +383,25 @@ In-Memory (لا يعمل عبر instances):
 
 ### 5.2 Loading States: شبه معدوم
 
-| المقياس | القيمة |
-|---|---|
-| Routes إجمالي | 117 |
-| `loading.tsx` | 4 (3.4%) |
-| Suspense boundaries | 0 |
+| المقياس             | القيمة   |
+| ------------------- | -------- |
+| Routes إجمالي       | 117      |
+| `loading.tsx`       | 4 (3.4%) |
+| Suspense boundaries | 0        |
 
 **الأثر:** 113 route تعرض شاشة بيضاء أثناء التحميل. على شبكة 3G في صعيد مصر، هذا يعني 3-8 ثوان من الفراغ.
 
 ### 5.3 Code Splitting: شبه معدوم
 
-| المقياس | القيمة |
-|---|---|
-| `next/dynamic` | 4 ملفات |
-| `React.lazy()` | 0 |
-| ملفات أكبر من 1500 سطر | 5 ملفات |
-| أكبر ملف | 2,909 سطر (Admin Orders) |
+| المقياس                | القيمة                   |
+| ---------------------- | ------------------------ |
+| `next/dynamic`         | 4 ملفات                  |
+| `React.lazy()`         | 0                        |
+| ملفات أكبر من 1500 سطر | 5 ملفات                  |
+| أكبر ملف               | 2,909 سطر (Admin Orders) |
 
 **الملفات الكبرى:**
+
 1. `admin/orders/page.tsx` — 2,909 سطر
 2. `provider/orders/page.tsx` — 2,301 سطر
 3. `checkout/page.tsx` — 2,209 سطر
@@ -451,27 +457,28 @@ In-Memory (لا يعمل عبر instances):
 
 ### 6.2 حمل قاعدة البيانات المتوقع
 
-| المصدر | الحساب | الاستعلامات/ثانية |
-|---|---|---|
-| Customer Polling | 8,000 × 2 queries / 30s | 533 |
-| Customer getUser() | 8,000 × 1 / 30s | 267 |
-| Provider Polling | 1,500 × 6 queries / 60s | 150 |
-| Admin Polling | 50 × 5 queries / 30s | 8 |
-| Middleware queries | 10,000 × 2 avg / 5s avg | 4,000 |
-| Page data fetches | 10,000 × 3 avg / 30s avg | 1,000 |
-| Realtime WAL processing | Fixed overhead | ~500 |
-| governorates/static | 10,000 × 1 / 30s avg | 333 |
-| **المجموع** | | **~6,791/ثانية** |
+| المصدر                  | الحساب                   | الاستعلامات/ثانية |
+| ----------------------- | ------------------------ | ----------------- |
+| Customer Polling        | 8,000 × 2 queries / 30s  | 533               |
+| Customer getUser()      | 8,000 × 1 / 30s          | 267               |
+| Provider Polling        | 1,500 × 6 queries / 60s  | 150               |
+| Admin Polling           | 50 × 5 queries / 30s     | 8                 |
+| Middleware queries      | 10,000 × 2 avg / 5s avg  | 4,000             |
+| Page data fetches       | 10,000 × 3 avg / 30s avg | 1,000             |
+| Realtime WAL processing | Fixed overhead           | ~500              |
+| governorates/static     | 10,000 × 1 / 30s avg     | 333               |
+| **المجموع**             |                          | **~6,791/ثانية**  |
 
 ### 6.3 Supabase Connection Limits
 
 | الخطة | Max Connections | المتاح بعد system overhead |
-|---|---|---|
-| Free | 60 | ~40 |
-| Pro | 60 | ~40 |
-| Team | 120 | ~90 |
+| ----- | --------------- | -------------------------- |
+| Free  | 60              | ~40                        |
+| Pro   | 60              | ~40                        |
+| Team  | 120             | ~90                        |
 
 **الحالة الحالية:** 9 اتصالات (من بيانات DB). لكن مع 10K مستخدم:
+
 - PostgREST pooler يدير الاتصالات، لكن ~6,800 query/s عبر 40 connection = 170 query/connection/second
 - PostgreSQL على Supabase Pro يعالج ~10,000-15,000 query/s كحد أقصى
 
@@ -507,13 +514,13 @@ In-Memory (لا يعمل عبر instances):
 
 ### 6.5 المخاطر الخمسة القاتلة
 
-| # | المخاطرة | الاحتمال | الأثر | وصف |
-|---|---|---|---|---|
-| 1 | **DB CPU Exhaustion** | مرتفع جداً | كارثي | 6,800 query/s + WAL processing تتجاوز قدرة Supabase Pro |
-| 2 | **Connection Pool Saturation** | مرتفع | كارثي | 40 connection لـ 6,800 query/s = queue overflow |
-| 3 | **Memory Leak من Polling** | مرتفع | عالي | Tabs في الخلفية بدون visibility guard تستهلك موارد بلا فائدة |
-| 4 | **Double Orders under Load** | متوسط | عالي | بدون idempotency key، latency عالي + retry = duplicate orders |
-| 5 | **No Alerting** | مؤكد | عالي | لن يعرف أحد أن النظام يعاني حتى يشتكي المستخدمون |
+| #   | المخاطرة                       | الاحتمال   | الأثر | وصف                                                           |
+| --- | ------------------------------ | ---------- | ----- | ------------------------------------------------------------- |
+| 1   | **DB CPU Exhaustion**          | مرتفع جداً | كارثي | 6,800 query/s + WAL processing تتجاوز قدرة Supabase Pro       |
+| 2   | **Connection Pool Saturation** | مرتفع      | كارثي | 40 connection لـ 6,800 query/s = queue overflow               |
+| 3   | **Memory Leak من Polling**     | مرتفع      | عالي  | Tabs في الخلفية بدون visibility guard تستهلك موارد بلا فائدة  |
+| 4   | **Double Orders under Load**   | متوسط      | عالي  | بدون idempotency key، latency عالي + retry = duplicate orders |
+| 5   | **No Alerting**                | مؤكد       | عالي  | لن يعرف أحد أن النظام يعاني حتى يشتكي المستخدمون              |
 
 ---
 
@@ -522,33 +529,43 @@ In-Memory (لا يعمل عبر instances):
 رغم المشاكل، المشروع يحتوي على قرارات هندسية ممتازة:
 
 ### 1. Commission Trigger (10/10)
+
 العمولة تُحسب حصرياً عبر PostgreSQL trigger — لا يمكن للـ client التلاعب بها. هذا القرار وحده يمنع فئة كاملة من الثغرات المالية.
 
 ### 2. Payment Webhook Idempotency (10/10)
+
 5 طبقات حماية ضد replay attacks و race conditions. هذا كود enterprise-grade.
 
 ### 3. SDUI 3-Layer Fallback (9/10)
+
 Defaults → Cache → Server. التطبيق لا يتوقف أبداً بسبب فشل SDUI. معالجة خطأ `42883` بذكاء.
 
 ### 4. Security Headers (9/10)
+
 CSP شاملة، HSTS مع preload، CSRF double-submit، XSS protection. على مستوى enterprise.
 
 ### 5. Financial Views as Source of Truth (9/10)
+
 SQL views (`financial_settlement_engine`, `admin_financial_summary`) تضمن أن الأرقام المالية تأتي دائماً من مصدر واحد.
 
 ### 6. Error Class Hierarchy (8/10)
+
 `AppError → ValidationError, AuthenticationError, RateLimitError` — مع `toJSON()` و `isOperational` flags. مبني بشكل ممتاز.
 
 ### 7. Sentry Integration (8/10)
+
 3 بيئات (Client/Server/Edge)، data scrubbing، smart filtering، session replay.
 
 ### 8. Zod Client Validation (8/10)
+
 Egyptian phone schemas، address validation، comprehensive order schemas.
 
 ### 9. Firebase Graceful Degradation (8/10)
+
 Null-safe returns، feature detection، lazy loading. لا crashes إذا Firebase معطل.
 
 ### 10. RLS Security Hardening (7/10)
+
 إصلاح `OR true`، تحويل views لـ `SECURITY INVOKER`، RBAC في middleware + API + DB layers.
 
 ---
@@ -557,55 +574,55 @@ Null-safe returns، feature detection، lazy loading. لا crashes إذا Fireba
 
 ### المرحلة 0: إنقاذ فوري (أسبوع 1 — قبل أي growth)
 
-| # | الإجراء | الأثر | الوقت |
-|---|---|---|---|
-| 1 | **تفعيل Cache Layer الموجود** لـ governorates, categories, maintenance settings | يقلل ~600K query بدون أي كتابة جديدة — النظام مبني أصلاً | 4 ساعات |
-| 2 | **إضافة `document.visibilitychange`** لكل polling | يقلل 30-50% من polling queries للمستخدمين في الخلفية | 3 ساعات |
-| 3 | **إزالة `getUser()` من BottomNavigation polling** | يقلل 267 query/s عند 8K عميل | 1 ساعة |
-| 4 | **تحويل pending orders لـ COUNT** بدل SELECT rows | يقلل نقل البيانات بنسبة 90% | 1 ساعة |
-| 5 | **تفعيل Realtime Manager** بدل raw `.subscribe()` في ProviderLayout | يضيف error recovery + exponential backoff مجاناً — الكود موجود | 4 ساعات |
+| #   | الإجراء                                                                         | الأثر                                                          | الوقت   |
+| --- | ------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------- |
+| 1   | **تفعيل Cache Layer الموجود** لـ governorates, categories, maintenance settings | يقلل ~600K query بدون أي كتابة جديدة — النظام مبني أصلاً       | 4 ساعات |
+| 2   | **إضافة `document.visibilitychange`** لكل polling                               | يقلل 30-50% من polling queries للمستخدمين في الخلفية           | 3 ساعات |
+| 3   | **إزالة `getUser()` من BottomNavigation polling**                               | يقلل 267 query/s عند 8K عميل                                   | 1 ساعة  |
+| 4   | **تحويل pending orders لـ COUNT** بدل SELECT rows                               | يقلل نقل البيانات بنسبة 90%                                    | 1 ساعة  |
+| 5   | **تفعيل Realtime Manager** بدل raw `.subscribe()` في ProviderLayout             | يضيف error recovery + exponential backoff مجاناً — الكود موجود | 4 ساعات |
 
 **الأثر المتوقع:** تخفيض queries/second بنسبة 40-50% بدون أي تغيير في الوظائف.
 
 ### المرحلة 1: سلامة البيانات (أسبوع 2)
 
-| # | الإجراء | الأثر | الوقت |
-|---|---|---|---|
-| 6 | **إنشاء RPC `create_order_atomic`** يجمع order + items + promo في transaction واحدة | يمنع الطلبات اليتيمة نهائياً | 8 ساعات |
-| 7 | **إضافة server-side price validation** في RPC أو API route | يمنع تلاعب الأسعار | 6 ساعات |
-| 8 | **إضافة idempotency key** (UUID) مع unique constraint على orders | يمنع double-submit | 3 ساعات |
-| 9 | **إضافة status transition guards** (`WHERE status = ?`) | يمنع invalid state transitions | 4 ساعات |
-| 10 | **إصلاح profiles RLS** — column-level access أو USING مع owner check | يمنع تسرب PII | 4 ساعات |
+| #   | الإجراء                                                                             | الأثر                          | الوقت   |
+| --- | ----------------------------------------------------------------------------------- | ------------------------------ | ------- |
+| 6   | **إنشاء RPC `create_order_atomic`** يجمع order + items + promo في transaction واحدة | يمنع الطلبات اليتيمة نهائياً   | 8 ساعات |
+| 7   | **إضافة server-side price validation** في RPC أو API route                          | يمنع تلاعب الأسعار             | 6 ساعات |
+| 8   | **إضافة idempotency key** (UUID) مع unique constraint على orders                    | يمنع double-submit             | 3 ساعات |
+| 9   | **إضافة status transition guards** (`WHERE status = ?`)                             | يمنع invalid state transitions | 4 ساعات |
+| 10  | **إصلاح profiles RLS** — column-level access أو USING مع owner check                | يمنع تسرب PII                  | 4 ساعات |
 
 ### المرحلة 2: أداء الـ Frontend (أسبوع 3-4)
 
-| # | الإجراء | الأثر | الوقت |
-|---|---|---|---|
-| 11 | **تحويل Home Page لـ Server Component** مع `fetch` + `revalidate` | يحسن LCP بنسبة 50-70%، يحسن SEO | 12 ساعة |
-| 12 | **إضافة `loading.tsx`** لأهم 20 route | يمنع الشاشة البيضاء | 8 ساعات |
-| 13 | **تقسيم الملفات الكبيرة** (>1500 سطر) بـ `next/dynamic` | يقلل initial bundle بنسبة 30-40% | 12 ساعة |
-| 14 | **إضافة ISR** لـ providers listing, categories, governorates | يقلل DB queries بشكل كبير | 8 ساعات |
+| #   | الإجراء                                                           | الأثر                            | الوقت   |
+| --- | ----------------------------------------------------------------- | -------------------------------- | ------- |
+| 11  | **تحويل Home Page لـ Server Component** مع `fetch` + `revalidate` | يحسن LCP بنسبة 50-70%، يحسن SEO  | 12 ساعة |
+| 12  | **إضافة `loading.tsx`** لأهم 20 route                             | يمنع الشاشة البيضاء              | 8 ساعات |
+| 13  | **تقسيم الملفات الكبيرة** (>1500 سطر) بـ `next/dynamic`           | يقلل initial bundle بنسبة 30-40% | 12 ساعة |
+| 14  | **إضافة ISR** لـ providers listing, categories, governorates      | يقلل DB queries بشكل كبير        | 8 ساعات |
 
 ### المرحلة 3: المتانة والمراقبة (أسبوع 5-6)
 
-| # | الإجراء | الأثر | الوقت |
-|---|---|---|---|
-| 15 | **تفعيل `withErrorHandler`** في جميع API routes | error handling موحد + logging تلقائي | 8 ساعات |
-| 16 | **تفعيل `withValidation`** في جميع API routes | server-side validation لكل endpoint | 12 ساعة |
-| 17 | **إضافة Alerting** (Slack/PagerDuty) لـ critical errors | وقت استجابة أقل للمشاكل | 4 ساعات |
-| 18 | **Rate limiting لـ register, contact, banners/track** | يمنع spam و abuse | 3 ساعات |
-| 19 | **حذف الـ 120+ فهرس الميت** | يحسن Write performance | 4 ساعات |
-| 20 | **تقليل Realtime publication** للجداول المطلوبة فقط | يقلل WAL processing بنسبة 50%+ | 4 ساعات |
+| #   | الإجراء                                                 | الأثر                                | الوقت   |
+| --- | ------------------------------------------------------- | ------------------------------------ | ------- |
+| 15  | **تفعيل `withErrorHandler`** في جميع API routes         | error handling موحد + logging تلقائي | 8 ساعات |
+| 16  | **تفعيل `withValidation`** في جميع API routes           | server-side validation لكل endpoint  | 12 ساعة |
+| 17  | **إضافة Alerting** (Slack/PagerDuty) لـ critical errors | وقت استجابة أقل للمشاكل              | 4 ساعات |
+| 18  | **Rate limiting لـ register, contact, banners/track**   | يمنع spam و abuse                    | 3 ساعات |
+| 19  | **حذف الـ 120+ فهرس الميت**                             | يحسن Write performance               | 4 ساعات |
+| 20  | **تقليل Realtime publication** للجداول المطلوبة فقط     | يقلل WAL processing بنسبة 50%+       | 4 ساعات |
 
 ### المرحلة 4: التحجيم (أسبوع 7-8)
 
-| # | الإجراء | الأثر | الوقت |
-|---|---|---|---|
-| 21 | **Cart price re-validation** عند checkout | يمنع الأسعار المجمدة | 6 ساعات |
-| 22 | **تفعيل `strongPasswordSchema`** في auth | يحسن أمان الحسابات | 1 ساعة |
-| 23 | **إصلاح error boundaries locale** — استخراج locale من URL | تجربة مستخدم أفضل عند الخطأ | 2 ساعة |
-| 24 | **إضافة Edge config data scrubbing** | يمنع تسرب auth headers لـ Sentry | 1 ساعة |
-| 25 | **تفعيل Upstash لـ promo validation** بدل in-memory | rate limiting يعمل عبر instances | 1 ساعة |
+| #   | الإجراء                                                   | الأثر                            | الوقت   |
+| --- | --------------------------------------------------------- | -------------------------------- | ------- |
+| 21  | **Cart price re-validation** عند checkout                 | يمنع الأسعار المجمدة             | 6 ساعات |
+| 22  | **تفعيل `strongPasswordSchema`** في auth                  | يحسن أمان الحسابات               | 1 ساعة  |
+| 23  | **إصلاح error boundaries locale** — استخراج locale من URL | تجربة مستخدم أفضل عند الخطأ      | 2 ساعة  |
+| 24  | **إضافة Edge config data scrubbing**                      | يمنع تسرب auth headers لـ Sentry | 1 ساعة  |
+| 25  | **تفعيل Upstash لـ promo validation** بدل in-memory       | rate limiting يعمل عبر instances | 1 ساعة  |
 
 ---
 

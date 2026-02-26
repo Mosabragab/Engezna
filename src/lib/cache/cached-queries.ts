@@ -81,10 +81,7 @@ export async function getCachedBusinessCategories(): Promise<CachedBusinessCateg
 export async function getCachedDeliveryFees(providerId: string) {
   return appCache.getOrSet(`delivery_fees:${providerId}`, async () => {
     const supabase = createClient();
-    const { data } = await supabase
-      .from('delivery_fees')
-      .select('*')
-      .eq('provider_id', providerId);
+    const { data } = await supabase.from('delivery_fees').select('*').eq('provider_id', providerId);
     return data || [];
   });
 }
