@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useCart } from '@/lib/store/cart';
@@ -154,6 +154,11 @@ export default function CheckoutPage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Idempotency key: generated once per checkout session (not per click!)
+  // If the user clicks "confirm" twice quickly, both requests send the SAME key
+  // → DB unique constraint rejects the duplicate → returns existing order
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [showClosedDialog, setShowClosedDialog] = useState(false);
   const [closedDialogMessage, setClosedDialogMessage] = useState('');
   const [orderPlaced, setOrderPlaced] = useState(false); // Prevent redirect after order is placed
@@ -1057,8 +1062,8 @@ export default function CheckoutPage() {
       // Idempotency key prevents double-submit duplicates
       // ============================================================
       if (paymentMethod === 'cash') {
-        // Generate idempotency key to prevent double-submit
-        const idempotencyKey = crypto.randomUUID();
+        // Use the session-level idempotency key (same key for double-clicks)
+        const idempotencyKey = idempotencyKeyRef.current;
 
         // Build items array for the RPC
         const itemsPayload = cart.map((item) => {
@@ -1103,6 +1108,8 @@ export default function CheckoutPage() {
 
         if (rpcError) {
           console.error('Atomic order creation error:', rpcError);
+          // Generate new key so user can retry after fixing the issue
+          idempotencyKeyRef.current = crypto.randomUUID();
           throw new Error(rpcError.message);
         }
 
