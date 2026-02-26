@@ -14,6 +14,12 @@ DROP POLICY IF EXISTS "profiles_select_authenticated" ON public.profiles;
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.profiles;
 
+-- Drop our own policies too (in case of partial previous run)
+DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_provider_customers" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_select_staff_customers" ON public.profiles;
+
 -- 1. Users can always read their own profile
 CREATE POLICY "profiles_select_own"
   ON public.profiles
