@@ -24,7 +24,10 @@ export function useVisibilityPolling(
 ) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const callbackRef = useRef(callback);
-  callbackRef.current = callback;
+
+  useEffect(() => {
+    callbackRef.current = callback;
+  });
 
   const startPolling = useCallback(() => {
     if (intervalRef.current) return;
