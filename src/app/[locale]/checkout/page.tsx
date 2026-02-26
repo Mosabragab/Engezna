@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useCart } from '@/lib/store/cart';
@@ -156,9 +156,6 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Idempotency key: generated once per checkout session (not per click!)
-  // If the user clicks "confirm" twice quickly, both requests send the SAME key
-  // → DB unique constraint rejects the duplicate → returns existing order
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [showClosedDialog, setShowClosedDialog] = useState(false);
   const [closedDialogMessage, setClosedDialogMessage] = useState('');
   const [orderPlaced, setOrderPlaced] = useState(false); // Prevent redirect after order is placed
@@ -1056,33 +1053,26 @@ export default function CheckoutPage() {
           : new Date(Date.now() + prepTime * 60 * 1000).toISOString();
 
       // ============================================================
-      // CASH (COD) FLOW: Atomic order creation via RPC
-      // Single DB transaction: order + items + promo — all or nothing
-      // Server-side price validation prevents client manipulation
-      // Idempotency key prevents double-submit duplicates
+      // CASH (COD) FLOW: Create order, items, and promo usage
       // ============================================================
       if (paymentMethod === 'cash') {
-        // Use the session-level idempotency key (same key for double-clicks)
-        const idempotencyKey = idempotencyKeyRef.current;
+        // Record promo usage BEFORE order creation for transaction safety
+        let promoUsageId: string | null = null;
+        if (appliedPromoCode) {
+          // Atomically increment usage count (prevents race conditions)
+          const { error: countError } = await supabase
+            .from('promo_codes')
+            .update({ usage_count: appliedPromoCode.usage_count + 1 })
+            .eq('id', appliedPromoCode.id)
+            .eq('usage_count', appliedPromoCode.usage_count); // Optimistic lock
 
-        // Build items array for the RPC
-        const itemsPayload = cart.map((item) => {
-          const itemPrice = item.selectedVariant?.price ?? item.menuItem.price;
-          const variantName = item.selectedVariant ? ` (${item.selectedVariant.name_ar})` : '';
-          const variantNameEn = item.selectedVariant
-            ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
-            : '';
-          return {
-            item_id: item.menuItem.id,
-            item_name_ar: item.menuItem.name_ar + variantName,
-            item_name_en: item.menuItem.name_en + variantNameEn,
-            quantity: item.quantity,
-            unit_price: itemPrice,
-            variant_id: item.selectedVariant?.id || null,
-            variant_name_ar: item.selectedVariant?.name_ar || null,
-            variant_name_en: item.selectedVariant?.name_en || null,
-          };
-        });
+          if (countError) {
+            throw new Error(
+              locale === 'ar'
+                ? 'كود الخصم تم استخدامه للتو. حاول مرة أخرى.'
+                : 'Promo code was just used by someone else. Please try again.'
+            );
+          }
 
         const { data: result, error: rpcError } = await supabase.rpc('create_order_atomic', {
           p_idempotency_key: idempotencyKey,
