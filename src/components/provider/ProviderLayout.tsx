@@ -1,9 +1,10 @@
 'use client';
 
-import { ReactNode, useState, useEffect, useCallback } from 'react';
+import { ReactNode, useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { setAppBadge, clearAppBadge } from '@/hooks/useBadge';
 import { getAudioManager } from '@/lib/audio/audio-manager';
 import { Button } from '@/components/ui/button';
@@ -181,9 +182,11 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OPTIMIZED: Single unified Realtime channel for critical updates
-  // Merged: notifications + orders + custom_orders (3 tables, 1 channel)
-  // This reduces Realtime connections by 80%
+  // OPTIMIZED: Single unified Realtime channel with error recovery
+  // Uses subscribeWithErrorHandling for:
+  // - Automatic exponential backoff on CHANNEL_ERROR / TIMED_OUT
+  // - Polling fallback when Realtime fails completely
+  // - Connection status tracking
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
     if (!provider?.id) return;
@@ -191,14 +194,10 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     const supabase = createClient();
     const providerId = provider.id;
 
-    // Single unified channel for all critical realtime updates
+    // Build the unified channel with all event listeners
     const unifiedChannel = supabase
       .channel(`provider-unified-${providerId}`)
-      // ─────────────────────────────────────────────────────────────────────────
-      // NOTIFICATIONS: Real-time updates for notification bell
-      // After INSERT, re-fetch actual count from DB to correct drift
-      // (Supabase Realtime can miss events when multiple INSERTs happen rapidly)
-      // ─────────────────────────────────────────────────────────────────────────
+      // NOTIFICATIONS
       .on(
         'postgres_changes',
         {
@@ -208,11 +207,8 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           filter: `provider_id=eq.${providerId}`,
         },
         () => {
-          // Optimistic increment for instant UI feedback
           setUnreadCount((prev) => prev + 1);
-          // Play notification sound via AudioManager
           getAudioManager().play('notification');
-          // Re-fetch actual count from DB after a short delay to correct drift
           setTimeout(() => syncUnreadCount(providerId), 500);
         }
       )
@@ -250,10 +246,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           }
         }
       )
-      // ─────────────────────────────────────────────────────────────────────────
-      // ORDERS: Real-time updates for pending orders badge (critical)
-      // IMPORTANT: Only count visible orders (cash or paid online payments)
-      // ─────────────────────────────────────────────────────────────────────────
+      // ORDERS
       .on(
         'postgres_changes',
         {
@@ -269,7 +262,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             payment_status: string;
             order_flow?: string;
           };
-          // Only count if: pending AND (cash OR paid online) AND standard flow
           const isVisible =
             newOrder.payment_method === 'cash' ||
             newOrder.payment_status === 'paid' ||
@@ -302,7 +294,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             order_flow?: string;
           };
 
-          // Check visibility for old and new states
           const wasVisible =
             oldOrder.payment_method === 'cash' ||
             oldOrder.payment_status === 'paid' ||
@@ -313,7 +304,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             newOrder.payment_status === 'completed';
           const isStandardFlow = !newOrder.order_flow || newOrder.order_flow === 'standard';
 
-          // Decrement if was visible pending and now not
           if (
             oldOrder.status === 'pending' &&
             wasVisible &&
@@ -321,7 +311,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           ) {
             setPendingOrders((prev) => Math.max(0, prev - 1));
           }
-          // Increment if becomes visible pending
           if (
             newOrder.status === 'pending' &&
             isVisible &&
@@ -332,10 +321,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           }
         }
       )
-      // ─────────────────────────────────────────────────────────────────────────
-      // CUSTOM ORDERS: Real-time updates for custom order requests (critical)
-      // Track both 'pending' (needs pricing) and 'priced' (awaiting customer approval)
-      // ─────────────────────────────────────────────────────────────────────────
+      // CUSTOM ORDERS
       .on(
         'postgres_changes',
         {
@@ -348,7 +334,6 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const newRequest = payload.new as { status: string };
           if (newRequest.status === 'pending' || newRequest.status === 'priced') {
             setPendingCustomOrders((prev) => prev + 1);
-            // Play DISTINCT notification sound for custom orders via AudioManager
             getAudioManager().play('custom-order');
           }
         }
@@ -368,11 +353,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
           const wasActive = oldRequest.status === 'pending' || oldRequest.status === 'priced';
           const isActive = newRequest.status === 'pending' || newRequest.status === 'priced';
 
-          // Decrement if was active and now not
           if (wasActive && !isActive) {
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
-          // Increment if becomes active
           if (!wasActive && isActive) {
             setPendingCustomOrders((prev) => prev + 1);
           }
@@ -392,19 +375,31 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             setPendingCustomOrders((prev) => Math.max(0, prev - 1));
           }
         }
-      )
-      .subscribe();
+      );
 
-    return () => {
-      supabase.removeChannel(unifiedChannel);
-    };
-  }, [provider?.id]);
+    // Subscribe with error handling: auto-retry with exponential backoff,
+    // polling fallback if Realtime fails completely
+    const cleanup = subscribeWithErrorHandling(supabase, unifiedChannel, {
+      channelName: `provider-unified-${providerId}`,
+      maxRetries: 3,
+      retryDelayMs: 2000,
+    });
+
+    return cleanup;
+  }, [provider?.id, syncUnreadCount]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // POLLING: All badge counts updated every 60 seconds (unified poll)
   // Includes: notifications, pending orders, refunds, complaints, on_hold
   // Realtime handles immediate updates; polling is a drift-correction fallback
+  //
+  // OPTIMIZATIONS:
+  // - Visibility guard: pauses when tab is in background
+  // - Pending orders uses COUNT instead of fetching rows (90% less data transfer)
+  // - All queries use { count: 'exact', head: true } for minimal payload
   // ═══════════════════════════════════════════════════════════════════════════
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     if (!provider?.id) return;
 
@@ -415,19 +410,30 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
     const fetchAllBadgeCounts = async () => {
       try {
         const [
-          pendingOrdersResult,
+          pendingCashResult,
+          pendingPaidResult,
           customOrdersResult,
           refundsResult,
           complaintsResult,
           onHoldResult,
           notifResult,
         ] = await Promise.all([
-          // Pending orders
+          // Pending cash orders (COUNT instead of fetching rows)
           supabase
             .from('orders')
-            .select('id, payment_method, payment_status')
+            .select('*', { count: 'exact', head: true })
             .eq('provider_id', providerId)
             .eq('status', 'pending')
+            .eq('payment_method', 'cash')
+            .or('order_flow.is.null,order_flow.eq.standard'),
+          // Pending paid online orders (COUNT)
+          supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true })
+            .eq('provider_id', providerId)
+            .eq('status', 'pending')
+            .neq('payment_method', 'cash')
+            .in('payment_status', ['paid', 'completed'])
             .or('order_flow.is.null,order_flow.eq.standard'),
           // Custom orders
           supabase
@@ -454,7 +460,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             .select('*', { count: 'exact', head: true })
             .eq('provider_id', providerId)
             .eq('settlement_status', 'on_hold'),
-          // Notification count (merged from the old 5s poll)
+          // Notification count
           supabase
             .from('provider_notifications')
             .select('*', { count: 'exact', head: true })
@@ -462,12 +468,7 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
             .eq('is_read', false),
         ]);
 
-        // Update pending orders (filter for visibility)
-        const visiblePendingOrders = (pendingOrdersResult.data || []).filter((order) => {
-          if (order.payment_method === 'cash') return true;
-          return order.payment_status === 'paid' || order.payment_status === 'completed';
-        });
-        setPendingOrders(visiblePendingOrders.length);
+        setPendingOrders((pendingCashResult.count || 0) + (pendingPaidResult.count || 0));
         setPendingCustomOrders(customOrdersResult.count || 0);
         setPendingRefunds(refundsResult.count || 0);
         setPendingComplaints(complaintsResult.count || 0);
@@ -478,14 +479,36 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
       }
     };
 
-    // Initial fetch
-    fetchAllBadgeCounts();
+    const startPolling = () => {
+      if (pollingIntervalRef.current) return;
+      pollingIntervalRef.current = setInterval(fetchAllBadgeCounts, 60000);
+    };
 
-    // Single unified poll every 60 seconds (was 5s + 30s = ~7 queries/5s, now 6 queries/60s)
-    const pollingInterval = setInterval(fetchAllBadgeCounts, 60000);
+    const stopPolling = () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
+
+    // Visibility guard: pause polling when tab is hidden
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        fetchAllBadgeCounts();
+        startPolling();
+      }
+    };
+
+    // Initial fetch + start polling
+    fetchAllBadgeCounts();
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      clearInterval(pollingInterval);
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [provider?.id]);
 

@@ -142,21 +142,44 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   }, [hasRegionFilter, regionProviderIds, allowedGovernorateIds]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OPTIMIZED: Polling only - removed Realtime channels for admin badges
-  // Admin badges don't need instant updates - 30s polling is sufficient
-  // This reduces 3 Realtime channels per admin session
+  // OPTIMIZED: Polling with visibility guard
+  // - Pauses when tab is in background (saves wasted queries)
+  // - Resumes + fetches immediately when tab becomes visible
   // ═══════════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    // Don't load badge counts on login page or while region data is loading
     if (isLoginPage || regionLoading) return;
 
-    // Load badge counts using cached region data
+    let pollingInterval: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (pollingInterval) return;
+      pollingInterval = setInterval(loadBadgeCounts, 30000);
+    };
+
+    const stopPolling = () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        loadBadgeCounts();
+        startPolling();
+      }
+    };
+
     loadBadgeCounts();
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // Poll every 30 seconds for admin badge updates
-    const pollingInterval = setInterval(loadBadgeCounts, 30000);
-
-    return () => clearInterval(pollingInterval);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [isLoginPage, regionLoading, loadBadgeCounts]);
 
   // Always render sidebar to prevent mounting issues on navigation

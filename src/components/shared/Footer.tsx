@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
-import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { Facebook, Instagram, MapPin, Mail, Globe } from 'lucide-react';
 
 interface Governorate {
@@ -23,20 +23,9 @@ export function Footer() {
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
 
   useEffect(() => {
-    async function fetchGovernorates() {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en, is_active')
-          .eq('is_active', true)
-          .order('name_ar');
-        setGovernorates(data || []);
-      } catch {
-        // Silent fail
-      }
-    }
-    fetchGovernorates();
+    getCachedGovernorates()
+      .then(setGovernorates)
+      .catch(() => {});
   }, []);
 
   const switchLanguage = useCallback(() => {
