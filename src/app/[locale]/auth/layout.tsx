@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: 'تسجيل الدخول | إنجزنا',
   description: 'سجّل دخولك في إنجزنا للمتابعة وطلب احتياجات بيتك اليومية.',
   robots: 'noindex, nofollow',
-  alternates: { canonical: null, languages: null },
+  alternates: { canonical: null, languages: {} },
 };
 
 interface AuthLayoutProps {
