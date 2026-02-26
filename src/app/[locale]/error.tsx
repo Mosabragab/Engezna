@@ -12,6 +12,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 
 export default function LocaleError({
@@ -21,6 +22,9 @@ export default function LocaleError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ar';
+
   useEffect(() => {
     // Send error to Sentry with digest for tracking
     Sentry.captureException(error, {
@@ -92,7 +96,7 @@ export default function LocaleError({
 
           {/* Home Button */}
           <Link
-            href="/ar"
+            href={`/${locale}`}
             className="flex items-center gap-2 px-5 py-2.5 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg font-medium transition-colors duration-200"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,8 +4,8 @@ import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
 import { type BusinessCategory, getCategoryGradient } from '@/lib/supabase/business-categories';
+import { getCachedBusinessCategories } from '@/lib/cache/cached-queries';
 
 interface CategoriesSectionProps {
   selectedCategory?: string;
@@ -26,18 +26,16 @@ export function CategoriesSection({
   const [categories, setCategories] = useState<BusinessCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories from database
+  // Fetch categories from cache layer (eliminates hundreds of thousands of direct DB queries)
   useEffect(() => {
     async function fetchCategories() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('business_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (!error && data) {
-        setCategories(data);
+      try {
+        const data = await getCachedBusinessCategories();
+        if (data && data.length > 0) {
+          setCategories(data as unknown as BusinessCategory[]);
+        }
+      } catch {
+        // Silent fallback — categories will show empty
       }
       setLoading(false);
     }

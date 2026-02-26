@@ -5,7 +5,7 @@ import { useLocale } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { CustomerLayout } from '@/components/customer/layout';
-import { HeroSection, OffersCarousel } from '@/components/customer/home';
+import { HeroSection } from '@/components/customer/home';
 import { useSDUI } from '@/hooks/sdui';
 
 // Lazy load below-the-fold sections to improve FCP and reduce initial bundle
@@ -75,6 +75,22 @@ const NearbySection = dynamic(
         <div className="flex gap-3 overflow-hidden">
           {[1, 2, 3].map((i) => (
             <div key={i} className="w-36 h-44 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+          ))}
+        </div>
+      </div>
+    ),
+  }
+);
+
+// Lazy load OffersCarousel to defer framer-motion (~40KB) from initial bundle
+const OffersCarousel = dynamic(
+  () => import('@/components/customer/home').then((mod) => mod.OffersCarousel),
+  {
+    loading: () => (
+      <div className="mt-4 px-4">
+        <div className="flex gap-3 overflow-hidden">
+          {[1, 2].map((i) => (
+            <div key={i} className="w-72 h-36 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
           ))}
         </div>
       </div>

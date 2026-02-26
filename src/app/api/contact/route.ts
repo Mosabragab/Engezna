@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { withValidation } from '@/lib/api/validate';
+import { successResponse } from '@/lib/api/error-handler';
 
 /**
  * Contact Form API Endpoint
@@ -44,12 +46,9 @@ const priorityMap: Record<string, string> = {
   partnership: 'medium',
 };
 
-export async function POST(request: Request) {
-  try {
-    // Parse and validate request body
-    const body = await request.json();
-    const validatedData = contactFormSchema.parse(body);
-
+export const POST = withValidation(
+  { body: contactFormSchema },
+  async (_request: NextRequest, { body: validatedData }) => {
     // Use admin client to bypass RLS (since user is not authenticated)
     const supabase = createAdminClient();
 
@@ -69,14 +68,12 @@ export async function POST(request: Request) {
       .from('support_tickets')
       .insert({
         ticket_number: ticketNumber,
-        // No user_id since this is anonymous contact form
         type: inquiryTypeMap[validatedData.inquiryType],
         source: 'contact_form',
         priority: priorityMap[validatedData.inquiryType],
         status: 'open',
         subject: subject,
         description: validatedData.message,
-        // Contact form fields
         contact_name: validatedData.name,
         contact_email: validatedData.email,
         contact_phone: validatedData.phone || null,
@@ -86,10 +83,7 @@ export async function POST(request: Request) {
 
     if (error) {
       logger.error('Error creating contact ticket', { error });
-      return NextResponse.json(
-        { error: 'Failed to submit contact form', details: error.message },
-        { status: 500 }
-      );
+      throw new Error('Failed to submit contact form');
     }
 
     // Create admin notification for new contact form submission
@@ -106,21 +100,10 @@ export async function POST(request: Request) {
       logger.error('Error creating admin notification', { error: notifError });
     }
 
-    return NextResponse.json({
+    return successResponse({
       success: true,
       message: 'Contact form submitted successfully',
       ticketNumber: ticket.ticket_number,
     });
-  } catch (error) {
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.issues },
-        { status: 400 }
-      );
-    }
-
-    logger.error('Contact form error', { error });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+);

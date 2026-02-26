@@ -13,6 +13,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 
 export default function ProviderError({
@@ -22,6 +23,9 @@ export default function ProviderError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const pathname = usePathname();
+  const locale = pathname?.split('/')[1] || 'ar';
+
   useEffect(() => {
     // Send error to Sentry with provider context
     Sentry.captureException(error, {
@@ -100,7 +104,7 @@ export default function ProviderError({
 
           {/* Provider Dashboard Button */}
           <Link
-            href="/ar/provider"
+            href={`/${locale}/provider`}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-3 border border-slate-300 hover:border-slate-400 text-slate-700 rounded-lg font-medium transition-colors duration-200"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

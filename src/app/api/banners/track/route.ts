@@ -5,77 +5,44 @@
  * Records impression and click events for banner analytics.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { z } from 'zod';
+import { withValidation } from '@/lib/api/validate';
+import { successResponse } from '@/lib/api/error-handler';
 
-interface TrackRequest {
-  banner_id: string;
-  event_type: 'impression' | 'click';
-  user_id?: string | null;
-}
+const trackSchema = z.object({
+  banner_id: z.string().min(1),
+  event_type: z.enum(['impression', 'click']),
+  user_id: z.string().nullable().optional(),
+});
 
-interface TrackResponse {
-  success: boolean;
-  error?: string;
-}
+export const POST = withValidation(
+  { body: trackSchema },
+  async (_request: NextRequest, { body }) => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export async function POST(request: NextRequest): Promise<NextResponse<TrackResponse>> {
-  let body: TrackRequest;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ success: false, error: 'Invalid request body' }, { status: 400 });
-  }
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Server configuration error');
+    }
 
-  const { banner_id, event_type, user_id } = body;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
-  if (!banner_id || !event_type) {
-    return NextResponse.json(
-      { success: false, error: 'Missing required fields: banner_id, event_type' },
-      { status: 400 }
-    );
-  }
-
-  if (!['impression', 'click'].includes(event_type)) {
-    return NextResponse.json(
-      { success: false, error: 'event_type must be impression or click' },
-      { status: 400 }
-    );
-  }
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json(
-      { success: false, error: 'Server configuration error' },
-      { status: 500 }
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false },
-  });
-
-  try {
     const { error } = await supabase.from('banner_analytics').insert({
-      banner_id,
-      event_type,
-      user_id: user_id || null,
+      banner_id: body.banner_id,
+      event_type: body.event_type,
+      user_id: body.user_id || null,
     });
 
     if (error) {
       logger.error('[Banner Track] Insert error', { error: error.message });
-      return NextResponse.json(
-        { success: false, error: 'Failed to record event' },
-        { status: 500 }
-      );
+      throw new Error('Failed to record event');
     }
 
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    logger.error('[Banner Track] Error tracking banner event', { error: err });
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return successResponse({ success: true });
   }
-}
+);
