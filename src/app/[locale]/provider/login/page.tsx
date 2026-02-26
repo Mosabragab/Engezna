@@ -204,35 +204,14 @@ export default function ProviderLoginPage() {
     setLoading(false);
   }
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="h-12 w-40 bg-slate-200 rounded animate-pulse mx-auto" />
-            <div className="h-4 w-24 bg-slate-200 rounded animate-pulse mx-auto mt-2" />
-          </div>
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-primary/20 to-primary/10 px-6 py-5">
-              <div className="h-6 w-32 bg-white/30 rounded animate-pulse" />
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
-              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
-              <div className="h-12 bg-primary/20 rounded-xl animate-pulse" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const isDisabled = loading || checkingAuth;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href={`/${locale}`} className="inline-block">
+          <Link href={`/${locale}`} className="inline-block" tabIndex={checkingAuth ? -1 : 0}>
             <EngeznaLogo size="lg" static showPen={false} />
           </Link>
           <p className="text-sm text-slate-600 mt-2">
@@ -254,8 +233,11 @@ export default function ProviderLoginPage() {
             </div>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
+          {/* Form - always rendered, disabled during auth check to avoid CLS */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className={`p-6 space-y-5 transition-opacity duration-200 ${checkingAuth ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             {verified && successMessage && (
               <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2 text-green-700">
                 <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
@@ -282,7 +264,7 @@ export default function ProviderLoginPage() {
                   type="email"
                   placeholder={t('emailPlaceholder')}
                   {...register('email')}
-                  disabled={loading}
+                  disabled={isDisabled}
                   className={`${isRTL ? 'pr-10 pl-4' : 'pl-10 pr-4'} ${errors.email ? 'border-destructive' : ''}`}
                   dir="ltr"
                 />
@@ -302,12 +284,13 @@ export default function ProviderLoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder={t('passwordPlaceholder')}
                   {...register('password')}
-                  disabled={loading}
+                  disabled={isDisabled}
                   className={`${isRTL ? 'pr-10 pl-10' : 'pl-10 pr-10'} ${errors.password ? 'border-destructive' : ''}`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={checkingAuth}
                   aria-label={
                     showPassword
                       ? isRTL
@@ -332,13 +315,14 @@ export default function ProviderLoginPage() {
               <Link
                 href={`/${locale}/auth/forgot-password`}
                 className="text-sm text-primary hover:underline"
+                tabIndex={checkingAuth ? -1 : 0}
               >
                 {t('forgotPassword')}
               </Link>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full py-3">
-              {loading ? (
+            <Button type="submit" disabled={isDisabled} className="w-full py-3">
+              {loading || checkingAuth ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <>
@@ -380,6 +364,6 @@ export default function ProviderLoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

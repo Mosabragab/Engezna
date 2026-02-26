@@ -19,11 +19,11 @@ export const notoSansArabic = Noto_Sans_Arabic({
 });
 
 // Logo font - Aref Ruqaa (Arabic calligraphy style)
-// Only used for the "إنجزنا" logo text
+// Used for the "إنجزنا" logo text across all pages
 export const arefRuqaa = Aref_Ruqaa({
   subsets: ['arabic'],
   weight: ['700'],
   variable: '--font-aref-ruqaa',
-  display: 'swap',
-  preload: false, // Don't preload - only used for logo
+  display: 'optional',
+  preload: true,
 });

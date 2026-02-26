@@ -264,8 +264,10 @@ test.describe('Phase 1: Customer Journey', () => {
             content.length > 50
         ).toBeTruthy();
       } else {
-        // Redirected to cart (empty cart)
-        expect(url.includes('/cart') || content.length > 50).toBeTruthy();
+        // Redirected to cart or providers (empty cart)
+        expect(
+          url.includes('/cart') || url.includes('/providers') || content.length > 50
+        ).toBeTruthy();
       }
     });
 
