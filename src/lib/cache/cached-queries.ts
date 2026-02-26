@@ -23,26 +23,28 @@ interface CachedGovernorate {
 }
 
 export async function getCachedGovernorates(): Promise<CachedGovernorate[]> {
-  return staticCache.getOrSet('governorates:active', async () => {
+  const result = await staticCache.getOrSet('governorates:active', async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from('governorates')
       .select('id, name_ar, name_en, is_active')
       .eq('is_active', true)
       .order('name_ar');
-    return (data || []) as CachedGovernorate[];
+    return data || [];
   });
+  return result as CachedGovernorate[];
 }
 
 export async function getCachedAllGovernorates(): Promise<CachedGovernorate[]> {
-  return staticCache.getOrSet('governorates:all', async () => {
+  const result = await staticCache.getOrSet('governorates:all', async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from('governorates')
       .select('id, name_ar, name_en, is_active')
       .order('name_ar');
-    return (data || []) as CachedGovernorate[];
+    return data || [];
   });
+  return result as CachedGovernorate[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -60,15 +62,16 @@ interface CachedBusinessCategory {
 }
 
 export async function getCachedBusinessCategories(): Promise<CachedBusinessCategory[]> {
-  return staticCache.getOrSet('business_categories:active', async () => {
+  const result = await staticCache.getOrSet('business_categories:active', async () => {
     const supabase = createClient();
     const { data } = await supabase
       .from('business_categories')
       .select('*')
       .eq('is_active', true)
       .order('sort_order');
-    return (data || []) as CachedBusinessCategory[];
+    return data || [];
   });
+  return result as CachedBusinessCategory[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
