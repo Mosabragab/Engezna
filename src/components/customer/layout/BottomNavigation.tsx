@@ -3,10 +3,11 @@
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { Home, Search, ShoppingCart, ClipboardList, Heart } from 'lucide-react';
 import { useCart } from '@/lib/store/cart';
 import { createClient } from '@/lib/supabase/client';
+import { useVisibilityPolling } from '@/hooks/useVisibilityPolling';
 
 interface NavItem {
   id: string;
@@ -29,17 +30,23 @@ export const BottomNavigation = memo(function BottomNavigation() {
   // ✅ Zustand Selector: Only re-render when item count changes
   const cartItemsCount = useCart((state) => state.getItemCount());
   const [pendingQuotes, setPendingQuotes] = useState(0);
+  const userIdRef = useRef<string | null>(null);
+
+  // Fetch user ID once on mount — not on every poll cycle
+  // This eliminates 1 auth query per poll (was 167 queries/sec at 5K customers)
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      userIdRef.current = user?.id ?? null;
+    });
+  }, []);
 
   // Load pending quotes count (custom orders awaiting customer approval)
   const loadPendingQuotes = useCallback(async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
 
-    // Count priced custom order requests for this customer
-    // Query requests directly and join to broadcasts to check ownership
+    const supabase = createClient();
     const { count, error } = await supabase
       .from('custom_order_requests')
       .select('id, custom_order_broadcasts!inner(customer_id, status)', {
@@ -47,7 +54,7 @@ export const BottomNavigation = memo(function BottomNavigation() {
         head: true,
       })
       .eq('status', 'priced')
-      .eq('custom_order_broadcasts.customer_id', user.id)
+      .eq('custom_order_broadcasts.customer_id', userId)
       .eq('custom_order_broadcasts.status', 'active');
 
     if (error) {
@@ -59,21 +66,12 @@ export const BottomNavigation = memo(function BottomNavigation() {
   }, []);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // OPTIMIZED: Polling instead of Realtime for non-critical badge updates
-  // Pending quotes badge doesn't need instant updates - 30s polling is sufficient
-  // This reduces Realtime connections significantly
+  // OPTIMIZED: Smart polling with visibility guard
+  // - Pauses when tab is in background (saves 30-50% polling queries)
+  // - Removed getUser() from poll loop (saves 1 query per poll cycle)
+  // - Resumes and fetches immediately when tab becomes visible
   // ═══════════════════════════════════════════════════════════════════════════
-  useEffect(() => {
-    // Initial load
-    loadPendingQuotes();
-
-    // Poll every 30 seconds for pending quotes updates
-    const pollingInterval = setInterval(loadPendingQuotes, 30000);
-
-    return () => {
-      clearInterval(pollingInterval);
-    };
-  }, [loadPendingQuotes]);
+  useVisibilityPolling(loadPendingQuotes, 30000);
 
   const navItems: NavItem[] = [
     { id: 'home', href: `/${locale}`, icon: Home, labelKey: 'home' },

@@ -1051,102 +1051,72 @@ export default function CheckoutPage() {
           : new Date(Date.now() + prepTime * 60 * 1000).toISOString();
 
       // ============================================================
-      // CASH (COD) FLOW: Create order immediately, clear cart
+      // CASH (COD) FLOW: Atomic order creation via RPC
+      // Single DB transaction: order + items + promo — all or nothing
+      // Server-side price validation prevents client manipulation
+      // Idempotency key prevents double-submit duplicates
       // ============================================================
       if (paymentMethod === 'cash') {
-        // P6: Record promo usage BEFORE order creation for transaction safety
-        let promoUsageId: string | null = null;
-        if (appliedPromoCode) {
-          // Atomically increment usage count first (prevents race conditions)
-          const { error: countError } = await supabase
-            .from('promo_codes')
-            .update({ usage_count: appliedPromoCode.usage_count + 1 })
-            .eq('id', appliedPromoCode.id)
-            .eq('usage_count', appliedPromoCode.usage_count); // Optimistic lock
+        // Generate idempotency key to prevent double-submit
+        const idempotencyKey = crypto.randomUUID();
 
-          if (countError) {
-            throw new Error('Promo code was just used by someone else. Please try again.');
-          }
+        // Build items array for the RPC
+        const itemsPayload = cart.map((item) => {
+          const itemPrice = item.selectedVariant?.price ?? item.menuItem.price;
+          const variantName = item.selectedVariant ? ` (${item.selectedVariant.name_ar})` : '';
+          const variantNameEn = item.selectedVariant
+            ? ` (${item.selectedVariant.name_en || item.selectedVariant.name_ar})`
+            : '';
+          return {
+            item_id: item.menuItem.id,
+            item_name_ar: item.menuItem.name_ar + variantName,
+            item_name_en: item.menuItem.name_en + variantNameEn,
+            quantity: item.quantity,
+            unit_price: itemPrice,
+            variant_id: item.selectedVariant?.id || null,
+            variant_name_ar: item.selectedVariant?.name_ar || null,
+            variant_name_en: item.selectedVariant?.name_en || null,
+          };
+        });
 
-          // Record usage (order_id will be updated after order creation)
-          const { data: usageRecord, error: usageError } = await supabase
-            .from('promo_code_usage')
-            .insert({
-              promo_code_id: appliedPromoCode.id,
-              user_id: user.id,
-              order_id: null,
-              discount_amount: discountAmount,
-            })
-            .select('id')
-            .single();
+        const { data: result, error: rpcError } = await supabase.rpc('create_order_atomic', {
+          p_idempotency_key: idempotencyKey,
+          p_customer_id: user.id,
+          p_provider_id: provider.id,
+          p_subtotal: subtotal,
+          p_delivery_fee: calculatedDeliveryFee,
+          p_discount: discountAmount,
+          p_total: finalTotal,
+          p_payment_method: paymentMethod,
+          p_payment_status: 'pending',
+          p_order_type: orderType,
+          p_delivery_timing: deliveryTiming,
+          p_scheduled_time: scheduledTimeValue,
+          p_delivery_address: deliveryAddressJson,
+          p_customer_notes: additionalNotes || null,
+          p_estimated_delivery_time: estimatedDeliveryTime,
+          p_promo_code: appliedPromoCode?.code || null,
+          p_promo_code_id: appliedPromoCode?.id || null,
+          p_promo_usage_count: appliedPromoCode?.usage_count || null,
+          p_items: itemsPayload,
+        });
 
-          if (usageError) {
-            // Rollback usage count
-            await supabase
-              .from('promo_codes')
-              .update({ usage_count: appliedPromoCode.usage_count })
-              .eq('id', appliedPromoCode.id);
-            throw new Error('Failed to record promo code usage.');
-          }
-          promoUsageId = usageRecord?.id || null;
+        if (rpcError) {
+          console.error('Atomic order creation error:', rpcError);
+          throw new Error(rpcError.message);
         }
 
-        // Create order with status 'pending'
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            customer_id: user.id,
-            provider_id: provider.id,
-            status: 'pending',
-            subtotal: subtotal,
-            delivery_fee: calculatedDeliveryFee,
-            discount: discountAmount,
-            total: finalTotal,
-            payment_method: paymentMethod,
-            payment_status: 'pending',
-            order_type: orderType,
-            delivery_timing: deliveryTiming,
-            scheduled_time: scheduledTimeValue,
-            delivery_address: deliveryAddressJson,
-            customer_notes: additionalNotes || null,
-            estimated_delivery_time: estimatedDeliveryTime,
-            promo_code: appliedPromoCode?.code || null,
-          })
-          .select()
-          .single();
-
-        if (orderError) {
-          console.error('Order creation error:', orderError);
-          // P6: Rollback promo usage on order creation failure
-          if (appliedPromoCode) {
-            if (promoUsageId) {
-              await supabase.from('promo_code_usage').delete().eq('id', promoUsageId);
-            }
-            await supabase
-              .from('promo_codes')
-              .update({ usage_count: appliedPromoCode.usage_count })
-              .eq('id', appliedPromoCode.id);
-          }
-          throw new Error(`Order creation failed: ${orderError.message}`);
+        const orderId = result?.order_id;
+        if (!orderId) {
+          throw new Error('Order creation returned no order ID');
         }
-
-        // P6: Link the promo usage record to the created order
-        if (appliedPromoCode && promoUsageId && order?.id) {
-          await supabase
-            .from('promo_code_usage')
-            .update({ order_id: order.id })
-            .eq('id', promoUsageId);
-        }
-
-        // Create order items
-        await createOrderItems(supabase, order.id);
 
         // Mark order as placed and clear cart
         setOrderPlaced(true);
         clearCart();
 
         // Redirect to confirmation page
-        router.push(`/${locale}/orders/${order.id}/confirmation`);
+        router.push(`/${locale}/orders/${orderId}/confirmation`);
         return;
       }
 
