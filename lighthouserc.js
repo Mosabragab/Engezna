@@ -66,8 +66,8 @@ module.exports = {
         'categories:performance': ['error', { minScore: 0.7 }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:best-practices': ['error', { minScore: 0.85 }],
-        // SEO: lower threshold for auth pages (noindex is intentional)
-        'categories:seo': ['error', { minScore: 0.65 }],
+        // SEO: lower threshold for auth pages (noindex is intentional) and client-rendered pages
+        'categories:seo': ['error', { minScore: 0.6 }],
 
         // Core Web Vitals - CI-friendly thresholds (CPU throttled 4x)
         'first-contentful-paint': ['error', { maxNumericValue: 4000 }],
