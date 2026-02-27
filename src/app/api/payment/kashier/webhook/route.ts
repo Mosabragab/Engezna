@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
   validateKashierSignature,
@@ -6,7 +7,21 @@ import {
   KASHIER_PAYMENT_STATUS,
 } from '@/lib/payment/kashier';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { logger } from '@/lib/logger';
+
+const webhookSchema = z
+  .object({
+    orderId: z.string().optional(),
+    transactionId: z.string().optional(),
+    paymentStatus: z.string().optional(),
+    signature: z.string().optional(),
+    // Kashier fields may come under various names; parseKashierCallback handles mapping
+    merchantOrderId: z.string().optional(),
+    order: z.any().optional(),
+    data: z.any().optional(),
+  })
+  .passthrough();
 
 /**
  * Kashier Webhook Handler
@@ -16,12 +31,12 @@ import { logger } from '@/lib/logger';
  * It validates the signature to prevent fake payment notifications
  */
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  // Parse request body
-  const body = await request.json();
+  // Parse and validate request body
+  const body = await validateBody(request, webhookSchema);
   logger.info('[Kashier Webhook] Received callback');
 
   // Extract callback data
-  const callbackData = parseKashierCallback(body);
+  const callbackData = parseKashierCallback(body as Record<string, string>);
   const { paymentStatus, orderId, transactionId, signature } = callbackData;
 
   if (!orderId) {
@@ -36,7 +51,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ success: false, error: 'Missing signature' }, { status: 403 });
   }
 
-  const isValid = validateKashierSignature(body, signature);
+  const isValid = validateKashierSignature(body as Record<string, string>, signature);
   if (!isValid) {
     logger.warn('[Kashier Webhook] Rejected: invalid signature', { orderId });
     return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });

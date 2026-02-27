@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
 
-export const POST = withErrorHandler(async (request: Request) => {
-  const { accessToken } = await request.json();
+const facebookAuthBodySchema = z.object({
+  accessToken: z.string().min(1),
+});
 
-  if (!accessToken) {
-    return NextResponse.json({ error: 'Access token is required' }, { status: 400 });
-  }
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  const { accessToken } = await validateBody(request, facebookAuthBodySchema);
 
   const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;

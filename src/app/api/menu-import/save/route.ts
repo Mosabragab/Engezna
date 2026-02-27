@@ -7,22 +7,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import type { ExtractedCategory, ExtractedAddon, ExtractedVariant } from '@/types/menu-import';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 
 export const maxDuration = 60; // 60 seconds timeout
 
-type ImportMode = 'create_only' | 'update_existing' | 'replace_all';
+const menuImportSaveSchema = z.object({
+  importId: z.string().min(1),
+  providerId: z.string().min(1),
+  categories: z.array(z.any()),
+  addons: z.array(z.any()),
+  importMode: z.enum(['create_only', 'update_existing', 'replace_all']).default('create_only'),
+});
 
-interface SaveRequest {
-  importId: string;
-  providerId: string;
-  categories: ExtractedCategory[];
-  addons: ExtractedAddon[];
-  importMode?: ImportMode; // Default: 'create_only'
-}
+type ImportMode = 'create_only' | 'update_existing' | 'replace_all';
 
 interface ExistingCategory {
   id: string;
@@ -37,16 +39,10 @@ interface ExistingProduct {
 }
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body: SaveRequest = await request.json();
-  const { importId, providerId, categories, addons, importMode = 'create_only' } = body;
-
-  // Validate required fields
-  if (!importId || !providerId) {
-    return NextResponse.json(
-      { success: false, error: 'Import ID and Provider ID are required' },
-      { status: 400 }
-    );
-  }
+  const { importId, providerId, categories, addons, importMode } = await validateBody(
+    request,
+    menuImportSaveSchema
+  );
 
   // Authenticate user
   const supabase = await createClient();

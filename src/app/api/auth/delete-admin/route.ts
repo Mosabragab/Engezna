@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+
+const deleteAdminSchema = z.object({
+  adminId: z.string().min(1, 'adminId is required'),
+  userId: z.string().min(1, 'userId is required'),
+});
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -80,13 +87,8 @@ export const DELETE = withErrorHandler(async (request: NextRequest) => {
     );
   }
 
-  // Parse request body
-  const body: DeleteAdminRequest = await request.json();
-  const { adminId, userId } = body;
-
-  if (!adminId || !userId) {
-    return NextResponse.json({ error: 'Missing adminId or userId' }, { status: 400 });
-  }
+  // Parse and validate request body
+  const { adminId, userId } = await validateBody(request, deleteAdminSchema);
 
   // Prevent self-deletion
   if (caller.id === userId) {

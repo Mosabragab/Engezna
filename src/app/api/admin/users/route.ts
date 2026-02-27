@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import {
   getUsers,
   getUserById,
@@ -10,6 +12,14 @@ import {
   getUserStats,
 } from '@/lib/admin/users';
 import type { UserFilters, UserRole } from '@/lib/admin/types';
+
+const adminUserActionSchema = z.object({
+  action: z.enum(['list', 'get', 'ban', 'unban', 'changeRole', 'stats']),
+  userId: z.string().optional(),
+  reason: z.string().optional(),
+  newRole: z.string().optional(),
+  filters: z.any().optional(),
+});
 
 /**
  * API Route for Admin User Management
@@ -41,7 +51,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     );
   }
 
-  const body = await request.json();
+  const body = await validateBody(request, adminUserActionSchema);
   const { action, ...params } = body;
 
   switch (action) {

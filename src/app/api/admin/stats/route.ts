@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import {
   getDashboardStats,
@@ -12,7 +13,21 @@ import {
 } from '@/lib/admin/statistics';
 import type { StatsFilters } from '@/lib/admin/types';
 import { withErrorHandler, successResponse } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors';
+
+const adminStatsActionSchema = z
+  .object({
+    action: z.enum([
+      'dashboard',
+      'ordersTimeSeries',
+      'revenueTimeSeries',
+      'ordersByCategory',
+      'byGovernorate',
+      'quick',
+    ]),
+  })
+  .passthrough();
 
 /**
  * API Route for Admin Statistics
@@ -41,7 +56,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw AuthorizationError.adminOnly();
   }
 
-  const body = await request.json();
+  const body = await validateBody(request, adminStatsActionSchema);
   const { action, filters = {} } = body;
 
   switch (action) {

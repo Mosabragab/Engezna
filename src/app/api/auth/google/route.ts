@@ -1,13 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
 
-export const POST = withErrorHandler(async (request: Request) => {
-  const { code } = await request.json();
+const googleAuthBodySchema = z.object({
+  code: z.string().min(1),
+});
 
-  if (!code) {
-    return NextResponse.json({ error: 'Authorization code is required' }, { status: 400 });
-  }
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  const { code } = await validateBody(request, googleAuthBodySchema);
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;

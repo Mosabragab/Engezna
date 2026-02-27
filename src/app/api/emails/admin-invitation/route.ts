@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { z } from 'zod';
 import { sendAdminInvitationEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema } from '@/lib/validations';
 
 // Create Supabase admin client
 function getSupabaseAdmin() {
@@ -21,16 +24,16 @@ function getSupabaseAdmin() {
   });
 }
 
-interface AdminInvitationEmailRequest {
-  to: string;
-  adminName: string;
-  roleName: string;
-  roleColor: string;
-  inviterName: string;
-  inviteUrl: string;
-  expiresIn: string;
-  message?: string;
-}
+const adminInvitationSchema = z.object({
+  to: emailSchema,
+  adminName: z.string().min(1),
+  roleName: z.string().min(1),
+  roleColor: z.string().default('#009DE0'),
+  inviterName: z.string().default('مدير النظام'),
+  inviteUrl: z.string().url(),
+  expiresIn: z.string().min(1),
+  message: z.string().optional(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   // Get authorization header
@@ -88,21 +91,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     );
   }
 
-  // Parse request body
-  const body: AdminInvitationEmailRequest = await request.json();
-  const { to, adminName, roleName, roleColor, inviterName, inviteUrl, expiresIn, message } = body;
-
-  // Validate required fields
-  if (!to || !adminName || !roleName || !inviteUrl || !expiresIn) {
-    logger.error('[Admin Invitation Email] Missing required fields', undefined, {
-      to: !!to,
-      adminName: !!adminName,
-      roleName: !!roleName,
-      inviteUrl: !!inviteUrl,
-      expiresIn: !!expiresIn,
-    });
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
+  // Parse and validate request body
+  const { to, adminName, roleName, roleColor, inviterName, inviteUrl, expiresIn, message } =
+    await validateBody(request, adminInvitationSchema);
 
   // Send the email
   logger.info(`[Admin Invitation Email] Sending to ${to}...`);
@@ -110,8 +101,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     to,
     adminName,
     roleName,
-    roleColor: roleColor || '#009DE0',
-    inviterName: inviterName || 'مدير النظام',
+    roleColor,
+    inviterName,
     inviteUrl,
     expiresIn,
     message,

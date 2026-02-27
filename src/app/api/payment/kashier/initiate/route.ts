@@ -1,8 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { buildKashierCheckoutUrl, kashierConfig } from '@/lib/payment/kashier';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { uuidSchema, priceSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+
+const cartItemSchema = z.object({
+  item_id: uuidSchema,
+  item_name_ar: z.string().min(1),
+  item_name_en: z.string().min(1),
+  quantity: z.number().int().positive(),
+  unit_price: z.number().nonnegative(),
+  total_price: z.number().nonnegative(),
+  variant_id: z.string().uuid().nullable().optional(),
+  variant_name_ar: z.string().nullable().optional(),
+  variant_name_en: z.string().nullable().optional(),
+});
+
+const initiatePaymentSchema = z.object({
+  orderData: z.object({
+    provider_id: uuidSchema,
+    customer_id: uuidSchema,
+    subtotal: z.number().nonnegative(),
+    delivery_fee: z.number().nonnegative(),
+    discount: z.number().nonnegative().default(0),
+    total: priceSchema,
+    order_type: z.string().min(1),
+    delivery_timing: z.string().optional(),
+    scheduled_time: z.string().nullable().optional(),
+    delivery_address: z.any().optional(),
+    customer_notes: z.string().nullable().optional(),
+    estimated_delivery_time: z.string().nullable().optional(),
+    promo_code: z.string().nullable().optional(),
+    promo_code_id: z.string().uuid().nullable().optional(),
+    promo_code_usage_count: z.number().int().nonnegative().nullable().optional(),
+    provider_name: z.string().optional(),
+    cart_items: z.array(cartItemSchema).min(1, 'At least one cart item is required'),
+  }),
+});
 
 /**
  * Payment Initiation API
@@ -36,20 +73,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { orderData } = body;
-
-  // Validate order data
-  if (!orderData) {
-    return NextResponse.json({ error: 'Order data is required' }, { status: 400 });
-  }
-
-  if (!orderData.provider_id || !orderData.total || !orderData.cart_items?.length) {
-    return NextResponse.json(
-      { error: 'Invalid order data: missing required fields' },
-      { status: 400 }
-    );
-  }
+  const { orderData } = await validateBody(request, initiatePaymentSchema);
 
   // Verify the user matches the order data
   if (orderData.customer_id !== user.id) {

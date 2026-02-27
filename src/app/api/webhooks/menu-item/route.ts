@@ -14,8 +14,44 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { logger } from '@/lib/logger';
+
+const webhookPayloadSchema = z
+  .object({
+    type: z.enum(['INSERT', 'UPDATE', 'DELETE']),
+    table: z.string(),
+    schema: z.string(),
+    record: z
+      .object({
+        id: z.string(),
+        name_ar: z.string(),
+        name_en: z.string().optional(),
+        description_ar: z.string().optional(),
+        description_en: z.string().optional(),
+        price: z.number(),
+        is_available: z.boolean(),
+        provider_id: z.string(),
+        provider_category_id: z.string().optional(),
+        embedding: z.unknown().optional(),
+      })
+      .passthrough(),
+    old_record: z
+      .object({
+        id: z.string(),
+        name_ar: z.string(),
+        name_en: z.string().optional(),
+        description_ar: z.string().optional(),
+        description_en: z.string().optional(),
+        price: z.number(),
+        provider_category_id: z.string().optional(),
+      })
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
 
 // Verify webhook signature (if configured)
 function verifyWebhookSignature(request: NextRequest): boolean {
@@ -40,33 +76,6 @@ function getSupabaseConfig() {
   };
 }
 
-interface WebhookPayload {
-  type: 'INSERT' | 'UPDATE' | 'DELETE';
-  table: string;
-  schema: string;
-  record: {
-    id: string;
-    name_ar: string;
-    name_en?: string;
-    description_ar?: string;
-    description_en?: string;
-    price: number;
-    is_available: boolean;
-    provider_id: string;
-    provider_category_id?: string;
-    embedding?: unknown;
-  };
-  old_record?: {
-    id: string;
-    name_ar: string;
-    name_en?: string;
-    description_ar?: string;
-    description_en?: string;
-    price: number;
-    provider_category_id?: string;
-  };
-}
-
 export const POST = withErrorHandler(async (request: NextRequest) => {
   // Verify webhook signature
   if (!verifyWebhookSignature(request)) {
@@ -74,7 +83,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  const payload: WebhookPayload = await request.json();
+  const payload = await validateBody(request, webhookPayloadSchema);
 
   logger.info(`[Webhook] Received ${payload.type} event for menu_items`);
 

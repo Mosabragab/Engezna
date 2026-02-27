@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { getAuditLog } from '@/lib/admin/audit';
+
+const adminAuditActionSchema = z.object({
+  action: z.enum(['list']),
+  adminId: z.string().optional(),
+  resourceType: z.string().optional(),
+  resourceId: z.string().optional(),
+  status: z.enum(['success', 'denied', 'failed']).optional(),
+  dateFrom: z.string().optional(),
+  dateTo: z.string().optional(),
+  page: z.number().optional(),
+  limit: z.number().optional(),
+});
 
 /**
  * API Route for Admin Audit Log
@@ -33,7 +47,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     );
   }
 
-  const body = await request.json();
+  const body = await validateBody(request, adminAuditActionSchema);
   const { action, ...params } = body;
 
   switch (action) {

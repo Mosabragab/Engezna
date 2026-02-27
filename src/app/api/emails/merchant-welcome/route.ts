@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { sendMerchantWelcomeEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { uuidSchema } from '@/lib/validations';
+
+const merchantWelcomeSchema = z.object({
+  merchantId: uuidSchema,
+  storeName: z.string().optional(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
@@ -31,12 +39,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { merchantId, storeName } = body;
-
-  if (!merchantId) {
-    return NextResponse.json({ error: 'merchantId is required' }, { status: 400 });
-  }
+  const { merchantId, storeName } = await validateBody(request, merchantWelcomeSchema);
 
   // Get merchant data
   const { data: merchant, error: merchantError } = await supabase

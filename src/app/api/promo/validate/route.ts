@@ -7,19 +7,22 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { uuidSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
 
-interface ValidateRequest {
-  code: string;
-  provider_id: string;
-  provider_category?: string;
-  subtotal: number;
-  governorate_id?: string | null;
-  city_id?: string | null;
-}
+const validatePromoSchema = z.object({
+  code: z.string().min(1, 'Promo code is required').trim(),
+  provider_id: uuidSchema,
+  provider_category: z.string().optional(),
+  subtotal: z.number().nonnegative('Subtotal must be non-negative'),
+  governorate_id: z.string().uuid().nullable().optional(),
+  city_id: z.string().uuid().nullable().optional(),
+});
 
 interface ValidateResponse {
   valid: boolean;
@@ -69,29 +72,9 @@ export const POST = withErrorHandler(
       );
     }
 
-    // Parse request body
-    let body: ValidateRequest;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { valid: false, error: 'Invalid request body', error_code: 'INVALID_REQUEST' },
-        { status: 400 }
-      );
-    }
-
-    const { code, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
-
-    if (!code || !provider_id || subtotal === undefined) {
-      return NextResponse.json(
-        {
-          valid: false,
-          error: 'Missing required fields: code, provider_id, subtotal',
-          error_code: 'MISSING_FIELDS',
-        },
-        { status: 400 }
-      );
-    }
+    // Parse and validate request body
+    const { code, provider_id, provider_category, subtotal, governorate_id, city_id } =
+      await validateBody(request, validatePromoSchema);
 
     // SECURITY: Get user identity from session, NOT from request body
     // This prevents identity spoofing attacks

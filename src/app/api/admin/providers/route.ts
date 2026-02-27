@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import {
   getProviders,
   getProviderById,
@@ -14,6 +16,27 @@ import {
   getProviderStats,
 } from '@/lib/admin/providers';
 import type { ProviderFilters } from '@/lib/admin/types';
+
+const adminProviderActionSchema = z.object({
+  action: z.enum([
+    'list',
+    'get',
+    'approve',
+    'reject',
+    'suspend',
+    'reactivate',
+    'updateCommission',
+    'toggleFeatured',
+    'toggleVerified',
+    'stats',
+  ]),
+  providerId: z.string().optional(),
+  reason: z.string().optional(),
+  commissionRate: z.number().optional(),
+  isFeatured: z.boolean().optional(),
+  isVerified: z.boolean().optional(),
+  filters: z.any().optional(),
+});
 
 /**
  * API Route for Admin Provider Management
@@ -45,7 +68,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     );
   }
 
-  const body = await request.json();
+  const body = await validateBody(request, adminProviderActionSchema);
   const { action, ...params } = body;
 
   switch (action) {

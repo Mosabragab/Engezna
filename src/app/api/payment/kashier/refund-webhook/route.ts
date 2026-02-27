@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { validateKashierSignature } from '@/lib/payment/kashier';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { logger } from '@/lib/logger';
+
+const refundWebhookSchema = z
+  .object({
+    orderId: z.string().min(1),
+    transactionId: z.string().optional(),
+    refundId: z.string().optional(),
+    status: z.string().optional(),
+    signature: z.string().optional(),
+    amount: z.union([z.string(), z.number()]).optional(),
+    error: z.string().optional(),
+  })
+  .passthrough();
 
 /**
  * Kashier Refund Webhook Handler
@@ -17,15 +31,10 @@ import { logger } from '@/lib/logger';
  * 3. Notifies the customer of the final refund result
  */
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body = await request.json();
+  const body = await validateBody(request, refundWebhookSchema);
   logger.info('[Kashier Refund Webhook] Received callback');
 
   const { orderId, transactionId, refundId, status, signature, amount, error: refundError } = body;
-
-  if (!orderId) {
-    logger.warn('[Kashier Refund Webhook] Missing order ID');
-    return NextResponse.json({ success: false, error: 'Missing order ID' }, { status: 400 });
-  }
 
   // SECURITY: Signature validation is MANDATORY
   if (!signature) {
@@ -33,7 +42,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ success: false, error: 'Missing signature' }, { status: 403 });
   }
 
-  const isValid = validateKashierSignature(body, signature);
+  const isValid = validateKashierSignature(body as Record<string, string>, signature);
   if (!isValid) {
     logger.warn('[Kashier Refund Webhook] Rejected: invalid signature', { orderId });
     return NextResponse.json({ success: false, error: 'Invalid signature' }, { status: 403 });
@@ -75,7 +84,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         payment_status: 'refunded',
         refund_transaction_id: refundId || transactionId,
         refunded_at: new Date().toISOString(),
-        refund_amount: amount ? parseFloat(amount) : order.refund_amount,
+        refund_amount: amount ? parseFloat(String(amount)) : order.refund_amount,
       })
       .eq('id', orderId);
 

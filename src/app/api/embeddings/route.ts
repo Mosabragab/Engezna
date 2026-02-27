@@ -6,9 +6,18 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+
+const embeddingsSchema = z.object({
+  mode: z.enum(['single', 'batch', 'all', 'catchup']).default('catchup'),
+  item_id: z.string().optional(),
+  item_ids: z.array(z.string()).optional(),
+  limit: z.number().int().positive().default(50),
+});
 
 // Helper to get the Supabase URL and key for Edge Function calls
 function getSupabaseConfig() {
@@ -56,8 +65,7 @@ export const GET = withErrorHandler(async () => {
 });
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body = await request.json();
-  const { mode = 'catchup', item_id, item_ids, limit = 50 } = body;
+  const { mode, item_id, item_ids, limit } = await validateBody(request, embeddingsSchema);
 
   const { url, serviceKey } = getSupabaseConfig();
 

@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { sendStoreApprovedEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+
+const storeApprovedSchema = z.object({
+  storeId: z.string().min(1),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
@@ -27,12 +33,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { storeId } = body;
-
-  if (!storeId) {
-    return NextResponse.json({ error: 'storeId is required' }, { status: 400 });
-  }
+  const { storeId } = await validateBody(request, storeApprovedSchema);
 
   // Get store data
   const { data: store, error: storeError } = await supabase

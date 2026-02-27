@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { sendStaffInvitationEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema } from '@/lib/validations';
+
+const staffInvitationSchema = z.object({
+  to: emailSchema,
+  staffName: z.string().optional(),
+  storeName: z.string().min(1),
+  merchantName: z.string().optional(),
+  role: z.string().optional(),
+  inviteUrl: z.string().url(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
@@ -16,17 +28,11 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Parse request body
-  const body = await request.json();
-  const { to, staffName, storeName, merchantName, role, inviteUrl } = body;
-
-  // Validate required fields
-  if (!to || !storeName || !inviteUrl) {
-    return NextResponse.json(
-      { error: 'Missing required fields: to, storeName, inviteUrl' },
-      { status: 400 }
-    );
-  }
+  // Parse and validate request body
+  const { to, staffName, storeName, merchantName, role, inviteUrl } = await validateBody(
+    request,
+    staffInvitationSchema
+  );
 
   // Verify the user is a provider owner
   const { data: provider } = await supabase

@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { sendEmailVerificationEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema, passwordSchema } from '@/lib/validations';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -21,16 +24,16 @@ function getSupabaseAdmin() {
   });
 }
 
-interface RegisterRequest {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  governorateId: string;
-  cityId: string;
-  locale: string;
-}
+const registerBodySchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  firstName: z.string().min(1).max(100),
+  lastName: z.string().min(1).max(100),
+  phone: z.string().optional(),
+  governorateId: z.string().optional(),
+  cityId: z.string().optional(),
+  locale: z.string().optional(),
+});
 
 /**
  * Check if email is a test account that should bypass email verification.
@@ -55,7 +58,6 @@ function isTestAccount(email: string): boolean {
 }
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body: RegisterRequest = await request.json();
   const {
     email,
     password,
@@ -65,46 +67,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     governorateId,
     cityId,
     locale = 'ar',
-  } = body;
-
-  // Validate required fields
-  if (!email || !password || !firstName || !lastName || !phone || !governorateId || !cityId) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required' },
-      { status: 400 }
-    );
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email format' },
-      { status: 400 }
-    );
-  }
-
-  // Validate Egyptian phone number
-  const phoneRegex = /^01[0-2,5]{1}[0-9]{8}$/;
-  if (!phoneRegex.test(phone)) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'رقم الهاتف غير صالح' : 'Invalid phone number' },
-      { status: 400 }
-    );
-  }
-
-  // Validate password length
-  if (password.length < 8) {
-    return NextResponse.json(
-      {
-        error:
-          locale === 'ar'
-            ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
-            : 'Password must be at least 8 characters',
-      },
-      { status: 400 }
-    );
-  }
+  } = await validateBody(request, registerBodySchema);
 
   const supabase = getSupabaseAdmin();
 

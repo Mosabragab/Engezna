@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema, passwordSchema } from '@/lib/validations';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -20,50 +23,20 @@ function getSupabaseAdmin() {
   });
 }
 
-interface StaffRegisterRequest {
-  email: string;
-  password: string;
-  invitationToken: string;
-  locale: string;
-}
+const staffRegisterBodySchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  invitationToken: z.string().min(1),
+  locale: z.string().optional(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body: StaffRegisterRequest = await request.json();
-  const { email, password, invitationToken, locale = 'ar' } = body;
-
-  // Validate required fields
-  if (!email || !password || !invitationToken) {
-    return NextResponse.json(
-      {
-        error: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required',
-      },
-      { status: 400 }
-    );
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return NextResponse.json(
-      {
-        error: locale === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email format',
-      },
-      { status: 400 }
-    );
-  }
-
-  // Validate password length
-  if (password.length < 6) {
-    return NextResponse.json(
-      {
-        error:
-          locale === 'ar'
-            ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-            : 'Password must be at least 6 characters',
-      },
-      { status: 400 }
-    );
-  }
+  const {
+    email,
+    password,
+    invitationToken,
+    locale = 'ar',
+  } = await validateBody(request, staffRegisterBodySchema);
 
   const supabase = getSupabaseAdmin();
 

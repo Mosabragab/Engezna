@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { sendSettlementEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+
+const settlementSchema = z.object({
+  settlementId: z.string().min(1),
+  storeId: z.string().min(1),
+  merchantId: z.string().optional(),
+  amount: z.number(),
+  ordersCount: z.number().optional(),
+  period: z.string().optional(),
+  settlementDate: z.string().optional(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const supabase = await createClient();
@@ -27,16 +39,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { settlementId, storeId, merchantId, amount, ordersCount, period, settlementDate } = body;
-
-  // Validate required fields
-  if (!settlementId || !storeId || !amount) {
-    return NextResponse.json(
-      { error: 'settlementId, storeId, and amount are required' },
-      { status: 400 }
-    );
-  }
+  const { settlementId, storeId, merchantId, amount, ordersCount, period, settlementDate } =
+    await validateBody(request, settlementSchema);
 
   // Get store data
   const { data: store, error: storeError } = await supabase

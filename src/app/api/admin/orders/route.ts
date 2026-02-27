@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import {
@@ -11,7 +12,18 @@ import {
 } from '@/lib/admin/orders';
 import type { OrderFilters, OrderStatus } from '@/lib/admin/types';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
 import { AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors';
+
+const adminOrderActionSchema = z.object({
+  action: z.enum(['list', 'get', 'cancel', 'refund', 'updateStatus', 'stats']),
+  orderId: z.string().optional(),
+  reason: z.string().optional(),
+  amount: z.number().positive().optional(),
+  status: z.string().optional(),
+  note: z.string().optional(),
+  filters: z.any().optional(),
+});
 
 /**
  * API Route for Admin Order Management
@@ -40,7 +52,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw AuthorizationError.adminOnly();
   }
 
-  const body = await request.json();
+  const body = await validateBody(request, adminOrderActionSchema);
   const { action, ...params } = body;
 
   switch (action) {

@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { sendPasswordResetEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema } from '@/lib/validations';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -21,25 +24,13 @@ function getSupabaseAdmin() {
   });
 }
 
+const forgotPasswordBodySchema = z.object({
+  email: emailSchema,
+  locale: z.string().optional(),
+});
+
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body = await request.json();
-  const { email, locale = 'ar' } = body;
-
-  if (!email) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'البريد الإلكتروني مطلوب' : 'Email is required' },
-      { status: 400 }
-    );
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email format' },
-      { status: 400 }
-    );
-  }
+  const { email, locale = 'ar' } = await validateBody(request, forgotPasswordBodySchema);
 
   const supabase = getSupabaseAdmin();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.engezna.com';

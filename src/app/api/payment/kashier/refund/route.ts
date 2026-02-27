@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { refundKashierPayment } from '@/lib/payment/kashier';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { uuidSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+
+const refundSchema = z.object({
+  orderId: uuidSchema,
+  amount: z.number().positive().optional(),
+  reason: z.string().min(1, 'Refund reason is required'),
+});
 
 /**
  * Kashier Refund API
@@ -42,16 +51,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
   }
 
-  const body = await request.json();
-  const { orderId, amount, reason } = body;
-
-  if (!orderId) {
-    return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
-  }
-
-  if (!reason) {
-    return NextResponse.json({ error: 'Refund reason is required' }, { status: 400 });
-  }
+  const { orderId, amount, reason } = await validateBody(request, refundSchema);
 
   const supabaseAdmin = createAdminClient();
 

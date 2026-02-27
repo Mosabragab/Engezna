@@ -3,6 +3,9 @@ import { createClient } from '@supabase/supabase-js';
 import { sendEmailVerificationEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema, passwordSchema } from '@/lib/validations';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -21,22 +24,21 @@ function getSupabaseAdmin() {
   });
 }
 
-interface PartnerRegisterRequest {
-  email: string;
-  password: string;
-  fullName: string;
-  phone: string;
-  governorateId: string;
-  cityId?: string;
-  businessCategory: string;
-  storeNameAr: string;
-  storeNameEn: string;
-  partnerRole: string;
-  locale: string;
-}
+const partnerRegisterBodySchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+  fullName: z.string().min(2).max(100),
+  phone: z.string().optional(),
+  governorateId: z.string().optional(),
+  cityId: z.string().optional(),
+  businessCategory: z.string().optional(),
+  storeNameAr: z.string().optional(),
+  storeNameEn: z.string().optional(),
+  partnerRole: z.string().optional(),
+  locale: z.string().optional(),
+});
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body: PartnerRegisterRequest = await request.json();
   const {
     email,
     password,
@@ -49,56 +51,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     storeNameEn,
     partnerRole,
     locale = 'ar',
-  } = body;
-
-  // Validate required fields
-  if (
-    !email ||
-    !password ||
-    !fullName ||
-    !phone ||
-    !governorateId ||
-    !businessCategory ||
-    !storeNameAr ||
-    !storeNameEn ||
-    !partnerRole
-  ) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'جميع الحقول مطلوبة' : 'All fields are required' },
-      { status: 400 }
-    );
-  }
-
-  // Validate email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email format' },
-      { status: 400 }
-    );
-  }
-
-  // Validate Egyptian phone number
-  const phoneRegex = /^01[0-2,5]{1}[0-9]{8}$/;
-  if (!phoneRegex.test(phone)) {
-    return NextResponse.json(
-      { error: locale === 'ar' ? 'رقم الهاتف غير صالح' : 'Invalid phone number' },
-      { status: 400 }
-    );
-  }
-
-  // Validate password length
-  if (password.length < 6) {
-    return NextResponse.json(
-      {
-        error:
-          locale === 'ar'
-            ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-            : 'Password must be at least 6 characters',
-      },
-      { status: 400 }
-    );
-  }
+  } = await validateBody(request, partnerRegisterBodySchema);
 
   const supabase = getSupabaseAdmin();
 

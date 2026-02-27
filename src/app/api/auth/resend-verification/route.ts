@@ -10,7 +10,9 @@ import { createClient } from '@supabase/supabase-js';
 import { sendEmailVerificationEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
 import { withErrorHandler, successResponse } from '@/lib/api/error-handler';
-import { ValidationError } from '@/lib/errors';
+import { z } from 'zod';
+import { validateBody } from '@/lib/api/validate';
+import { emailSchema } from '@/lib/validations';
 
 function getSupabaseAdmin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -28,18 +30,12 @@ function getSupabaseAdmin() {
   });
 }
 
+const resendVerificationBodySchema = z.object({
+  email: emailSchema,
+});
+
 export const POST = withErrorHandler(async (request: NextRequest) => {
-  const body = await request.json();
-  const { email } = body;
-
-  if (!email || typeof email !== 'string') {
-    throw ValidationError.field('email', 'Email is required');
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    throw ValidationError.field('email', 'Invalid email format');
-  }
+  const { email } = await validateBody(request, resendVerificationBodySchema);
 
   const supabase = getSupabaseAdmin();
 
