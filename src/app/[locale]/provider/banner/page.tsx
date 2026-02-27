@@ -257,13 +257,11 @@ export default function ProviderBannerPage() {
 
     setProvider(providerRecord);
 
-    // Load location names
+    // Load location names (from cache to reduce DB queries)
     if (providerRecord.governorate_id) {
-      const { data: govData } = await supabase
-        .from('governorates')
-        .select('name_ar, name_en')
-        .eq('id', providerRecord.governorate_id)
-        .single();
+      const { getCachedGovernorates } = await import('@/lib/cache/cached-queries');
+      const allGovs = await getCachedGovernorates();
+      const govData = allGovs.find((g) => g.id === providerRecord.governorate_id) || null;
 
       let cityData = null;
       if (providerRecord.city_id) {

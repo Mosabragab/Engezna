@@ -4,6 +4,13 @@ import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { withValidation } from '@/lib/api/validate';
 import { successResponse } from '@/lib/api/error-handler';
+import {
+  contactLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
+import { alertRateLimitViolation } from '@/lib/monitoring/slack-alerting';
 
 /**
  * Contact Form API Endpoint
@@ -48,7 +55,19 @@ const priorityMap: Record<string, string> = {
 
 export const POST = withValidation(
   { body: contactFormSchema },
-  async (_request: NextRequest, { body: validatedData }) => {
+  async (request: NextRequest, { body: validatedData }) => {
+    // Rate limit: 5 requests per 10 minutes per IP
+    try {
+      const identifier = getClientIdentifier(request);
+      const rateLimitResult = await checkRateLimit(contactLimiter, identifier);
+      if (!rateLimitResult.success) {
+        alertRateLimitViolation('/api/contact', identifier).catch(() => {});
+        return rateLimitErrorResponse(rateLimitResult);
+      }
+    } catch {
+      // Gracefully skip rate limiting if Upstash is unavailable
+    }
+
     // Use admin client to bypass RLS (since user is not authenticated)
     const supabase = createAdminClient();
 

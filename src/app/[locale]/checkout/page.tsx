@@ -155,6 +155,13 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Price re-validation state (#21: validate cart prices against current DB prices)
+  const [priceChanges, setPriceChanges] = useState<
+    Array<{ name: string; oldPrice: number; newPrice: number }>
+  >([]);
+  const [showPriceChangeDialog, setShowPriceChangeDialog] = useState(false);
+  const [validatingPrices, setValidatingPrices] = useState(false);
+
   // Idempotency key: generated once per checkout session (not per click!)
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [showClosedDialog, setShowClosedDialog] = useState(false);
@@ -371,6 +378,101 @@ export default function CheckoutPage() {
       setLoadingAddresses(false);
     }
   }, [authLoading, isAuthenticated, cart, user]);
+
+  // ─── Price Re-validation (#21) ─────────────────────────────────────────
+  // When checkout loads, validate cart prices against current DB prices.
+  // If prices changed since items were added to localStorage cart, warn user.
+  useEffect(() => {
+    if (!cart || cart.length === 0 || orderPlaced) return;
+
+    const validatePrices = async () => {
+      setValidatingPrices(true);
+      try {
+        const supabase = createClient();
+        const menuItemIds = [...new Set(cart.map((item) => item.menuItem.id))];
+
+        // Fetch current prices for all menu items in the cart
+        const { data: currentItems } = await supabase
+          .from('menu_items')
+          .select('id, price, is_available')
+          .in('id', menuItemIds);
+
+        // Fetch current variant prices if any items have variants
+        const variantIds = cart
+          .filter((item) => item.selectedVariant?.id)
+          .map((item) => item.selectedVariant!.id);
+
+        let currentVariants: Array<{ id: string; price: number; is_available: boolean }> = [];
+        if (variantIds.length > 0) {
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('id, price, is_available')
+            .in('id', variantIds);
+          currentVariants = variants || [];
+        }
+
+        if (!currentItems) {
+          setValidatingPrices(false);
+          return;
+        }
+
+        const changes: Array<{ name: string; oldPrice: number; newPrice: number }> = [];
+        const currentItemsMap = new Map(currentItems.map((i) => [i.id, i]));
+        const currentVariantsMap = new Map(currentVariants.map((v) => [v.id, v]));
+
+        // Update cart items with current prices (silently update the store)
+        const updatedCart = cart.map((cartItem) => {
+          const currentItem = currentItemsMap.get(cartItem.menuItem.id);
+          if (!currentItem) return cartItem; // Item removed from menu — kept as-is
+
+          let updated = cartItem;
+
+          // Check variant price
+          if (cartItem.selectedVariant?.id) {
+            const currentVariant = currentVariantsMap.get(cartItem.selectedVariant.id);
+            if (currentVariant && currentVariant.price !== cartItem.selectedVariant.price) {
+              const variantName = cartItem.selectedVariant.name_ar || '';
+              changes.push({
+                name: `${cartItem.menuItem.name_ar} (${variantName})`,
+                oldPrice: cartItem.selectedVariant.price,
+                newPrice: currentVariant.price,
+              });
+              updated = {
+                ...updated,
+                selectedVariant: { ...updated.selectedVariant!, price: currentVariant.price },
+              };
+            }
+          } else if (currentItem.price !== cartItem.menuItem.price) {
+            // Check base item price (only if no variant selected)
+            changes.push({
+              name: cartItem.menuItem.name_ar,
+              oldPrice: cartItem.menuItem.price,
+              newPrice: currentItem.price,
+            });
+            updated = {
+              ...updated,
+              menuItem: { ...updated.menuItem, price: currentItem.price },
+            };
+          }
+
+          return updated;
+        });
+
+        if (changes.length > 0) {
+          // Update cart store with fresh prices
+          useCart.setState({ cart: updatedCart });
+          setPriceChanges(changes);
+          setShowPriceChangeDialog(true);
+        }
+      } catch {
+        // Don't block checkout if price validation fails — the server-side
+        // RPC (create_order_atomic) will validate prices anyway
+      }
+      setValidatingPrices(false);
+    };
+
+    validatePrices();
+  }, [_hasHydrated]); // Run once after cart hydrates from localStorage
 
   // Reset city and district when governorate changes
   useEffect(() => {
@@ -2244,6 +2346,45 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      {/* Price Change Warning Dialog (#21) */}
+      <Dialog open={showPriceChangeDialog} onOpenChange={setShowPriceChangeDialog}>
+        <DialogContent className="text-center">
+          <DialogHeader className="items-center">
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
+              <AlertCircle className="h-7 w-7 text-amber-600" />
+            </div>
+            <DialogTitle>
+              {locale === 'ar' ? 'تم تحديث الأسعار' : 'Prices Updated'}
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              {locale === 'ar'
+                ? 'تغيرت أسعار بعض الأصناف منذ إضافتها للسلة. تم تحديث السلة بالأسعار الجديدة.'
+                : 'Some item prices have changed since they were added to your cart. Your cart has been updated with current prices.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="my-3 space-y-2 text-sm max-h-48 overflow-y-auto">
+            {priceChanges.map((change, i) => (
+              <div key={i} className="flex justify-between items-center px-3 py-2 bg-muted rounded-lg">
+                <span className="text-start truncate flex-1">{change.name}</span>
+                <div className="flex items-center gap-2 shrink-0 ms-2">
+                  <span className="line-through text-muted-foreground">
+                    {change.oldPrice.toFixed(2)}
+                  </span>
+                  <span className="font-semibold text-primary">
+                    {change.newPrice.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="sm:justify-center mt-2">
+            <Button variant="default" onClick={() => setShowPriceChangeDialog(false)}>
+              {locale === 'ar' ? 'حسنًا، متابعة الطلب' : 'OK, Continue'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Store Closed Popup Dialog */}
       <Dialog open={showClosedDialog} onOpenChange={setShowClosedDialog}>
         <DialogContent className="text-center">

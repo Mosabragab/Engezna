@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { AppError, isAppError, RateLimitError } from '@/lib/errors';
+import { alertApiError } from '@/lib/monitoring/slack-alerting';
 
 /**
  * Standard API response format
@@ -115,6 +116,16 @@ export function withErrorHandler<T extends unknown[]>(
     try {
       return await handler(...args);
     } catch (error) {
+      // Send Slack alert for 500-level (non-operational) errors
+      const isOperational = isAppError(error) && error.isOperational;
+      if (!isOperational) {
+        const route =
+          args[0] && typeof args[0] === 'object' && 'url' in args[0]
+            ? new URL((args[0] as Request).url).pathname
+            : 'unknown';
+        alertApiError(route, error).catch(() => {});
+      }
+
       return errorResponse(error);
     }
   };

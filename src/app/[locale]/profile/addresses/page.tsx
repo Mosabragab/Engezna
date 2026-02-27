@@ -143,13 +143,8 @@ export default function AddressesPage() {
   }, []);
 
   const loadGovernorates = useCallback(async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('governorates')
-      .select('*')
-      .eq('is_active', true)
-      .order('name_en');
-
+    const { getCachedGovernorates } = await import('@/lib/cache/cached-queries');
+    const data = await getCachedGovernorates();
     if (data) {
       setGovernorates(data);
     }

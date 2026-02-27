@@ -1,5 +1,6 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { NextResponse } from 'next/server';
 
 /**
  * Upstash Redis Rate Limiter
@@ -118,6 +119,39 @@ export const promoValidateLimiter = new Ratelimit({
   analytics: true,
 });
 
+/**
+ * Register: 5 requests per 15 minutes
+ * Prevents mass account creation / registration abuse
+ */
+export const registerLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '15 m'),
+  prefix: 'ratelimit:auth:register',
+  analytics: true,
+});
+
+/**
+ * Contact Form: 5 requests per 10 minutes
+ * Prevents contact form spam / DoS on support tickets
+ */
+export const contactLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, '10 m'),
+  prefix: 'ratelimit:api:contact',
+  analytics: true,
+});
+
+/**
+ * Banner Track: 100 requests per minute
+ * Prevents fake analytics injection / tracking spam
+ */
+export const bannerTrackLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(100, '1 m'),
+  prefix: 'ratelimit:api:banner:track',
+  analytics: true,
+});
+
 // ============================================
 // Helper Types & Functions
 // ============================================
@@ -168,20 +202,19 @@ export function rateLimitHeaders(result: RateLimitResult): Headers {
 /**
  * Create standard rate limit error response (429)
  */
-export function rateLimitErrorResponse(result: RateLimitResult): Response {
+export function rateLimitErrorResponse(result: RateLimitResult): NextResponse {
   const retryAfter = Math.ceil((result.reset - Date.now()) / 1000);
 
-  return new Response(
-    JSON.stringify({
+  return NextResponse.json(
+    {
       error: 'Too many requests',
       message: `Rate limit exceeded. Try again in ${retryAfter} seconds.`,
       message_ar: `تم تجاوز الحد المسموح. حاول مرة أخرى بعد ${retryAfter} ثانية.`,
       retryAfter,
-    }),
+    },
     {
       status: 429,
       headers: {
-        'Content-Type': 'application/json',
         'Retry-After': retryAfter.toString(),
         ...Object.fromEntries(rateLimitHeaders(result)),
       },
@@ -203,6 +236,9 @@ export const limiters = {
   orderCreation: orderCreationLimiter,
   search: searchLimiter,
   promoValidate: promoValidateLimiter,
+  register: registerLimiter,
+  contact: contactLimiter,
+  bannerTrack: bannerTrackLimiter,
 } as const;
 
 export type LimiterType = keyof typeof limiters;

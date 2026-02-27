@@ -201,8 +201,9 @@ export default function InviteSupervisorPage() {
   const loadGeoData = useCallback(async () => {
     const supabase = createClient();
 
-    const [govRes, cityRes, distRes] = await Promise.all([
-      supabase.from('governorates').select('id, name_ar, name_en').order('name_ar'),
+    const { getCachedGovernorates } = await import('@/lib/cache/cached-queries');
+    const [govData, cityRes, distRes] = await Promise.all([
+      getCachedGovernorates(),
       supabase.from('cities').select('id, name_ar, name_en, governorate_id').order('name_ar'),
       supabase
         .from('districts')
@@ -210,7 +211,7 @@ export default function InviteSupervisorPage() {
         .order('name_ar'),
     ]);
 
-    if (govRes.data) setGovernorates(govRes.data);
+    if (govData) setGovernorates(govData);
     if (cityRes.data) setCities(cityRes.data);
     if (distRes.data) setDistricts(distRes.data);
   }, []);

@@ -194,13 +194,9 @@ export default function CompleteProfilePage() {
         setCityLocked(true); // Lock city - cannot be changed
       }
 
-      // Load governorates
-      const { data: govData } = await supabase
-        .from('governorates')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order');
-
+      // Load governorates (cached — avoids redundant queries for 27 static rows)
+      const { getCachedGovernorates } = await import('@/lib/cache/cached-queries');
+      const govData = await getCachedGovernorates();
       if (govData) setGovernorates(govData);
 
       // Load all cities
