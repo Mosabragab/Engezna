@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { type BusinessCategory, getCategoryGradient } from '@/lib/supabase/business-categories';
 import { getCachedBusinessCategories } from '@/lib/cache/cached-queries';
+import { BUSINESS_CATEGORIES_LIST } from '@/lib/constants/categories';
 
 interface CategoriesSectionProps {
   selectedCategory?: string;
@@ -27,15 +28,46 @@ export function CategoriesSection({
   const [loading, setLoading] = useState(true);
 
   // Fetch categories from cache layer (eliminates hundreds of thousands of direct DB queries)
+  // Falls back to hardcoded constants when the database is unavailable
   useEffect(() => {
     async function fetchCategories() {
       try {
         const data = await getCachedBusinessCategories();
         if (data && data.length > 0) {
           setCategories(data as unknown as BusinessCategory[]);
+        } else {
+          // Fallback to hardcoded categories
+          setCategories(
+            BUSINESS_CATEGORIES_LIST.map((cat, i) => ({
+              id: cat.code,
+              code: cat.code,
+              name_ar: cat.name_ar,
+              name_en: cat.name_en,
+              description_ar: cat.description_ar,
+              description_en: cat.description_en,
+              icon: cat.icon,
+              color: cat.color,
+              display_order: i + 1,
+              is_active: true,
+            }))
+          );
         }
       } catch {
-        // Silent fallback — categories will show empty
+        // Fallback to hardcoded categories when DB is unavailable
+        setCategories(
+          BUSINESS_CATEGORIES_LIST.map((cat, i) => ({
+            id: cat.code,
+            code: cat.code,
+            name_ar: cat.name_ar,
+            name_en: cat.name_en,
+            description_ar: cat.description_ar,
+            description_en: cat.description_en,
+            icon: cat.icon,
+            color: cat.color,
+            display_order: i + 1,
+            is_active: true,
+          }))
+        );
       }
       setLoading(false);
     }
@@ -51,8 +83,8 @@ export function CategoriesSection({
         <div className="flex justify-between items-center mb-5">
           <h2 className="text-xl font-bold text-slate-900">{sectionTitle}</h2>
         </div>
-        <div className="grid grid-cols-5 gap-2 sm:gap-3 items-start">
-          {[1, 2, 3, 4, 5].map((i) => (
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 items-start">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="flex flex-col items-center animate-pulse">
               <div className="w-[64px] h-[64px] sm:w-[72px] sm:h-[72px] md:w-[84px] md:h-[84px] lg:w-[100px] lg:h-[100px] rounded-2xl md:rounded-3xl bg-slate-200" />
               <div className="mt-2 h-4 w-16 bg-slate-200 rounded" />
@@ -80,7 +112,7 @@ export function CategoriesSection({
       </div>
 
       {/* Categories Grid - Elegant Design with Hover Effects */}
-      <div className="grid grid-cols-5 gap-2 sm:gap-3 items-start">
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 items-start">
         {categories.map((category) => {
           const isSelected = selectedCategory === category.code;
           const gradient = getCategoryGradient(category.code);
