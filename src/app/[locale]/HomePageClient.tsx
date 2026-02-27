@@ -156,29 +156,26 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
   const [userId, setUserId] = useState<string | undefined>();
   const [isReordering, setIsReordering] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [earlyRedirectDone, setEarlyRedirectDone] = useState(false);
+
+  // SYNCHRONOUS CHECK: Determine on first render if we need to redirect to welcome.
+  // Using lazy initializer so localStorage is read before the first paint,
+  // preventing a flash of the homepage skeleton before redirect.
+  const [earlyRedirectDone] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const guestLocation = guestLocationStorage.get();
+    return !guestLocation?.governorateId;
+  });
 
   // Track if we've already loaded providers to avoid duplicate calls
   const providersLoadedRef = useRef(false);
   const lastLocationRef = useRef<string | null>(null);
 
-  // FAST CHECK: Check localStorage immediately on mount (before any async operations)
-  // This ensures new visitors are redirected to welcome page ASAP
+  // Perform the actual redirect (useEffect is still needed for router.replace)
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return;
-
-    // Check localStorage synchronously for guest location
-    const guestLocation = guestLocationStorage.get();
-
-    // If no location saved, redirect to welcome immediately (for guests)
-    // Don't wait for auth check - just redirect fast, welcome page will handle logged-in users
-    if (!guestLocation?.governorateId) {
-      setEarlyRedirectDone(true);
+    if (earlyRedirectDone) {
       router.replace(`/${locale}/welcome`);
-      return;
     }
-  }, [locale, router]);
+  }, [earlyRedirectDone, locale, router]);
 
   // Single auth check on mount - just to get userId for orders
   useEffect(() => {
@@ -495,6 +492,11 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
     },
     [router, locale]
   );
+
+  // If redirecting to welcome, render nothing to avoid a flash of the homepage skeleton
+  if (earlyRedirectDone) {
+    return null;
+  }
 
   // Show loading while initializing or loading location data
   const isLoading = isInitializing || !isDataLoaded || isUserLocationLoading;
