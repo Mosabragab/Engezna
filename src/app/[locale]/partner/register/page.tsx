@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates, getCachedBusinessCategories } from '@/lib/cache/cached-queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -65,8 +66,9 @@ interface BusinessCategory {
   name_ar: string;
   name_en: string;
   icon: string | null;
-  color: string | null;
-  display_order: number;
+  color?: string | null;
+  sort_order?: number;
+  display_order?: number;
 }
 
 // Icon mapping for business categories
@@ -152,30 +154,14 @@ export default function PartnerRegisterPage() {
   // Fetch governorates and business categories on mount
   useEffect(() => {
     async function fetchInitialData() {
-      const supabase = createClient();
-
-      // Fetch governorates
-      const { data: govData, error: govError } = await supabase
-        .from('governorates')
-        .select('id, name_ar, name_en, is_active')
-        .eq('is_active', true)
-        .order('name_ar');
-
-      if (!govError && govData) {
-        setGovernorates(govData);
-      }
+      // Fetch governorates (cached)
+      const govData = await getCachedGovernorates();
+      setGovernorates(govData);
       setLoadingGovernorates(false);
 
-      // Fetch business categories from database
-      const { data: catData, error: catError } = await supabase
-        .from('business_categories')
-        .select('id, code, name_ar, name_en, icon, color, display_order')
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (!catError && catData) {
-        setBusinessCategories(catData);
-      }
+      // Fetch business categories (cached)
+      const catData = await getCachedBusinessCategories();
+      setBusinessCategories(catData);
       setLoadingCategories(false);
     }
     fetchInitialData();

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatDate } from '@/lib/utils/formatters';
 import {
@@ -439,11 +440,11 @@ export default function AdminBannersPage() {
 
   async function loadLocations() {
     const supabase = createClient();
-    const [govResult, cityResult] = await Promise.all([
-      supabase.from('governorates').select('*').eq('is_active', true).order('name_ar'),
+    const [govData, cityResult] = await Promise.all([
+      getCachedGovernorates(),
       supabase.from('cities').select('*').eq('is_active', true).order('name_ar'),
     ]);
-    setGovernorates(govResult.data || []);
+    setGovernorates(govData);
     setCities(cityResult.data || []);
   }
 

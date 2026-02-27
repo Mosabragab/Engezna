@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import Link from 'next/link';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { Button } from '@/components/ui/button';
@@ -160,15 +161,8 @@ export default function RegisterPage() {
     async function fetchLocations() {
       const supabase = createClient();
 
-      const { data: govData } = await supabase
-        .from('governorates')
-        .select('id, name_ar, name_en, is_active')
-        .eq('is_active', true)
-        .order('name_ar');
-
-      if (govData) {
-        setGovernorates(govData);
-      }
+      const govData = await getCachedGovernorates();
+      setGovernorates(govData);
 
       const { data: cityData } = await supabase
         .from('cities')

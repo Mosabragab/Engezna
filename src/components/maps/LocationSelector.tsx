@@ -11,6 +11,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { LocationPicker } from './LocationPicker';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates, getCachedAllGovernorates } from '@/lib/cache/cached-queries';
 import { Loader2 } from 'lucide-react';
 
 interface Governorate {
@@ -63,26 +64,14 @@ export function LocationSelector({
   // Fetch governorates on mount
   useEffect(() => {
     async function fetchGovernorates() {
-      let query = supabase
-        .from('governorates')
-        .select('id, name_ar, name_en, is_active')
-        .order('display_order', { ascending: true })
-        .order('name_ar', { ascending: true });
+      const data = onlyActive ? await getCachedGovernorates() : await getCachedAllGovernorates();
 
-      if (onlyActive) {
-        query = query.eq('is_active', true);
-      }
-
-      const { data, error } = await query;
-
-      if (!error && data) {
-        setGovernorates(data);
-      }
+      setGovernorates(data);
       setIsLoadingGovernorates(false);
     }
 
     fetchGovernorates();
-  }, [onlyActive, supabase]);
+  }, [onlyActive]);
 
   // Fetch cities when governorate changes
   useEffect(() => {

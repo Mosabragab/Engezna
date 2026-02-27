@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar, GeoFilter, GeoFilterValue } from '@/components/admin';
 import { formatNumber, formatDate } from '@/lib/utils/formatters';
 import {
@@ -189,14 +190,8 @@ export default function AdminSupervisorsPage() {
     const supabase = createClient();
 
     // Load governorates
-    const { data: govData } = await supabase
-      .from('governorates')
-      .select('id, name_ar, name_en')
-      .order('name_ar');
-
-    if (govData) {
-      setGovernorates(govData);
-    }
+    const govData = await getCachedGovernorates();
+    setGovernorates(govData);
 
     // Load cities
     const { data: cityData } = await supabase

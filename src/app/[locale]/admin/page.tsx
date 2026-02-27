@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 import { csrfHeaders } from '@/lib/security/csrf-client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatTimeAgo } from '@/lib/utils/formatters';
 import {
@@ -261,15 +262,8 @@ export default function AdminDashboard() {
         }
 
         // Load governorates for display
-        const { data: govData } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en')
-          .eq('is_active', true)
-          .order('name_ar');
-
-        if (govData) {
-          setGovernorates(govData);
-        }
+        const govData = await getCachedGovernorates();
+        setGovernorates(govData);
 
         await loadDashboardData(supabase, adminData as AdminUser | null);
       }

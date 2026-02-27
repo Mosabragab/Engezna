@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedAllGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatCurrency, formatDate } from '@/lib/utils/formatters';
 import {
@@ -100,9 +101,8 @@ export default function AdminRegionalAnalyticsPage() {
 
   const loadLocationData = useCallback(async (supabase: ReturnType<typeof createClient>) => {
     // Load governorates
-    const { data: govData } = await supabase.from('governorates').select('*').order('name_ar');
-
-    if (govData) setGovernorates(govData);
+    const govData = await getCachedAllGovernorates();
+    setGovernorates(govData);
 
     // Load cities
     const { data: cityData } = await supabase.from('cities').select('*').order('name_ar');

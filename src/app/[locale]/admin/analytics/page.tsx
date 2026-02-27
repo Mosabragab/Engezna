@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar, GeoFilter, useAdminGeoFilter } from '@/components/admin';
 import type { GeoFilterValue } from '@/components/admin';
 import { MapPin } from 'lucide-react';
@@ -100,14 +101,8 @@ export default function AdminAnalyticsPage() {
         setIsAdmin(true);
 
         // Load governorates for display
-        const { data: govData } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en')
-          .eq('is_active', true)
-          .order('name_ar');
-        if (govData) {
-          setGovernorates(govData);
-        }
+        const govData = await getCachedGovernorates();
+        setGovernorates(govData);
 
         setLoading(false); // Show page immediately
         // loadAnalytics will be triggered by useEffect when geoFilter is ready

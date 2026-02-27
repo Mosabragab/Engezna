@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedAllGovernorates } from '@/lib/cache/cached-queries';
 import type {
   PermissionConstraints,
   GeographicConstraint,
@@ -86,8 +87,8 @@ export function ConstraintsEditor({
     const supabase = createClient();
     setLoadingGeo(true);
 
-    const [govRes, cityRes, distRes] = await Promise.all([
-      supabase.from('governorates').select('id, name_ar, name_en').order('name_ar'),
+    const [govData, cityRes, distRes] = await Promise.all([
+      getCachedAllGovernorates(),
       supabase.from('cities').select('id, name_ar, name_en, governorate_id').order('name_ar'),
       supabase
         .from('districts')
@@ -95,7 +96,7 @@ export function ConstraintsEditor({
         .order('name_ar'),
     ]);
 
-    if (govRes.data) setGovernorates(govRes.data);
+    setGovernorates(govData);
     if (cityRes.data) setCities(cityRes.data);
     if (distRes.data) setDistricts(distRes.data);
     setLoadingGeo(false);

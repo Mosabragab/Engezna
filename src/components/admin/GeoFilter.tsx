@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl';
 import { useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { Building, Map, Home, X } from 'lucide-react';
 
 interface Governorate {
@@ -62,18 +63,13 @@ export function GeoFilter({
   const loadLocations = useCallback(async () => {
     const supabase = createClient();
 
-    const [govRes, cityRes, distRes] = await Promise.all([
-      supabase
-        .from('governorates')
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true })
-        .order('name_ar'),
+    const [govData, cityRes, distRes] = await Promise.all([
+      getCachedGovernorates(),
       supabase.from('cities').select('*').eq('is_active', true).order('name_ar'),
       supabase.from('districts').select('*').eq('is_active', true).order('name_ar'),
     ]);
 
-    setGovernorates(govRes.data || []);
+    setGovernorates(govData);
     setCities(cityRes.data || []);
     setDistricts(distRes.data || []);
     setLoading(false);
