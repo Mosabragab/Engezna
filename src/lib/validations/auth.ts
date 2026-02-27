@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { emailSchema, passwordSchema, strongPasswordSchema, egyptianPhoneSchema } from './common';
+import { emailSchema, strongPasswordSchema, egyptianPhoneSchema } from './common';
 
 /**
  * Authentication validation schemas

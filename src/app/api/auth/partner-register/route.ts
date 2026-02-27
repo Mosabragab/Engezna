@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 import { withErrorHandler } from '@/lib/api/error-handler';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
-import { emailSchema, passwordSchema } from '@/lib/validations';
+import { emailSchema, strongPasswordSchema } from '@/lib/validations';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -26,7 +26,7 @@ function getSupabaseAdmin() {
 
 const partnerRegisterBodySchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: strongPasswordSchema,
   fullName: z.string().min(2).max(100),
   phone: z.string().optional(),
   governorateId: z.string().optional(),

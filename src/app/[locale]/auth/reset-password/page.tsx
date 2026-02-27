@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
+import { strongPasswordSchema } from '@/lib/validations/common';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
@@ -78,12 +79,9 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
-      setError(
-        locale === 'ar'
-          ? 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'
-          : 'Password must be at least 8 characters'
-      );
+    const passwordValidation = strongPasswordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      setError(passwordValidation.error.issues[0].message);
       return;
     }
 
