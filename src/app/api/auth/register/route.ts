@@ -6,6 +6,13 @@ import { withErrorHandler } from '@/lib/api/error-handler';
 import { z } from 'zod';
 import { validateBody } from '@/lib/api/validate';
 import { emailSchema, strongPasswordSchema } from '@/lib/validations';
+import {
+  registerLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
+import { alertRateLimitViolation } from '@/lib/monitoring/slack-alerting';
 
 // Create Supabase admin client with service role key
 function getSupabaseAdmin() {
@@ -58,6 +65,18 @@ function isTestAccount(email: string): boolean {
 }
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
+  // Rate limit: 5 requests per 15 minutes per IP
+  try {
+    const identifier = getClientIdentifier(request);
+    const rateLimitResult = await checkRateLimit(registerLimiter, identifier);
+    if (!rateLimitResult.success) {
+      alertRateLimitViolation('/api/auth/register', identifier).catch(() => {});
+      return rateLimitErrorResponse(rateLimitResult);
+    }
+  } catch {
+    // Gracefully skip rate limiting if Upstash is unavailable
+  }
+
   const {
     email,
     password,

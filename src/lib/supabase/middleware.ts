@@ -27,6 +27,41 @@ interface MaintenanceSettings {
 let maintenanceCache: { settings: MaintenanceSettings | null; timestamp: number } | null = null;
 const CACHE_DURATION = 30000; // 30 seconds
 
+/**
+ * User role cache — reduces profiles table queries for admin/provider routes
+ * Each user's role is cached for 60 seconds (role changes are rare)
+ */
+const roleCache = new Map<string, { role: UserRole | null; timestamp: number }>();
+const ROLE_CACHE_DURATION = 60000; // 60 seconds
+const ROLE_CACHE_MAX_SIZE = 100;
+
+async function getCachedUserRole(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string
+): Promise<UserRole | null> {
+  const cached = roleCache.get(userId);
+  if (cached && Date.now() - cached.timestamp < ROLE_CACHE_DURATION) {
+    return cached.role;
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+
+  const role = (profile?.role as UserRole) || null;
+  roleCache.set(userId, { role, timestamp: Date.now() });
+
+  // Evict oldest entries if cache grows too large
+  if (roleCache.size > ROLE_CACHE_MAX_SIZE) {
+    const oldestKey = roleCache.keys().next().value;
+    if (oldestKey) roleCache.delete(oldestKey);
+  }
+
+  return role;
+}
+
 async function getMaintenanceSettings(
   supabase: ReturnType<typeof createServerClient>
 ): Promise<MaintenanceSettings | null> {
@@ -330,14 +365,9 @@ export async function updateSession(request: NextRequest) {
     const needsProviderCheck = isProviderDashboard && !isProviderPublicPage;
 
     // Only query the profiles table when accessing admin or provider routes
+    // Uses a short-lived cache (60s) to avoid repeated DB queries for the same user
     if (isAdminAccessCheck || needsProviderCheck) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      const userRole: UserRole | null = profile?.role as UserRole | null;
+      const userRole = await getCachedUserRole(supabase, user.id);
 
       // Check admin routes - only 'admin' role allowed
       if (isAdminAccessCheck) {

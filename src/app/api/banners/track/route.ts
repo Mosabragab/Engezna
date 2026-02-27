@@ -11,6 +11,12 @@ import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { withValidation } from '@/lib/api/validate';
 import { successResponse } from '@/lib/api/error-handler';
+import {
+  bannerTrackLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+  rateLimitErrorResponse,
+} from '@/lib/utils/upstash-rate-limit';
 
 const trackSchema = z.object({
   banner_id: z.string().min(1),
@@ -20,7 +26,18 @@ const trackSchema = z.object({
 
 export const POST = withValidation(
   { body: trackSchema },
-  async (_request: NextRequest, { body }) => {
+  async (request: NextRequest, { body }) => {
+    // Rate limit: 100 requests per minute per IP
+    try {
+      const identifier = getClientIdentifier(request);
+      const rateLimitResult = await checkRateLimit(bannerTrackLimiter, identifier);
+      if (!rateLimitResult.success) {
+        return rateLimitErrorResponse(rateLimitResult);
+      }
+    } catch {
+      // Gracefully skip rate limiting if Upstash is unavailable
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
