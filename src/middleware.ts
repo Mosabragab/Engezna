@@ -52,6 +52,24 @@ export default async function middleware(request: NextRequest) {
     return supabaseResponse;
   }
 
+  // ─── Guest Location Check: redirect new visitors to /welcome ──────────
+  // Without this, the server renders the homepage skeleton and the client
+  // redirects after hydration, causing a visible flash for new visitors.
+  const isHomePage = pathname === '/' || /^\/(ar|en)\/?$/.test(pathname);
+  if (isHomePage) {
+    const hasLocation = request.cookies.get('engezna_has_location');
+    if (!hasLocation) {
+      // Don't redirect authenticated users — client-side handles their case
+      const hasAuth = request.cookies
+        .getAll()
+        .some((c) => c.name.startsWith('sb-') && c.name.includes('auth'));
+      if (!hasAuth) {
+        const locale = pathname.startsWith('/en') ? 'en' : defaultLocale;
+        return NextResponse.redirect(new URL(`/${locale}/welcome`, request.url));
+      }
+    }
+  }
+
   // Then apply internationalization
   const intlResponse = intlMiddleware(request);
 
