@@ -14,6 +14,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { withErrorHandler } from '@/lib/api/error-handler';
 import { logger } from '@/lib/logger';
 
 // Verify webhook signature (if configured)
@@ -66,108 +67,99 @@ interface WebhookPayload {
   };
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    // Verify webhook signature
-    if (!verifyWebhookSignature(request)) {
-      logger.error('Invalid webhook signature');
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-    }
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  // Verify webhook signature
+  if (!verifyWebhookSignature(request)) {
+    logger.error('Invalid webhook signature');
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+  }
 
-    const payload: WebhookPayload = await request.json();
+  const payload: WebhookPayload = await request.json();
 
-    logger.info(`[Webhook] Received ${payload.type} event for menu_items`);
+  logger.info(`[Webhook] Received ${payload.type} event for menu_items`);
 
-    // Only process INSERT and UPDATE events
-    if (payload.type === 'DELETE') {
-      return NextResponse.json({ success: true, message: 'DELETE event ignored' });
-    }
+  // Only process INSERT and UPDATE events
+  if (payload.type === 'DELETE') {
+    return NextResponse.json({ success: true, message: 'DELETE event ignored' });
+  }
 
-    const record = payload.record;
-    const oldRecord = payload.old_record;
+  const record = payload.record;
+  const oldRecord = payload.old_record;
 
-    // Skip if item is not available
-    if (!record.is_available) {
-      return NextResponse.json({
-        success: true,
-        message: 'Item not available, skipping embedding generation',
-      });
-    }
-
-    // For UPDATE, check if relevant fields changed
-    if (payload.type === 'UPDATE' && oldRecord) {
-      const relevantFieldsChanged =
-        record.name_ar !== oldRecord.name_ar ||
-        record.name_en !== oldRecord.name_en ||
-        record.description_ar !== oldRecord.description_ar ||
-        record.description_en !== oldRecord.description_en ||
-        record.price !== oldRecord.price ||
-        record.provider_category_id !== oldRecord.provider_category_id;
-
-      if (!relevantFieldsChanged) {
-        return NextResponse.json({
-          success: true,
-          message: 'No relevant fields changed, skipping embedding generation',
-        });
-      }
-    }
-
-    // Trigger embedding generation
-    const { url, serviceKey } = getSupabaseConfig();
-
-    if (!url || !serviceKey) {
-      logger.error('Supabase configuration missing');
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-    }
-
-    logger.info('[Webhook] Triggering embedding generation', { itemId: record.id });
-
-    const response = await fetch(`${url}/functions/v1/generate-embedding`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${serviceKey}`,
-      },
-      body: JSON.stringify({
-        item_id: record.id,
-        mode: 'single',
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!result.success) {
-      logger.error('[Webhook] Embedding generation failed', { error: result.error });
-      // Don't return error - webhook should always return 200 to prevent retries
-      return NextResponse.json({
-        success: false,
-        message: 'Embedding generation queued for retry',
-        error: result.error,
-      });
-    }
-
-    logger.info('[Webhook] Embedding generated successfully', { itemId: record.id });
-
+  // Skip if item is not available
+  if (!record.is_available) {
     return NextResponse.json({
       success: true,
-      message: 'Embedding generated',
-      item_id: record.id,
-    });
-  } catch (error) {
-    logger.error('[Webhook] Error processing menu item webhook', { error });
-    // Return 200 to prevent Supabase from retrying
-    return NextResponse.json({
-      success: false,
-      error: (error as Error).message,
+      message: 'Item not available, skipping embedding generation',
     });
   }
-}
+
+  // For UPDATE, check if relevant fields changed
+  if (payload.type === 'UPDATE' && oldRecord) {
+    const relevantFieldsChanged =
+      record.name_ar !== oldRecord.name_ar ||
+      record.name_en !== oldRecord.name_en ||
+      record.description_ar !== oldRecord.description_ar ||
+      record.description_en !== oldRecord.description_en ||
+      record.price !== oldRecord.price ||
+      record.provider_category_id !== oldRecord.provider_category_id;
+
+    if (!relevantFieldsChanged) {
+      return NextResponse.json({
+        success: true,
+        message: 'No relevant fields changed, skipping embedding generation',
+      });
+    }
+  }
+
+  // Trigger embedding generation
+  const { url, serviceKey } = getSupabaseConfig();
+
+  if (!url || !serviceKey) {
+    logger.error('Supabase configuration missing');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
+  logger.info('[Webhook] Triggering embedding generation', { itemId: record.id });
+
+  const response = await fetch(`${url}/functions/v1/generate-embedding`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify({
+      item_id: record.id,
+      mode: 'single',
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!result.success) {
+    logger.error('[Webhook] Embedding generation failed', { error: result.error });
+    // Don't return error - webhook should always return 200 to prevent retries
+    return NextResponse.json({
+      success: false,
+      message: 'Embedding generation queued for retry',
+      error: result.error,
+    });
+  }
+
+  logger.info('[Webhook] Embedding generated successfully', { itemId: record.id });
+
+  return NextResponse.json({
+    success: true,
+    message: 'Embedding generated',
+    item_id: record.id,
+  });
+});
 
 // Handle GET for health check
-export async function GET() {
+export const GET = withErrorHandler(async () => {
   return NextResponse.json({
     status: 'ok',
     endpoint: 'menu-item webhook',
     description: 'Receives INSERT/UPDATE events from menu_items table',
   });
-}
+});
