@@ -57,7 +57,7 @@ interface CachedBusinessCategory {
   name_ar: string;
   name_en: string;
   icon: string | null;
-  sort_order: number;
+  display_order: number;
   is_active: boolean;
 }
 
@@ -68,7 +68,7 @@ export async function getCachedBusinessCategories(): Promise<CachedBusinessCateg
       .from('business_categories')
       .select('*')
       .eq('is_active', true)
-      .order('sort_order');
+      .order('display_order');
     return data || [];
   });
   return result as CachedBusinessCategory[];
