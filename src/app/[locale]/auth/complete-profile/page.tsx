@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -164,15 +165,8 @@ export default function CompleteProfilePage() {
       const supabase = createClient();
 
       // Fetch governorates
-      const { data: govData } = await supabase
-        .from('governorates')
-        .select('id, name_ar, name_en, is_active')
-        .eq('is_active', true)
-        .order('name_ar');
-
-      if (govData) {
-        setGovernorates(govData);
-      }
+      const govData = await getCachedGovernorates();
+      setGovernorates(govData);
 
       // Fetch all cities
       const { data: cityData } = await supabase

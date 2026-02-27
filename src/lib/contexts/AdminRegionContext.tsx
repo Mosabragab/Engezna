@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AdminRegionContext - Caches admin region data to reduce database queries
@@ -161,18 +162,13 @@ export function AdminRegionProvider({ children }: { children: ReactNode }) {
     // Load fresh data from database
     try {
       // Parallel queries for better performance
-      const [adminResult, govResult, citiesResult] = await Promise.all([
+      const [adminResult, governorates, citiesResult] = await Promise.all([
         supabase
           .from('admin_users')
           .select('id, role, assigned_regions')
           .eq('user_id', authUser.id)
           .single(),
-        supabase
-          .from('governorates')
-          .select('id, name_ar, name_en, is_active')
-          .eq('is_active', true)
-          .order('display_order', { ascending: true })
-          .order('name_ar'),
+        getCachedGovernorates(),
         supabase
           .from('cities')
           .select('id, governorate_id, name_ar, name_en, is_active')
@@ -181,7 +177,6 @@ export function AdminRegionProvider({ children }: { children: ReactNode }) {
       ]);
 
       const adminUser = adminResult.data;
-      const governorates = govResult.data || [];
       const cities = citiesResult.data || [];
 
       if (!adminUser) {

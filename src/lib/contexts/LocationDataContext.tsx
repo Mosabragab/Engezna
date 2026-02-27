@@ -10,6 +10,7 @@ import {
   ReactNode,
 } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 
 // Types for location data
 export interface Governorate {
@@ -122,12 +123,8 @@ export function LocationDataProvider({ children }: { children: ReactNode }) {
 
     try {
       // Fetch all data in parallel
-      const [govResult, cityResult, distResult] = await Promise.all([
-        supabase
-          .from('governorates')
-          .select('id, name_ar, name_en, is_active')
-          .eq('is_active', true)
-          .order('name_ar'),
+      const [govData, cityResult, distResult] = await Promise.all([
+        getCachedGovernorates(),
         supabase
           .from('cities')
           .select('id, name_ar, name_en, governorate_id, is_active')
@@ -140,7 +137,6 @@ export function LocationDataProvider({ children }: { children: ReactNode }) {
           .order('name_ar'),
       ]);
 
-      const govData = (govResult.data || []) as Governorate[];
       const cityData = (cityResult.data || []) as City[];
       const distData = (distResult.data || []) as District[];
 

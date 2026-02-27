@@ -185,7 +185,7 @@ describe('Validation Schemas', () => {
       it('should accept valid registration data', () => {
         const result = registerSchema.safeParse({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'Test User',
         });
         expect(result.success).toBe(true);
@@ -194,7 +194,7 @@ describe('Validation Schemas', () => {
       it('should accept with optional phone', () => {
         const result = registerSchema.safeParse({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'Test User',
           phone: '01012345678',
         });
@@ -204,7 +204,7 @@ describe('Validation Schemas', () => {
       it('should reject short name', () => {
         const result = registerSchema.safeParse({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'A',
         });
         expect(result.success).toBe(false);
@@ -213,7 +213,7 @@ describe('Validation Schemas', () => {
       it('should reject invalid phone', () => {
         const result = registerSchema.safeParse({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'Password123',
           name: 'Test User',
           phone: '123456',
         });
@@ -225,7 +225,7 @@ describe('Validation Schemas', () => {
       it('should accept valid login data', () => {
         const result = loginEmailSchema.safeParse({
           email: 'test@example.com',
-          password: 'password123',
+          password: 'Password123',
         });
         expect(result.success).toBe(true);
       });

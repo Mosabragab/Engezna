@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
-import { logger } from '@/lib/logger';
 import {
   getDashboardStats,
   getOrdersTimeSeries,
@@ -12,107 +12,94 @@ import {
   getTodayRevenue,
 } from '@/lib/admin/statistics';
 import type { StatsFilters } from '@/lib/admin/types';
+import { withErrorHandler, successResponse } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors';
+
+const adminStatsActionSchema = z
+  .object({
+    action: z.enum([
+      'dashboard',
+      'ordersTimeSeries',
+      'revenueTimeSeries',
+      'ordersByCategory',
+      'byGovernorate',
+      'quick',
+    ]),
+  })
+  .passthrough();
 
 /**
  * API Route for Admin Statistics
  * POST /api/admin/stats
  */
-export async function POST(request: NextRequest) {
-  try {
-    // Verify authentication and admin role
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
+export const POST = withErrorHandler(async (request: NextRequest) => {
+  // Verify authentication and admin role
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get user role from profiles table
-    const { data: userData, error: userError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-
-    if (userError || userData?.role !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden - Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const { action, filters = {} } = body;
-
-    switch (action) {
-      // ───────────────────────────────────────────────────────────────────
-      // إحصائيات لوحة التحكم الرئيسية
-      // ───────────────────────────────────────────────────────────────────
-      case 'dashboard': {
-        const result = await getDashboardStats(filters as StatsFilters);
-        return NextResponse.json(result);
-      }
-
-      // ───────────────────────────────────────────────────────────────────
-      // سلسلة زمنية للطلبات
-      // ───────────────────────────────────────────────────────────────────
-      case 'ordersTimeSeries': {
-        const result = await getOrdersTimeSeries(filters as StatsFilters);
-        return NextResponse.json(result);
-      }
-
-      // ───────────────────────────────────────────────────────────────────
-      // سلسلة زمنية للإيرادات
-      // ───────────────────────────────────────────────────────────────────
-      case 'revenueTimeSeries': {
-        const result = await getRevenueTimeSeries(filters as StatsFilters);
-        return NextResponse.json(result);
-      }
-
-      // ───────────────────────────────────────────────────────────────────
-      // إحصائيات حسب الفئة
-      // ───────────────────────────────────────────────────────────────────
-      case 'ordersByCategory': {
-        const result = await getOrdersByCategory(filters as StatsFilters);
-        return NextResponse.json(result);
-      }
-
-      // ───────────────────────────────────────────────────────────────────
-      // إحصائيات حسب المحافظة
-      // ───────────────────────────────────────────────────────────────────
-      case 'byGovernorate': {
-        const result = await getStatsByGovernorate();
-        return NextResponse.json(result);
-      }
-
-      // ───────────────────────────────────────────────────────────────────
-      // إحصائيات سريعة للكروت
-      // ───────────────────────────────────────────────────────────────────
-      case 'quick': {
-        const [pendingResult, ordersResult, revenueResult] = await Promise.all([
-          getPendingProvidersCount(),
-          getTodayOrdersCount(),
-          getTodayRevenue(),
-        ]);
-
-        return NextResponse.json({
-          success: true,
-          data: {
-            pendingProviders: pendingResult.success ? pendingResult.data : 0,
-            todayOrders: ordersResult.success ? ordersResult.data : 0,
-            todayRevenue: revenueResult.success ? revenueResult.data : 0,
-          },
-        });
-      }
-
-      default:
-        return NextResponse.json({ success: false, error: 'Unknown action' }, { status: 400 });
-    }
-  } catch (error) {
-    logger.error('Error in admin stats API', { error });
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  if (authError || !user) {
+    throw new AuthenticationError('Unauthorized');
   }
-}
+
+  // Get user role from profiles table
+  const { data: userData, error: userError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (userError || userData?.role !== 'admin') {
+    throw AuthorizationError.adminOnly();
+  }
+
+  const body = await validateBody(request, adminStatsActionSchema);
+  const { action, filters = {} } = body;
+
+  switch (action) {
+    case 'dashboard': {
+      const result = await getDashboardStats(filters as StatsFilters);
+      return NextResponse.json(result);
+    }
+
+    case 'ordersTimeSeries': {
+      const result = await getOrdersTimeSeries(filters as StatsFilters);
+      return NextResponse.json(result);
+    }
+
+    case 'revenueTimeSeries': {
+      const result = await getRevenueTimeSeries(filters as StatsFilters);
+      return NextResponse.json(result);
+    }
+
+    case 'ordersByCategory': {
+      const result = await getOrdersByCategory(filters as StatsFilters);
+      return NextResponse.json(result);
+    }
+
+    case 'byGovernorate': {
+      const result = await getStatsByGovernorate();
+      return NextResponse.json(result);
+    }
+
+    case 'quick': {
+      const [pendingResult, ordersResult, revenueResult] = await Promise.all([
+        getPendingProvidersCount(),
+        getTodayOrdersCount(),
+        getTodayRevenue(),
+      ]);
+
+      return successResponse({
+        pendingProviders: pendingResult.success ? pendingResult.data : 0,
+        todayOrders: ordersResult.success ? ordersResult.data : 0,
+        todayRevenue: revenueResult.success ? revenueResult.data : 0,
+      });
+    }
+
+    default:
+      throw ValidationError.field('action', 'Unknown action');
+  }
+});

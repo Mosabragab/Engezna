@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedAllGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber } from '@/lib/utils/formatters';
 import {
@@ -46,7 +47,7 @@ interface Governorate {
   name_ar: string;
   name_en: string;
   is_active: boolean;
-  created_at: string;
+  created_at?: string;
   cities_count?: number;
   commission_override?: number | null;
 }
@@ -193,7 +194,7 @@ export default function AdminLocationsPage() {
 
   async function loadLocations(supabase: ReturnType<typeof createClient>) {
     // Load governorates
-    const { data: govData } = await supabase.from('governorates').select('*').order('name_ar');
+    const govData = await getCachedAllGovernorates();
 
     // Load cities
     const { data: cityData } = await supabase.from('cities').select('*').order('name_ar');
@@ -238,7 +239,7 @@ export default function AdminLocationsPage() {
 
     try {
       // Fetch all governorates
-      const { data: govData } = await supabase.from('governorates').select('*').order('name_ar');
+      const govData = await getCachedAllGovernorates();
 
       // Fetch providers with their governorate
       const { data: providersData } = await supabase

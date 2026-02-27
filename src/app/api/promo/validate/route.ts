@@ -7,18 +7,27 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { createClient as createServerClient } from '@/lib/supabase/server';
+import { withErrorHandler } from '@/lib/api/error-handler';
+import { validateBody } from '@/lib/api/validate';
+import { uuidSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+import {
+  promoValidateLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+} from '@/lib/utils/upstash-rate-limit';
 
-interface ValidateRequest {
-  code: string;
-  provider_id: string;
-  provider_category?: string;
-  subtotal: number;
-  governorate_id?: string | null;
-  city_id?: string | null;
-}
+const validatePromoSchema = z.object({
+  code: z.string().min(1, 'Promo code is required').trim(),
+  provider_id: uuidSchema,
+  provider_category: z.string().optional(),
+  subtotal: z.number().nonnegative('Subtotal must be non-negative'),
+  governorate_id: z.string().uuid().nullable().optional(),
+  city_id: z.string().uuid().nullable().optional(),
+});
 
 interface ValidateResponse {
   valid: boolean;
@@ -30,98 +39,65 @@ interface ValidateResponse {
   error_code?: string;
 }
 
-// Simple in-memory rate limiter (per IP)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10; // 10 requests per minute per IP
+export const POST = withErrorHandler(
+  async (request: NextRequest): Promise<NextResponse<ValidateResponse>> => {
+    // Rate limiting via Upstash Redis (10 requests per minute per IP)
+    // Gracefully skip if Upstash is not configured (env vars missing)
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      try {
+        const identifier = getClientIdentifier(request);
+        const rateLimitResult = await checkRateLimit(promoValidateLimiter, identifier);
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+        if (!rateLimitResult.success) {
+          return NextResponse.json(
+            {
+              valid: false,
+              error: 'Too many requests. Please try again later.',
+              error_code: 'RATE_LIMITED',
+            },
+            { status: 429 }
+          );
+        }
+      } catch (error) {
+        // If Redis is unavailable, log and continue without rate limiting
+        logger.warn('Upstash rate limiting unavailable for promo validation, skipping', { error });
+      }
+    }
 
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
+    // Parse and validate request body
+    const { code, provider_id, provider_category, subtotal, governorate_id, city_id } =
+      await validateBody(request, validatePromoSchema);
 
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
+    // SECURITY: Get user identity from session, NOT from request body
+    // This prevents identity spoofing attacks
+    const serverSupabase = await createServerClient();
+    const {
+      data: { user },
+    } = await serverSupabase.auth.getUser();
 
-  entry.count++;
-  return true;
-}
+    if (!user) {
+      return NextResponse.json(
+        { valid: false, error: 'Authentication required', error_code: 'UNAUTHORIZED' },
+        { status: 401 }
+      );
+    }
 
-export async function POST(request: NextRequest): Promise<NextResponse<ValidateResponse>> {
-  // Rate limiting
-  const ip =
-    request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-  if (!checkRateLimit(ip)) {
-    return NextResponse.json(
-      {
-        valid: false,
-        error: 'Too many requests. Please try again later.',
-        error_code: 'RATE_LIMITED',
-      },
-      { status: 429 }
-    );
-  }
+    const user_id = user.id;
 
-  // Parse request body
-  let body: ValidateRequest;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { valid: false, error: 'Invalid request body', error_code: 'INVALID_REQUEST' },
-      { status: 400 }
-    );
-  }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  const { code, provider_id, provider_category, subtotal, governorate_id, city_id } = body;
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json(
+        { valid: false, error: 'Server configuration error', error_code: 'SERVER_ERROR' },
+        { status: 500 }
+      );
+    }
 
-  if (!code || !provider_id || subtotal === undefined) {
-    return NextResponse.json(
-      {
-        valid: false,
-        error: 'Missing required fields: code, provider_id, subtotal',
-        error_code: 'MISSING_FIELDS',
-      },
-      { status: 400 }
-    );
-  }
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
-  // SECURITY: Get user identity from session, NOT from request body
-  // This prevents identity spoofing attacks
-  const serverSupabase = await createServerClient();
-  const {
-    data: { user },
-  } = await serverSupabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json(
-      { valid: false, error: 'Authentication required', error_code: 'UNAUTHORIZED' },
-      { status: 401 }
-    );
-  }
-
-  const user_id = user.id;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json(
-      { valid: false, error: 'Server configuration error', error_code: 'SERVER_ERROR' },
-      { status: 500 }
-    );
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: { persistSession: false },
-  });
-
-  try {
     // Fetch promo code
     const { data: promoCode, error: fetchError } = await supabase
       .from('promo_codes')
@@ -280,11 +256,5 @@ export async function POST(request: NextRequest): Promise<NextResponse<ValidateR
       discount_value: promoCode.discount_value,
       promo_code_id: promoCode.id,
     });
-  } catch (err) {
-    logger.error('[Promo Validate] Error validating promo code', { error: err });
-    return NextResponse.json(
-      { valid: false, error: 'Internal server error', error_code: 'SERVER_ERROR' },
-      { status: 500 }
-    );
   }
-}
+);

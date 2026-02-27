@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { withErrorHandler } from '@/lib/api/error-handler';
 
 /**
  * Quota Check API Endpoint
@@ -236,7 +237,7 @@ async function sendAlerts(results: QuotaCheckResult[]): Promise<boolean> {
   }
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
+export const POST = withErrorHandler(async (request: Request): Promise<NextResponse> => {
   // Verify cron secret (optional security)
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
@@ -277,9 +278,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   return NextResponse.json(response, {
     status: overallStatus === 'critical' ? 503 : 200,
   });
-}
+});
 
 // Also support GET for manual checks
-export async function GET(request: Request): Promise<NextResponse> {
+export const GET = withErrorHandler(async (request: Request): Promise<NextResponse> => {
   return POST(request);
-}
+});

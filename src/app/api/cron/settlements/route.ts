@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSettlementCreatedEmail } from '@/lib/email/resend';
 import { logger } from '@/lib/logger';
+import { withErrorHandler } from '@/lib/api/error-handler';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -340,41 +341,43 @@ async function processDailySettlements(): Promise<CronJobResult> {
 // API Route Handlers
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function GET(request: NextRequest): Promise<NextResponse<CronJobResult>> {
-  // Security check
-  if (!verifyCronSecret(request)) {
-    return NextResponse.json(
-      {
-        success: false,
-        timestamp: new Date().toISOString(),
-        periodStart: '',
-        periodEnd: '',
-        settlementsCreated: 0,
-        providersProcessed: 0,
-        errors: ['Unauthorized: Invalid or missing CRON_SECRET'],
-      },
-      { status: 401 }
-    );
+export const GET = withErrorHandler(
+  async (request: NextRequest): Promise<NextResponse<CronJobResult>> => {
+    // Security check
+    if (!verifyCronSecret(request)) {
+      return NextResponse.json(
+        {
+          success: false,
+          timestamp: new Date().toISOString(),
+          periodStart: '',
+          periodEnd: '',
+          settlementsCreated: 0,
+          providersProcessed: 0,
+          errors: ['Unauthorized: Invalid or missing CRON_SECRET'],
+        },
+        { status: 401 }
+      );
+    }
+
+    logger.info('[Cron] Starting daily settlement processing...');
+
+    const result = await processDailySettlements();
+
+    if (result.success) {
+      logger.info(
+        `[Cron] Settlement completed: ${result.settlementsCreated} settlements created for ${result.providersProcessed} providers`
+      );
+    } else {
+      logger.error('[Cron] Settlement failed with errors', { error: result.errors });
+    }
+
+    return NextResponse.json(result, {
+      status: result.success ? 200 : 500,
+    });
   }
-
-  logger.info('[Cron] Starting daily settlement processing...');
-
-  const result = await processDailySettlements();
-
-  if (result.success) {
-    logger.info(
-      `[Cron] Settlement completed: ${result.settlementsCreated} settlements created for ${result.providersProcessed} providers`
-    );
-  } else {
-    logger.error('[Cron] Settlement failed with errors', { error: result.errors });
-  }
-
-  return NextResponse.json(result, {
-    status: result.success ? 200 : 500,
-  });
-}
+);
 
 // POST handler for manual triggering (same logic)
-export async function POST(request: NextRequest): Promise<NextResponse<CronJobResult>> {
+export const POST = withErrorHandler(async (request: NextRequest) => {
   return GET(request);
-}
+});

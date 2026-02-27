@@ -107,6 +107,17 @@ export const searchLimiter = new Ratelimit({
   analytics: true,
 });
 
+/**
+ * Promo Validate: 10 requests per minute
+ * Prevents promo code brute-force/abuse
+ */
+export const promoValidateLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, '1 m'),
+  prefix: 'ratelimit:api:promo:validate',
+  analytics: true,
+});
+
 // ============================================
 // Helper Types & Functions
 // ============================================
@@ -191,6 +202,7 @@ export const limiters = {
   voiceOrder: voiceOrderLimiter,
   orderCreation: orderCreationLimiter,
   search: searchLimiter,
+  promoValidate: promoValidateLimiter,
 } as const;
 
 export type LimiterType = keyof typeof limiters;

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { formatNumber, formatDateTime } from '@/lib/utils/formatters';
 import {
@@ -214,15 +215,8 @@ export default function AdminSupportPage() {
         }
 
         // Load governorates for filter dropdown
-        const { data: govData } = await supabase
-          .from('governorates')
-          .select('id, name_ar, name_en')
-          .eq('is_active', true)
-          .order('name_ar');
-
-        if (govData) {
-          setGovernorates(govData);
-        }
+        const govData = await getCachedGovernorates();
+        setGovernorates(govData);
 
         await loadTickets(supabase);
       }
