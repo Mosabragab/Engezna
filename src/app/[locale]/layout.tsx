@@ -139,7 +139,7 @@ export default async function LocaleLayout({ children, params }: Props) {
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <head>
         {/* Preconnect to external resources for faster loading */}
-        {/* Note: Google Fonts preconnects removed - fonts loaded via next/font/google */}
+        {/* Fonts are self-hosted via next/font/local — no external font requests */}
         <link rel="preconnect" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         <link rel="dns-prefetch" href="https://cmxpvzqrmptfnuymhxmr.supabase.co" />
         {/* Preconnect to Supabase storage for faster image loading */}
@@ -148,7 +148,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           href="https://cmxpvzqrmptfnuymhxmr.supabase.co"
           crossOrigin="anonymous"
         />
-        {/* Fonts are loaded via next/font/google in @/lib/fonts for better performance */}
+        {/* Fonts are self-hosted in public/fonts/ and loaded via next/font/local */}
         {/* Apple Touch Icons - Required for iOS Home Screen */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
