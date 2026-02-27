@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { emailSchema, passwordSchema, egyptianPhoneSchema } from './common';
+import { emailSchema, passwordSchema, strongPasswordSchema, egyptianPhoneSchema } from './common';
 
 /**
  * Authentication validation schemas
@@ -10,7 +10,7 @@ import { emailSchema, passwordSchema, egyptianPhoneSchema } from './common';
  */
 export const registerSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: strongPasswordSchema,
   name: z.string().min(2, 'Name must be at least 2 characters').max(100),
   phone: egyptianPhoneSchema.optional(),
 });
@@ -52,7 +52,7 @@ export type PasswordResetRequestInput = z.infer<typeof passwordResetRequestSchem
 export const passwordResetSchema = z
   .object({
     token: z.string().min(1, 'Reset token is required'),
-    password: passwordSchema,
+    password: strongPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -68,7 +68,7 @@ export type PasswordResetInput = z.infer<typeof passwordResetSchema>;
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: passwordSchema,
+    newPassword: strongPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {

@@ -14,6 +14,11 @@ import { withErrorHandler } from '@/lib/api/error-handler';
 import { validateBody } from '@/lib/api/validate';
 import { uuidSchema } from '@/lib/validations';
 import { logger } from '@/lib/logger';
+import {
+  promoValidateLimiter,
+  checkRateLimit,
+  getClientIdentifier,
+} from '@/lib/utils/upstash-rate-limit';
 
 const validatePromoSchema = z.object({
   code: z.string().min(1, 'Promo code is required').trim(),
@@ -34,42 +39,29 @@ interface ValidateResponse {
   error_code?: string;
 }
 
-// Simple in-memory rate limiter (per IP)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 10; // 10 requests per minute per IP
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
-
 export const POST = withErrorHandler(
   async (request: NextRequest): Promise<NextResponse<ValidateResponse>> => {
-    // Rate limiting
-    const ip =
-      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json(
-        {
-          valid: false,
-          error: 'Too many requests. Please try again later.',
-          error_code: 'RATE_LIMITED',
-        },
-        { status: 429 }
-      );
+    // Rate limiting via Upstash Redis (10 requests per minute per IP)
+    // Gracefully skip if Upstash is not configured (env vars missing)
+    if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+      try {
+        const identifier = getClientIdentifier(request);
+        const rateLimitResult = await checkRateLimit(promoValidateLimiter, identifier);
+
+        if (!rateLimitResult.success) {
+          return NextResponse.json(
+            {
+              valid: false,
+              error: 'Too many requests. Please try again later.',
+              error_code: 'RATE_LIMITED',
+            },
+            { status: 429 }
+          );
+        }
+      } catch (error) {
+        // If Redis is unavailable, log and continue without rate limiting
+        logger.warn('Upstash rate limiting unavailable for promo validation, skipping', { error });
+      }
     }
 
     // Parse and validate request body

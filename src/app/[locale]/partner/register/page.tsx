@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { strongPasswordSchema } from '@/lib/validations/common';
 import { createClient } from '@/lib/supabase/client';
 import { getCachedGovernorates, getCachedBusinessCategories } from '@/lib/cache/cached-queries';
 import { Button } from '@/components/ui/button';
@@ -93,7 +94,7 @@ const partnerSignupSchema = z
     fullName: z.string().min(2, 'Name must be at least 2 characters'),
     phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'Please enter a valid Egyptian phone number'),
     email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    password: strongPasswordSchema,
     confirmPassword: z.string(),
     businessCategory: z.string().min(1, 'Please select a business category'),
     storeNameAr: z.string().min(2, 'Store name (Arabic) must be at least 2 characters'),

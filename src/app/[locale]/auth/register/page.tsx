@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { strongPasswordSchema } from '@/lib/validations/common';
 import { createClient } from '@/lib/supabase/client';
 import { getCachedGovernorates } from '@/lib/cache/cached-queries';
 import Link from 'next/link';
@@ -67,7 +68,7 @@ const registerSchema = z
     phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
     governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
     cityId: z.string().min(1, 'يرجى اختيار المدينة'),
-    password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
+    password: strongPasswordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
