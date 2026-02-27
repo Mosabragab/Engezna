@@ -4,27 +4,27 @@
 **المدقق:** Claude (Senior Software Architect)
 **النسخة:** 3.1 — Deep-Dive Engineering Design Review + Implementation Tracking
 **النطاق:** Production Readiness لـ 10,000 مستخدم متزامن
-**آخر تحديث للحالة:** 26 فبراير 2026 (Session 3 — withErrorHandler 100% Coverage)
+**آخر تحديث للحالة:** 27 فبراير 2026 (Session 4 — withValidation 100% Coverage)
 
 ---
 
 ## ملخص حالة التنفيذ
 
 ```
-خريطة الطريق:  █████████████████░░░░░░░░  62% مكتمل (15.5/25 بند)
+خريطة الطريق:  ██████████████████░░░░░░░  64% مكتمل (16/25 بند)
 
 المرحلة 0 (الأداء الفوري):       ████████████████████░  4.5/5  (90%)
 المرحلة 1 (سلامة البيانات):       █████████████████████  5/5    (100%) ✅
 المرحلة 2 (Frontend):             ████████░░░░░░░░░░░░░  1.5/4  (37.5%)
-المرحلة 3 (المتانة والمراقبة):     ███████████░░░░░░░░░░  3/6    (50%)
+المرحلة 3 (المتانة والمراقبة):     ████████████░░░░░░░░░  3.5/6  (58.3%)
 المرحلة 4 (التحجيم):               ████░░░░░░░░░░░░░░░░░  1.5/5  (30%)
 ```
 
-| الحالة     | العدد | البنود                                             |
-| ---------- | ----- | -------------------------------------------------- |
-| ✅ مكتمل   | 12    | #2, #3, #4, #5, #6, #7, #8, #9, #10, #15, #19, #23 |
-| 🔶 جزئي    | 7     | #1, #12, #13, #14, #16, #18, #21                   |
-| ❌ لم يبدأ | 6     | #11, #17, #20, #22, #24, #25                       |
+| الحالة     | العدد | البنود                                                  |
+| ---------- | ----- | ------------------------------------------------------- |
+| ✅ مكتمل   | 13    | #2, #3, #4, #5, #6, #7, #8, #9, #10, #15, #16, #19, #23 |
+| 🔶 جزئي    | 6     | #1, #12, #13, #14, #18, #21                              |
+| ❌ لم يبدأ | 6     | #11, #17, #20, #22, #24, #25                             |
 
 ---
 
@@ -45,7 +45,7 @@
 | Infrastructure Efficiency & Cost | 45/100         | **74/100**     | ✅ تحسن كبير — Cache موسّع + Polling + Realtime                 |
 | Data Integrity & Concurrency     | 50/100         | **88/100**     | ✅ تحسن جذري — Atomic RPC + Guards + RLS                        |
 | Resiliency & Error Handling      | 62/100         | **92/100**     | ✅ تحسن جذري — withErrorHandler مُفعّل في 41/41 route (100%)    |
-| Security & Observability         | 72/100         | **79/100**     | 🔶 تحسن — withValidation مُفعّل جزئياً (2 routes) + Zod schemas |
+| Security & Observability         | 72/100         | **86/100**     | ✅ تحسن جذري — withValidation مُفعّل في 29/29 POST route (100%) + Zod schemas |
 | Frontend Architecture            | 40/100         | **58/100**     | 🔶 تحسن ملحوظ — 13 loading.tsx + dynamic imports محسّنة         |
 
 ---
@@ -108,11 +108,11 @@ SELECT id, name_ar, name_en, is_active FROM governorates
 | **Cache Layer (LRU + TTL)** | `src/lib/cache/cached-queries.ts`      | صفر استخدام في Production   | 🔶 **جزئي** — مُفعّل في `Footer.tsx` + `CategoriesSection.tsx`. باقي الأماكن (admin pages) لا تزال تستعلم مباشرة     |
 | **Realtime Manager**        | `src/lib/supabase/realtime-manager.ts` | غير مستخدم                  | ✅ **مُفعّل** — يُستخدم في `ProviderLayout.tsx` مع `subscribeWithErrorHandling()`                                    |
 | **`withErrorHandler`**      | `src/lib/api/error-handler.ts`         | مستخدم في 0 من 41 API route | ✅ **مكتمل** — مُفعّل في 39/41 route مباشرة. الـ 2 routes الإضافية تستخدم `withValidation` الذي يتضمن error handling |
-| **`withValidation`**        | `src/lib/api/validate.ts`              | مستخدم في 0 من 41 route     | 🔶 **جزئي** — مُفعّل في 2 routes: `banners/track` (Zod schema), `contact` (Zod schema)                               |
+| **`withValidation`**        | `src/lib/api/validate.ts`              | مستخدم في 0 من 41 route     | ✅ **مكتمل** — 29/29 POST route مُغطّاة بـ Zod validation. 2 routes تستخدم `withValidation` wrapper + 27 route تستخدم `validateBody()` داخل `withErrorHandler` |
 | **`strongPasswordSchema`**  | `src/lib/validations/common.ts`        | لا يُستخدم في auth          | ❌ **لا يزال غير مُفعّل** — لا يُستخدم في أي صفحة auth                                                               |
 | **Visibility Polling**      | `src/hooks/useVisibilityPolling.ts`    | _(لم يكن موجوداً)_          | ✅ **مُنجز** — يُستخدم في `BottomNavigation.tsx` و `ProviderLayout.tsx`                                              |
 
-> **تحديث:** تم تفعيل 3 من 5 أنظمة (Cache جزئياً، Realtime Manager بالكامل، `withErrorHandler` 41/41 route). النظامان المتبقيان (`withValidation` لباقي الـ routes، `strongPasswordSchema`) يحتاجان تفعيل — الكود جاهز ويحتاج فقط ربطه.
+> **تحديث:** تم تفعيل 4 من 5 أنظمة (Cache جزئياً، Realtime Manager بالكامل، `withErrorHandler` 41/41 route، `withValidation` 29/29 POST route). النظام المتبقي (`strongPasswordSchema`) يحتاج تفعيل — الكود جاهز ويحتاج فقط ربطه.
 
 ### 1.5 Indexes: 120+ فهرس ميت
 
@@ -271,13 +271,13 @@ const handlePlaceOrder = async () => {
 ╔══════════════════════════════════════════════════════════════╗
 ║  من 41 API route:                                           ║
 ║  ─ تستخدم withErrorHandler: 39 (95.1%)  ← مكتمل ✅           ║
-║  ─ تستخدم withValidation:    2 (4.9%)   ← يحتاج توسيع     ║
+║  ─ تستخدم withValidation:    2 (4.9%)   ← مكتمل ✅           ║
+║  ─ تستخدم validateBody():   27 (65.9%)  ← مكتمل ✅           ║
 ║  ─ تستخدم try-catch يدوي:    0 (0%)     ← تم إزالته بالكامل║
 ║                                                              ║
-║  التوزيع:                                                    ║
-║  Auth (13), Payment (4), Promo (1), Admin (5),               ║
-║  Email (5), Cron (3), Utility (7), Webhook (1),              ║
-║  + 2 withValidation (banners/track, contact)                 ║
+║  Zod validation coverage (POST routes):                      ║
+║  29/29 POST route = 100% ✅                                  ║
+║  الـ 12 route المتبقية = GET-only أو cron (لا تحتاج body)   ║
 ╚══════════════════════════════════════════════════════════════╝
 ```
 
@@ -629,12 +629,12 @@ Null-safe returns، feature detection، lazy loading. لا crashes إذا Fireba
 | 13  | **تقسيم الملفات الكبيرة** (>1500 سطر) بـ `next/dynamic`           | 🔶 جزئي    | **تحسّن:** الصفحة الرئيسية تستخدم `next/dynamic` لـ 6 مكونات: `CategoriesSection`, `DeliveryModeSelector`, `ReorderSection`, `TopRatedSection`, `NearbySection`, `OffersCarousel` (يحتوي framer-motion ~40KB). الملفات الكبيرة لا تزال كما هي: admin/orders (2909 سطر), provider/orders (2301 سطر), checkout (2209 سطر), admin/providers (~1900 سطر), provider/menu (~1800 سطر) |
 | 14  | **إضافة ISR** لـ providers listing, categories, governorates      | 🔶 جزئي    | ISR مُفعّل في `providers/page.tsx` (`revalidate=300`) و `providers/[id]/page.tsx` (`revalidate=300`). لا يوجد ISR لصفحات categories أو governorates                                                                                                                                                                                                                             |
 
-### المرحلة 3: المتانة والمراقبة (أسبوع 5-6) — 50% مكتمل
+### المرحلة 3: المتانة والمراقبة (أسبوع 5-6) — 58.3% مكتمل
 
 | #   | الإجراء                                                 | الحالة     | التفاصيل                                                                                                                                                                                           |
 | --- | ------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 15  | **تفعيل `withErrorHandler`** في جميع API routes         | ✅ مكتمل   | **مكتمل 100%:** 41/41 API route مُغلّفة. 39 route تستخدم `withErrorHandler` مباشرة + 2 route تستخدم `withValidation` (يتضمن error handling). يضمن Content-Type headers موحّدة وerror schema معياري |
-| 16  | **تفعيل `withValidation`** في جميع API routes           | 🔶 جزئي    | **تحسّن:** من 0 إلى 2 routes (4.9%). مُفعّل في: `banners/track` (Zod schema: banner_id, event_type, user_id), `contact` (Zod schema). لا يزال 39 route بدون validation middleware                  |
+| 16  | **تفعيل `withValidation`** في جميع API routes           | ✅ مكتمل   | **مكتمل 100%:** 29/29 POST route مُغطّاة بـ Zod schemas. 2 routes تستخدم `withValidation` wrapper (`banners/track`, `contact`) + 27 route تستخدم `validateBody()` helper داخل `withErrorHandler`. الـ 12 route المتبقية هي GET-only أو cron endpoints لا تحتاج body validation |
 | 17  | **إضافة Alerting** (Slack/PagerDuty) لـ critical errors | ❌ لم يبدأ | لا يوجد أي تكامل مع Slack webhooks أو PagerDuty في المشروع. Sentry مُفعّل لتتبع الأخطاء لكن بدون تنبيهات خارجية                                                                                    |
 | 18  | **Rate limiting لـ register, contact, banners/track**   | 🔶 جزئي    | `promo/validate` يحتوي rate limiting in-memory (أسطر 34-50). Chat API يستخدم Upstash Redis rate limiting. لكن **لا يوجد rate limiting** على `auth/register`, `contact`, أو `banners/track` تحديداً |
 | 19  | **حذف الـ 120+ فهرس الميت**                             | ✅ مكتمل   | Migration `20260225000001_fix_unused_indexes.sql` تحذف 9 فهارس غير مستخدمة (أسطر 18-38) بشكل منهجي بناءً على بيانات `pg_stat_user_indexes`                                                         |
@@ -705,28 +705,39 @@ Data Safety: risky     Data Safety: solid ✅         Data Safety: excellent
 - ✅ تحقيق 0 أخطاء TypeScript و Prettier formatting كامل
 - 🔍 تحقيق Firebase config: المشكلة في عدم تعيين env vars (`NEXT_PUBLIC_FIREBASE_*`) وليست في الكود
 
+#### Session 4 — withValidation 100% Coverage
+
+- ✅ تفعيل Zod body validation (`validateBody()`) في جميع 27 POST route — من 2 إلى 29 route (100%)
+  - Auth (8): register, admin-register, partner-register, staff-register, forgot-password, resend-verification, facebook, google
+  - Admin (5): orders, providers, users, audit, stats
+  - Payment (5): kashier initiate, refund, webhook, refund-webhook, promo validate
+  - Email (5): admin-invitation, merchant-welcome, settlement, staff-invitation, store-approved
+  - Utility (4): embeddings, menu-import/save, webhooks/menu-item, delete-admin
+- ✅ استبدال `.passthrough()` بحقول Zod صريحة في admin routes — إصلاح 25 خطأ TypeScript
+- ✅ إضافة 'catchup' لـ embeddings enum + إصلاح type casts في webhook routes
+- ✅ إزالة manual validation (regex checks, null checks) واستبدالها بـ Zod schemas
+- ✅ تحقيق 0 أخطاء TypeScript و Prettier formatting كامل
+
 ### ما تبقى — أولوية التنفيذ
 
 | الأولوية | البند                                              | السبب                                                                                           | الجهد   |
 | -------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------- |
-| 🔴 1     | **#16: تفعيل `withValidation`** في باقي الـ routes | مُفعّل في 2/41 route فقط. يحتاج Zod schemas للـ POST/PUT routes الحرجة                          | 8 ساعات |
-| 🔴 2     | **#1: توسيع استخدام Cache Layer**                  | مُستخدم في `Footer.tsx` و `CategoriesSection.tsx` فقط. يحتاج تفعيل في admin pages وباقي الأماكن | 4 ساعات |
-| 🟠 3     | **#20: تقليل Realtime publication**                | كل الجداول مشتركة في WAL — يحتاج تحديد الجداول المطلوبة فقط                                     | 4 ساعات |
-| 🟠 4     | **#17: إضافة Alerting**                            | لا يوجد أي تنبيه عند حدوث مشاكل — خطر كبير على الإنتاج                                          | 4 ساعات |
-| 🟠 5     | **#12: إضافة `loading.tsx`** لباقي الـ routes      | 13 من 117 route (11.1%) — لا يزال بعيداً عن هدف 20 route                                        | 4 ساعات |
-| 🟡 6     | **#11: تحويل Home Page لـ Server Component**       | لا يزال `'use client'` — يؤثر على SEO و LCP                                                     | 12 ساعة |
-| 🟡 7     | **#22, #24, #25: بنود التحجيم الصغيرة**            | `strongPasswordSchema`, edge data scrubbing, Upstash لـ promo                                   | 5 ساعات |
+| 🔴 1     | **#1: توسيع استخدام Cache Layer**                  | مُستخدم في `Footer.tsx` و `CategoriesSection.tsx` فقط. يحتاج تفعيل في admin pages وباقي الأماكن | 4 ساعات |
+| 🟠 2     | **#20: تقليل Realtime publication**                | كل الجداول مشتركة في WAL — يحتاج تحديد الجداول المطلوبة فقط                                     | 4 ساعات |
+| 🟠 3     | **#17: إضافة Alerting**                            | لا يوجد أي تنبيه عند حدوث مشاكل — خطر كبير على الإنتاج                                          | 4 ساعات |
+| 🟠 4     | **#12: إضافة `loading.tsx`** لباقي الـ routes      | 13 من 117 route (11.1%) — لا يزال بعيداً عن هدف 20 route                                        | 4 ساعات |
+| 🟡 5     | **#11: تحويل Home Page لـ Server Component**       | لا يزال `'use client'` — يؤثر على SEO و LCP                                                     | 12 ساعة |
+| 🟡 6     | **#22, #24, #25: بنود التحجيم الصغيرة**            | `strongPasswordSchema`, edge data scrubbing, Upstash لـ promo                                   | 5 ساعات |
 
 ### القرارات الهندسية التي لا تزال مطلوبة
 
-1. **`withValidation` لا يزال جزئياً (2/41)** — يحتاج Zod schemas للـ POST/PUT routes الحرجة (auth, payment, admin)
-2. **الـ Frontend لا يزال ضعيفاً** — 95.7% client-rendered مع 13 `loading.tsx` من 117 route
-3. **لا يوجد Alerting** — إذا حدث خلل في الساعة 3 صباحاً، لن يعرف أحد
-4. **Firebase env vars** — `NEXT_PUBLIC_FIREBASE_*` غير مُعيّنة في البيئة، يجب تعيينها في `.env.local` أو Vercel dashboard
+1. **الـ Frontend لا يزال ضعيفاً** — 95.7% client-rendered مع 13 `loading.tsx` من 117 route
+2. **لا يوجد Alerting** — إذا حدث خلل في الساعة 3 صباحاً، لن يعرف أحد
+3. **Firebase env vars** — `NEXT_PUBLIC_FIREBASE_*` غير مُعيّنة في البيئة، يجب تعيينها في `.env.local` أو Vercel dashboard
 
 ---
 
 _تقرير مُنشأ بتاريخ: 26 فبراير 2026_
-_آخر تحديث لحالة التنفيذ: 26 فبراير 2026_
+_آخر تحديث لحالة التنفيذ: 27 فبراير 2026_
 _المُعد: Claude — Senior Software Architect Audit_
-_نسبة الإنجاز: 62% (12 مكتمل، 7 جزئي، 6 لم يبدأ)_
+_نسبة الإنجاز: 64% (13 مكتمل، 6 جزئي، 6 لم يبدأ)_
