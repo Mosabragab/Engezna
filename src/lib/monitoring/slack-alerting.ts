@@ -138,7 +138,10 @@ function buildSlackMessage(payload: AlertPayload) {
       type: 'section',
       fields: [
         { type: 'mrkdwn', text: `*Source:*\n\`${payload.source}\`` },
-        { type: 'mrkdwn', text: `*Environment:*\n\`${process.env.VERCEL_ENV || process.env.NODE_ENV || 'unknown'}\`` },
+        {
+          type: 'mrkdwn',
+          text: `*Environment:*\n\`${process.env.VERCEL_ENV || process.env.NODE_ENV || 'unknown'}\``,
+        },
         { type: 'mrkdwn', text: `*Time:*\n${timestamp}` },
         { type: 'mrkdwn', text: `*App:*\n<${APP_URL}|${APP_NAME}>` },
       ],
@@ -312,10 +315,7 @@ export async function alertAuthAnomaly(
 }
 
 /** Alert for database connection issues */
-export async function alertDatabaseIssue(
-  description: string,
-  error?: unknown
-): Promise<void> {
+export async function alertDatabaseIssue(description: string, error?: unknown): Promise<void> {
   return sendAlert({
     title: 'Database Issue Detected',
     description,

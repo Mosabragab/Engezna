@@ -2353,9 +2353,7 @@ export default function CheckoutPage() {
             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100">
               <AlertCircle className="h-7 w-7 text-amber-600" />
             </div>
-            <DialogTitle>
-              {locale === 'ar' ? 'تم تحديث الأسعار' : 'Prices Updated'}
-            </DialogTitle>
+            <DialogTitle>{locale === 'ar' ? 'تم تحديث الأسعار' : 'Prices Updated'}</DialogTitle>
             <DialogDescription className="text-base">
               {locale === 'ar'
                 ? 'تغيرت أسعار بعض الأصناف منذ إضافتها للسلة. تم تحديث السلة بالأسعار الجديدة.'
@@ -2364,7 +2362,10 @@ export default function CheckoutPage() {
           </DialogHeader>
           <div className="my-3 space-y-2 text-sm max-h-48 overflow-y-auto">
             {priceChanges.map((change, i) => (
-              <div key={i} className="flex justify-between items-center px-3 py-2 bg-muted rounded-lg">
+              <div
+                key={i}
+                className="flex justify-between items-center px-3 py-2 bg-muted rounded-lg"
+              >
                 <span className="text-start truncate flex-1">{change.name}</span>
                 <div className="flex items-center gap-2 shrink-0 ms-2">
                   <span className="line-through text-muted-foreground">
