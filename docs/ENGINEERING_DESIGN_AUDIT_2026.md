@@ -2,9 +2,9 @@
 
 **التاريخ:** 26 فبراير 2026
 **المدقق:** Claude (Senior Software Architect)
-**النسخة:** 3.1 — Deep-Dive Engineering Design Review + Implementation Tracking
+**النسخة:** 3.2 — Deep-Dive Engineering Design Review + Vercel Speed Insights Analysis
 **النطاق:** Production Readiness لـ 10,000 مستخدم متزامن
-**آخر تحديث للحالة:** 27 فبراير 2026 (Session 5 — Slack Alerts + Rate Limiting + Cart Validation + Code Split + ISR + Cache + Home SC)
+**آخر تحديث للحالة:** 28 فبراير 2026 (Session 6 — Vercel Speed Insights Real User Data Analysis)
 
 ---
 
@@ -46,7 +46,7 @@
 | Data Integrity & Concurrency     | 50/100         | **88/100**     | ✅ تحسن جذري — Atomic RPC + Guards + RLS                                                     |
 | Resiliency & Error Handling      | 62/100         | **92/100**     | ✅ تحسن جذري — withErrorHandler مُفعّل في 41/41 route (100%)                                 |
 | Security & Observability         | 72/100         | **92/100**     | ✅ تحسن جذري — withValidation 100% + strongPassword + edge scrubbing + Upstash rate limiting |
-| Frontend Architecture            | 40/100         | **62/100**     | 🔶 تحسن ملحوظ — 20 loading.tsx + dynamic imports محسّنة + Cache Layer موسّع                  |
+| Frontend Architecture            | 40/100         | **62/100**     | 🔴 **Vercel RUM Score = 39** — 20 loading.tsx + dynamic imports لكن 95.7% client-rendered    |
 
 ---
 
@@ -744,7 +744,220 @@ Data Safety: risky     Data Safety: excellent ✅     Data Safety: excellent
 
 ---
 
+## القسم 7: تحليل Vercel Speed Insights — بيانات المستخدمين الحقيقيين (28 فبراير 2026)
+
+### 7.1 النتائج الفعلية من Real User Monitoring
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  Real Experience Score:  39/100  ← سيء جداً                ║
+║                                                              ║
+║  Core Web Vitals:                                            ║
+║  ─ FCP  (First Contentful Paint):     3.12s   ← بطيء       ║
+║  ─ LCP  (Largest Contentful Paint):   6.86s   ← سيء        ║
+║  ─ INP  (Interaction to Next Paint):  64ms    ← ممتاز ✅    ║
+║  ─ CLS  (Cumulative Layout Shift):    0.58    ← سيء        ║
+║  ─ FID  (First Input Delay):          3ms     ← ممتاز ✅    ║
+║  ─ TTFB (Time to First Byte):         2.17s   ← بطيء جداً  ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+### 7.2 أسوأ الصفحات — LCP Breakdown
+
+| الصفحة | LCP | التحليل |
+|--------|-----|---------|
+| `/[locale]/admin` | **11.58s** | 716 سطر `'use client'` + 16 icon import + 3 parallel DB queries + auth check waterfall |
+| `/[locale]/profile/go...` | **7.96s** | `'use client'` + auth guard + profile fetch + 15 lucide icons + menu rendering |
+| `/[locale]/welcome` | **6.86s** | `'use client'` + SDUI RPC call + GovernoratesList fetch + Footer dynamic import |
+| `/[locale]` (الرئيسية) | **4.45s** | Server Component wrapper لكن `HomePageClient` = `'use client'` مع data waterfall |
+
+### 7.3 التشخيص الجذري — لماذا Score = 39؟
+
+#### السبب #1: TTFB = 2.17s — Middleware يعمل كـ Bottleneck
+
+```
+كل Page Request يمر عبر:
+  middleware.ts
+    ├── CSRF validation check
+    ├── await updateSession(request)  ← HTTP call لـ Supabase Auth (~200-800ms)
+    ├── Guest location cookie check
+    ├── intlMiddleware(request)       ← i18n routing processing
+    └── Header merging + CSRF cookie set
+
+المشكلة: updateSession() يُرسل HTTP request لسيرفر Supabase Auth مع *كل*
+page request — حتى الصفحات العامة مثل /welcome التي لا تحتاج auth.
+على شبكات مصر مع Supabase region بعيد = 500ms-1.5s إضافية.
+```
+
+**الملف:** `src/middleware.ts` سطر 47 → `await updateSession(request)`
+**الملف:** `src/lib/supabase/middleware.ts` → session refresh logic
+
+#### السبب #2: FCP = 3.12s — Client Components + JS Bundle ثقيل
+
+```
+التسلسل الزمني الفعلي للصفحة الرئيسية:
+
+  0ms      Browser Request sent
+  ~800ms   Middleware processing (CSRF + Auth + i18n)
+  ~1200ms  Server renders HTML (ISR cache hit or Supabase query)
+  ~2170ms  HTML arrives at browser (TTFB = 2.17s)
+  ~2500ms  Browser parses HTML → Skeleton appears (FCP candidate)
+  ~3120ms  FCP measured at 3.12s
+  ~3500ms  JS bundle downloads (HomePageClient + dependencies)
+  ~4000ms  React hydration begins
+  ~4200ms  Client-side fetches start:
+           ├── getUser() → Supabase Auth
+           ├── useSDUI() → Supabase RPC
+           ├── fetchNearbyProviders() → Supabase query
+           ├── fetchTopRatedProviders() → Supabase query
+           └── loadLastOrder() → Supabase query
+  ~4450ms  LCP content appears (4.45s)
+```
+
+**الملف:** `src/app/[locale]/HomePageClient.tsx` — `'use client'` مع 6+ useEffect hooks
+
+#### السبب #3: CLS = 0.58 — عدم حجز مساحة للمحتوى الديناميكي
+
+| المكون | المشكلة | الملف |
+|--------|---------|-------|
+| `OffersCarousel` | `return null` أثناء التحميل — لا يحجز مساحة | `OffersCarousel.tsx` سطر 772 |
+| `DeliveryModeSelector` | يظهر بعد تحميل البيانات ويدفع المحتوى للأسفل | `HomePageClient.tsx` dynamic import |
+| `CategoriesSection` | Skeleton لا يطابق أبعاد المحتوى الحقيقي | `HomePageClient.tsx` سطر 12-29 |
+| Banner images | بدون `width`/`height` محددة في بعض الأماكن | `OffersCarousel.tsx` سطر 318-327 |
+
+#### السبب #4: LCP = 6.86s — Client-Side Data Waterfall
+
+```
+HomePageClient يُنفذ هذا التسلسل بعد الـ hydration:
+
+  useEffect #1: getUser()                    ← Supabase Auth HTTP call
+       ↓ (ينتظر userId)
+  useEffect #2: check location               ← LocationContext read
+       ↓ (ينتظر governorateId)
+  useEffect #3: useSDUI()                    ← Supabase RPC call
+  useEffect #4: fetchNearbyProviders()       ← Supabase query
+  useEffect #5: fetchTopRatedProviders()     ← Supabase query (يُحسّن initialTopRated)
+       ↓ (ينتظر userId من #1)
+  useEffect #6: loadLastOrder()              ← Supabase query
+
+هذا waterfall كلاسيكي — كل fetch ينتظر الذي قبله.
+رغم وجود initialTopRated من السيرفر، باقي البيانات تُجلب client-side.
+```
+
+#### السبب #5: Context Provider Stack يُبطئ Hydration
+
+```
+layout.tsx (سطر 169-186):
+
+  ThemeProvider
+    → NextIntlClientProvider
+      → LocationProvider (ينشئ 3 contexts داخلياً!)
+        → OrderModeProvider
+          → PushNotificationProvider (يُهيئ Audio Manager عند mount!)
+            → children
+            → UpdateNotification
+
+5 providers متداخلة = React يحتاج hydrate كلها قبل عرض أي محتوى.
+PushNotificationProvider يُهيئ AudioManager بشكل blocking.
+```
+
+### 7.4 التناقض بين التدقيق ونتائج Speed Insights
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  التدقيق يقول:                  Speed Insights يقول:           ║
+║  ─────────────────────────────   ─────────────────────────────  ║
+║  Score: ~88/100                  Score: 39/100                  ║
+║  Frontend: 62/100                Real User Experience: سيء     ║
+║  "جاهز لـ 10,000 متزامن"        LCP = 6.86s (الحد: 2.5s)     ║
+║                                                                  ║
+║  السبب: التدقيق ركّز على stability و data integrity            ║
+║  (وهي فعلاً ممتازة) لكن أهمل ما يشعر به المستخدم الحقيقي.     ║
+║                                                                  ║
+║  الخلاصة: البنية التحتية قوية، لكن الواجهة الأمامية هي          ║
+║  العائق الأساسي أمام تجربة المستخدم.                           ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+### 7.5 المشكلة الهيكلية الأساسية
+
+```
+من 117 route:
+  ─ Client Components ('use client'):  112 (95.7%)
+  ─ Server Components:                   5 (4.3%)
+
+هذا يعني أن Next.js App Router — الذي تم اختياره تحديداً لـ SSR/SSG —
+لا يُستخدم لأي غرض عملي. المشروع يعمل فعلياً كـ SPA مع overhead الـ framework.
+```
+
+### 7.6 خطة إصلاح الأداء — مرتبة حسب التأثير/الجهد
+
+#### المرحلة الفورية (Quick Wins — أيام)
+
+| # | الإجراء | الملف | التأثير المتوقع | الجهد |
+|---|---------|-------|-----------------|-------|
+| A1 | **Middleware: تخطي `updateSession()` للصفحات العامة** (welcome, about, privacy, terms, offline) | `middleware.ts` سطر 47 | TTFB -500ms إلى -1s | 2 ساعة |
+| A2 | **OffersCarousel: حجز مساحة ثابتة أثناء التحميل** بدل `return null` | `OffersCarousel.tsx` سطر 772 | CLS -0.15 | 1 ساعة |
+| A3 | **PushNotificationProvider: تأجيل AudioManager لـ `requestIdleCallback`** | `PushNotificationProvider.tsx` سطر 22-26 | FCP -100ms | 30 دقيقة |
+| A4 | **useSDUI: جعله non-blocking** — استخدام cache فوراً بدون انتظار fetch | `useSDUI.ts` سطر 725-750 | FCP -500ms | 2 ساعة |
+| A5 | **Welcome Page: تحويل لـ full Server Component** — لا يحتاج client data | `welcome/page.tsx` + `WelcomePageClient.tsx` | Welcome LCP من 6.86s → ~2s | 4 ساعات |
+
+#### المرحلة القصيرة (1-2 أسبوع)
+
+| # | الإجراء | التأثير المتوقع | الجهد |
+|---|---------|-----------------|-------|
+| B1 | **Home Page: نقل جميع data fetches للسيرفر** — providers, banners, categories كلها ISR مع Streaming SSR | Home LCP من 4.45s → ~2s | 12 ساعة |
+| B2 | **تقسيم admin/orders (2909 سطر) و checkout (2418 سطر)** بـ `next/dynamic` | Admin LCP من 11.58s → ~5s | 8 ساعات |
+| B3 | **Profile page → Server Component** مع auth check server-side | Profile LCP من 7.96s → ~2.5s | 6 ساعات |
+| B4 | **إصلاح CLS شامل** — تحديد أبعاد دقيقة لكل skeleton loader | CLS من 0.58 → <0.15 | 4 ساعات |
+| B5 | **إضافة `<link rel="preload">` لـ LCP elements** (fonts, hero images) | LCP -1s شامل | 2 ساعة |
+
+#### المرحلة المتوسطة (3-4 أسابيع)
+
+| # | الإجراء | التأثير المتوقع | الجهد |
+|---|---------|-----------------|-------|
+| C1 | **تحويل top 20 صفحة عميل من `'use client'` لـ Server Components** | Score من 39 → 65+ | 40 ساعة |
+| C2 | **Streaming SSR مع `<Suspense>` في الصفحات الثقيلة** | FCP تحسن شامل | 20 ساعة |
+| C3 | **Bundle analysis + tree-shaking audit** — إزالة imports غير مستخدمة | JS bundle -20-30% | 8 ساعات |
+
+### 7.7 الأهداف المستهدفة بعد الإصلاح
+
+```
+╔══════════════════════════════════════════════════════════════╗
+║  المقياس          الحالي    بعد المرحلة A   بعد المرحلة B   ║
+║  ──────────────   ────────  ─────────────   ─────────────   ║
+║  Score            39        55-60           75-80           ║
+║  TTFB             2.17s     1.2-1.5s        0.8-1.0s       ║
+║  FCP              3.12s     2.0-2.5s        1.5-1.8s       ║
+║  LCP              6.86s     3.5-4.0s        2.0-2.5s       ║
+║  CLS              0.58      0.25-0.30       <0.10          ║
+║  INP              64ms      64ms ✅          64ms ✅         ║
+╚══════════════════════════════════════════════════════════════╝
+```
+
+### 7.8 الخلاصة الاستراتيجية
+
+المشروع في وضع **"بنية تحتية قوية، واجهة أمامية ضعيفة"**:
+
+**ما تم إنجازه ممتاز:**
+- Atomic transactions (create_order_atomic) — لا طلبات يتيمة
+- Server-side price validation — لا تلاعب بالأسعار
+- Idempotency keys — لا double-submit
+- withErrorHandler 100% + withValidation 100%
+- Rate limiting (Upstash) — حماية من abuse
+- Security headers enterprise-grade
+
+**ما يحتاج إصلاح فوري:**
+- 95.7% من الصفحات `'use client'` = لا SSR حقيقي
+- Middleware يُبطئ كل request بـ auth check غير ضروري
+- Client-side data waterfall يُضاعف LCP
+- عدم حجز مساحة للمحتوى = CLS عالي
+
+**التوصية:** التركيز الكامل الآن على **Frontend Performance** — تحويل الصفحات الأكثر زيارة لـ Server Components هو الإجراء الوحيد الذي سيرفع النتيجة من 39 إلى 75+.
+
+---
+
 _تقرير مُنشأ بتاريخ: 26 فبراير 2026_
-_آخر تحديث لحالة التنفيذ: 27 فبراير 2026 (Session 4 continued)_
+_آخر تحديث لحالة التنفيذ: 28 فبراير 2026 (Session 6 — Vercel Speed Insights Analysis)_
 _المُعد: Claude — Senior Software Architect Audit_
-_نسبة الإنجاز: 82% (18 مكتمل، 5 جزئي، 2 لم يبدأ)_
+_نسبة الإنجاز: 82% (18 مكتمل، 5 جزئي، 2 لم يبدأ) + Frontend Performance Plan_
