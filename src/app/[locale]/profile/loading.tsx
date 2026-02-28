@@ -1,7 +1,6 @@
-'use client';
-
 /**
  * Profile Page Loading State
+ * Server Component — renders as static HTML without JS bundle overhead.
  */
 export default function ProfileLoading() {
   return (
