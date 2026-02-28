@@ -43,16 +43,26 @@ export default async function middleware(request: NextRequest) {
 
   // ─── Page Routes: Auth + i18n + CSRF cookie ────────────────────────────
 
-  // First, handle Supabase session refresh and auth checks
-  const supabaseResponse = await updateSession(request);
+  // ─── Performance: Skip auth for public-only pages ─────────────────────
+  // Pages like /welcome, /about, /privacy, /terms, /offline never need auth.
+  // Skipping updateSession() for these saves 200-800ms TTFB per request
+  // by avoiding the Supabase Auth HTTP round-trip.
+  const pathWithoutLocale = pathname.replace(/^\/(ar|en)/, '') || '/';
+  const publicOnlyPages = [
+    '/welcome',
+    '/about',
+    '/privacy',
+    '/terms',
+    '/offline',
+    '/maintenance',
+    '/contact',
+    '/handle',
+  ];
+  const isPublicOnlyPage = publicOnlyPages.some(
+    (p) => pathWithoutLocale === p || pathWithoutLocale.startsWith(p + '/')
+  );
 
-  // IMPORTANT: If updateSession returned a redirect, use it immediately
-  // This ensures auth redirects (login required, unauthorized) are respected
-  if (supabaseResponse.status === 307 || supabaseResponse.status === 302) {
-    return supabaseResponse;
-  }
-
-  // ─── Guest Location Check: redirect new visitors to /welcome ──────────
+  // ─── Guest Location Check (before auth, for faster redirect) ──────────
   // Without this, the server renders the homepage skeleton and the client
   // redirects after hydration, causing a visible flash for new visitors.
   const isHomePage = pathname === '/' || /^\/(ar|en)\/?$/.test(pathname);
@@ -68,6 +78,29 @@ export default async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(`/${locale}/welcome`, request.url));
       }
     }
+  }
+
+  // For public-only pages: skip Supabase auth entirely (saves ~500ms TTFB)
+  if (isPublicOnlyPage) {
+    const intlResponse = intlMiddleware(request);
+
+    // Set CSRF cookie if not already present
+    const existingToken = getCsrfTokenFromCookie(request);
+    if (!existingToken) {
+      const csrfToken = generateCsrfToken();
+      setCsrfCookie(intlResponse, csrfToken);
+    }
+
+    return intlResponse;
+  }
+
+  // For pages that may need auth: handle Supabase session refresh
+  const supabaseResponse = await updateSession(request);
+
+  // IMPORTANT: If updateSession returned a redirect, use it immediately
+  // This ensures auth redirects (login required, unauthorized) are respected
+  if (supabaseResponse.status === 307 || supabaseResponse.status === 302) {
+    return supabaseResponse;
   }
 
   // Then apply internationalization

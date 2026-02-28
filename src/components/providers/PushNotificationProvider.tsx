@@ -19,10 +19,21 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
   const [showPrompt, setShowPrompt] = useState(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
 
-  // Initialize Audio Manager on mount
+  // Initialize Audio Manager after main thread is idle to avoid blocking FCP
   useEffect(() => {
-    const audioManager = getAudioManager();
-    audioManager.init();
+    const initAudio = () => {
+      const audioManager = getAudioManager();
+      audioManager.init();
+    };
+
+    if (typeof requestIdleCallback !== 'undefined') {
+      const id = requestIdleCallback(initAudio, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    } else {
+      // Fallback: defer to next macrotask
+      const timer = setTimeout(initAudio, 1000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // Determine if we should show the notification prompt

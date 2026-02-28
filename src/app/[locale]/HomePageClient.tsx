@@ -498,26 +498,36 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
     return null;
   }
 
-  // Show loading while initializing or loading location data
-  const isLoading = isInitializing || !isDataLoaded || isUserLocationLoading;
+  // Show loading only while location data is loading.
+  // Auth (isInitializing) is NOT a blocker — the page renders with ISR data
+  // immediately and auth-dependent sections (reorder) appear when ready.
+  const isLoading = !isDataLoaded || isUserLocationLoading;
 
   if (isLoading) {
     return (
       <CustomerLayout showHeader={true} showBottomNav={true}>
         <div className="min-h-screen">
-          {/* Skeleton hero */}
-          <div className="px-4 pt-12 pb-6">
-            <div className="h-8 w-48 bg-slate-100 rounded animate-pulse mb-2" />
-            <div className="h-5 w-64 bg-slate-100 rounded animate-pulse mb-4" />
-            <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+          {/* Skeleton hero — matches HeroSection: pt-8 pb-10, text-center */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#E8F7FF] via-[#F0FAFF] to-white" />
+            <div className="relative px-4 pt-8 pb-10">
+              <div className="text-center mb-8">
+                <div className="h-8 w-56 bg-slate-200/60 rounded-lg animate-pulse mx-auto mb-2" />
+                <div className="h-5 w-72 bg-slate-200/40 rounded animate-pulse mx-auto" />
+              </div>
+              <div className="h-[58px] bg-white rounded-2xl shadow-sm animate-pulse max-w-2xl mx-auto" />
+            </div>
           </div>
-          {/* Skeleton banners */}
-          <div className="px-4 flex gap-3 overflow-hidden">
-            <div className="w-72 h-36 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
-            <div className="w-72 h-36 bg-slate-100 rounded-2xl animate-pulse shrink-0" />
+          {/* Skeleton banners — matches OffersCarousel min-h */}
+          <div className="min-h-[220px] md:min-h-[280px] px-4 py-6">
+            <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse mb-5" />
+            <div className="flex gap-4 overflow-hidden">
+              <div className="w-[85%] shrink-0 aspect-[16/9] rounded-2xl bg-slate-100 animate-pulse" />
+              <div className="w-[85%] shrink-0 aspect-[16/9] rounded-2xl bg-slate-100 animate-pulse" />
+            </div>
           </div>
-          {/* Skeleton categories */}
-          <div className="px-4 mt-6">
+          {/* Skeleton categories — matches CategoriesSection grid */}
+          <div className="min-h-[180px] px-4 mt-6">
             <div className="h-6 w-24 bg-slate-100 rounded animate-pulse mb-4" />
             <div className="grid grid-cols-4 gap-3">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
