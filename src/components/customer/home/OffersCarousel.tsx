@@ -767,9 +767,9 @@ export function OffersCarousel({
   }
 
   if (banners.length === 0) {
-    // Return null when no banners - the section simply won't render
-    // Using h-0 was causing CLS issues
-    return null;
+    // Reserve minimum space to prevent CLS when banners load asynchronously.
+    // Using return null caused layout shift when content below moved up/down.
+    return <div className="min-h-0" aria-hidden="true" />;
   }
 
   // Desktop: Show 3 cards

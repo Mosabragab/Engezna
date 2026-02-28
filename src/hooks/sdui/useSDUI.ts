@@ -722,31 +722,33 @@ export function useSDUI(options: UseSDUIOptions = {}) {
   }, [page, userRole, governorateId, cityId, previewToken, deviceType, isNewUser]);
 
   // Initial load: Try cache first (Layer 2), then fetch from server (Layer 3)
+  // Non-blocking: if cache or defaults are available, render immediately
+  // and update in the background when server response arrives.
   useEffect(() => {
     mounted.current = true;
 
-    // Try cache first
+    // Try cache first — render immediately without blocking
     const cached = getCachedSections(page);
     if (cached && cached.length > 0) {
       setState({
         sections: cached.sort((a, b) => a.display_order - b.display_order),
-        isLoading: true, // Still loading to get fresh data
+        isLoading: false, // Non-blocking: show cached data immediately
         isFromCache: true,
         error: null,
         lastUpdated: null,
       });
     } else {
-      // Reset to defaults when page changes
+      // Use defaults immediately — don't block rendering
       setState({
         sections: getDefaultSections(page),
-        isLoading: true,
+        isLoading: false, // Non-blocking: show defaults immediately
         isFromCache: false,
         error: null,
         lastUpdated: null,
       });
     }
 
-    // Fetch from server (will update if different)
+    // Fetch from server in background (will update silently if different)
     fetchSections();
 
     return () => {
