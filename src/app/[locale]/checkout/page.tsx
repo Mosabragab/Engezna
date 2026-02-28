@@ -153,7 +153,14 @@ export default function CheckoutPage() {
   } = useLocation();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorRaw] = useState<string | null>(null);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+
+  // Helper: set error and show popup dialog so the user always sees it
+  const setError = (msg: string | null) => {
+    setErrorRaw(msg);
+    if (msg) setShowErrorDialog(true);
+  };
 
   // Price re-validation state (#21: validate cart prices against current DB prices)
   const [priceChanges, setPriceChanges] = useState<
@@ -1387,12 +1394,6 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Form */}
             <div className="lg:col-span-2 space-y-6">
-              {error && (
-                <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-lg">
-                  {error}
-                </div>
-              )}
-
               {/* Customer Information */}
               <Card>
                 <CardHeader>
@@ -2409,6 +2410,30 @@ export default function CheckoutPage() {
             </Button>
             <Button variant="outline" onClick={() => setShowClosedDialog(false)}>
               {locale === 'ar' ? 'إغلاق' : 'Close'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Validation Error Popup Dialog */}
+      <Dialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <DialogContent className="text-center">
+          <DialogHeader className="items-center">
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+              <AlertCircle className="h-7 w-7 text-destructive" />
+            </div>
+            <DialogTitle>{locale === 'ar' ? 'تنبيه' : 'Attention'}</DialogTitle>
+            <DialogDescription className="text-base">{error}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center mt-2">
+            <Button
+              variant="default"
+              onClick={() => {
+                setShowErrorDialog(false);
+                setErrorRaw(null);
+              }}
+            >
+              {locale === 'ar' ? 'حسنًا' : 'OK'}
             </Button>
           </DialogFooter>
         </DialogContent>
