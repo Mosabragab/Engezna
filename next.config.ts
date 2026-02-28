@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
   // Standalone output for Capacitor native builds and Docker deployments
   output: 'standalone',
 
+  // Tree-shake heavy barrel-exported packages at build time.
+  // lucide-react: 206 files import icons — without this, the full icon set (~180KB) is bundled.
+  // framer-motion: 29 files import animations — tree-shakes unused animation primitives.
+  // date-fns: 6 files import date utilities — prevents bundling all 200+ locale/fn modules.
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
+  },
+
   // Image optimization configuration
   images: {
     remotePatterns: [
