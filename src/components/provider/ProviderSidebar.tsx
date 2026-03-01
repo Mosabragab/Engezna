@@ -3,7 +3,6 @@
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import {
   Package,
   ShoppingBag,
@@ -425,11 +424,7 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={cn(
-                              isRTL ? 'mr-auto' : 'ml-auto',
-                              isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor),
-                              'min-w-[20px] h-[20px] px-1.5 text-white text-[11px] font-bold rounded-full flex items-center justify-center'
-                            )}
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)} text-white text-xs px-2 py-0.5 rounded-full font-numbers`}
                           >
                             {item.badge}
                           </span>
