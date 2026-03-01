@@ -149,10 +149,7 @@ export function ProviderSidebar({
         icon: RefreshCw,
         label: { ar: 'المرتجعات', en: 'Refunds' },
         path: `/${locale}/provider/refunds`,
-        badge:
-          pendingRefunds + onHoldOrders > 0
-            ? (pendingRefunds + onHoldOrders).toString()
-            : undefined,
+        badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
         badgeColor: 'amber',
       });
     }
@@ -173,6 +170,8 @@ export function ProviderSidebar({
           icon: Wallet,
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
+          badge: onHoldOrders > 0 ? onHoldOrders.toString() : undefined,
+          badgeColor: 'amber',
         });
       }
 
