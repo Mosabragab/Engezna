@@ -428,9 +428,7 @@ export function ProviderSidebar({
                             className={cn(
                               isRTL ? 'mr-auto' : 'ml-auto',
                               isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor),
-                              'text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full font-numbers',
-                              // Pulsating animation for custom orders and orders badges
-                              !isActive && 'animate-pulse-badge'
+                              'min-w-[20px] h-[20px] px-1.5 text-white text-[11px] font-bold rounded-full flex items-center justify-center'
                             )}
                           >
                             {item.badge}
