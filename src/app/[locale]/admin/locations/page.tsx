@@ -299,10 +299,8 @@ export default function AdminLocationsPage() {
           (o) =>
             o.status !== 'cancelled' && o.status !== 'rejected' && o.status !== 'pending_payment'
         );
-        // Revenue from completed/delivered orders
-        const completedOrders = govOrders.filter(
-          (o) => o.status === 'completed' || o.status === 'delivered'
-        );
+        // Revenue from delivered orders
+        const completedOrders = govOrders.filter((o) => o.status === 'delivered');
         const revenue = completedOrders.reduce((sum, o) => sum + (o.total || 0), 0);
         const avgOrderValue = completedOrders.length > 0 ? revenue / completedOrders.length : 0;
 

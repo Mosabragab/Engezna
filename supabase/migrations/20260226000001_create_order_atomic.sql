@@ -276,8 +276,9 @@ BEGIN
   -- preparing → ready, cancelled
   -- ready → out_for_delivery, delivered, cancelled (delivered for pickup)
   -- out_for_delivery → delivered, cancelled
-  -- delivered → (terminal state)
-  -- cancelled → (terminal state)
+  -- delivered → refunded
+  -- cancelled → refunded
+  -- refunded → (terminal state)
   -- rejected → (terminal state)
 
   IF NOT (
@@ -287,7 +288,8 @@ BEGIN
     (OLD.status = 'preparing' AND NEW.status IN ('ready', 'cancelled')) OR
     (OLD.status = 'ready' AND NEW.status IN ('out_for_delivery', 'delivered', 'cancelled')) OR
     (OLD.status = 'out_for_delivery' AND NEW.status IN ('delivered', 'cancelled')) OR
-    (OLD.status = 'delivered' AND NEW.status IN ('cancelled'))
+    (OLD.status = 'delivered' AND NEW.status IN ('refunded')) OR
+    (OLD.status = 'cancelled' AND NEW.status IN ('refunded'))
   ) THEN
     RAISE EXCEPTION 'Invalid status transition: % → %', OLD.status, NEW.status;
   END IF;

@@ -216,7 +216,7 @@ export async function getDashboardStats(
     }
 
     const orders = ordersData || [];
-    const completedStatuses = ['delivered', 'completed'];
+    const completedStatuses = ['delivered'];
     const cancelledStatuses = ['cancelled', 'refunded'];
 
     const ordersToday = orders.filter((o) => new Date(o.created_at) >= new Date(startOfToday));
@@ -467,7 +467,7 @@ export async function getRevenueTimeSeries(
       .select('created_at, total, status')
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
-      .in('status', ['delivered', 'completed'])
+      .in('status', ['delivered'])
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -522,7 +522,7 @@ export async function getOrdersByCategory(
         provider:providers(category)
       `
       )
-      .in('status', ['delivered', 'completed']);
+      .in('status', ['delivered']);
 
     if (dateFrom) query = query.gte('created_at', dateFrom);
     if (dateTo) query = query.lte('created_at', dateTo);
@@ -701,7 +701,7 @@ export async function getTodayRevenue(): Promise<OperationResult<number>> {
       .from('orders')
       .select('total')
       .gte('created_at', startOfToday)
-      .in('status', ['delivered', 'completed']);
+      .in('status', ['delivered']);
 
     if (error) {
       return { success: false, error: error.message };

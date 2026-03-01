@@ -38,7 +38,8 @@ export type OrderStatus =
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'rejected';
+  | 'rejected'
+  | 'refunded';
 
 // Updated: Added 'online' for Kashier integration, keeping legacy types for compatibility
 export type PaymentMethod = 'cash' | 'online' | 'card' | 'fawry' | 'vodafone_cash' | 'credit_card';
