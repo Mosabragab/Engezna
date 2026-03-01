@@ -14,16 +14,17 @@ import {
   PaginatedResult,
 } from './base-repository';
 
-// Order status types
+// Order status types (must match database order_status enum)
 export type OrderStatus =
+  | 'pending_payment'
   | 'pending'
-  | 'confirmed'
+  | 'accepted'
   | 'preparing'
   | 'ready'
-  | 'delivering'
+  | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'refunded';
+  | 'rejected';
 
 // Order entity type
 export interface Order {
@@ -401,7 +402,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
   async getProviderActiveOrders(providerId: string): Promise<RepositoryListResult<Order>> {
     return this.listOrders({
       providerId,
-      status: ['pending', 'confirmed', 'preparing', 'ready', 'delivering'],
+      status: ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'],
       sort: 'created_at',
       sortOrder: 'asc',
     });
@@ -451,7 +452,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
     // Set timestamp fields based on status
     const now = new Date().toISOString();
     switch (status) {
-      case 'confirmed':
+      case 'accepted':
         updateData.confirmed_at = now;
         break;
       case 'preparing':
@@ -460,7 +461,7 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
       case 'ready':
         updateData.ready_at = now;
         break;
-      case 'delivering':
+      case 'out_for_delivery':
         updateData.delivering_at = now;
         break;
       case 'delivered':
@@ -484,9 +485,10 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
 
   /**
    * Mark order as refunded
+   * Note: requires 'refunded' value to be added to database order_status enum
    */
   async markRefunded(id: string): Promise<RepositoryResult<Order>> {
-    return this.updateStatus(id, 'refunded');
+    return this.update(id, { status: 'refunded' as unknown as OrderStatus });
   }
 
   /**

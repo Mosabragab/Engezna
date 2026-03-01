@@ -215,14 +215,7 @@ export default function AdminCustomerDetailsPage() {
     // If banning, first cancel all active orders
     if (ban) {
       // Get all in-progress orders for this customer
-      const activeStatuses = [
-        'pending',
-        'confirmed',
-        'accepted',
-        'preparing',
-        'ready',
-        'out_for_delivery',
-      ];
+      const activeStatuses = ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'];
 
       const { data: activeOrders } = await supabase
         .from('orders')

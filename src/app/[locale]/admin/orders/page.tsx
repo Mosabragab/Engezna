@@ -137,14 +137,7 @@ export default function AdminOrdersPage() {
 
         const pending = data.filter((o) => o.status === 'pending').length;
         const inProgress = data.filter((o) =>
-          [
-            'accepted',
-            'preparing',
-            'ready',
-            'out_for_delivery',
-            'confirmed',
-            'delivering',
-          ].includes(o.status)
+          ['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)
         ).length;
         const delivered = data.filter((o) => o.status === 'delivered').length;
         const cancelled = data.filter((o) => ['cancelled', 'rejected'].includes(o.status)).length;

@@ -52,13 +52,13 @@ export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export const orderStatusSchema = z.enum([
   'pending_payment',
   'pending',
-  'confirmed',
+  'accepted',
   'preparing',
   'ready',
   'out_for_delivery',
   'delivered',
   'cancelled',
-  'refunded',
+  'rejected',
 ]);
 
 /**

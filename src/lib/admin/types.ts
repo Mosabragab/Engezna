@@ -19,16 +19,17 @@ export type UserStatus = 'active' | 'inactive' | 'banned';
 // أدوار المستخدم
 export type UserRole = 'customer' | 'provider' | 'admin';
 
-// حالات الطلب
+// حالات الطلب (must match database order_status enum)
 export type OrderStatus =
+  | 'pending_payment'
   | 'pending'
-  | 'confirmed'
+  | 'accepted'
   | 'preparing'
   | 'ready'
-  | 'delivering'
+  | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'refunded';
+  | 'rejected';
 
 // ═══════════════════════════════════════════════════════════════════════
 // مقدم الخدمة - Provider
@@ -358,14 +359,15 @@ export const PROVIDER_STATUS_LABELS: Record<ProviderStatus, { ar: string; en: st
 };
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, { ar: string; en: string }> = {
+  pending_payment: { ar: 'في انتظار الدفع', en: 'Pending Payment' },
   pending: { ar: 'في الانتظار', en: 'Pending' },
-  confirmed: { ar: 'مؤكد', en: 'Confirmed' },
+  accepted: { ar: 'مقبول', en: 'Accepted' },
   preparing: { ar: 'قيد التحضير', en: 'Preparing' },
   ready: { ar: 'جاهز', en: 'Ready' },
-  delivering: { ar: 'قيد التوصيل', en: 'Delivering' },
+  out_for_delivery: { ar: 'قيد التوصيل', en: 'Out for Delivery' },
   delivered: { ar: 'تم التوصيل', en: 'Delivered' },
   cancelled: { ar: 'ملغي', en: 'Cancelled' },
-  refunded: { ar: 'مسترد', en: 'Refunded' },
+  rejected: { ar: 'مرفوض', en: 'Rejected' },
 };
 
 export const USER_ROLE_LABELS: Record<UserRole, { ar: string; en: string }> = {

@@ -151,7 +151,7 @@ BEGIN
     p_idempotency_key,
     p_customer_id,
     p_provider_id,
-    CASE WHEN p_payment_method = 'cash' THEN 'pending' ELSE 'pending_payment' END,
+    (CASE WHEN p_payment_method = 'cash' THEN 'pending' ELSE 'pending_payment' END)::order_status,
     v_computed_subtotal,  -- Use server-validated subtotal
     p_delivery_fee,
     p_discount,
@@ -269,25 +269,25 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- Define valid transitions
-  -- pending → confirmed, cancelled
+  -- Define valid transitions (using actual DB enum values)
+  -- pending → accepted, cancelled, rejected
   -- pending_payment → pending, cancelled
-  -- confirmed → preparing, cancelled
+  -- accepted → preparing, cancelled
   -- preparing → ready, cancelled
-  -- ready → delivering, delivered, cancelled (delivered for pickup)
-  -- delivering → delivered, cancelled
-  -- delivered → refunded
-  -- cancelled → (terminal state, no transitions)
-  -- refunded → (terminal state, no transitions)
+  -- ready → out_for_delivery, delivered, cancelled (delivered for pickup)
+  -- out_for_delivery → delivered, cancelled
+  -- delivered → (terminal state)
+  -- cancelled → (terminal state)
+  -- rejected → (terminal state)
 
   IF NOT (
-    (OLD.status = 'pending' AND NEW.status IN ('confirmed', 'cancelled')) OR
+    (OLD.status = 'pending' AND NEW.status IN ('accepted', 'cancelled', 'rejected')) OR
     (OLD.status = 'pending_payment' AND NEW.status IN ('pending', 'cancelled')) OR
-    (OLD.status = 'confirmed' AND NEW.status IN ('preparing', 'cancelled')) OR
+    (OLD.status = 'accepted' AND NEW.status IN ('preparing', 'cancelled')) OR
     (OLD.status = 'preparing' AND NEW.status IN ('ready', 'cancelled')) OR
-    (OLD.status = 'ready' AND NEW.status IN ('delivering', 'delivered', 'cancelled')) OR
-    (OLD.status = 'delivering' AND NEW.status IN ('delivered', 'cancelled')) OR
-    (OLD.status = 'delivered' AND NEW.status IN ('refunded'))
+    (OLD.status = 'ready' AND NEW.status IN ('out_for_delivery', 'delivered', 'cancelled')) OR
+    (OLD.status = 'out_for_delivery' AND NEW.status IN ('delivered', 'cancelled')) OR
+    (OLD.status = 'delivered' AND NEW.status IN ('cancelled'))
   ) THEN
     RAISE EXCEPTION 'Invalid status transition: % → %', OLD.status, NEW.status;
   END IF;
