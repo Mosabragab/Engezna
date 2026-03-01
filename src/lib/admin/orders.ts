@@ -270,7 +270,7 @@ export async function cancelOrder(
     }
 
     // Validate status - can only cancel certain statuses
-    const cancellableStatuses: OrderStatus[] = ['pending', 'confirmed', 'preparing'];
+    const cancellableStatuses: OrderStatus[] = ['pending', 'accepted', 'preparing'];
     if (!cancellableStatuses.includes(current.status)) {
       return {
         success: false,
@@ -481,14 +481,15 @@ export async function updateOrderStatus(
 
     // Validate status transition
     const validTransitions: Record<string, OrderStatus[]> = {
-      pending: ['confirmed', 'cancelled'],
-      confirmed: ['preparing', 'cancelled'],
+      pending: ['accepted', 'cancelled', 'rejected'],
+      pending_payment: ['pending', 'cancelled'],
+      accepted: ['preparing', 'cancelled'],
       preparing: ['ready', 'cancelled'],
-      ready: ['delivering', 'cancelled'],
-      delivering: ['delivered', 'cancelled'],
-      delivered: ['refunded'],
-      cancelled: ['refunded'],
-      refunded: [],
+      ready: ['out_for_delivery', 'delivered', 'cancelled'],
+      out_for_delivery: ['delivered', 'cancelled'],
+      delivered: [],
+      cancelled: [],
+      rejected: [],
     };
 
     const currentStatus = current.status as string;
@@ -507,7 +508,7 @@ export async function updateOrderStatus(
     };
 
     // Set timestamps based on status
-    if (newStatus === 'confirmed' && !current.confirmed_at) {
+    if (newStatus === 'accepted' && !current.confirmed_at) {
       updateData.confirmed_at = new Date().toISOString();
     }
     if (newStatus === 'delivered' && !current.delivered_at) {
@@ -659,7 +660,7 @@ async function sendOrderStatusEmail(
   const orderNumber = order.order_number || order.id;
 
   switch (newStatus) {
-    case 'confirmed': {
+    case 'accepted': {
       // Send "order received" notification to merchant
       if (providerEmail) {
         await sendOrderReceivedEmail({
@@ -678,7 +679,7 @@ async function sendOrderStatusEmail(
       break;
     }
 
-    case 'delivering': {
+    case 'out_for_delivery': {
       // Send "shipped / out for delivery" notification to customer
       if (customerEmail) {
         await sendCustomerOrderShippedEmail({

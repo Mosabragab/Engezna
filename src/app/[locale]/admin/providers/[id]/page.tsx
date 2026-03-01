@@ -167,7 +167,7 @@ export default function ProviderDetailPage() {
     if (orders) {
       const completed = orders.filter((o) => o.status === 'delivered');
       const pending = orders.filter((o) =>
-        ['pending', 'confirmed', 'preparing', 'ready', 'delivering'].includes(o.status)
+        ['pending', 'accepted', 'preparing', 'ready', 'out_for_delivery'].includes(o.status)
       );
 
       // Calculate live rating from reviews

@@ -28,18 +28,15 @@ export type ProviderStatus =
   | 'on_vacation'
   | 'rejected';
 
-// Updated: Added 'completed' and 'confirmed' for settlement calculations
-// Added 'pending_payment' for online payment orders awaiting Kashier confirmation
+// Order status enum — must match database order_status enum exactly
 export type OrderStatus =
   | 'pending_payment'
   | 'pending'
-  | 'confirmed'
   | 'accepted'
   | 'preparing'
   | 'ready'
   | 'out_for_delivery'
   | 'delivered'
-  | 'completed'
   | 'cancelled'
   | 'rejected';
 
@@ -2091,7 +2088,6 @@ export const ACTIVE_PROVIDER_STATUSES: ProviderStatus[] = [
 // Valid order statuses for in-progress orders
 export const IN_PROGRESS_ORDER_STATUSES: OrderStatus[] = [
   'pending',
-  'confirmed',
   'accepted',
   'preparing',
   'ready',
@@ -2099,4 +2095,4 @@ export const IN_PROGRESS_ORDER_STATUSES: OrderStatus[] = [
 ];
 
 // Valid order statuses for completed orders (used in settlements)
-export const COMPLETED_ORDER_STATUSES: OrderStatus[] = ['delivered', 'completed'];
+export const COMPLETED_ORDER_STATUSES: OrderStatus[] = ['delivered'];
