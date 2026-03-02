@@ -6,10 +6,8 @@ import { usePathname } from 'next/navigation';
 import {
   Package,
   ShoppingBag,
-  BarChart3,
   Settings,
   Home,
-  Clock,
   Wallet,
   Tag,
   X,
@@ -18,7 +16,6 @@ import {
   RefreshCw,
   MessageSquare,
   TrendingUp,
-  Users,
   ClipboardList,
   Bell,
 } from 'lucide-react';
@@ -33,7 +30,6 @@ interface NavItem {
   label: { ar: string; en: string };
   path: string;
   badge?: string;
-  badgeColor?: 'red' | 'amber' | 'green';
 }
 
 interface NavGroup {
@@ -132,7 +128,6 @@ export function ProviderSidebar({
           label: { ar: 'الطلبات', en: 'Orders' },
           path: `/${locale}/provider/orders`,
           badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
-          badgeColor: 'red',
         });
       }
       // Custom Orders - only show for 'custom' or 'hybrid' modes
@@ -142,7 +137,6 @@ export function ProviderSidebar({
           label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
           path: `/${locale}/provider/orders/custom`,
           badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
-          badgeColor: 'red',
         });
       }
       operationsItems.push({
@@ -150,7 +144,6 @@ export function ProviderSidebar({
         label: { ar: 'المرتجعات', en: 'Refunds' },
         path: `/${locale}/provider/refunds`,
         badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
-        badgeColor: 'amber',
       });
     }
 
@@ -160,7 +153,6 @@ export function ProviderSidebar({
       label: { ar: 'الشكاوى والدعم', en: 'Support Tickets' },
       path: `/${locale}/provider/complaints`,
       badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
-      badgeColor: 'red',
     });
 
     groups.push({
@@ -180,7 +172,6 @@ export function ProviderSidebar({
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
           badge: onHoldOrders > 0 ? onHoldOrders.toString() : undefined,
-          badgeColor: 'amber',
         });
       }
 
@@ -300,18 +291,6 @@ export function ProviderSidebar({
         return 'bg-amber-500';
       default:
         return 'bg-slate-500';
-    }
-  };
-
-  const getBadgeColor = (color?: 'red' | 'amber' | 'green') => {
-    switch (color) {
-      case 'amber':
-        return 'bg-amber-500';
-      case 'green':
-        return 'bg-green-500';
-      case 'red':
-      default:
-        return 'bg-red-500';
     }
   };
 
@@ -435,7 +414,7 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${getBadgeColor(item.badgeColor)} text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers ${isActive ? 'ring-2 ring-white/30 shadow-sm' : ''} ${item.badgeColor === 'red' ? 'animate-pulse-badge' : ''}`}
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers`}
                           >
                             {item.badge}
                           </span>

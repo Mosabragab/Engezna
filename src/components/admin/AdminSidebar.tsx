@@ -321,7 +321,7 @@ export function AdminSidebar({
         <span className="font-medium text-sm">{item.label[locale === 'ar' ? 'ar' : 'en']}</span>
         {item.badge && (
           <span
-            className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers animate-pulse-badge ${isActive ? 'ring-2 ring-white/30 shadow-sm' : ''}`}
+            className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers`}
           >
             {item.badge}
           </span>
