@@ -30,6 +30,9 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
   const [pendingBannerApprovals, setPendingBannerApprovals] = useState(0);
   const [pendingRefunds, setPendingRefunds] = useState(0);
   const [contactFormMessages, setContactFormMessages] = useState(0);
+  const [pendingTasks, setPendingTasks] = useState(0);
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // Check if current page is login page - don't show sidebar
   const isLoginPage = pathname?.includes('/admin/login');
@@ -131,6 +134,44 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
       if (!contactFormError) {
         setContactFormMessages(contactFormCount || 0);
       }
+
+      // Get pending tasks count
+      const { count: tasksCount, error: tasksError } = await supabase
+        .from('admin_tasks')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['new', 'accepted', 'in_progress', 'pending']);
+
+      if (!tasksError) {
+        setPendingTasks(tasksCount || 0);
+      }
+
+      // Get pending approvals count
+      const { count: approvalsCount, error: approvalsError } = await supabase
+        .from('approval_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      if (!approvalsError) {
+        setPendingApprovals(approvalsCount || 0);
+      }
+
+      // Get unread internal messages count for current admin
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const adminUserId = session?.user?.id;
+
+      if (adminUserId) {
+        const { count: messagesCount, error: messagesError } = await supabase
+          .from('internal_messages')
+          .select('*', { count: 'exact', head: true })
+          .contains('recipient_ids', [adminUserId])
+          .not('read_by', 'cs', `{${adminUserId}}`);
+
+        if (!messagesError) {
+          setUnreadMessages(messagesCount || 0);
+        }
+      }
     } catch (error) {
       // Log error for debugging - badge counts are not critical for UI
       logger.warn('Failed to load badge counts', {
@@ -197,6 +238,9 @@ function AdminLayoutInner({ children }: AdminLayoutInnerProps) {
           pendingBannerApprovals={pendingBannerApprovals}
           pendingRefunds={pendingRefunds}
           contactFormMessages={contactFormMessages}
+          pendingTasks={pendingTasks}
+          pendingApprovals={pendingApprovals}
+          unreadMessages={unreadMessages}
           hasMounted={hasMounted}
         />
       </div>
