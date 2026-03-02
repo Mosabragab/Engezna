@@ -6,10 +6,8 @@ import { usePathname } from 'next/navigation';
 import {
   Package,
   ShoppingBag,
-  BarChart3,
   Settings,
   Home,
-  Clock,
   Wallet,
   Tag,
   X,
@@ -18,7 +16,6 @@ import {
   RefreshCw,
   MessageSquare,
   TrendingUp,
-  Users,
   ClipboardList,
   Bell,
 } from 'lucide-react';
@@ -33,11 +30,11 @@ interface NavItem {
   label: { ar: string; en: string };
   path: string;
   badge?: string;
-  badgeColor?: 'red' | 'amber' | 'green';
 }
 
 interface NavGroup {
   title: { ar: string; en: string };
+  titleColor?: string;
   items: NavItem[];
 }
 
@@ -131,7 +128,6 @@ export function ProviderSidebar({
           label: { ar: 'الطلبات', en: 'Orders' },
           path: `/${locale}/provider/orders`,
           badge: pendingOrders > 0 ? pendingOrders.toString() : undefined,
-          badgeColor: 'red',
         });
       }
       // Custom Orders - only show for 'custom' or 'hybrid' modes
@@ -141,7 +137,6 @@ export function ProviderSidebar({
           label: { ar: 'الطلبات الخاصة', en: 'Custom Orders' },
           path: `/${locale}/provider/orders/custom`,
           badge: pendingCustomOrders > 0 ? pendingCustomOrders.toString() : undefined,
-          badgeColor: 'red',
         });
       }
       operationsItems.push({
@@ -149,9 +144,16 @@ export function ProviderSidebar({
         label: { ar: 'المرتجعات', en: 'Refunds' },
         path: `/${locale}/provider/refunds`,
         badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
-        badgeColor: 'amber',
       });
     }
+
+    // Complaints/Support - always visible
+    operationsItems.push({
+      icon: MessageSquare,
+      label: { ar: 'الشكاوى والدعم', en: 'Support Tickets' },
+      path: `/${locale}/provider/complaints`,
+      badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
+    });
 
     groups.push({
       title: { ar: 'العمليات', en: 'Operations' },
@@ -170,7 +172,6 @@ export function ProviderSidebar({
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
           badge: onHoldOrders > 0 ? onHoldOrders.toString() : undefined,
-          badgeColor: 'amber',
         });
       }
 
@@ -185,6 +186,7 @@ export function ProviderSidebar({
       if (financialItems.length > 0) {
         groups.push({
           title: { ar: 'المالية', en: 'Financials' },
+          titleColor: 'text-amber-600',
           items: financialItems,
         });
       }
@@ -292,18 +294,6 @@ export function ProviderSidebar({
     }
   };
 
-  const getBadgeColor = (color?: 'red' | 'amber' | 'green') => {
-    switch (color) {
-      case 'amber':
-        return 'bg-amber-500';
-      case 'green':
-        return 'bg-green-500';
-      case 'red':
-      default:
-        return 'bg-red-500';
-    }
-  };
-
   const isItemActive = (itemPath: string) => {
     return (
       pathname === itemPath || (itemPath !== `/${locale}/provider` && pathname.startsWith(itemPath))
@@ -394,7 +384,7 @@ export function ProviderSidebar({
               <div key={group.title.en} className={groupIndex > 0 ? 'mt-4 lg:mt-5' : ''}>
                 {/* Group Title */}
                 <div className="px-3 lg:px-4 mb-1.5 lg:mb-2">
-                  <p className="text-[10px] lg:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <p className={`text-[10px] lg:text-xs font-semibold ${group.titleColor || 'text-slate-400'} uppercase tracking-wider`}>
                     {locale === 'ar' ? group.title.ar : group.title.en}
                   </p>
                 </div>
@@ -424,7 +414,7 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)} text-white text-xs px-2 py-0.5 rounded-full font-numbers`}
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} bg-red-500 text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers`}
                           >
                             {item.badge}
                           </span>
