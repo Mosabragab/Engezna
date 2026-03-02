@@ -384,7 +384,9 @@ export function ProviderSidebar({
               <div key={group.title.en} className={groupIndex > 0 ? 'mt-4 lg:mt-5' : ''}>
                 {/* Group Title */}
                 <div className="px-3 lg:px-4 mb-1.5 lg:mb-2">
-                  <p className={`text-[10px] lg:text-xs font-semibold ${group.titleColor || 'text-slate-400'} uppercase tracking-wider`}>
+                  <p
+                    className={`text-[10px] lg:text-xs font-semibold ${group.titleColor || 'text-slate-400'} uppercase tracking-wider`}
+                  >
                     {locale === 'ar' ? group.title.ar : group.title.en}
                   </p>
                 </div>
