@@ -487,8 +487,9 @@ export async function updateOrderStatus(
       preparing: ['ready', 'cancelled'],
       ready: ['out_for_delivery', 'delivered', 'cancelled'],
       out_for_delivery: ['delivered', 'cancelled'],
-      delivered: [],
-      cancelled: [],
+      delivered: ['refunded'],
+      cancelled: ['refunded'],
+      refunded: [],
       rejected: [],
     };
 

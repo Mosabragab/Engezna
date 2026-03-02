@@ -3,7 +3,6 @@
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
 import {
   Package,
   ShoppingBag,
@@ -149,10 +148,7 @@ export function ProviderSidebar({
         icon: RefreshCw,
         label: { ar: 'المرتجعات', en: 'Refunds' },
         path: `/${locale}/provider/refunds`,
-        badge:
-          pendingRefunds + onHoldOrders > 0
-            ? (pendingRefunds + onHoldOrders).toString()
-            : undefined,
+        badge: pendingRefunds > 0 ? pendingRefunds.toString() : undefined,
         badgeColor: 'amber',
       });
     }
@@ -173,6 +169,8 @@ export function ProviderSidebar({
           icon: Wallet,
           label: { ar: 'التسويات', en: 'Settlements' },
           path: `/${locale}/provider/finance`,
+          badge: onHoldOrders > 0 ? onHoldOrders.toString() : undefined,
+          badgeColor: 'amber',
         });
       }
 
@@ -426,13 +424,7 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={cn(
-                              isRTL ? 'mr-auto' : 'ml-auto',
-                              isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor),
-                              'text-white text-xs max-lg:text-[10px] px-2 max-lg:px-1.5 py-0.5 rounded-full font-numbers',
-                              // Pulsating animation for custom orders and orders badges
-                              !isActive && 'animate-pulse-badge'
-                            )}
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)} text-white text-xs px-2 py-0.5 rounded-full font-numbers`}
                           >
                             {item.badge}
                           </span>

@@ -29,7 +29,8 @@ export type OrderStatus =
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'rejected';
+  | 'rejected'
+  | 'refunded';
 
 // ═══════════════════════════════════════════════════════════════════════
 // مقدم الخدمة - Provider
@@ -368,6 +369,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, { ar: string; en: string }
   delivered: { ar: 'تم التوصيل', en: 'Delivered' },
   cancelled: { ar: 'ملغي', en: 'Cancelled' },
   rejected: { ar: 'مرفوض', en: 'Rejected' },
+  refunded: { ar: 'مسترد', en: 'Refunded' },
 };
 
 export const USER_ROLE_LABELS: Record<UserRole, { ar: string; en: string }> = {

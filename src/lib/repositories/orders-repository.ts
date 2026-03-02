@@ -24,7 +24,8 @@ export type OrderStatus =
   | 'out_for_delivery'
   | 'delivered'
   | 'cancelled'
-  | 'rejected';
+  | 'rejected'
+  | 'refunded';
 
 // Order entity type
 export interface Order {
@@ -485,10 +486,9 @@ class OrdersRepositoryClass extends BaseRepository<Order, OrderInsert, OrderUpda
 
   /**
    * Mark order as refunded
-   * Note: requires 'refunded' value to be added to database order_status enum
    */
   async markRefunded(id: string): Promise<RepositoryResult<Order>> {
-    return this.update(id, { status: 'refunded' as unknown as OrderStatus });
+    return this.updateStatus(id, 'refunded');
   }
 
   /**
