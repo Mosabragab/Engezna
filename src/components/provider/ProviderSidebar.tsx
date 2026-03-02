@@ -38,6 +38,7 @@ interface NavItem {
 
 interface NavGroup {
   title: { ar: string; en: string };
+  titleColor?: string;
   items: NavItem[];
 }
 
@@ -153,6 +154,15 @@ export function ProviderSidebar({
       });
     }
 
+    // Complaints/Support - always visible
+    operationsItems.push({
+      icon: MessageSquare,
+      label: { ar: 'الشكاوى والدعم', en: 'Support Tickets' },
+      path: `/${locale}/provider/complaints`,
+      badge: pendingComplaints > 0 ? pendingComplaints.toString() : undefined,
+      badgeColor: 'red',
+    });
+
     groups.push({
       title: { ar: 'العمليات', en: 'Operations' },
       items: operationsItems,
@@ -185,6 +195,7 @@ export function ProviderSidebar({
       if (financialItems.length > 0) {
         groups.push({
           title: { ar: 'المالية', en: 'Financials' },
+          titleColor: 'text-amber-600',
           items: financialItems,
         });
       }
@@ -394,7 +405,7 @@ export function ProviderSidebar({
               <div key={group.title.en} className={groupIndex > 0 ? 'mt-4 lg:mt-5' : ''}>
                 {/* Group Title */}
                 <div className="px-3 lg:px-4 mb-1.5 lg:mb-2">
-                  <p className="text-[10px] lg:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <p className={`text-[10px] lg:text-xs font-semibold ${group.titleColor || 'text-slate-400'} uppercase tracking-wider`}>
                     {locale === 'ar' ? group.title.ar : group.title.en}
                   </p>
                 </div>
@@ -424,7 +435,7 @@ export function ProviderSidebar({
                         </span>
                         {item.badge && (
                           <span
-                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${isActive ? 'bg-white/20' : getBadgeColor(item.badgeColor)} text-white text-xs px-2 py-0.5 rounded-full font-numbers`}
+                            className={`${isRTL ? 'mr-auto' : 'ml-auto'} ${getBadgeColor(item.badgeColor)} text-white text-xs min-w-[20px] text-center px-2 py-0.5 rounded-full font-numbers ${isActive ? 'ring-2 ring-white/30 shadow-sm' : ''} ${item.badgeColor === 'red' ? 'animate-pulse-badge' : ''}`}
                           >
                             {item.badge}
                           </span>
