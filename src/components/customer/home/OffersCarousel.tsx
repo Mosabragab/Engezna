@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { supabaseImageLoader } from '@/lib/supabase/image-loader';
 import { csrfHeaders } from '@/lib/security/csrf-client';
 import { useUserLocation } from '@/lib/contexts/LocationContext';
 
@@ -323,6 +324,8 @@ function BannerCard({
             fill
             className="object-cover opacity-30"
             sizes="(max-width: 768px) 85vw, 33vw"
+            quality={60}
+            loader={supabaseImageLoader}
             priority={isLCPCandidate}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -430,6 +433,8 @@ function BannerCard({
               height={150}
               className="w-auto h-full max-w-full object-contain"
               sizes="(max-width: 768px) 25vw, 15vw"
+              quality={60}
+              loader={supabaseImageLoader}
               priority={isLCPCandidate}
               style={{
                 filter:
@@ -565,6 +570,7 @@ export function OffersCarousel({
 
   // Detect desktop
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
     checkDesktop();
     window.addEventListener('resize', checkDesktop);

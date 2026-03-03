@@ -20,6 +20,7 @@ export function AdminSidebarProvider({ children }: { children: ReactNode }) {
 
   // Initialize sidebar state based on screen size
   const initializeSidebar = useCallback(() => {
+    if (typeof window === 'undefined') return;
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (mediaQuery.matches) {
       setIsOpen(true);

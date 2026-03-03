@@ -21,6 +21,8 @@ export default function OfflinePage() {
   const [cachedRestaurants, setCachedRestaurants] = useState<CachedRestaurant[]>([]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     // Check initial online status
     setIsOnline(navigator.onLine);
 
@@ -55,6 +57,7 @@ export default function OfflinePage() {
   }, []);
 
   const handleRetry = async () => {
+    if (typeof window === 'undefined') return;
     setIsRetrying(true);
 
     // Check if we're back online
@@ -74,6 +77,7 @@ export default function OfflinePage() {
   };
 
   const handleCallSupport = () => {
+    if (typeof window === 'undefined') return;
     window.location.href = `tel:${SUPPORT_PHONE}`;
   };
 

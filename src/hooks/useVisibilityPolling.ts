@@ -55,7 +55,9 @@ export function useVisibilityPolling(
     // Start polling
     startPolling();
 
-    // Visibility change handler
+    // Visibility change handler (guard for SSR/native environments)
+    if (typeof document === 'undefined') return stopPolling;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopPolling();

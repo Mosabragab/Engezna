@@ -26,6 +26,8 @@ export default function ResetPasswordPage() {
 
   // Check if user has a valid recovery session
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     async function checkSession() {
       const supabase = createClient();
 

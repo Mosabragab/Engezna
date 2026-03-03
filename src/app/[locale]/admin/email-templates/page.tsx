@@ -487,7 +487,9 @@ export default function AdminEmailTemplatesPage() {
   }
 
   function copyVariable(variable: string) {
-    navigator.clipboard.writeText(`{{${variable}}}`);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(`{{${variable}}}`);
+    }
     setCopiedVar(variable);
     setTimeout(() => setCopiedVar(null), 2000);
   }

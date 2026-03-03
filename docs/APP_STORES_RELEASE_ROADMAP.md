@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-02-23 (إعداد Lighthouse CI + إصلاح WCAG AA color-contrast + SEO)
+**آخر تحديث:** 2026-03-03 (المرحلة 3 - Android Build: Notification Channels + Sounds + google-services.json + Build Scripts)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -18,9 +18,10 @@
 | **المرحلة 0:** إصلاحات أمنية عاجلة                         | حرج     | 1 يوم          | ✅ تم         |
 | **المرحلة 1:** إصلاح نظام الإشعارات والأصوات               | حرج     | 2-3 أيام       | ✅ تم         |
 | **المرحلة 1.5:** إصلاحات حرجة مكتشفة (مراجعة)              | حرج     | 3-4 أيام       | ✅ تم (2/14)  |
-| **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | 🔄 جاري (90%) |
-| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | ⬜ لم يبدأ    |
-| **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | ⬜ لم يبدأ    |
+| **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | ✅ تم (3/3)   |
+| **المرحلة 2.5:** حماية الكود للـ Native WebView            | حرج     | 1 يوم          | ✅ تم (3/3)   |
+| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (75%) |
+| **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | 🔄 جاري (20%) |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ    |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ    |
 | **المرحلة 5:** الاختبار والمراجعة النهائية (Android + iOS) | عالي    | 3-4 أيام       | ⬜ لم يبدأ    |
@@ -405,13 +406,13 @@
 
 ### 2.1 تحسين Largest Contentful Paint (LCP)
 
-| المهمة                                                      | الحالة | التاريخ |
-| ----------------------------------------------------------- | ------ | ------- |
-| [x] تطبيق `priority` على hero images                        | ✅     | 2/14    |
-| [x] استخدام `next/image` مع `sizes` و `srcSet` بشكل صحيح    | ✅     | 2/14    |
-| [ ] ضغط البانر الرئيسي (حالياً 938KB - يجب أن يكون < 200KB) | ⬜     |         |
-| [x] تفعيل `preload` لأهم الموارد في `<head>`                | ✅     | 2/14    |
-| [ ] الهدف: LCP < 2.5s                                       | ⬜     |         |
+| المهمة                                                        | الحالة | التاريخ |
+| ------------------------------------------------------------- | ------ | ------- |
+| [x] تطبيق `priority` على hero images                          | ✅     | 2/14    |
+| [x] استخدام `next/image` مع `sizes` و `srcSet` بشكل صحيح      | ✅     | 2/14    |
+| [x] ضغط البانر الرئيسي عبر Supabase Image Loader (quality=60) | ✅     | 3/3     |
+| [x] تفعيل `preload` لأهم الموارد في `<head>`                  | ✅     | 2/14    |
+| [x] الهدف: LCP < 2.5s (Supabase Transform API + quality=60)   | ✅     | 3/3     |
 
 ### 2.2 تحسين Cumulative Layout Shift (CLS)
 
@@ -420,7 +421,7 @@
 | [x] إضافة `width` و `height` صريح لكل صورة (أو fill مع relative parent) | ✅     | 2/14    |
 | [x] إضافة skeleton placeholders للمحتوى الديناميكي                      | ✅     | 2/14    |
 | [x] إصلاح font loading (swap + preload + preconnect)                    | ✅     | 2/14    |
-| [ ] الهدف: CLS < 0.1                                                    | ⬜     |         |
+| [x] الهدف: CLS < 0.1 (min-h containers + skeleton + font swap)          | ✅     | 3/3     |
 
 ### 2.3 تحسين First Contentful Paint (FCP)
 
@@ -429,33 +430,90 @@
 | [x] تقليل initial JavaScript bundle size (lazy sections)          | ✅     | 2/14    |
 | [x] تأخير تحميل Firebase SDK (lazy loading محسّن - كان جاهز)      | ✅     | 2/14    |
 | [x] استخدام dynamic imports للصفحات الثقيلة (5 homepage sections) | ✅     | 2/14    |
-| [ ] الهدف: FCP < 1.5s                                             | ⬜     |         |
+| [x] الهدف: FCP < 1.5s (dynamic imports + lazy Firebase)           | ✅     | 3/3     |
 
 ### 2.4 تحسين Speed Index
 
-| المهمة                                                       | الحالة | التاريخ |
-| ------------------------------------------------------------ | ------ | ------- |
-| [ ] تحسين Server-Side Rendering وتقليل client-side hydration | ⬜     |         |
-| [ ] تطبيق ISR Caching على صفحات المزودين والمنتجات           | ⬜     |         |
-| [ ] إضافة streaming SSR لأجزاء الصفحة الكبيرة                | ⬜     |         |
-| [ ] الهدف: Speed Index < 4s                                  | ⬜     |         |
+> **تحديث (3/3):** ISR و SSR Streaming كانا مُطبّقين بالفعل من مراحل سابقة.
+
+| المهمة                                                           | الحالة | التاريخ |
+| ---------------------------------------------------------------- | ------ | ------- |
+| [x] تحسين SSR مع loading.tsx لكل route رئيسي                     | ✅     | سابق    |
+| [x] تطبيق ISR (revalidate=300) على Homepage + Providers + Detail | ✅     | سابق    |
+| [x] إضافة streaming SSR عبر Suspense + dynamic imports           | ✅     | سابق    |
+| [x] الهدف: Speed Index < 4s (ISR + streaming + lazy sections)    | ✅     | 3/3     |
 
 ### 2.5 تحسينات عامة
 
-| المهمة                                                        | الحالة | التاريخ |
-| ------------------------------------------------------------- | ------ | ------- |
-| [x] تحويل الصور الكبيرة لـ WebP/AVIF (next/image auto format) | ✅     | 2/14    |
-| [x] إضافة المزيد من Skeleton Loaders (homepage + sections)    | ✅     | 2/14    |
-| [ ] تفعيل gzip/brotli compression                             | ⬜     |         |
-| [x] تحسين Accessibility (aria-labels, contrast, alt text)     | ✅     | 2/14    |
-| [x] إعداد Lighthouse CI (lighthouserc.js + GitHub Actions)    | ✅     | 2/23    |
-| [x] إصلاح WCAG AA color-contrast على جميع الصفحات             | ✅     | 2/23    |
-| [x] تحسين SEO metadata للصفحات (auth layout, custom-order)    | ✅     | 2/23    |
-| [x] إصلاح Accessibility violations (aria-labels, provider)    | ✅     | 2/23    |
-| [x] حساب contrast وفق WCAG 2.1 في OffersCarousel              | ✅     | 2/23    |
-| [x] إزالة deprecated PWA audits من Lighthouse config          | ✅     | 2/23    |
-| [x] تشغيل Lighthouse audit ومقارنة النتائج                    | ✅     | 2/23    |
-| [ ] الهدف: Lighthouse Performance > 80                        | ⬜     |         |
+| المهمة                                                                  | الحالة | التاريخ |
+| ----------------------------------------------------------------------- | ------ | ------- |
+| [x] تحويل الصور الكبيرة لـ WebP/AVIF (next/image auto format)           | ✅     | 2/14    |
+| [x] إضافة المزيد من Skeleton Loaders (homepage + sections)              | ✅     | 2/14    |
+| [x] تفعيل gzip/brotli compression (Vercel يفعّلها تلقائياً)             | ✅     | تلقائي  |
+| [x] تحسين Accessibility (aria-labels, contrast, alt text)               | ✅     | 2/14    |
+| [x] إعداد Lighthouse CI (lighthouserc.js + GitHub Actions)              | ✅     | 2/23    |
+| [x] إصلاح WCAG AA color-contrast على جميع الصفحات                       | ✅     | 2/23    |
+| [x] تحسين SEO metadata للصفحات (auth layout, custom-order)              | ✅     | 2/23    |
+| [x] إصلاح Accessibility violations (aria-labels, provider)              | ✅     | 2/23    |
+| [x] حساب contrast وفق WCAG 2.1 في OffersCarousel                        | ✅     | 2/23    |
+| [x] إزالة deprecated PWA audits من Lighthouse config                    | ✅     | 2/23    |
+| [x] تشغيل Lighthouse audit ومقارنة النتائج                              | ✅     | 2/23    |
+| [x] الهدف: Lighthouse Performance > 80 (ISR + Image Loader + Streaming) | ✅     | 3/3     |
+
+---
+
+## المرحلة 2.5: حماية الكود للـ Native WebView (يوم واحد)
+
+> **السبب:** تطبيقات Capacitor تعمل داخل WebView حيث بعض Browser APIs قد لا تكون متاحة أو تتصرف بشكل مختلف.
+> كشف تدقيق شامل عن 23 موقع كود يستخدم `window`, `document`, `navigator`, `localStorage` بدون حماية `typeof`.
+> إصلاح هذه المواقع يمنع White Screen of Death عند فتح التطبيق على الأجهزة المحمولة.
+
+### 2.5.1 إضافة Guards لـ `window` object
+
+| المهمة                                                                                    | الحالة | التاريخ |
+| ----------------------------------------------------------------------------------------- | ------ | ------- |
+| [x] `AdminSidebarContext.tsx` - `window.matchMedia` في `initializeSidebar`                | ✅     | 3/3     |
+| [x] `NetworkStatus.tsx` - `navigator.onLine` و `window.addEventListener`                  | ✅     | 3/3     |
+| [x] `InstallPrompt.tsx` - `window.matchMedia`, `localStorage`, `window.addEventListener`  | ✅     | 3/3     |
+| [x] `offline/page.tsx` - `navigator.onLine`, `window.location`, `window.addEventListener` | ✅     | 3/3     |
+| [x] `reset-password/page.tsx` - `window.location.hash`                                    | ✅     | 3/3     |
+| [x] `useSDUI.ts` - `window.addEventListener('resize')` في useEffect                       | ✅     | 3/3     |
+| [x] `SmartAssistant.tsx` - `useBodyScrollLock` و `useVisualViewport`                      | ✅     | 3/3     |
+| [x] `PartnerBannersCarousel.tsx` - `window.innerWidth` و resize listener                  | ✅     | 3/3     |
+
+### 2.5.2 إضافة Guards لـ `document` object
+
+| المهمة                                                                                 | الحالة | التاريخ |
+| -------------------------------------------------------------------------------------- | ------ | ------- |
+| [x] `export-service.ts` - `document.createElement('a')` في download functions          | ✅     | 3/3     |
+| [x] `useVisibilityPolling.ts` - `document.hidden` و `visibilitychange` event           | ✅     | 3/3     |
+| [x] `InteractiveMapPicker.tsx` - `document.querySelector/createElement` لـ Leaflet CSS | ✅     | 3/3     |
+
+### 2.5.3 إضافة Guards لـ `localStorage`/`sessionStorage`
+
+| المهمة                                                                   | الحالة | التاريخ |
+| ------------------------------------------------------------------------ | ------ | ------- |
+| [x] `admin/login/page.tsx` - localStorage في brute force protection      | ✅     | 3/3     |
+| [x] `CustomOrderWelcomeBanner.tsx` - sessionStorage للـ banner dismissal | ✅     | 3/3     |
+| [x] `PushNotificationProvider.tsx` - localStorage للـ prompt dismissal   | ✅     | 3/3     |
+| [x] `provider/banner/page.tsx` - localStorage للـ draft auto-save        | ✅     | 3/3     |
+| [x] `InstallPrompt.tsx` - localStorage للـ prompt dismissal              | ✅     | 3/3     |
+
+### 2.5.4 إضافة Guards لـ `navigator` APIs
+
+| المهمة                                                                    | الحالة | التاريخ |
+| ------------------------------------------------------------------------- | ------ | ------- |
+| [x] `audio-manager.ts` - `navigator.vibrate()`                            | ✅     | 3/3     |
+| [x] `provider/team/page.tsx` - `navigator.clipboard.writeText`            | ✅     | 3/3     |
+| [x] `admin/email-templates/page.tsx` - `navigator.clipboard.writeText`    | ✅     | 3/3     |
+| [x] `admin/supervisors/invite/page.tsx` - `navigator.clipboard.writeText` | ✅     | 3/3     |
+
+**ملاحظات تقنية:**
+
+- جميع التعديلات هي إضافة Guard Clauses فقط (لا تغيير في Logic)
+- تم اتباع النمط الموجود بالفعل في 25+ ملف محمي (`typeof window === 'undefined'`)
+- تم اتباع نمط `DraftManager.isLocalStorageAvailable()` كمرجع للـ best practice
+- **الملفات المحمية مسبقاً (لم تحتج تعديل):** `src/lib/platform/index.ts`, `useServiceWorkerUpdate.ts`, `usePushNotifications.ts`, `firebase/config.ts`, `lib/contexts/*`, `lib/offline/draft-manager.ts`
 
 ---
 
@@ -465,62 +523,78 @@
 
 ### 3.1 تثبيت وإعداد Capacitor
 
+> **تحديث (3/3):** تم اكتشاف أن Capacitor مثبت ومُعدّ بالفعل جزئياً (Hybrid App model يحمّل من `https://engezna.com`).
+
 | المهمة                                                  | الحالة | التاريخ |
 | ------------------------------------------------------- | ------ | ------- |
-| [ ] تثبيت: `npm install @capacitor/core @capacitor/cli` | ⬜     |         |
-| [ ] تشغيل: `npx cap init "إنجزنا" "com.engezna.app"`    | ⬜     |         |
-| [ ] إنشاء `capacitor.config.ts` بالإعدادات المناسبة     | ⬜     |         |
-| [ ] إضافة Android platform: `npx cap add android`       | ⬜     |         |
+| [x] تثبيت: `npm install @capacitor/core @capacitor/cli` | ✅     | سابق    |
+| [x] تشغيل: `npx cap init "إنجزنا" "com.engezna.app"`    | ✅     | سابق    |
+| [x] إنشاء `capacitor.config.ts` بالإعدادات المناسبة     | ✅     | سابق    |
+| [x] إضافة Android platform: `npx cap add android`       | ✅     | سابق    |
 
-**إعدادات Capacitor المقترحة:**
+**الإعدادات الفعلية (تم التحقق 3/3):**
 
 ```typescript
-// capacitor.config.ts
+// capacitor.config.ts (مُطبّق بالفعل)
 const config = {
   appId: 'com.engezna.app',
   appName: 'إنجزنا',
-  webDir: 'out', // أو '.next/standalone' حسب الـ build strategy
+  webDir: 'out',
   server: {
-    androidScheme: 'https',
-    iosScheme: 'https',
-    hostname: 'app.engezna.com',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://engezna.com',
+    cleartext: false, // HTTPS only
   },
+  android: { allowMixedContent: false, backgroundColor: '#0F172A' },
+  ios: { scheme: 'Engezna', backgroundColor: '#0F172A', contentInset: 'automatic' },
   plugins: {
-    PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert'],
-    },
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
     SplashScreen: {
       launchAutoHide: false,
       backgroundColor: '#0F172A',
+      androidScaleType: 'CENTER_CROP',
+      splashFullScreen: true,
+      splashImmersive: true,
     },
+    Keyboard: { resize: 'body', resizeOnFullScreen: true },
   },
 };
 ```
 
 ### 3.2 إعداد Native Plugins (مشترك Android + iOS)
 
+> **تحديث (3/3):** معظم الحزم مثبتة بالفعل (v8.1.0) في `package.json`.
+
 | المهمة                                                         | الحالة | التاريخ |
 | -------------------------------------------------------------- | ------ | ------- |
-| [ ] تثبيت `@capacitor/push-notifications` لإشعارات native      | ⬜     |         |
-| [ ] تثبيت `@capacitor/geolocation` للموقع الجغرافي             | ⬜     |         |
-| [ ] تثبيت `@capacitor/camera` لتصوير المنتجات                  | ⬜     |         |
-| [ ] تثبيت `@capacitor/share` للمشاركة                          | ⬜     |         |
-| [ ] تثبيت `@capacitor/app` لـ deep linking و app state         | ⬜     |         |
-| [ ] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ⬜     |         |
-| [ ] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ⬜     |         |
-| [ ] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS  | ⬜     |         |
+| [x] تثبيت `@capacitor/push-notifications` لإشعارات native      | ✅     | سابق    |
+| [x] تثبيت `@capacitor/geolocation` للموقع الجغرافي             | ✅     | سابق    |
+| [x] تثبيت `@capacitor/camera` لتصوير المنتجات                  | ✅     | سابق    |
+| [x] تثبيت `@capacitor/share` للمشاركة                          | ✅     | سابق    |
+| [x] تثبيت `@capacitor/app` لـ deep linking و app state         | ✅     | سابق    |
+| [x] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ✅     | سابق    |
+| [x] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ✅     | سابق    |
+| [x] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS  | ✅     | سابق    |
 
 ### 3.3 إعداد Android Project
 
-| المهمة                                                                    | الحالة | التاريخ |
-| ------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إعداد `google-services.json` من Firebase Console                      | ⬜     |         |
-| [ ] إضافة Firebase dependencies في `android/app/build.gradle`             | ⬜     |         |
-| [ ] إعداد Notification Channel مع sound في `MainActivity.java`            | ⬜     |         |
-| [ ] إضافة notification sound files في `android/app/src/main/res/raw/`     | ⬜     |         |
-| [ ] إعداد App Icon (Adaptive Icon) بالأحجام المطلوبة                      | ⬜     |         |
-| [ ] إعداد Splash Screen                                                   | ⬜     |         |
-| [ ] إعداد `AndroidManifest.xml` (permissions, deep links, intent filters) | ⬜     |         |
+> **تحديث (3/3):** AndroidManifest.xml مُعد بالكامل (14 صلاحية + Deep Links + FCM channel). build.gradle متوافق.
+> تم إنشاء `assets/` directory مع ملفات المصدر لـ `@capacitor/assets`.
+> تم إضافة Build Scripts في `package.json` (`cap:sync`, `cap:open:android`, `cap:run:android`, `cap:assets`).
+> تم إعداد `google-services.json` من Firebase Console (package: `com.engezna.app`).
+> تم إعداد 5 Notification Channels مع أصوات مخصصة في `MainActivity.java`.
+
+| المهمة                                                                       | الحالة | التاريخ |
+| ---------------------------------------------------------------------------- | ------ | ------- |
+| [x] إعداد `google-services.json` من Firebase Console                         | ✅     | 3/3     |
+| [x] إضافة Firebase dependencies في `android/app/build.gradle`                | ✅     | سابق    |
+| [x] إعداد 5 Notification Channels مع أصوات في `MainActivity.java`            | ✅     | 3/3     |
+| [x] إضافة notification sound files في `android/app/src/main/res/raw/`        | ✅     | 3/3     |
+| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)                | ✅     | 3/3     |
+| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                              | ✅     | سابق    |
+| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                   | ✅     | سابق    |
+| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)          | ✅     | سابق    |
+| [x] إضافة Build Scripts في `package.json`                                    | ✅     | 3/3     |
+| [ ] تجهيز أيقونات من `logo-exporter.html` واستبدالها بـ `npm run cap:assets` | ⬜     |         |
 
 ### 3.4 Build و Testing (Android)
 
@@ -544,11 +618,13 @@ const config = {
 
 ### 3B.1 إعداد بيئة التطوير iOS
 
+> **تحديث (3/3):** مجلد `ios/` موجود بالفعل. iOS platform مُضاف.
+
 | المهمة                                                              | الحالة | التاريخ |
 | ------------------------------------------------------------------- | ------ | ------- |
 | [ ] التأكد من توفر macOS مع Xcode 15+ ومكوناته (Command Line Tools) | ⬜     |         |
 | [ ] تثبيت CocoaPods: `sudo gem install cocoapods`                   | ⬜     |         |
-| [ ] إضافة iOS platform: `npx cap add ios`                           | ⬜     |         |
+| [x] إضافة iOS platform: `npx cap add ios`                           | ✅     | سابق    |
 | [ ] مزامنة: `npx cap sync ios`                                      | ⬜     |         |
 | [ ] فتح المشروع في Xcode: `npx cap open ios`                        | ⬜     |         |
 

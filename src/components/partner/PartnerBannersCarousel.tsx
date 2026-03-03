@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { supabaseImageLoader } from '@/lib/supabase/image-loader';
 
 // Helper function to calculate color luminance
 function getContrastTextColor(hexColor: string): 'light' | 'dark' {
@@ -168,6 +169,8 @@ function PartnerBannerCard({
             fill
             className="object-cover opacity-30"
             sizes="(max-width: 1024px) 85vw, 33vw"
+            quality={60}
+            loader={supabaseImageLoader}
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
@@ -353,6 +356,7 @@ export function PartnerBannersCarousel({
 
   // Detect desktop
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
     checkDesktop();
     window.addEventListener('resize', checkDesktop);

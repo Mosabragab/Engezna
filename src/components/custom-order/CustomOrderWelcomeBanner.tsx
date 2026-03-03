@@ -35,6 +35,7 @@ export function CustomOrderWelcomeBanner({
 
   // Check if banner was previously dismissed (per provider, per session)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const dismissedKey = `custom_order_banner_dismissed_${providerId}`;
     const dismissed = sessionStorage.getItem(dismissedKey);
     if (dismissed === 'true') {
@@ -43,8 +44,10 @@ export function CustomOrderWelcomeBanner({
   }, [providerId]);
 
   const handleDismiss = () => {
-    const dismissedKey = `custom_order_banner_dismissed_${providerId}`;
-    sessionStorage.setItem(dismissedKey, 'true');
+    if (typeof window !== 'undefined') {
+      const dismissedKey = `custom_order_banner_dismissed_${providerId}`;
+      sessionStorage.setItem(dismissedKey, 'true');
+    }
     setIsDismissed(true);
   };
 

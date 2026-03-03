@@ -48,6 +48,7 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
   useEffect(() => {
     if (!isAuthenticatedPage || !isSupported || isLoading) return;
     if (permission !== 'default') return;
+    if (typeof window === 'undefined') return;
 
     // Check if prompt was recently dismissed before showing
     const dismissed = localStorage.getItem('notification_prompt_dismissed');
@@ -77,11 +78,14 @@ export function PushNotificationProvider({ children }: { children: React.ReactNo
   const handleDismissPrompt = useCallback(() => {
     setShowPrompt(false);
     // Store dismissal in localStorage to not show again for 7 days
-    localStorage.setItem('notification_prompt_dismissed', String(Date.now()));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('notification_prompt_dismissed', String(Date.now()));
+    }
   }, []);
 
   // Check if prompt was recently dismissed
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const dismissed = localStorage.getItem('notification_prompt_dismissed');
     if (dismissed) {
       const dismissedAt = parseInt(dismissed);

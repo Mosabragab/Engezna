@@ -166,7 +166,7 @@ class NotificationAudioManager {
    * Vibrate the device as a fallback when sound fails.
    */
   private vibrate(type: SoundType): void {
-    if (!('vibrate' in navigator)) return;
+    if (typeof navigator === 'undefined' || !('vibrate' in navigator)) return;
 
     const patterns: Record<SoundType, number[]> = {
       notification: [200, 100, 200],

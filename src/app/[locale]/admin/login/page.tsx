@@ -41,6 +41,7 @@ export default function AdminLoginPage() {
 
   // Helper functions - defined before hooks that use them
   const clearLockout = useCallback(() => {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem('admin_login_lockout');
     localStorage.removeItem('admin_login_attempts');
     setIsLocked(false);
@@ -48,10 +49,12 @@ export default function AdminLoginPage() {
   }, []);
 
   const clearAttempts = useCallback(() => {
+    if (typeof window === 'undefined') return;
     localStorage.removeItem('admin_login_attempts');
   }, []);
 
   const getFailedAttempts = useCallback((): number => {
+    if (typeof window === 'undefined') return 0;
     const data = localStorage.getItem('admin_login_attempts');
     if (data) {
       const { count, timestamp } = JSON.parse(data);
@@ -66,6 +69,7 @@ export default function AdminLoginPage() {
   }, []);
 
   const incrementFailedAttempts = useCallback(() => {
+    if (typeof window === 'undefined') return 0;
     const current = getFailedAttempts();
     const newCount = current + 1;
     localStorage.setItem(
@@ -87,6 +91,7 @@ export default function AdminLoginPage() {
   }, [getFailedAttempts, MAX_ATTEMPTS, LOCKOUT_DURATION]);
 
   const checkLockoutStatus = useCallback(() => {
+    if (typeof window === 'undefined') return;
     const lockoutData = localStorage.getItem('admin_login_lockout');
     if (lockoutData) {
       const { lockoutUntil } = JSON.parse(lockoutData);
