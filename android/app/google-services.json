@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "937850460252",
+    "project_id": "engezna-6edd0",
+    "storage_bucket": "engezna-6edd0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937850460252:android:5b03cb7477f28c7aeaae99",
+        "android_client_info": {
+          "package_name": "com.engezna.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "937850460252-l67usn11uha20t7ltndgalga7kmpb70p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD5L8pdPKH3lFXBCj9hPdZFld3brikcROc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "937850460252-l67usn11uha20t7ltndgalga7kmpb70p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
