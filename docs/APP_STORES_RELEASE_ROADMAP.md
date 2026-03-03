@@ -20,7 +20,7 @@
 | **المرحلة 1.5:** إصلاحات حرجة مكتشفة (مراجعة)              | حرج     | 3-4 أيام       | ✅ تم (2/14)  |
 | **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | ✅ تم (3/3)   |
 | **المرحلة 2.5:** حماية الكود للـ Native WebView            | حرج     | 1 يوم          | ✅ تم (3/3)   |
-| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (30%) |
+| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (60%) |
 | **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | 🔄 جاري (20%) |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ    |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ    |
@@ -532,27 +532,30 @@
 | [x] إنشاء `capacitor.config.ts` بالإعدادات المناسبة     | ✅     | سابق    |
 | [x] إضافة Android platform: `npx cap add android`       | ✅     | سابق    |
 
-**إعدادات Capacitor المقترحة:**
+**الإعدادات الفعلية (تم التحقق 3/3):**
 
 ```typescript
-// capacitor.config.ts
+// capacitor.config.ts (مُطبّق بالفعل)
 const config = {
   appId: 'com.engezna.app',
   appName: 'إنجزنا',
-  webDir: 'out', // أو '.next/standalone' حسب الـ build strategy
+  webDir: 'out',
   server: {
-    androidScheme: 'https',
-    iosScheme: 'https',
-    hostname: 'app.engezna.com',
+    url: process.env.CAPACITOR_SERVER_URL || 'https://engezna.com',
+    cleartext: false, // HTTPS only
   },
+  android: { allowMixedContent: false, backgroundColor: '#0F172A' },
+  ios: { scheme: 'Engezna', backgroundColor: '#0F172A', contentInset: 'automatic' },
   plugins: {
-    PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert'],
-    },
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
     SplashScreen: {
       launchAutoHide: false,
       backgroundColor: '#0F172A',
+      androidScaleType: 'CENTER_CROP',
+      splashFullScreen: true,
+      splashImmersive: true,
     },
+    Keyboard: { resize: 'body', resizeOnFullScreen: true },
   },
 };
 ```
@@ -566,7 +569,7 @@ const config = {
 | [x] تثبيت `@capacitor/push-notifications` لإشعارات native      | ✅     | سابق    |
 | [x] تثبيت `@capacitor/geolocation` للموقع الجغرافي             | ✅     | سابق    |
 | [x] تثبيت `@capacitor/camera` لتصوير المنتجات                  | ✅     | سابق    |
-| [ ] تثبيت `@capacitor/share` للمشاركة                          | ⬜     |         |
+| [x] تثبيت `@capacitor/share` للمشاركة                          | ✅     | سابق    |
 | [x] تثبيت `@capacitor/app` لـ deep linking و app state         | ✅     | سابق    |
 | [x] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ✅     | سابق    |
 | [x] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ✅     | سابق    |
@@ -574,15 +577,21 @@ const config = {
 
 ### 3.3 إعداد Android Project
 
-| المهمة                                                                    | الحالة | التاريخ |
-| ------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إعداد `google-services.json` من Firebase Console                      | ⬜     |         |
-| [ ] إضافة Firebase dependencies في `android/app/build.gradle`             | ⬜     |         |
-| [ ] إعداد Notification Channel مع sound في `MainActivity.java`            | ⬜     |         |
-| [ ] إضافة notification sound files في `android/app/src/main/res/raw/`     | ⬜     |         |
-| [ ] إعداد App Icon (Adaptive Icon) بالأحجام المطلوبة                      | ⬜     |         |
-| [ ] إعداد Splash Screen                                                   | ⬜     |         |
-| [ ] إعداد `AndroidManifest.xml` (permissions, deep links, intent filters) | ⬜     |         |
+> **تحديث (3/3):** AndroidManifest.xml مُعد بالكامل (14 صلاحية + Deep Links + FCM channel). build.gradle متوافق.
+> تم إنشاء `assets/` directory مع ملفات المصدر لـ `@capacitor/assets`.
+> تم إضافة Build Scripts في `package.json` (`cap:sync`, `cap:open:android`, `cap:run:android`, `cap:assets`).
+
+| المهمة                                                                     | الحالة | التاريخ |
+| -------------------------------------------------------------------------- | ------ | ------- |
+| [ ] إعداد `google-services.json` من Firebase Console (**مطلوب من المالك**) | ⬜     |         |
+| [x] إضافة Firebase dependencies في `android/app/build.gradle`              | ✅     | سابق    |
+| [ ] إعداد Notification Channel مع sound في `MainActivity.java`             | ⬜     |         |
+| [ ] إضافة notification sound files في `android/app/src/main/res/raw/`      | ⬜     |         |
+| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)              | ✅     | 3/3     |
+| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                            | ✅     | سابق    |
+| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                 | ✅     | سابق    |
+| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)        | ✅     | سابق    |
+| [x] إضافة Build Scripts في `package.json`                                  | ✅     | 3/3     |
 
 ### 3.4 Build و Testing (Android)
 
