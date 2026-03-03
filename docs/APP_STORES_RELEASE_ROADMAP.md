@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-03-03 (إتمام المرحلة 2 - Lighthouse Performance + Supabase Image Loader + Native WebView Guards)
+**آخر تحديث:** 2026-03-03 (المرحلة 3 - Android Build: Notification Channels + Sounds + google-services.json + Build Scripts)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -20,7 +20,7 @@
 | **المرحلة 1.5:** إصلاحات حرجة مكتشفة (مراجعة)              | حرج     | 3-4 أيام       | ✅ تم (2/14)  |
 | **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | ✅ تم (3/3)   |
 | **المرحلة 2.5:** حماية الكود للـ Native WebView            | حرج     | 1 يوم          | ✅ تم (3/3)   |
-| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (60%) |
+| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (75%) |
 | **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | 🔄 جاري (20%) |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ    |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ    |
@@ -580,18 +580,21 @@ const config = {
 > **تحديث (3/3):** AndroidManifest.xml مُعد بالكامل (14 صلاحية + Deep Links + FCM channel). build.gradle متوافق.
 > تم إنشاء `assets/` directory مع ملفات المصدر لـ `@capacitor/assets`.
 > تم إضافة Build Scripts في `package.json` (`cap:sync`, `cap:open:android`, `cap:run:android`, `cap:assets`).
+> تم إعداد `google-services.json` من Firebase Console (package: `com.engezna.app`).
+> تم إعداد 5 Notification Channels مع أصوات مخصصة في `MainActivity.java`.
 
-| المهمة                                                                     | الحالة | التاريخ |
-| -------------------------------------------------------------------------- | ------ | ------- |
-| [ ] إعداد `google-services.json` من Firebase Console (**مطلوب من المالك**) | ⬜     |         |
-| [x] إضافة Firebase dependencies في `android/app/build.gradle`              | ✅     | سابق    |
-| [ ] إعداد Notification Channel مع sound في `MainActivity.java`             | ⬜     |         |
-| [ ] إضافة notification sound files في `android/app/src/main/res/raw/`      | ⬜     |         |
-| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)              | ✅     | 3/3     |
-| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                            | ✅     | سابق    |
-| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                 | ✅     | سابق    |
-| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)        | ✅     | سابق    |
-| [x] إضافة Build Scripts في `package.json`                                  | ✅     | 3/3     |
+| المهمة                                                                       | الحالة | التاريخ |
+| ---------------------------------------------------------------------------- | ------ | ------- |
+| [x] إعداد `google-services.json` من Firebase Console                         | ✅     | 3/3     |
+| [x] إضافة Firebase dependencies في `android/app/build.gradle`                | ✅     | سابق    |
+| [x] إعداد 5 Notification Channels مع أصوات في `MainActivity.java`            | ✅     | 3/3     |
+| [x] إضافة notification sound files في `android/app/src/main/res/raw/`        | ✅     | 3/3     |
+| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)                | ✅     | 3/3     |
+| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                              | ✅     | سابق    |
+| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                   | ✅     | سابق    |
+| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)          | ✅     | سابق    |
+| [x] إضافة Build Scripts في `package.json`                                    | ✅     | 3/3     |
+| [ ] تجهيز أيقونات من `logo-exporter.html` واستبدالها بـ `npm run cap:assets` | ⬜     |         |
 
 ### 3.4 Build و Testing (Android)
 

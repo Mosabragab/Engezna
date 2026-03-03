@@ -2,6 +2,8 @@ package com.engezna.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.media.AudioAttributes;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 
@@ -19,6 +21,11 @@ public class MainActivity extends BridgeActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = getSystemService(NotificationManager.class);
 
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .build();
+
             // Orders channel - high priority for order updates
             NotificationChannel ordersChannel = new NotificationChannel(
                     "orders",
@@ -28,6 +35,10 @@ public class MainActivity extends BridgeActivity {
             ordersChannel.setDescription("إشعارات حالة الطلبات والتحديثات");
             ordersChannel.enableVibration(true);
             ordersChannel.setShowBadge(true);
+            ordersChannel.setSound(
+                    Uri.parse("android.resource://" + getPackageName() + "/raw/new_order"),
+                    audioAttributes
+            );
             manager.createNotificationChannel(ordersChannel);
 
             // Chat channel - for AI chat and customer support
@@ -39,6 +50,10 @@ public class MainActivity extends BridgeActivity {
             chatChannel.setDescription("إشعارات المحادثات والدعم الفني");
             chatChannel.enableVibration(true);
             chatChannel.setShowBadge(true);
+            chatChannel.setSound(
+                    Uri.parse("android.resource://" + getPackageName() + "/raw/notification"),
+                    audioAttributes
+            );
             manager.createNotificationChannel(chatChannel);
 
             // Promotions channel - lower priority for offers
@@ -51,6 +66,21 @@ public class MainActivity extends BridgeActivity {
             promosChannel.setShowBadge(false);
             manager.createNotificationChannel(promosChannel);
 
+            // Custom orders channel - for custom order broadcasts
+            NotificationChannel customOrdersChannel = new NotificationChannel(
+                    "custom_orders",
+                    "الطلبات المخصصة",
+                    NotificationManager.IMPORTANCE_HIGH
+            );
+            customOrdersChannel.setDescription("إشعارات البث والطلبات المخصصة");
+            customOrdersChannel.enableVibration(true);
+            customOrdersChannel.setShowBadge(true);
+            customOrdersChannel.setSound(
+                    Uri.parse("android.resource://" + getPackageName() + "/raw/custom_order"),
+                    audioAttributes
+            );
+            manager.createNotificationChannel(customOrdersChannel);
+
             // General channel - default fallback
             NotificationChannel generalChannel = new NotificationChannel(
                     "general",
@@ -59,6 +89,10 @@ public class MainActivity extends BridgeActivity {
             );
             generalChannel.setDescription("إشعارات عامة من التطبيق");
             generalChannel.setShowBadge(true);
+            generalChannel.setSound(
+                    Uri.parse("android.resource://" + getPackageName() + "/raw/notification"),
+                    audioAttributes
+            );
             manager.createNotificationChannel(generalChannel);
         }
     }
