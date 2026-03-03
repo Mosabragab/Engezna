@@ -37,6 +37,7 @@ export function InteractiveMapPicker({
 
     // Dynamically import Leaflet
     const initMap = async () => {
+      if (typeof document === 'undefined') return;
       const L = (await import('leaflet')).default;
 
       // Import Leaflet CSS

@@ -517,6 +517,7 @@ export default function InviteSupervisorPage() {
 
   async function handleCopyLink() {
     if (!invitationResult) return;
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
 
     try {
       await navigator.clipboard.writeText(invitationResult.url);

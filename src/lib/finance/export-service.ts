@@ -560,6 +560,8 @@ export function exportSettlementToPDF(data: SettlementExportData, options: Expor
  * Download settlement report as HTML file
  */
 export function downloadSettlementAsHTML(data: SettlementExportData, options: ExportOptions): void {
+  if (typeof document === 'undefined') return;
+
   const html = generateSettlementHTML(data, options);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -653,6 +655,7 @@ export function exportSettlementsToCSV(
   const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
 
+  if (typeof document === 'undefined') return;
   const a = document.createElement('a');
   a.href = url;
   a.download = `settlements-${new Date().toISOString().slice(0, 10)}.csv`;

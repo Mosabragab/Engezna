@@ -609,6 +609,7 @@ export function useSDUI(options: UseSDUIOptions = {}) {
   const [autoIsNewUser, setAutoIsNewUser] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     setAutoDeviceType(detectDeviceType());
     setAutoIsNewUser(checkIsNewUser());
 

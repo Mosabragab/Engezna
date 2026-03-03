@@ -18,6 +18,8 @@ export function InstallPrompt() {
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -78,7 +80,9 @@ export function InstallPrompt() {
   };
 
   const handleDismiss = () => {
-    localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pwa-prompt-dismissed', Date.now().toString());
+    }
     setShowPrompt(false);
   };
 

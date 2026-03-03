@@ -184,6 +184,7 @@ export default function ProviderBannerPage() {
   useEffect(() => {
     checkAuthAndLoad();
     // P9: Restore draft from localStorage
+    if (typeof window === 'undefined') return;
     try {
       const saved = localStorage.getItem(DRAFT_KEY);
       if (saved) {
@@ -201,6 +202,7 @@ export default function ProviderBannerPage() {
 
   // P9: Auto-save draft to localStorage when form changes
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     if (showForm && !isEditing && formData.title_ar) {
       try {
         localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
@@ -428,7 +430,7 @@ export default function ProviderBannerPage() {
       setIsEditing(false);
       setEditingBannerId(null);
       // P9: Clear draft on successful submission
-      localStorage.removeItem(DRAFT_KEY);
+      if (typeof window !== 'undefined') localStorage.removeItem(DRAFT_KEY);
       setHasDraft(false);
     } catch (error) {
       console.error('Save error:', error);

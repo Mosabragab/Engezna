@@ -30,7 +30,7 @@ import { createClient } from '@/lib/supabase/client';
 // Custom hook to disable body scroll when chat is open
 function useBodyScrollLock(isLocked: boolean) {
   useEffect(() => {
-    if (!isLocked) return;
+    if (!isLocked || typeof window === 'undefined') return;
 
     // Save current scroll position and body style
     const scrollY = window.scrollY;
@@ -59,6 +59,7 @@ function useVisualViewport() {
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const viewport = window.visualViewport;
     if (!viewport) return;
 

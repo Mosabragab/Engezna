@@ -636,15 +636,18 @@ export default function TeamManagementPage() {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     const invitationLink = `${baseUrl}/${locale}/provider/join?token=${invitation.invitation_token}`;
 
-    navigator.clipboard.writeText(invitationLink).catch(() => {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = invitationLink;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-    });
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(invitationLink).catch(() => {
+        // Fallback for older browsers
+        if (typeof document === 'undefined') return;
+        const textArea = document.createElement('textarea');
+        textArea.value = invitationLink;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      });
+    }
   };
 
   // Resend invitation

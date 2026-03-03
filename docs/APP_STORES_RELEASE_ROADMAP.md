@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-02-23 (إعداد Lighthouse CI + إصلاح WCAG AA color-contrast + SEO)
+**آخر تحديث:** 2026-03-03 (حماية الكود للـ Native WebView - Capacitor Guards)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -19,8 +19,9 @@
 | **المرحلة 1:** إصلاح نظام الإشعارات والأصوات               | حرج     | 2-3 أيام       | ✅ تم         |
 | **المرحلة 1.5:** إصلاحات حرجة مكتشفة (مراجعة)              | حرج     | 3-4 أيام       | ✅ تم (2/14)  |
 | **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | 🔄 جاري (90%) |
-| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | ⬜ لم يبدأ    |
-| **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | ⬜ لم يبدأ    |
+| **المرحلة 2.5:** حماية الكود للـ Native WebView            | حرج     | 1 يوم          | ✅ تم (3/3)   |
+| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (30%) |
+| **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | 🔄 جاري (20%) |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ    |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ    |
 | **المرحلة 5:** الاختبار والمراجعة النهائية (Android + iOS) | عالي    | 3-4 أيام       | ⬜ لم يبدأ    |
@@ -459,18 +460,74 @@
 
 ---
 
+## المرحلة 2.5: حماية الكود للـ Native WebView (يوم واحد)
+
+> **السبب:** تطبيقات Capacitor تعمل داخل WebView حيث بعض Browser APIs قد لا تكون متاحة أو تتصرف بشكل مختلف.
+> كشف تدقيق شامل عن 23 موقع كود يستخدم `window`, `document`, `navigator`, `localStorage` بدون حماية `typeof`.
+> إصلاح هذه المواقع يمنع White Screen of Death عند فتح التطبيق على الأجهزة المحمولة.
+
+### 2.5.1 إضافة Guards لـ `window` object
+
+| المهمة | الحالة | التاريخ |
+| --- | --- | --- |
+| [x] `AdminSidebarContext.tsx` - `window.matchMedia` في `initializeSidebar` | ✅ | 3/3 |
+| [x] `NetworkStatus.tsx` - `navigator.onLine` و `window.addEventListener` | ✅ | 3/3 |
+| [x] `InstallPrompt.tsx` - `window.matchMedia`, `localStorage`, `window.addEventListener` | ✅ | 3/3 |
+| [x] `offline/page.tsx` - `navigator.onLine`, `window.location`, `window.addEventListener` | ✅ | 3/3 |
+| [x] `reset-password/page.tsx` - `window.location.hash` | ✅ | 3/3 |
+| [x] `useSDUI.ts` - `window.addEventListener('resize')` في useEffect | ✅ | 3/3 |
+| [x] `SmartAssistant.tsx` - `useBodyScrollLock` و `useVisualViewport` | ✅ | 3/3 |
+| [x] `PartnerBannersCarousel.tsx` - `window.innerWidth` و resize listener | ✅ | 3/3 |
+
+### 2.5.2 إضافة Guards لـ `document` object
+
+| المهمة | الحالة | التاريخ |
+| --- | --- | --- |
+| [x] `export-service.ts` - `document.createElement('a')` في download functions | ✅ | 3/3 |
+| [x] `useVisibilityPolling.ts` - `document.hidden` و `visibilitychange` event | ✅ | 3/3 |
+| [x] `InteractiveMapPicker.tsx` - `document.querySelector/createElement` لـ Leaflet CSS | ✅ | 3/3 |
+
+### 2.5.3 إضافة Guards لـ `localStorage`/`sessionStorage`
+
+| المهمة | الحالة | التاريخ |
+| --- | --- | --- |
+| [x] `admin/login/page.tsx` - localStorage في brute force protection | ✅ | 3/3 |
+| [x] `CustomOrderWelcomeBanner.tsx` - sessionStorage للـ banner dismissal | ✅ | 3/3 |
+| [x] `PushNotificationProvider.tsx` - localStorage للـ prompt dismissal | ✅ | 3/3 |
+| [x] `provider/banner/page.tsx` - localStorage للـ draft auto-save | ✅ | 3/3 |
+| [x] `InstallPrompt.tsx` - localStorage للـ prompt dismissal | ✅ | 3/3 |
+
+### 2.5.4 إضافة Guards لـ `navigator` APIs
+
+| المهمة | الحالة | التاريخ |
+| --- | --- | --- |
+| [x] `audio-manager.ts` - `navigator.vibrate()` | ✅ | 3/3 |
+| [x] `provider/team/page.tsx` - `navigator.clipboard.writeText` | ✅ | 3/3 |
+| [x] `admin/email-templates/page.tsx` - `navigator.clipboard.writeText` | ✅ | 3/3 |
+| [x] `admin/supervisors/invite/page.tsx` - `navigator.clipboard.writeText` | ✅ | 3/3 |
+
+**ملاحظات تقنية:**
+- جميع التعديلات هي إضافة Guard Clauses فقط (لا تغيير في Logic)
+- تم اتباع النمط الموجود بالفعل في 25+ ملف محمي (`typeof window === 'undefined'`)
+- تم اتباع نمط `DraftManager.isLocalStorageAvailable()` كمرجع للـ best practice
+- **الملفات المحمية مسبقاً (لم تحتج تعديل):** `src/lib/platform/index.ts`, `useServiceWorkerUpdate.ts`, `usePushNotifications.ts`, `firebase/config.ts`, `lib/contexts/*`, `lib/offline/draft-manager.ts`
+
+---
+
 ## المرحلة 3: إعداد Capacitor + Android Build (2-3 أيام)
 
 > **السبب:** لرفع التطبيق كـ APK/AAB على Google Play.
 
 ### 3.1 تثبيت وإعداد Capacitor
 
+> **تحديث (3/3):** تم اكتشاف أن Capacitor مثبت ومُعدّ بالفعل جزئياً (Hybrid App model يحمّل من `https://engezna.com`).
+
 | المهمة                                                  | الحالة | التاريخ |
 | ------------------------------------------------------- | ------ | ------- |
-| [ ] تثبيت: `npm install @capacitor/core @capacitor/cli` | ⬜     |         |
-| [ ] تشغيل: `npx cap init "إنجزنا" "com.engezna.app"`    | ⬜     |         |
-| [ ] إنشاء `capacitor.config.ts` بالإعدادات المناسبة     | ⬜     |         |
-| [ ] إضافة Android platform: `npx cap add android`       | ⬜     |         |
+| [x] تثبيت: `npm install @capacitor/core @capacitor/cli` | ✅     | سابق    |
+| [x] تشغيل: `npx cap init "إنجزنا" "com.engezna.app"`    | ✅     | سابق    |
+| [x] إنشاء `capacitor.config.ts` بالإعدادات المناسبة     | ✅     | سابق    |
+| [x] إضافة Android platform: `npx cap add android`       | ✅     | سابق    |
 
 **إعدادات Capacitor المقترحة:**
 
@@ -499,16 +556,18 @@ const config = {
 
 ### 3.2 إعداد Native Plugins (مشترك Android + iOS)
 
+> **تحديث (3/3):** معظم الحزم مثبتة بالفعل (v8.1.0) في `package.json`.
+
 | المهمة                                                         | الحالة | التاريخ |
 | -------------------------------------------------------------- | ------ | ------- |
-| [ ] تثبيت `@capacitor/push-notifications` لإشعارات native      | ⬜     |         |
-| [ ] تثبيت `@capacitor/geolocation` للموقع الجغرافي             | ⬜     |         |
-| [ ] تثبيت `@capacitor/camera` لتصوير المنتجات                  | ⬜     |         |
+| [x] تثبيت `@capacitor/push-notifications` لإشعارات native      | ✅     | سابق    |
+| [x] تثبيت `@capacitor/geolocation` للموقع الجغرافي             | ✅     | سابق    |
+| [x] تثبيت `@capacitor/camera` لتصوير المنتجات                  | ✅     | سابق    |
 | [ ] تثبيت `@capacitor/share` للمشاركة                          | ⬜     |         |
-| [ ] تثبيت `@capacitor/app` لـ deep linking و app state         | ⬜     |         |
-| [ ] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ⬜     |         |
-| [ ] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ⬜     |         |
-| [ ] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS  | ⬜     |         |
+| [x] تثبيت `@capacitor/app` لـ deep linking و app state         | ✅     | سابق    |
+| [x] تثبيت `@capacitor/status-bar` و `@capacitor/splash-screen` | ✅     | سابق    |
+| [x] تثبيت `@capacitor/haptics` للاهتزاز عند الإشعارات          | ✅     | سابق    |
+| [x] تثبيت `@capacitor/keyboard` لتحسين تجربة الكيبورد على iOS  | ✅     | سابق    |
 
 ### 3.3 إعداد Android Project
 
@@ -544,11 +603,13 @@ const config = {
 
 ### 3B.1 إعداد بيئة التطوير iOS
 
+> **تحديث (3/3):** مجلد `ios/` موجود بالفعل. iOS platform مُضاف.
+
 | المهمة                                                              | الحالة | التاريخ |
 | ------------------------------------------------------------------- | ------ | ------- |
 | [ ] التأكد من توفر macOS مع Xcode 15+ ومكوناته (Command Line Tools) | ⬜     |         |
 | [ ] تثبيت CocoaPods: `sudo gem install cocoapods`                   | ⬜     |         |
-| [ ] إضافة iOS platform: `npx cap add ios`                           | ⬜     |         |
+| [x] إضافة iOS platform: `npx cap add ios`                           | ✅     | سابق    |
 | [ ] مزامنة: `npx cap sync ios`                                      | ⬜     |         |
 | [ ] فتح المشروع في Xcode: `npx cap open ios`                        | ⬜     |         |
 

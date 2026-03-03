@@ -353,6 +353,7 @@ export function PartnerBannersCarousel({
 
   // Detect desktop
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
     checkDesktop();
     window.addEventListener('resize', checkDesktop);
