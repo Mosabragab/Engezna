@@ -16,8 +16,8 @@
 
 ## Subtitle (30 characters max)
 
-- **English:** Local Stores & Orders
-- **Arabic:** متاجر محلية وطلبات
+- **English:** Order from nearby local stores
+- **Arabic:** اطلب من أقرب المتاجر ليك
 
 ---
 
@@ -25,7 +25,7 @@
 
 ### English (4000 characters max)
 
-**Engezna - Your Local Marketplace**
+**Engezna - Egypt's First Local Marketplace Serving the Governorates**
 
 Discover the easiest way to order food, groceries, and more from your favorite local stores in Egypt. Engezna connects you with trusted merchants in your neighborhood — browse, order, and get everything your home needs.
 
@@ -69,15 +69,15 @@ Are you a store owner? Join Engezna to reach more customers and grow your busine
 - Secure payment processing
 - Available in multiple Egyptian governorates
 
-Download Engezna today and get everything your home needs from local stores!
+Download Engezna today and order your daily needs from local stores the easy way!
 
 ---
 
 ### Arabic (4000 characters max)
 
-**إنجزنا - منصة احتياجات البيت اليومية**
+**إنجزنا هو أول منصة مصرية لاحتياجات البيت اليومية بتخدم المحافظات**
 
-اكتشف أسهل طريقة لطلب الطعام والبقالة والمزيد من متاجرك المحلية المفضلة في مصر. إنجزنا تربطك بالتجار الموثوقين في منطقتك — تصفّح واطلب وكل اللي بيتك محتاجه هيوصلك.
+اكتشف أسهل طريقة لطلب الطعام والبقالة والمزيد من متاجرك المحلية المفضلة في مصر. إنجزنا بتوصلك بالتجار الموثوقين في منطقتك — تصفّح واطلب وكل اللي بيتك محتاجه هيوصلك.
 
 **المميزات الرئيسية:**
 
@@ -119,7 +119,7 @@ Download Engezna today and get everything your home needs from local stores!
 - معالجة دفع آمنة
 - متاح في عدة محافظات مصرية
 
-حمّل إنجزنا اليوم واطلب كل اللي بيتك محتاجه من المتاجر المحلية!
+حمّل إنجزنا دلوقتي واطلب احتياجات بيتك اليوميه بسهوله!
 
 ---
 
