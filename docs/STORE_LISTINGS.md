@@ -4,15 +4,15 @@
 
 ### Arabic (ar)
 
-**App Name:** إنجزنا - توصيل طلبات وأكل
+**App Name:** إنجزنا - احتياجات بيتك اليوميه
 
 **Short Description (80 chars max):**
-اطلب أكل ومنتجات من أقرب المتاجر ليك. توصيل سريع وأسعار مناسبة.
+اطلب احتياجات بيتك اليوميه بسهوله! من أقرب المتاجر والمطاعم ليك.
 
 **Full Description:**
-إنجزنا - منصة احتياجات البيت اليومية الأولى في مصر
+إنجزنا هو أول منصة مصرية لاحتياجات البيت اليومية بتخدم المحافظات
 
-اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا يوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
+اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا بيوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
 
 مميزات التطبيق:
 
@@ -25,26 +25,26 @@
 - إشعارات فورية بحالة طلبك
 - دفع إلكتروني آمن أو عند الاستلام
 
-سواء عايز تطلب أكل من مطعمك المفضل، أو محتاج منتجات من أقرب متجر، إنجزنا هيوصلك اللي عايزه في أسرع وقت.
+سواء عايز تطلب أكل من مطعمك المفضل، أو محتاج منتجات من أقرب متجر، إنجزنا هيوصلك بالتاجر اللي يخدمك في منطقتك.
 
-حمّل التطبيق دلوقتي واستمتع بتجربة توصيل سهلة وسريعة!
+حمّل التطبيق دلوقتي واطلب احتياجات بيتك اليوميه بسهوله!
 
 **Keywords/Tags:**
-توصيل طلبات, توصيل أكل, طلبات أونلاين, متاجر قريبة, مطاعم, توصيل سريع, مصر, طلبات مخصصة, عروض, تخفيضات
+احتياجات البيت, طلبات أونلاين, متاجر قريبة, مطاعم, منصة محلية, مصر, طلبات مخصصة, عروض, تخفيضات, المحافظات
 
 ---
 
 ### English (en)
 
-**App Name:** Engezna - Food & Delivery
+**App Name:** Engezna - Local Stores & Orders
 
 **Short Description (80 chars max):**
-Order food & products from nearby stores. Fast delivery at great prices.
+Order your daily needs from nearby local stores & restaurants. One tap away!
 
 **Full Description:**
-Engezna - Your Local Marketplace in Egypt
+Engezna - Egypt's First Local Marketplace Serving the Governorates
 
-Order from nearby stores and restaurants and get your delivery fast. Engezna connects you with local service providers and shops in your area.
+Order from nearby stores and restaurants with ease. Engezna connects you with local service providers and shops in your area.
 
 Features:
 
@@ -57,12 +57,12 @@ Features:
 - Instant push notifications for order updates
 - Secure online payment or cash on delivery
 
-Whether you want food from your favorite restaurant or products from the nearest store, Engezna delivers what you need as fast as possible.
+Whether you want food from your favorite restaurant or products from the nearest store, Engezna connects you with local merchants ready to serve you.
 
-Download now and enjoy a seamless delivery experience!
+Download now and order your daily needs the easy way!
 
 **Keywords/Tags:**
-food delivery, order delivery, online orders, nearby stores, restaurants, fast delivery, Egypt, custom orders, deals, promotions
+local stores, daily needs, online orders, nearby stores, restaurants, local marketplace, Egypt, custom orders, deals, governorates
 
 ---
 
@@ -70,18 +70,18 @@ food delivery, order delivery, online orders, nearby stores, restaurants, fast d
 
 ### Arabic (ar)
 
-**App Name:** إنجزنا - توصيل طلبات وأكل
+**App Name:** إنجزنا - احتياجات بيتك اليوميه
 
 **Subtitle (30 chars max):**
-توصيل سريع من أقرب متجر
+اطلب من أقرب المتاجر ليك
 
 **Promotional Text (170 chars max):**
-اطلب أكل ومنتجات من المتاجر القريبة منك. عروض يومية وتوصيل سريع. حمّل إنجزنا دلوقتي!
+اطلب احتياجات بيتك اليوميه بسهوله! تصفح المتاجر والمطاعم القريبة منك. عروض يومية وأسعار مناسبة. حمّل إنجزنا دلوقتي!
 
 **Description:**
-إنجزنا - منصة احتياجات البيت اليومية الأولى في مصر
+إنجزنا هو أول منصة مصرية لاحتياجات البيت اليومية بتخدم المحافظات
 
-اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا يوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
+اطلب من أقرب المتاجر والمطاعم ليك واستلم طلبك بسرعة. إنجزنا بيوصلك بمزودي الخدمات والمتاجر المحلية في منطقتك.
 
 مميزات التطبيق:
 • تصفح المتاجر والمطاعم القريبة منك
@@ -94,27 +94,27 @@ food delivery, order delivery, online orders, nearby stores, restaurants, fast d
 • دفع إلكتروني آمن أو عند الاستلام
 • تسجيل دخول بحساب Apple أو Google
 
-حمّل التطبيق دلوقتي واستمتع بتجربة توصيل سهلة وسريعة!
+حمّل التطبيق دلوقتي واطلب احتياجات بيتك اليوميه بسهوله!
 
 **Keywords (100 chars max):**
-توصيل,طلبات,أكل,مطاعم,متاجر,عروض,مصر,delivery,food,orders
+احتياجات,طلبات,متاجر,مطاعم,منصة,عروض,مصر,محافظات,بقالة,محلية
 
 ---
 
 ### English (en)
 
-**App Name:** Engezna - Food & Delivery
+**App Name:** Engezna - Local Stores & Orders
 
 **Subtitle (30 chars max):**
-Fast delivery from nearby stores
+Order from nearby local stores
 
 **Promotional Text (170 chars max):**
-Order food & products from nearby stores. Daily deals and fast delivery. Download Engezna now!
+Order your daily needs from nearby local stores & restaurants. Daily deals and great prices. Download Engezna now!
 
 **Description:**
 Engezna - Your Local Marketplace in Egypt
 
-Order from nearby stores and restaurants and get your delivery fast. Engezna connects you with local service providers and shops in your area.
+Order from nearby stores and restaurants with ease. Engezna connects you with local service providers and shops in your area.
 
 Features:
 • Browse nearby stores and restaurants
@@ -127,10 +127,10 @@ Features:
 • Secure online payment or cash on delivery
 • Sign in with Apple or Google
 
-Download now and enjoy a seamless delivery experience!
+Download now and order your daily needs the easy way!
 
 **Keywords (100 chars max):**
-delivery,food,orders,restaurants,stores,deals,Egypt,fast,nearby,local
+local,stores,orders,restaurants,marketplace,deals,Egypt,nearby,daily,needs
 
 ---
 

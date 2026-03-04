@@ -442,7 +442,7 @@
 | 6   | نموذج العمل       | غير موجود                          | **0 تسجيل، 0% أول 3 شهور، 7% حد أقصى**                                                      |
 | 7   | الكلمات المفتاحية | غير محسنة للبحث المصري             | **كلمات بالعامية المصرية**                                                                  |
 | 8   | Value Proposition | مختلفة تماماً عن البراند           | **"عايز تطلب؟ إنجزنا!"**                                                                    |
-| 9   | Subtitle (EN)     | "Food & Grocery Delivery"          | **"Local delivery from your city stores"**                                                  |
+| 9   | Subtitle (EN)     | "Food & Grocery Delivery"          | **"Order from nearby local stores"**                                                        |
 
 ---
 
@@ -494,7 +494,7 @@
 **Keywords/Tags:**
 
 ```
-توصيل طلبات, محلات قريبة, اطلب اكل, صيدلية اونلاين, سوبر ماركت, خضار, بقالة, توصيل سريع, مصر, محافظات, بني سويف, انجزنا, engezna, طلبات مخصصة, عروض
+احتياجات البيت, محلات قريبة, اطلب اكل, صيدلية اونلاين, سوبر ماركت, خضار, بقالة, منصة محلية, مصر, محافظات, بني سويف, انجزنا, engezna, طلبات مخصصة, عروض
 ```
 
 ---
@@ -547,7 +547,7 @@ Your local stores at your fingertips - download Engezna now! 💙
 **Keywords/Tags:**
 
 ```
-food delivery, local stores, pharmacy delivery, grocery, supermarket, Egypt, governorates, beni suef, engezna, custom orders, compare prices, fast delivery
+local marketplace, local stores, pharmacy, grocery, supermarket, Egypt, governorates, beni suef, engezna, custom orders, compare prices, daily needs
 ```
 
 ---
@@ -574,7 +574,7 @@ food delivery, local stores, pharmacy delivery, grocery, supermarket, Egypt, gov
 **Keywords (100 حرف):**
 
 ```
-توصيل,طلبات,محلات,صيدلية,سوبر,خضار,مطاعم,بقالة,انجزنا,مصر,محافظات,اسعار
+احتياجات,طلبات,محلات,صيدلية,سوبر,خضار,مطاعم,بقالة,انجزنا,مصر,محافظات,اسعار
 ```
 
 ---
@@ -586,7 +586,7 @@ food delivery, local stores, pharmacy delivery, grocery, supermarket, Egypt, gov
 **Subtitle (30 chars):**
 
 ```
-Local delivery from your city
+Order from nearby local stores
 ```
 
 **Promotional Text (170 chars):**
@@ -601,7 +601,7 @@ Order from local stores in seconds! Restaurants, pharmacies, supermarkets, groce
 **Keywords (100 chars):**
 
 ```
-delivery,food,pharmacy,grocery,stores,Egypt,local,orders,compare,engezna,fast
+local,stores,pharmacy,grocery,marketplace,Egypt,orders,compare,engezna,daily,needs
 ```
 
 ---

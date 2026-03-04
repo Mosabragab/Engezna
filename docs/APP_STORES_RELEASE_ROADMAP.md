@@ -738,8 +738,8 @@ const config = {
 **مقترح Short Description:**
 
 ```
-AR: إنجزنا - اطلب احتياجات بيتك من محلات بلدك. توصيل سريع بأسعار المحل!
-EN: Engezna - Order daily essentials from local stores. Fast delivery at store prices!
+AR: اطلب احتياجات بيتك اليوميه بسهوله! من أقرب المتاجر والمطاعم ليك.
+EN: Order your daily needs from nearby local stores & restaurants. One tap away!
 ```
 
 ### 4.4 إعداد Content Rating و Data Safety (Google Play)
@@ -754,7 +754,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 | - App activity: نعم (سجل الطلبات)                            |        |         |
 | - Device identifiers: نعم (FCM tokens)                       |        |         |
 | [ ] مراجعة تطابق Data Safety مع سياسة الخصوصية `/ar/privacy` | ⬜     |         |
-| [ ] تحديد Target Audience: 13+ (خدمة توصيل)                  | ⬜     |         |
+| [ ] تحديد Target Audience: 13+ (منصة طلبات محلية)            | ⬜     |         |
 | [ ] اختيار App Category: Food & Drink                        | ⬜     |         |
 | [ ] تحديد البلدان المستهدفة: مصر                             | ⬜     |         |
 
@@ -796,7 +796,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 
 | المهمة                                                           | الحالة | التاريخ |
 | ---------------------------------------------------------------- | ------ | ------- |
-| [ ] Subtitle (حتى 30 حرف): مثال "توصيل سريع من محلات بلدك"       | ⬜     |         |
+| [ ] Subtitle (حتى 30 حرف): مثال "اطلب من أقرب المتاجر ليك"       | ⬜     |         |
 | [ ] Promotional Text (حتى 170 حرف) - يتغير بدون إرسال تحديث جديد | ⬜     |         |
 | [ ] Description (حتى 4000 حرف) - لا يتغير إلا مع تحديث جديد      | ⬜     |         |
 | [ ] Keywords (حتى 100 حرف، مفصولة بفواصل) - مهمة جداً لـ ASO     | ⬜     |         |
@@ -808,7 +808,7 @@ EN: Engezna - Order daily essentials from local stores. Fast delivery at store p
 **مقترح Keywords (عربي):**
 
 ```
-توصيل,طلبات,محلات,بقالة,سوبر,ماركت,انجزنا,engezna,شراء,منزل,اون لاين,محل قريب
+احتياجات,طلبات,محلات,بقالة,سوبر,ماركت,انجزنا,engezna,منصة,منزل,اون لاين,محل قريب
 ```
 
 ### 4B.4 إعداد App Privacy (App Store)
