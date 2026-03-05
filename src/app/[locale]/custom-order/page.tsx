@@ -1,15 +1,19 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { CustomOrderInterface } from '@/components/custom-order';
-import { CustomerHeader } from '@/components/customer/layout';
 import { ArrowRight, ArrowLeft, Store, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import type { ProviderWithCustomSettings, CreateBroadcastPayload } from '@/types/custom-order';
-import { createCustomerBroadcastService } from '@/lib/orders/broadcast-service';
+
+const CustomOrderInterface = lazy(() =>
+  import('@/components/custom-order').then((mod) => ({ default: mod.CustomOrderInterface }))
+);
+const CustomerHeader = lazy(() =>
+  import('@/components/customer/layout').then((mod) => ({ default: mod.CustomerHeader }))
+);
 
 function CustomOrderPageContent() {
   const locale = useLocale();
@@ -86,6 +90,7 @@ function CustomOrderPageContent() {
 
     try {
       const supabase = createClient();
+      const { createCustomerBroadcastService } = await import('@/lib/orders/broadcast-service');
       const broadcastService = createCustomerBroadcastService(supabase, customerId);
 
       const result = await broadcastService.createBroadcast(payload);
@@ -136,7 +141,9 @@ function CustomOrderPageContent() {
   if (error && !provider) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <CustomerHeader />
+        <Suspense fallback={null}>
+          <CustomerHeader />
+        </Suspense>
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
@@ -159,7 +166,9 @@ function CustomOrderPageContent() {
   if (!provider) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <CustomerHeader />
+        <Suspense fallback={null}>
+          <CustomerHeader />
+        </Suspense>
         <div className="flex flex-col items-center justify-center p-8 mt-20">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
             <Store className="w-8 h-8 text-amber-500" />
@@ -219,13 +228,21 @@ function CustomOrderPageContent() {
 
       {/* Main Content */}
       <div className="flex-1">
-        <CustomOrderInterface
-          provider={provider}
-          customerId={customerId || undefined}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          className="h-full"
-        />
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          }
+        >
+          <CustomOrderInterface
+            provider={provider}
+            customerId={customerId || undefined}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            className="h-full"
+          />
+        </Suspense>
       </div>
     </div>
   );
