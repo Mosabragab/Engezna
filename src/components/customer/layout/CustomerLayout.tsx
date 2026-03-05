@@ -40,7 +40,12 @@ export function CustomerLayout({
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 ${showBottomNav ? 'pb-20' : ''}`}>{children}</main>
+      {/* Main Content - extra bottom padding for safe area behind fixed bottom nav */}
+      <main
+        className={`flex-1 ${showBottomNav ? 'pb-[calc(5rem+var(--safe-area-bottom,env(safe-area-inset-bottom,0px)))]' : ''}`}
+      >
+        {children}
+      </main>
 
       {/* Footer - Hidden on mobile when bottom nav is shown */}
       {showFooter && (

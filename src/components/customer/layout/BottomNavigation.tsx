@@ -90,8 +90,8 @@ export const BottomNavigation = memo(function BottomNavigation() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-100 shadow-elegant-lg md:hidden">
-      {/* Safe area padding for iOS - bottom, left, and right */}
-      <div className="pb-[max(env(safe-area-inset-bottom,0px),var(--native-bottom-inset,0px))] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)]">
+      {/* Safe area padding for native + PWA - bottom, left, and right */}
+      <div className="pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))] pl-[var(--safe-area-left,env(safe-area-inset-left,0px))] pr-[var(--safe-area-right,env(safe-area-inset-right,0px))]">
         <div className="flex items-center justify-around h-[68px] px-2">
           {navItems.map((item) => {
             const Icon = item.icon;

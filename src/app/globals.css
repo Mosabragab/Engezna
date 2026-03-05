@@ -21,6 +21,17 @@
     color-scheme: light;
   }
 
+  /* Native Safe Area CSS Variables
+   * --safe-area-top / --safe-area-bottom are set by NativeInit.tsx on native platforms.
+   * On web/PWA, env(safe-area-inset-*) handles safe areas via viewport-fit=cover.
+   * We combine both: max(env(), var()) so it works everywhere. */
+  :root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
+  }
+
   /* Smooth scrolling for the entire page */
   html {
     scroll-behavior: smooth;

@@ -248,7 +248,7 @@ export function ProviderHeader({
   const unreadNotifications = notifications.filter((n) => !n.is_read);
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-slate-100/80 px-4 lg:px-6 py-3 shadow-elegant sticky top-0 z-40">
+    <header className="bg-white/95 backdrop-blur-md border-b border-slate-100/80 px-4 lg:px-6 py-3 shadow-elegant sticky top-0 z-40 pt-[calc(var(--safe-area-top,env(safe-area-inset-top,0px))+0.75rem)]">
       <div className="flex items-center justify-between">
         {/* Right Side (RTL): Menu & Logo */}
         <div className="flex items-center gap-4">

@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-03-03 (المرحلة 3 - Android Build: Notification Channels + Sounds + google-services.json + Build Scripts)
+**آخر تحديث:** 2026-03-05 (المرحلة 3 - Safe Area Optimization: StatusBar overlay + CSS variables + Native Feel)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -20,7 +20,7 @@
 | **المرحلة 1.5:** إصلاحات حرجة مكتشفة (مراجعة)              | حرج     | 3-4 أيام       | ✅ تم (2/14)  |
 | **المرحلة 2:** تحسين الأداء (Lighthouse)                   | عالي    | 2-3 أيام       | ✅ تم (3/3)   |
 | **المرحلة 2.5:** حماية الكود للـ Native WebView            | حرج     | 1 يوم          | ✅ تم (3/3)   |
-| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (75%) |
+| **المرحلة 3:** إعداد Capacitor + Android Build             | عالي    | 2-3 أيام       | 🔄 جاري (85%) |
 | **المرحلة 3B:** إعداد Capacitor + iOS Build                | عالي    | 2-3 أيام       | 🔄 جاري (20%) |
 | **المرحلة 4:** تجهيز Google Play Store Listing             | متوسط   | 1-2 يوم        | ⬜ لم يبدأ    |
 | **المرحلة 4B:** تجهيز Apple App Store Listing              | متوسط   | 2-3 أيام       | ⬜ لم يبدأ    |
@@ -596,7 +596,23 @@ const config = {
 | [x] إضافة Build Scripts في `package.json`                                    | ✅     | 3/3     |
 | [ ] تجهيز أيقونات من `logo-exporter.html` واستبدالها بـ `npm run cap:assets` | ⬜     |         |
 
-### 3.4 Build و Testing (Android)
+### 3.4 Safe Area Optimization (Native Feel)
+
+> **السبب:** لضمان عدم تداخل StatusBar و Navigation Bar مع محتوى التطبيق، ولمنح المستخدم إحساس التطبيق Native.
+> **تحديث (3/5):** تم التنفيذ بالكامل. StatusBar شفاف مع overlay mode، وتم إضافة CSS variables لـ safe areas على Android/iOS.
+
+| المهمة                                                                             | الحالة | التاريخ |
+| ---------------------------------------------------------------------------------- | ------ | ------- |
+| [x] إضافة CSS variables (`--safe-area-top`, `--safe-area-bottom`) في `globals.css` | ✅     | 3/5     |
+| [x] التحقق من `viewport-fit=cover` في `layout.tsx`                                 | ✅     | 3/5     |
+| [x] إعداد StatusBar Plugin: overlay + transparent + Light style                    | ✅     | 3/5     |
+| [x] حساب safe area insets ديناميكياً على Android (لأن `env()` لا تعمل في WebView)  | ✅     | 3/5     |
+| [x] تحديث `CustomerHeader` بـ `pt-[var(--safe-area-top)]` مع امتداد الخلفية        | ✅     | 3/5     |
+| [x] تحديث `BottomNavigation` بـ `pb-[var(--safe-area-bottom)]` مع امتداد الخلفية   | ✅     | 3/5     |
+| [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                | ✅     | 3/5     |
+| [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى             | ✅     | 3/5     |
+
+### 3.5 Build و Testing (Android)
 
 | المهمة                                                                     | الحالة | التاريخ |
 | -------------------------------------------------------------------------- | ------ | ------- |
