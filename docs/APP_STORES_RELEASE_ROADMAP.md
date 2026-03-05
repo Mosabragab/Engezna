@@ -599,7 +599,7 @@ const config = {
 ### 3.4 Safe Area Optimization (Native Feel)
 
 > **السبب:** لضمان عدم تداخل StatusBar و Navigation Bar مع محتوى التطبيق، ولمنح المستخدم إحساس التطبيق Native.
-> **تحديث (3/5):** تم التنفيذ بالكامل. StatusBar شفاف مع overlay mode، وتم إضافة CSS variables لـ safe areas على Android/iOS.
+> **تحديث (3/5):** تم تنفيذ الأساسيات (StatusBar overlay، CSS variables، تحديث الـ headers و bottom nav). **لكن مشكلة الحواف (dark border حول حواف الشاشة المدورة) لا تزال موجودة على Android Emulator** — الخلفية الأصلية للـ WebView/Activity تظهر عند الحواف المدورة. تم تغيير `backgroundColor` إلى `#FFFFFF` لكن المشكلة تحتاج مزيد من التحقيق (قد تكون مرتبطة بالـ Activity theme أو WebView rendering على أجهزة بحواف مدورة).
 
 | المهمة                                                                             | الحالة | التاريخ |
 | ---------------------------------------------------------------------------------- | ------ | ------- |
@@ -611,6 +611,7 @@ const config = {
 | [x] تحديث `BottomNavigation` بـ `pb-[var(--safe-area-bottom)]` مع امتداد الخلفية   | ✅     | 3/5     |
 | [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                | ✅     | 3/5     |
 | [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى             | ✅     | 3/5     |
+| [ ] **حل مشكلة الحواف الغامقة على الأجهزة ذات الشاشات المدورة (Android)**          | 🔴     | 3/5     |
 
 ### 3.5 Build و Testing (Android)
 
