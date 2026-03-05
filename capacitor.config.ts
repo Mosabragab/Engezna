@@ -38,7 +38,7 @@ const config: CapacitorConfig = {
     },
     Keyboard: {
       resize: 'body',
-      resizeOnFullScreen: true,
+      // resizeOnFullScreen must be false - it conflicts with @capacitor-community/safe-area
     },
   },
 };

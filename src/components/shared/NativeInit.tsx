@@ -37,46 +37,31 @@ export function NativeInit() {
     if (!isNativePlatform()) return;
 
     async function initNative() {
-      // 1. Configure StatusBar for edge-to-edge
+      // Use @capacitor-community/safe-area for both system bar styling AND safe area insets.
+      // NOTE: Do NOT use @capacitor/status-bar alongside this plugin - they conflict.
+      // The safe-area plugin handles env(safe-area-inset-*) injection on Android automatically.
       try {
-        const { StatusBar, Style } = await import('@capacitor/status-bar');
-
-        // Enable overlay mode - WebView draws behind the status bar (edge-to-edge)
-        await StatusBar.setOverlaysWebView({ overlay: true });
-
-        // Transparent background so the app header color shows through seamlessly
-        await StatusBar.setBackgroundColor({ color: '#00000000' });
-
+        const { SafeArea, SystemBarsStyle } = await import(
+          '@capacitor-community/safe-area'
+        );
         // Light style = dark icons on light backgrounds (matches our white header)
-        await StatusBar.setStyle({ style: Style.Light });
+        await SafeArea.setSystemBarsStyle({
+          style: SystemBarsStyle.Light,
+        });
       } catch {
-        // StatusBar plugin not available - graceful fallback
+        // Plugin not available - graceful fallback
       }
 
-      // 2. Enable accurate safe area insets on Android
-      // Android WebView returns 0 for env(safe-area-inset-*) even with overlay mode,
-      // so we use the @capacitor-community/safe-area plugin to inject real values,
-      // then read them via a probe element and set CSS variables as a reliable channel.
+      // Set CSS custom properties as a secondary channel for components.
+      // On Android, env(safe-area-inset-*) is handled by the plugin + EdgeToEdge.
+      // These CSS vars serve as fallback when env() isn't available.
       if (isAndroid()) {
         const root = document.documentElement;
-        try {
-          const { SafeArea, SystemBarsStyle } = await import(
-            '@capacitor-community/safe-area'
-          );
-          // Plugin injects env(safe-area-inset-*) values in the WebView
-          await SafeArea.setSystemBarsStyle({
-            style: SystemBarsStyle.Light,
-          });
-          // Read the actual env() values via a probe element
-          await new Promise((r) => setTimeout(r, 50));
-          const insets = readSafeAreaEnv();
-          root.style.setProperty('--safe-area-top', insets.top);
-          root.style.setProperty('--safe-area-bottom', insets.bottom);
-        } catch {
-          // Plugin not available - use generous defaults that work on most devices
-          root.style.setProperty('--safe-area-top', '48px');
-          root.style.setProperty('--safe-area-bottom', '32px');
-        }
+        // Wait for plugin to inject env() values, then read them
+        await new Promise((r) => setTimeout(r, 100));
+        const insets = readSafeAreaEnv();
+        root.style.setProperty('--safe-area-top', insets.top);
+        root.style.setProperty('--safe-area-bottom', insets.bottom);
       }
       // iOS: env(safe-area-inset-*) works natively in WKWebView - no extra setup needed
     }
