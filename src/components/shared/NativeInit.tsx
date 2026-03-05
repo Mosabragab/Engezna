@@ -1,15 +1,16 @@
 'use client';
 
 import { useEffect } from 'react';
-import { isNativePlatform, isAndroid, isIOS } from '@/lib/platform';
+import { isNativePlatform, isAndroid } from '@/lib/platform';
 
 /**
  * NativeInit - Configures native platform UI for a modern, edge-to-edge feel.
  *
  * On native platforms (Android/iOS via Capacitor):
  * - Sets StatusBar to overlay mode with transparent background (modern look)
- * - Uses @capacitor-community/safe-area plugin for accurate inset values
- * - Injects --safe-area-top / --safe-area-bottom as CSS variables
+ * - Uses @capacitor-community/safe-area to enable env(safe-area-inset-*) on Android
+ *   (Android WebView normally returns 0 for these values)
+ * - Sets --safe-area-* CSS variables as a secondary channel for components
  *
  * On web/PWA:
  * - Does nothing; CSS env(safe-area-inset-*) handles it via viewport-fit=cover
@@ -35,30 +36,28 @@ export function NativeInit() {
         // StatusBar plugin not available - graceful fallback
       }
 
-      // 2. Get accurate safe area insets from native plugin
-      // On Android, env(safe-area-inset-*) returns 0 in WebView even with overlay,
-      // so we use @capacitor-community/safe-area for real values from the OS.
-      const root = document.documentElement;
-
-      try {
-        const { SafeArea } = await import('@capacitor-community/safe-area');
-        const { insets } = await SafeArea.getSafeAreaInsets();
-
-        // insets.top/bottom are in CSS px (already density-independent)
-        root.style.setProperty('--safe-area-top', `${insets.top}px`);
-        root.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
-        root.style.setProperty('--safe-area-left', `${insets.left}px`);
-        root.style.setProperty('--safe-area-right', `${insets.right}px`);
-      } catch {
-        // Plugin not available - fall back to platform-specific estimates
-        if (isAndroid()) {
-          // Reasonable Android defaults (status bar ~24dp, gesture nav ~16dp)
+      // 2. Enable accurate safe area insets on Android
+      // @capacitor-community/safe-area makes env(safe-area-inset-*) work correctly
+      // in Android WebView (which normally returns 0 even with overlay mode).
+      // The plugin automatically injects correct values once imported and configured.
+      if (isAndroid()) {
+        try {
+          const { SafeArea, SystemBarsStyle } = await import(
+            '@capacitor-community/safe-area'
+          );
+          // Set light style (dark icons) to match our UI
+          await SafeArea.setSystemBarsStyle({
+            style: SystemBarsStyle.Light,
+          });
+        } catch {
+          // Plugin not available - fall back to manual CSS variable injection
+          // env(safe-area-inset-*) won't work, so set reasonable defaults
+          const root = document.documentElement;
           root.style.setProperty('--safe-area-top', '24px');
           root.style.setProperty('--safe-area-bottom', '16px');
         }
-        // iOS: env(safe-area-inset-*) works correctly in WKWebView,
-        // so CSS fallback values in globals.css handle it.
       }
+      // iOS: env(safe-area-inset-*) works natively in WKWebView - no extra setup needed
     }
 
     initNative();
