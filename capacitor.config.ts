@@ -40,10 +40,6 @@ const config: CapacitorConfig = {
       resize: 'body',
       resizeOnFullScreen: true,
     },
-    SafeArea: {
-      statusBarStyle: 'LIGHT',
-      navigationBarStyle: 'LIGHT',
-    },
   },
 };
 
