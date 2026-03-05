@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { getCachedGovernorates } from '@/lib/cache/cached-queries';
+import { isNativePlatform } from '@/lib/platform';
 import { Facebook, Instagram, MapPin, Mail, Globe } from 'lucide-react';
 
 interface Governorate {
@@ -21,6 +22,11 @@ export function Footer() {
   const router = useRouter();
   const pathname = usePathname();
   const [governorates, setGovernorates] = useState<Governorate[]>([]);
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   useEffect(() => {
     getCachedGovernorates()
@@ -45,6 +51,9 @@ export function Footer() {
       });
     });
   }, [locale, pathname, router]);
+
+  // Hide footer on native mobile apps - not needed in-app
+  if (isNative) return null;
 
   return (
     <footer className="bg-slate-50 border-t border-slate-200">
