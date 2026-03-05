@@ -11,6 +11,8 @@ const config: CapacitorConfig = {
     cleartext: false, // HTTPS only
     allowNavigation: ['engezna.com', '*.engezna.com'],
   },
+  // Append to user agent so the web app can detect native context
+  appendUserAgent: 'CapacitorApp/Engezna',
   android: {
     allowMixedContent: false,
     backgroundColor: '#0F172A',
