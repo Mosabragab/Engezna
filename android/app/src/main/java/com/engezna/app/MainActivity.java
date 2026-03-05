@@ -6,6 +6,7 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import com.getcapacitor.BridgeActivity;
@@ -17,6 +18,12 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         createNotificationChannels();
+
+        // Ensure dark status bar icons on our white background (Android 6+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decor = getWindow().getDecorView();
+            decor.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
 
         // Ensure WebView clips to the display's rounded corners (Android 12+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
