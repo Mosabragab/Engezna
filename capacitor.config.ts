@@ -6,10 +6,10 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     // Hybrid App: WebView loads from the deployed Vercel URL
-    // This allows full Next.js SSR/ISR/API routes to work
+    // For local testing, set CAPACITOR_SERVER_URL=http://YOUR_IP:3000
     url: process.env.CAPACITOR_SERVER_URL || 'https://engezna.com',
-    cleartext: false, // HTTPS only
-    allowNavigation: ['engezna.com', '*.engezna.com'],
+    cleartext: true, // Allow HTTP for local development testing
+    allowNavigation: ['engezna.com', '*.engezna.com', '192.168.*.*'],
   },
   // Append to user agent so the web app can detect native context
   appendUserAgent: 'CapacitorApp/Engezna',
