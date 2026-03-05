@@ -15,6 +15,23 @@ import { isNativePlatform, isAndroid } from '@/lib/platform';
  * On web/PWA:
  * - Does nothing; CSS env(safe-area-inset-*) handles it via viewport-fit=cover
  */
+/** Read env(safe-area-inset-*) values via a temporary probe element */
+function readSafeAreaEnv() {
+  const probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+  document.body.appendChild(probe);
+  const style = getComputedStyle(probe);
+  const top = style.paddingTop;
+  const bottom = style.paddingBottom;
+  document.body.removeChild(probe);
+  // If env() returned 0px, use generous defaults for devices with notches
+  return {
+    top: top && top !== '0px' ? top : '48px',
+    bottom: bottom && bottom !== '0px' ? bottom : '32px',
+  };
+}
+
 export function NativeInit() {
   useEffect(() => {
     if (!isNativePlatform()) return;
@@ -38,22 +55,27 @@ export function NativeInit() {
 
       // 2. Enable accurate safe area insets on Android
       // Android WebView returns 0 for env(safe-area-inset-*) even with overlay mode,
-      // so we always set CSS variables manually as a reliable fallback.
+      // so we use the @capacitor-community/safe-area plugin to inject real values,
+      // then read them via a probe element and set CSS variables as a reliable channel.
       if (isAndroid()) {
         const root = document.documentElement;
-        // Always set CSS variable defaults for Android status bar
-        root.style.setProperty('--safe-area-top', '28px');
-        root.style.setProperty('--safe-area-bottom', '16px');
         try {
           const { SafeArea, SystemBarsStyle } = await import(
             '@capacitor-community/safe-area'
           );
-          // Plugin also injects env(safe-area-inset-*) values in the WebView
+          // Plugin injects env(safe-area-inset-*) values in the WebView
           await SafeArea.setSystemBarsStyle({
             style: SystemBarsStyle.Light,
           });
+          // Read the actual env() values via a probe element
+          await new Promise((r) => setTimeout(r, 50));
+          const insets = readSafeAreaEnv();
+          root.style.setProperty('--safe-area-top', insets.top);
+          root.style.setProperty('--safe-area-bottom', insets.bottom);
         } catch {
-          // Plugin not available - CSS variables above still provide correct spacing
+          // Plugin not available - use generous defaults that work on most devices
+          root.style.setProperty('--safe-area-top', '48px');
+          root.style.setProperty('--safe-area-bottom', '32px');
         }
       }
       // iOS: env(safe-area-inset-*) works natively in WKWebView - no extra setup needed
