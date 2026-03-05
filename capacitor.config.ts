@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   appendUserAgent: 'CapacitorApp/Engezna',
   android: {
     allowMixedContent: false,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
   ios: {
     scheme: 'Engezna',
