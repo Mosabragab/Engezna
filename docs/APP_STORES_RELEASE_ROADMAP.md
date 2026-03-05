@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-03-05 (المرحلة 3 - Safe Area Optimization: StatusBar overlay + CSS variables + Native Feel)
+**آخر تحديث:** 2026-03-05 (المرحلة 3.4 مكتملة - Safe Area: @capacitor-community/safe-area plugin + windowBackground fix + WebView clipping)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -599,7 +599,11 @@ const config = {
 ### 3.4 Safe Area Optimization (Native Feel)
 
 > **السبب:** لضمان عدم تداخل StatusBar و Navigation Bar مع محتوى التطبيق، ولمنح المستخدم إحساس التطبيق Native.
-> **تحديث (3/5):** تم تنفيذ الأساسيات (StatusBar overlay، CSS variables، تحديث الـ headers و bottom nav). **لكن مشكلة الحواف (dark border حول حواف الشاشة المدورة) لا تزال موجودة على Android Emulator** — الخلفية الأصلية للـ WebView/Activity تظهر عند الحواف المدورة. تم تغيير `backgroundColor` إلى `#FFFFFF` لكن المشكلة تحتاج مزيد من التحقيق (قد تكون مرتبطة بالـ Activity theme أو WebView rendering على أجهزة بحواف مدورة).
+> **تحديث (3/5):** تم تنفيذ جميع الأساسيات + حل مشكلة الحواف الغامقة بالكامل:
+> - استبدال الحساب اليدوي غير الدقيق بـ `@capacitor-community/safe-area` plugin للحصول على قيم دقيقة من النظام
+> - إضافة `android:windowBackground` أبيض في الـ theme لإخفاء الحواف الغامقة
+> - إضافة WebView clipping للحواف المدورة (Android 12+) في `MainActivity.java`
+> - توحيد CSS safe area utilities لاستخدام `var(--safe-area-*)` بدلاً من `env()` فقط
 
 | المهمة                                                                             | الحالة | التاريخ |
 | ---------------------------------------------------------------------------------- | ------ | ------- |
@@ -611,7 +615,11 @@ const config = {
 | [x] تحديث `BottomNavigation` بـ `pb-[var(--safe-area-bottom)]` مع امتداد الخلفية   | ✅     | 3/5     |
 | [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                | ✅     | 3/5     |
 | [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى             | ✅     | 3/5     |
-| [ ] **حل مشكلة الحواف الغامقة على الأجهزة ذات الشاشات المدورة (Android)**          | 🔴     | 3/5     |
+| [x] تثبيت `@capacitor-community/safe-area` plugin لقراءة insets دقيقة من النظام    | ✅     | 3/5     |
+| [x] استبدال الحساب اليدوي في `NativeInit.tsx` بقيم SafeArea plugin                  | ✅     | 3/5     |
+| [x] إضافة `android:windowBackground` أبيض في `styles.xml` (حل الحواف الغامقة)      | ✅     | 3/5     |
+| [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)         | ✅     | 3/5     |
+| [x] توحيد CSS safe area utilities (`globals.css` + `pwa.css`) لاستخدام CSS vars    | ✅     | 3/5     |
 
 ### 3.5 Build و Testing (Android)
 

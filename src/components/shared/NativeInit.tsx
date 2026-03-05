@@ -8,8 +8,8 @@ import { isNativePlatform, isAndroid, isIOS } from '@/lib/platform';
  *
  * On native platforms (Android/iOS via Capacitor):
  * - Sets StatusBar to overlay mode with transparent background (modern look)
- * - Calculates actual safe area insets and injects them as CSS variables
- * - Ensures header/bottom-nav can use --safe-area-top / --safe-area-bottom
+ * - Uses @capacitor-community/safe-area plugin for accurate inset values
+ * - Injects --safe-area-top / --safe-area-bottom as CSS variables
  *
  * On web/PWA:
  * - Does nothing; CSS env(safe-area-inset-*) handles it via viewport-fit=cover
@@ -19,6 +19,7 @@ export function NativeInit() {
     if (!isNativePlatform()) return;
 
     async function initNative() {
+      // 1. Configure StatusBar for edge-to-edge
       try {
         const { StatusBar, Style } = await import('@capacitor/status-bar');
 
@@ -34,37 +35,29 @@ export function NativeInit() {
         // StatusBar plugin not available - graceful fallback
       }
 
-      // Inject safe area CSS variables for native platforms
+      // 2. Get accurate safe area insets from native plugin
       // On Android, env(safe-area-inset-*) returns 0 in WebView even with overlay,
-      // so we must calculate the actual inset values and set them as CSS variables.
+      // so we use @capacitor-community/safe-area for real values from the OS.
       const root = document.documentElement;
 
-      if (isAndroid()) {
-        // Android status bar: measure the gap between screen and viewport
-        // screen.height = full display, innerHeight = WebView visible area
-        const statusBarHeight = Math.round(
-          window.screen.height - window.innerHeight > 100
-            ? 28 // Fallback: typical Android status bar height in CSS px
-            : window.screen.height - window.innerHeight > 24
-              ? 28
-              : 24
-        );
+      try {
+        const { SafeArea } = await import('@capacitor-community/safe-area');
+        const { insets } = await SafeArea.getSafeAreaInsets();
 
-        // Use a more reliable calculation via devicePixelRatio
-        // Android status bar is typically 24dp; navigation bar is 48dp
-        const dpr = window.devicePixelRatio || 1;
-        const statusBarDp = 24;
-        const navBarDp = isGestureNavigation() ? 16 : 48;
-
-        const safeTop = Math.round(statusBarDp * (dpr / dpr)); // 24px CSS
-        const safeBottom = Math.round(navBarDp * (dpr / dpr)); // 16-48px CSS
-
-        root.style.setProperty('--safe-area-top', `${safeTop}px`);
-        root.style.setProperty('--safe-area-bottom', `${safeBottom}px`);
-      } else if (isIOS()) {
-        // iOS: env(safe-area-inset-*) works correctly in WKWebView with viewport-fit=cover
-        // Just ensure the CSS variables fall back to env() values (already set in globals.css)
-        // No extra JS needed for iOS.
+        // insets.top/bottom are in CSS px (already density-independent)
+        root.style.setProperty('--safe-area-top', `${insets.top}px`);
+        root.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
+        root.style.setProperty('--safe-area-left', `${insets.left}px`);
+        root.style.setProperty('--safe-area-right', `${insets.right}px`);
+      } catch {
+        // Plugin not available - fall back to platform-specific estimates
+        if (isAndroid()) {
+          // Reasonable Android defaults (status bar ~24dp, gesture nav ~16dp)
+          root.style.setProperty('--safe-area-top', '24px');
+          root.style.setProperty('--safe-area-bottom', '16px');
+        }
+        // iOS: env(safe-area-inset-*) works correctly in WKWebView,
+        // so CSS fallback values in globals.css handle it.
       }
     }
 
@@ -72,17 +65,4 @@ export function NativeInit() {
   }, []);
 
   return null;
-}
-
-/**
- * Detect Android gesture navigation vs 3-button navigation.
- * Gesture nav has a smaller bottom bar (~16dp) vs 3-button (~48dp).
- */
-function isGestureNavigation(): boolean {
-  if (typeof window === 'undefined') return true;
-  // Heuristic: gesture nav has a thin bottom bar
-  // screen.height - screen.availHeight gives system chrome height
-  const systemChrome = window.screen.height - window.screen.availHeight;
-  // If system chrome is small (< 80px), likely gesture navigation
-  return systemChrome < 80;
 }

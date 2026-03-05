@@ -38,40 +38,42 @@
 }
 
 /* ============================================
-   SAFE AREAS - iPhone Notch Support
+   SAFE AREAS - Notch & Home Indicator Support
+   Uses CSS variables set by NativeInit.tsx on native,
+   falling back to env(safe-area-inset-*) on web/PWA.
    ============================================ */
 
 /* Safe area padding for layout */
 .safe-area-top {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-area-top, env(safe-area-inset-top, 0px));
 }
 
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
 }
 
 .safe-area-left {
-  padding-left: env(safe-area-inset-left, 0px);
+  padding-left: var(--safe-area-left, env(safe-area-inset-left, 0px));
 }
 
 .safe-area-right {
-  padding-right: env(safe-area-inset-right, 0px);
+  padding-right: var(--safe-area-right, env(safe-area-inset-right, 0px));
 }
 
 .safe-area-all {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  padding-top: var(--safe-area-top, env(safe-area-inset-top, 0px));
+  padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
+  padding-left: var(--safe-area-left, env(safe-area-inset-left, 0px));
+  padding-right: var(--safe-area-right, env(safe-area-inset-right, 0px));
 }
 
 /* Fixed elements need safe area consideration */
 .pwa-fixed-bottom {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  padding-bottom: calc(var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)) + 1rem);
 }
 
 .pwa-fixed-top {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+  padding-top: calc(var(--safe-area-top, env(safe-area-inset-top, 0px)) + 1rem);
 }
 
 /* ============================================
@@ -127,9 +129,9 @@
     min-height: 100dvh; /* Dynamic viewport height */
   }
 
-  /* iOS status bar area */
+  /* Status bar area */
   .pwa-header {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: var(--safe-area-top, env(safe-area-inset-top, 0px));
   }
 
   /* Hide scrollbars for cleaner look */
@@ -150,7 +152,7 @@
 
 .network-status-bar {
   position: fixed;
-  top: env(safe-area-inset-top, 0px);
+  top: var(--safe-area-top, env(safe-area-inset-top, 0px));
   left: 0;
   right: 0;
   z-index: 9999;
@@ -308,7 +310,7 @@
   background-color: #ffffff;
   border-radius: 1.5rem 1.5rem 0 0;
   padding: 1.5rem;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
+  padding-bottom: calc(var(--safe-area-bottom, env(safe-area-inset-bottom, 0px)) + 1.5rem);
   z-index: 9999;
   transform: translateY(100%);
   transition: transform 0.3s ease;

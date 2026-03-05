@@ -15,6 +15,11 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createNotificationChannels();
+
+        // Ensure WebView clips to the display's rounded corners (Android 12+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getWindow().getDecorView().setClipToOutline(true);
+        }
     }
 
     private void createNotificationChannels() {
