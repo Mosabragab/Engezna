@@ -41,21 +41,19 @@ export function NativeInit() {
       // so we always set CSS variables manually as a reliable fallback.
       if (isAndroid()) {
         const root = document.documentElement;
+        // Always set CSS variable defaults for Android status bar
+        root.style.setProperty('--safe-area-top', '28px');
+        root.style.setProperty('--safe-area-bottom', '16px');
         try {
           const { SafeArea, SystemBarsStyle } = await import(
             '@capacitor-community/safe-area'
           );
+          // Plugin also injects env(safe-area-inset-*) values in the WebView
           await SafeArea.setSystemBarsStyle({
             style: SystemBarsStyle.Light,
           });
-          // Try to get actual inset values from the plugin
-          const insets = await SafeArea.getInsets();
-          root.style.setProperty('--safe-area-top', `${insets.top}px`);
-          root.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
         } catch {
-          // Plugin not available - use reasonable defaults for status bar height
-          root.style.setProperty('--safe-area-top', '28px');
-          root.style.setProperty('--safe-area-bottom', '16px');
+          // Plugin not available - CSS variables above still provide correct spacing
         }
       }
       // iOS: env(safe-area-inset-*) works natively in WKWebView - no extra setup needed
