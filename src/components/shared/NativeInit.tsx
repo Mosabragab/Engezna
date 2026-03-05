@@ -37,23 +37,24 @@ export function NativeInit() {
       }
 
       // 2. Enable accurate safe area insets on Android
-      // @capacitor-community/safe-area makes env(safe-area-inset-*) work correctly
-      // in Android WebView (which normally returns 0 even with overlay mode).
-      // The plugin automatically injects correct values once imported and configured.
+      // Android WebView returns 0 for env(safe-area-inset-*) even with overlay mode,
+      // so we always set CSS variables manually as a reliable fallback.
       if (isAndroid()) {
+        const root = document.documentElement;
         try {
           const { SafeArea, SystemBarsStyle } = await import(
             '@capacitor-community/safe-area'
           );
-          // Set light style (dark icons) to match our UI
           await SafeArea.setSystemBarsStyle({
             style: SystemBarsStyle.Light,
           });
+          // Try to get actual inset values from the plugin
+          const insets = await SafeArea.getInsets();
+          root.style.setProperty('--safe-area-top', `${insets.top}px`);
+          root.style.setProperty('--safe-area-bottom', `${insets.bottom}px`);
         } catch {
-          // Plugin not available - fall back to manual CSS variable injection
-          // env(safe-area-inset-*) won't work, so set reasonable defaults
-          const root = document.documentElement;
-          root.style.setProperty('--safe-area-top', '24px');
+          // Plugin not available - use reasonable defaults for status bar height
+          root.style.setProperty('--safe-area-top', '28px');
           root.style.setProperty('--safe-area-bottom', '16px');
         }
       }
