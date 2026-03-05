@@ -9,6 +9,7 @@ const config: CapacitorConfig = {
     // This allows full Next.js SSR/ISR/API routes to work
     url: process.env.CAPACITOR_SERVER_URL || 'https://engezna.com',
     cleartext: false, // HTTPS only
+    allowNavigation: ['engezna.com', '*.engezna.com'],
   },
   android: {
     allowMixedContent: false,

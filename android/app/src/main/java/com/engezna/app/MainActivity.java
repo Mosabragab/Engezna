@@ -6,6 +6,8 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -15,6 +17,23 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         createNotificationChannels();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        WebView webView = getBridge().getWebView();
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                String url = request.getUrl().toString();
+                // Keep engezna.com URLs inside the WebView
+                if (url.contains("engezna.com")) {
+                    return false;
+                }
+                return super.shouldOverrideUrlLoading(view, request);
+            }
+        });
     }
 
     private void createNotificationChannels() {
