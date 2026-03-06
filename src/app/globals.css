@@ -667,7 +667,17 @@ html.no-transition * {
 
 /* Fixed bottom element with safe area - for bottom navigation, FABs */
 .fixed-bottom-safe {
-  bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
+  bottom: 0;
+  padding-bottom: var(--safe-area-bottom, env(safe-area-inset-bottom, 0px));
+  background-color: white;
+}
+
+/* Ensure fixed-bottom elements stretch under system navigation bar */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fixed-bottom-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+    background-color: white;
+  }
 }
 
 /* ========================================
