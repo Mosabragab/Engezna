@@ -58,18 +58,15 @@ export function NativeInit() {
         // Plugin not available - graceful fallback
       }
 
-      // On Android, set CSS custom properties with guaranteed minimum values.
+      // Set CSS custom properties with guaranteed minimum values on all native platforms.
       // This ensures header icons are pushed below the status bar and bottom
       // nav is above the gesture bar, even if env() returns 0.
-      if (isAndroid()) {
-        const root = document.documentElement;
-        // Wait for plugin to inject env() values into the WebView
-        await new Promise((r) => setTimeout(r, 150));
-        const insets = readSafeAreaEnv();
-        root.style.setProperty('--safe-area-top', insets.top);
-        root.style.setProperty('--safe-area-bottom', insets.bottom);
-      }
-      // iOS: env(safe-area-inset-*) works natively in WKWebView - no extra setup needed
+      const root = document.documentElement;
+      // Wait for plugin to inject env() values into the WebView
+      await new Promise((r) => setTimeout(r, 150));
+      const insets = readSafeAreaEnv();
+      root.style.setProperty('--safe-area-top', insets.top);
+      root.style.setProperty('--safe-area-bottom', insets.bottom);
     }
 
     initNative();

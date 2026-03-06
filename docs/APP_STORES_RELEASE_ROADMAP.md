@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-03-05 (المرحلة 3.4 مكتملة - Safe Area: @capacitor-community/safe-area plugin + windowBackground fix + WebView clipping)
+**آخر تحديث:** 2026-03-06 (المرحلة 3.4 مكتملة بالكامل - Safe Area: علوي + سفلي، z-index fix، iOS+Android support)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -620,6 +620,9 @@ const config = {
 | [x] إضافة `android:windowBackground` أبيض في `styles.xml` (حل الحواف الغامقة)      | ✅     | 3/5     |
 | [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)         | ✅     | 3/5     |
 | [x] توحيد CSS safe area utilities (`globals.css` + `pwa.css`) لاستخدام CSS vars    | ✅     | 3/5     |
+| [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول             | ✅     | 3/6     |
+| [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                 | ✅     | 3/6     |
+| [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                     | ✅     | 3/6     |
 
 ### 3.5 Build و Testing (Android)
 
