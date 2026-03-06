@@ -8,6 +8,8 @@ import { ThemeProvider } from '@/components/shared/ThemeProvider';
 import { UpdateNotification } from '@/components/shared/UpdateNotification';
 import { LocationProvider, OrderModeProvider } from '@/lib/contexts';
 import { PushNotificationProvider } from '@/components/providers/PushNotificationProvider';
+import { NativeSplashHider } from '@/components/shared/NativeSplashHider';
+import { NativeInit } from '@/components/shared/NativeInit';
 import { locales } from '@/i18n/config';
 import '../globals.css';
 
@@ -179,6 +181,8 @@ export default async function LocaleLayout({ children, params }: Props) {
               <OrderModeProvider>
                 <PushNotificationProvider>
                   {children}
+                  <NativeInit />
+                  <NativeSplashHider />
                   <UpdateNotification />
                 </PushNotificationProvider>
               </OrderModeProvider>

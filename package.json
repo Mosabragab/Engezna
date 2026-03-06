@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@capacitor-community/safe-area": "^8.0.1",
     "@capacitor/android": "^8.1.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/camera": "^8.0.1",

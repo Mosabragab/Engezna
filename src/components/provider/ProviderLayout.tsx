@@ -605,7 +605,9 @@ export function ProviderLayout({ children, pageTitle, pageSubtitle }: ProviderLa
         />
 
         {/* Page Content - with bottom padding for mobile nav */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20 lg:pb-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-[calc(5rem+var(--safe-area-bottom,env(safe-area-inset-bottom,0px)))] lg:pb-6">
+          {children}
+        </main>
 
         {/* Bottom Navigation - Mobile Only */}
         <ProviderBottomNav pendingOrders={pendingOrders} pendingRefunds={pendingRefunds} />

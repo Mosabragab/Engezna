@@ -269,9 +269,9 @@ export const CustomerHeader = memo(function CustomerHeader({
 
   return (
     <header
-      className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${transparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-md border-b border-slate-100/80'}`}
+      className={`sticky top-0 z-[9999] pt-[var(--safe-area-top,env(safe-area-inset-top,0px))] ${transparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-md border-b border-slate-100/80'}`}
     >
-      <div className="container mx-auto px-4 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))]">
+      <div className="container mx-auto px-4 pl-[max(1rem,var(--safe-area-left,env(safe-area-inset-left,0px)))] pr-[max(1rem,var(--safe-area-right,env(safe-area-inset-right,0px)))]">
         <div className="flex items-center justify-between h-16">
           {/* Left Section - Location (only on home page without title) */}
           <div className="flex items-center gap-3">

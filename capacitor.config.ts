@@ -6,13 +6,16 @@ const config: CapacitorConfig = {
   webDir: 'out',
   server: {
     // Hybrid App: WebView loads from the deployed Vercel URL
-    // This allows full Next.js SSR/ISR/API routes to work
+    // For local testing, set CAPACITOR_SERVER_URL=http://YOUR_IP:3000
     url: process.env.CAPACITOR_SERVER_URL || 'https://engezna.com',
-    cleartext: false, // HTTPS only
+    cleartext: true, // Allow HTTP for local development testing
+    allowNavigation: ['engezna.com', '*.engezna.com', '192.168.*.*'],
   },
+  // Append to user agent so the web app can detect native context
+  appendUserAgent: 'CapacitorApp/Engezna',
   android: {
     allowMixedContent: false,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#FFFFFF',
   },
   ios: {
     scheme: 'Engezna',
@@ -24,7 +27,9 @@ const config: CapacitorConfig = {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
-      launchAutoHide: false,
+      launchAutoHide: true,
+      launchShowDuration: 3000,
+      fadeOutDuration: 300,
       backgroundColor: '#0F172A',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
@@ -33,7 +38,7 @@ const config: CapacitorConfig = {
     },
     Keyboard: {
       resize: 'body',
-      resizeOnFullScreen: true,
+      // resizeOnFullScreen must be false - it conflicts with @capacitor-community/safe-area
     },
   },
 };

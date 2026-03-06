@@ -23,7 +23,10 @@ type Platform = 'android' | 'ios' | 'web';
 export function isNativePlatform(): boolean {
   if (typeof window === 'undefined') return false;
   const cap = (window as any).Capacitor;
-  return !!cap?.isNativePlatform?.();
+  if (cap?.isNativePlatform?.()) return true;
+  // Fallback: detect Capacitor WebView when bridge hasn't loaded yet
+  const ua = navigator.userAgent || '';
+  return /CapacitorApp/i.test(ua) || (/wv\)/.test(ua) && /Android/.test(ua));
 }
 
 /**
