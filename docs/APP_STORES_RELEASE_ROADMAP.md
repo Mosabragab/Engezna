@@ -600,6 +600,7 @@ const config = {
 
 > **السبب:** لضمان عدم تداخل StatusBar و Navigation Bar مع محتوى التطبيق، ولمنح المستخدم إحساس التطبيق Native.
 > **تحديث (3/5):** تم تنفيذ جميع الأساسيات + حل مشكلة الحواف الغامقة بالكامل:
+>
 > - استبدال الحساب اليدوي غير الدقيق بـ `@capacitor-community/safe-area` plugin للحصول على قيم دقيقة من النظام
 > - إضافة `android:windowBackground` أبيض في الـ theme لإخفاء الحواف الغامقة
 > - إضافة WebView clipping للحواف المدورة (Android 12+) في `MainActivity.java`
@@ -616,13 +617,13 @@ const config = {
 | [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                | ✅     | 3/5     |
 | [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى             | ✅     | 3/5     |
 | [x] تثبيت `@capacitor-community/safe-area` plugin لقراءة insets دقيقة من النظام    | ✅     | 3/5     |
-| [x] استبدال الحساب اليدوي في `NativeInit.tsx` بقيم SafeArea plugin                  | ✅     | 3/5     |
+| [x] استبدال الحساب اليدوي في `NativeInit.tsx` بقيم SafeArea plugin                 | ✅     | 3/5     |
 | [x] إضافة `android:windowBackground` أبيض في `styles.xml` (حل الحواف الغامقة)      | ✅     | 3/5     |
-| [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)         | ✅     | 3/5     |
+| [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)          | ✅     | 3/5     |
 | [x] توحيد CSS safe area utilities (`globals.css` + `pwa.css`) لاستخدام CSS vars    | ✅     | 3/5     |
-| [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول             | ✅     | 3/6     |
-| [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                 | ✅     | 3/6     |
-| [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                     | ✅     | 3/6     |
+| [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول           | ✅     | 3/6     |
+| [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                | ✅     | 3/6     |
+| [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                    | ✅     | 3/6     |
 
 ### 3.5 Build و Testing (Android)
 

@@ -47,9 +47,7 @@ export function NativeInit() {
       // Use @capacitor-community/safe-area for both system bar styling AND inset injection.
       // NOTE: Do NOT use @capacitor/status-bar alongside this plugin - they conflict.
       try {
-        const { SafeArea, SystemBarsStyle } = await import(
-          '@capacitor-community/safe-area'
-        );
+        const { SafeArea, SystemBarsStyle } = await import('@capacitor-community/safe-area');
         // Light style = dark icons on light backgrounds (matches our white header)
         await SafeArea.setSystemBarsStyle({
           style: SystemBarsStyle.Light,

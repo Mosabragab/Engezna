@@ -91,18 +91,39 @@ export const BottomNavigation = memo(function BottomNavigation() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-slate-100 shadow-elegant-lg md:hidden pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))]">
       {/* Left/right safe area for landscape */}
-      <div className="pl-[var(--safe-area-left,env(safe-area-inset-left,0px))] pr-[var(--safe-area-right,env(safe-area-inset-right,0px))]">
+      <div className="relative pl-[var(--safe-area-left,env(safe-area-inset-left,0px))] pr-[var(--safe-area-right,env(safe-area-inset-right,0px))]">
         <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
             const isCart = item.id === 'cart';
 
+            // Floating Cart Button
+            if (isCart) {
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className="relative flex items-center justify-center flex-1 h-full active:scale-95 transition-transform duration-200"
+                >
+                  <div className="absolute -top-5 flex items-center justify-center w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30">
+                    <Icon className="w-6 h-6 text-white stroke-[2]" />
+                    {cartItemsCount > 0 && (
+                      <span className="absolute -top-1 -end-1 min-w-[20px] h-5 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 text-white text-[11px] font-bold rounded-full px-1 shadow-sm">
+                        {cartItemsCount > 9 ? '9+' : cartItemsCount}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            }
+
+            // Regular Nav Items
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-200 rounded-xl mx-0.5 active:scale-95 ${
+                className={`flex flex-col items-center justify-center flex-1 h-full pb-1 transition-all duration-200 rounded-xl mx-0.5 active:scale-95 ${
                   active ? 'text-primary-dark' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
@@ -116,12 +137,6 @@ export const BottomNavigation = memo(function BottomNavigation() {
                       active ? 'stroke-[2.5] scale-110' : 'stroke-[1.8]'
                     }`}
                   />
-                  {/* Cart Badge - Elegant */}
-                  {isCart && cartItemsCount > 0 && (
-                    <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] flex items-center justify-center bg-gradient-to-r from-primary to-primary/90 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-primary/30">
-                      {cartItemsCount > 9 ? '9+' : cartItemsCount}
-                    </span>
-                  )}
                   {/* Orders Badge - Pending Quotes */}
                   {item.id === 'orders' && pendingQuotes > 0 && (
                     <span className="absolute -top-1 -end-1 min-w-[18px] h-[18px] flex items-center justify-center bg-gradient-to-r from-amber-500 to-amber-400 text-white text-[10px] font-bold rounded-full px-1 shadow-sm shadow-amber-500/30 animate-pulse">
