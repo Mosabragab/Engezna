@@ -126,7 +126,7 @@ export default function PartnerLandingPage() {
 
         <div className="container mx-auto px-4 relative">
           {/* Header Nav */}
-          <header className="py-6 border-b border-[#E2E8F0]/50">
+          <header className="py-6 border-b border-[#E2E8F0]/50 pt-[calc(1.5rem+var(--safe-area-top,env(safe-area-inset-top,0px)))]">
             <div className="flex items-center justify-between">
               {/* Left - Already Partner */}
               <Link
