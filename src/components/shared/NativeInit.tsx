@@ -15,9 +15,9 @@ import { isNativePlatform } from '@/lib/platform';
  * - Does nothing; CSS env(safe-area-inset-*) handles it via viewport-fit=cover
  */
 
-/** Minimum safe area values for Android (covers devices with notches/punch-holes) */
-const ANDROID_MIN_SAFE_TOP = 48;
-const ANDROID_MIN_SAFE_BOTTOM = 32;
+/** Minimum safe area values for native platforms (covers devices with notches/punch-holes/Dynamic Island) */
+const NATIVE_MIN_SAFE_TOP = 48;
+const NATIVE_MIN_SAFE_BOTTOM = 32;
 
 /** Read env(safe-area-inset-*) values via a temporary probe element */
 function readSafeAreaEnv(): { top: string; bottom: string } {
@@ -33,8 +33,8 @@ function readSafeAreaEnv(): { top: string; bottom: string } {
   document.body.removeChild(probe);
   // Use the larger of env() value or our minimum defaults
   return {
-    top: `${Math.max(topPx, ANDROID_MIN_SAFE_TOP)}px`,
-    bottom: `${Math.max(bottomPx, ANDROID_MIN_SAFE_BOTTOM)}px`,
+    top: `${Math.max(topPx, NATIVE_MIN_SAFE_TOP)}px`,
+    bottom: `${Math.max(bottomPx, NATIVE_MIN_SAFE_BOTTOM)}px`,
   };
 }
 

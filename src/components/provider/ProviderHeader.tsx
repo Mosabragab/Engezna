@@ -249,7 +249,7 @@ export function ProviderHeader({
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-100/80 shadow-elegant sticky top-0 z-[9999] pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]">
-      <div className="flex items-center justify-between px-4 lg:px-6 py-3 pl-[max(1rem,var(--safe-area-left,env(safe-area-inset-left,0px)))] pr-[max(1rem,var(--safe-area-right,env(safe-area-inset-right,0px)))]">
+      <div className="flex items-center justify-between py-3 pl-[max(1rem,var(--safe-area-left,env(safe-area-inset-left,0px)))] pr-[max(1rem,var(--safe-area-right,env(safe-area-inset-right,0px)))]">
         {/* Right Side (RTL): Menu & Logo */}
         <div className="flex items-center gap-4">
           <button
