@@ -3,7 +3,7 @@
 ## Engezna - App Stores Release Roadmap (Google Play + App Store)
 
 **تاريخ الإنشاء:** 2026-02-08
-**آخر تحديث:** 2026-03-06 (المرحلة 3.4 مكتملة بالكامل - Safe Area: علوي + سفلي، z-index fix، iOS+Android support)
+**آخر تحديث:** 2026-03-07 (إصلاح أيقونات الهيدر خلف Status Bar + توحيد ProviderHeader مع CustomerHeader + تحسين NativeInit safe area detection)
 **الحالة:** تم الاعتماد - جاري التنفيذ
 
 > **تعليمات المتابعة:** يتم تحديث هذا الملف مع كل مهمة تُنفذ. غيّر `[ ]` إلى `[x]` عند الاكتمال.
@@ -594,7 +594,7 @@ const config = {
 | [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                   | ✅     | سابق    |
 | [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)          | ✅     | سابق    |
 | [x] إضافة Build Scripts في `package.json`                                    | ✅     | 3/3     |
-| [ ] تجهيز أيقونات من `logo-exporter.html` واستبدالها بـ `npm run cap:assets` | ⬜     |         |
+| [x] تجهيز أيقونات التطبيق (جميع الأحجام والكثافات جاهزة في mipmap-* + adaptive icons) | ✅     | سابق    |
 
 ### 3.4 Safe Area Optimization (Native Feel)
 
@@ -624,6 +624,9 @@ const config = {
 | [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول           | ✅     | 3/6     |
 | [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                | ✅     | 3/6     |
 | [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                    | ✅     | 3/6     |
+| [x] إصلاح أيقونات الهيدر خلف Status Bar: استخدام getSafeAreaInsets() API مباشرة    | ✅     | 3/7     |
+| [x] رفع ANDROID_MIN_SAFE_TOP من 48 إلى 56 + إضافة 8px touch buffer                | ✅     | 3/7     |
+| [x] توحيد ProviderHeader مع CustomerHeader (z-[9999] + safe area pattern)          | ✅     | 3/7     |
 
 ### 3.5 Build و Testing (Android)
 
@@ -738,7 +741,7 @@ const config = {
 
 | المهمة                                       | الحالة | التاريخ |
 | -------------------------------------------- | ------ | ------- |
-| [ ] تسجيل حساب Google Play Developer ($25)   | ⬜     |         |
+| [x] تسجيل حساب Google Play Developer ($25)   | ✅     | 3/7     |
 | [ ] إعداد ملف الشركة/المطور                  | ⬜     |         |
 | [ ] التحقق من الهوية (Identity Verification) | ⬜     |         |
 
@@ -1186,3 +1189,5 @@ Password: [كلمة المرور]
 | 2026-02-22 | مراجعة شاملة للخطة والتقرير مقابل الكود الفعلي (PLAN_REVIEW) + إضافة google-services.json                    | Claude |
 | 2026-02-23 | المرحلة 2: إعداد Lighthouse CI + إصلاح WCAG AA color-contrast + SEO metadata + إزالة deprecated PWA audits   | Claude |
 | 2026-02-23 | المرحلة 2: حساب contrast وفق WCAG 2.1 في OffersCarousel + dark overlay للبانرات + إضافة primary-dark للألوان | Claude |
+| 2026-03-07 | إصلاح أيقونات الهيدر خلف Status Bar + توحيد ProviderHeader مع CustomerHeader + تحسين NativeInit safe area     | Claude |
+| 2026-03-07 | تأكيد اكتمال أيقونات Android (mipmap-* + adaptive icons) + تحديث مهمة cap:assets في الخطة                    | Claude |
