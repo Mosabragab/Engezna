@@ -1,15 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { isNativePlatform, isAndroid } from '@/lib/platform';
+import { isNativePlatform } from '@/lib/platform';
 
 /**
  * NativeInit - Configures native platform UI for a modern, edge-to-edge feel.
  *
  * On native platforms (Android/iOS via Capacitor):
  * - Uses @capacitor-community/safe-area plugin for system bar styling
- *   and env(safe-area-inset-*) injection on Android
- * - Sets --safe-area-* CSS variables as a reliable fallback (min 48px top, 32px bottom)
+ * - Sets --safe-area-* CSS variables with guaranteed minimums (48px top, 32px bottom)
  * - NOTE: Do NOT use @capacitor/status-bar alongside safe-area plugin - they conflict
  *
  * On web/PWA:
