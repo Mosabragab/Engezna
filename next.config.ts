@@ -31,6 +31,13 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
 
+  // Use build-specific tsconfig that excludes scripts/ with wildcard patterns.
+  // Next.js TypeScript checker can resolve from a parent directory, breaking
+  // tsconfig.json's "scripts" exclude. tsconfig.build.json adds **/scripts/** patterns.
+  typescript: {
+    tsconfigPath: './tsconfig.build.json',
+  },
+
   // Tree-shake heavy barrel-exported packages at build time.
   // lucide-react: 206 files import icons — without this, the full icon set (~180KB) is bundled.
   // framer-motion: 29 files import animations — tree-shakes unused animation primitives.
