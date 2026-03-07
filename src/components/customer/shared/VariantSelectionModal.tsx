@@ -89,7 +89,7 @@ export function VariantSelectionModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center justify-center"
+      className="fixed inset-0 bg-black/50 z-[10000] flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
       <div
