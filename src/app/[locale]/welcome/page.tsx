@@ -214,7 +214,7 @@ export default async function WelcomePage({ params }: PageProps) {
             <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
           </div>
 
-          <div className="relative container mx-auto px-4 pt-[calc(2rem+var(--safe-area-top,env(safe-area-inset-top,0px)))] pb-12">
+          <div className="relative container mx-auto px-4 pt-8 pb-12">
             <div className="flex justify-center mb-8">
               <EngeznaLogo size="lg" static showPen={false} />
             </div>
