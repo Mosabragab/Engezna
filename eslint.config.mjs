@@ -19,6 +19,7 @@ const eslintConfig = defineConfig([
     'public/sw.js',
     'public/workbox-*.js',
     'public/serwist-*.js',
+    'scripts/**',
   ]),
   // Custom rule overrides
   {
