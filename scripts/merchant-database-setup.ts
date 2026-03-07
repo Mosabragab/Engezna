@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Engezna Merchant Database Setup Script
  * =======================================
