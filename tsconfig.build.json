@@ -1,11 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": [
-    "node_modules",
-    "supabase/functions",
-    "e2e/archive",
-    "scripts",
-    "**/scripts",
-    "**/scripts/**"
-  ]
+  "exclude": ["node_modules", "supabase/functions", "e2e/archive", "scripts", "**/scripts", "**/scripts/**"]
 }
