@@ -583,18 +583,18 @@ const config = {
 > تم إعداد `google-services.json` من Firebase Console (package: `com.engezna.app`).
 > تم إعداد 5 Notification Channels مع أصوات مخصصة في `MainActivity.java`.
 
-| المهمة                                                                       | الحالة | التاريخ |
-| ---------------------------------------------------------------------------- | ------ | ------- |
-| [x] إعداد `google-services.json` من Firebase Console                         | ✅     | 3/3     |
-| [x] إضافة Firebase dependencies في `android/app/build.gradle`                | ✅     | سابق    |
-| [x] إعداد 5 Notification Channels مع أصوات في `MainActivity.java`            | ✅     | 3/3     |
-| [x] إضافة notification sound files في `android/app/src/main/res/raw/`        | ✅     | 3/3     |
-| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)                | ✅     | 3/3     |
-| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                              | ✅     | سابق    |
-| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                   | ✅     | سابق    |
-| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)          | ✅     | سابق    |
-| [x] إضافة Build Scripts في `package.json`                                    | ✅     | 3/3     |
-| [x] تجهيز أيقونات التطبيق (جميع الأحجام والكثافات جاهزة في mipmap-* + adaptive icons) | ✅     | سابق    |
+| المهمة                                                                                 | الحالة | التاريخ |
+| -------------------------------------------------------------------------------------- | ------ | ------- |
+| [x] إعداد `google-services.json` من Firebase Console                                   | ✅     | 3/3     |
+| [x] إضافة Firebase dependencies في `android/app/build.gradle`                          | ✅     | سابق    |
+| [x] إعداد 5 Notification Channels مع أصوات في `MainActivity.java`                      | ✅     | 3/3     |
+| [x] إضافة notification sound files في `android/app/src/main/res/raw/`                  | ✅     | 3/3     |
+| [x] إنشاء `assets/` directory مع ملفات المصدر (icon + splash)                          | ✅     | 3/3     |
+| [x] إعداد App Icon (Adaptive Icons) بكل الأحجام                                        | ✅     | سابق    |
+| [x] إعداد Splash Screen بكل الأحجام (portrait + landscape)                             | ✅     | سابق    |
+| [x] إعداد `AndroidManifest.xml` (14 permissions + deep links + FCM)                    | ✅     | سابق    |
+| [x] إضافة Build Scripts في `package.json`                                              | ✅     | 3/3     |
+| [x] تجهيز أيقونات التطبيق (جميع الأحجام والكثافات جاهزة في mipmap-\* + adaptive icons) | ✅     | سابق    |
 
 ### 3.4 Safe Area Optimization (Native Feel)
 
@@ -606,24 +606,24 @@ const config = {
 > - إضافة WebView clipping للحواف المدورة (Android 12+) في `MainActivity.java`
 > - توحيد CSS safe area utilities لاستخدام `var(--safe-area-*)` بدلاً من `env()` فقط
 
-| المهمة                                                                             | الحالة | التاريخ |
-| ---------------------------------------------------------------------------------- | ------ | ------- |
-| [x] إضافة CSS variables (`--safe-area-top`, `--safe-area-bottom`) في `globals.css` | ✅     | 3/5     |
-| [x] التحقق من `viewport-fit=cover` في `layout.tsx`                                 | ✅     | 3/5     |
-| [x] إعداد StatusBar Plugin: overlay + transparent + Light style                    | ✅     | 3/5     |
-| [x] حساب safe area insets ديناميكياً على Android (لأن `env()` لا تعمل في WebView)  | ✅     | 3/5     |
-| [x] تحديث `CustomerHeader` بـ `pt-[var(--safe-area-top)]` مع امتداد الخلفية        | ✅     | 3/5     |
-| [x] تحديث `BottomNavigation` بـ `pb-[var(--safe-area-bottom)]` مع امتداد الخلفية   | ✅     | 3/5     |
-| [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                | ✅     | 3/5     |
-| [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى             | ✅     | 3/5     |
-| [x] تثبيت `@capacitor-community/safe-area` plugin لقراءة insets دقيقة من النظام    | ✅     | 3/5     |
-| [x] استبدال الحساب اليدوي في `NativeInit.tsx` بقيم SafeArea plugin                 | ✅     | 3/5     |
-| [x] إضافة `android:windowBackground` أبيض في `styles.xml` (حل الحواف الغامقة)      | ✅     | 3/5     |
-| [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)          | ✅     | 3/5     |
-| [x] توحيد CSS safe area utilities (`globals.css` + `pwa.css`) لاستخدام CSS vars    | ✅     | 3/5     |
-| [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول           | ✅     | 3/6     |
-| [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                | ✅     | 3/6     |
-| [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                    | ✅     | 3/6     |
+| المهمة                                                                                 | الحالة | التاريخ |
+| -------------------------------------------------------------------------------------- | ------ | ------- |
+| [x] إضافة CSS variables (`--safe-area-top`, `--safe-area-bottom`) في `globals.css`     | ✅     | 3/5     |
+| [x] التحقق من `viewport-fit=cover` في `layout.tsx`                                     | ✅     | 3/5     |
+| [x] إعداد StatusBar Plugin: overlay + transparent + Light style                        | ✅     | 3/5     |
+| [x] حساب safe area insets ديناميكياً على Android (لأن `env()` لا تعمل في WebView)      | ✅     | 3/5     |
+| [x] تحديث `CustomerHeader` بـ `pt-[var(--safe-area-top)]` مع امتداد الخلفية            | ✅     | 3/5     |
+| [x] تحديث `BottomNavigation` بـ `pb-[var(--safe-area-bottom)]` مع امتداد الخلفية       | ✅     | 3/5     |
+| [x] تحديث `ProviderHeader` و `ProviderBottomNav` و `SettingsLayout`                    | ✅     | 3/5     |
+| [x] تحديث `CustomerLayout` و `ProviderLayout` بـ padding إضافي للمحتوى                 | ✅     | 3/5     |
+| [x] تثبيت `@capacitor-community/safe-area` plugin لقراءة insets دقيقة من النظام        | ✅     | 3/5     |
+| [x] استبدال الحساب اليدوي في `NativeInit.tsx` بقيم SafeArea plugin                     | ✅     | 3/5     |
+| [x] إضافة `android:windowBackground` أبيض في `styles.xml` (حل الحواف الغامقة)          | ✅     | 3/5     |
+| [x] إضافة WebView `setClipToOutline` في `MainActivity.java` (Android 12+)              | ✅     | 3/5     |
+| [x] توحيد CSS safe area utilities (`globals.css` + `pwa.css`) لاستخدام CSS vars        | ✅     | 3/5     |
+| [x] رفع z-index للـ BottomNavigation إلى 9999 لمنع التداخل أثناء السكرول               | ✅     | 3/6     |
+| [x] تطبيق safe area على iOS أيضاً (كان Android فقط) مع حد أدنى 32px                    | ✅     | 3/6     |
+| [x] التأكد من امتداد خلفية الفوتر لتغطية المساحة الآمنة بالكامل                        | ✅     | 3/6     |
 | [x] توحيد ProviderHeader مع CustomerHeader (z-[9999] + safe area + left/right padding) | ✅     | 3/7     |
 
 ### 3.5 Build و Testing (Android)
@@ -1187,4 +1187,4 @@ Password: [كلمة المرور]
 | 2026-02-22 | مراجعة شاملة للخطة والتقرير مقابل الكود الفعلي (PLAN_REVIEW) + إضافة google-services.json                    | Claude |
 | 2026-02-23 | المرحلة 2: إعداد Lighthouse CI + إصلاح WCAG AA color-contrast + SEO metadata + إزالة deprecated PWA audits   | Claude |
 | 2026-02-23 | المرحلة 2: حساب contrast وفق WCAG 2.1 في OffersCarousel + dark overlay للبانرات + إضافة primary-dark للألوان | Claude |
-| 2026-03-07 | توحيد ProviderHeader مع CustomerHeader (z-[9999] + safe area pattern) + تأكيد اكتمال أيقونات Android          | Claude |
+| 2026-03-07 | توحيد ProviderHeader مع CustomerHeader (z-[9999] + safe area pattern) + تأكيد اكتمال أيقونات Android         | Claude |
