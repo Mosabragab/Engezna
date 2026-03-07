@@ -25,6 +25,12 @@ const nextConfig: NextConfig = {
   // Standalone output for Capacitor native builds and Docker deployments
   output: 'standalone',
 
+  // Pin Turbopack root to this project so tsconfig "exclude" patterns resolve correctly.
+  // Without this, Turbopack infers ~/package-lock.json as root and scripts/ exclude breaks.
+  turbopack: {
+    root: __dirname,
+  },
+
   // Tree-shake heavy barrel-exported packages at build time.
   // lucide-react: 206 files import icons — without this, the full icon set (~180KB) is bundled.
   // framer-motion: 29 files import animations — tree-shakes unused animation primitives.
