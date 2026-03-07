@@ -11,8 +11,16 @@ declare module '@capacitor-community/safe-area' {
 
   export const SafeArea: {
     setSystemBarsStyle(options: { style: SystemBarsStyle }): Promise<void>;
-    enable(options: { config: { customColorsForSystemBars: boolean; statusBarColor?: string; navigationBarColor?: string } }): Promise<void>;
+    enable(options: {
+      config: {
+        customColorsForSystemBars: boolean;
+        statusBarColor?: string;
+        navigationBarColor?: string;
+      };
+    }): Promise<void>;
     getStatusBarHeight(): Promise<{ statusBarHeight: number }>;
-    getSafeAreaInsets(): Promise<{ insets: { top: number; right: number; bottom: number; left: number } }>;
+    getSafeAreaInsets(): Promise<{
+      insets: { top: number; right: number; bottom: number; left: number };
+    }>;
   };
 }
