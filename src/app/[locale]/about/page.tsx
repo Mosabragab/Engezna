@@ -167,7 +167,7 @@ export default function AboutPage() {
   return (
     <div className={`min-h-screen bg-white ${hasLocation ? 'pb-20 md:pb-0' : ''}`}>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <Link
