@@ -30,29 +30,51 @@ export const viewport: Viewport = {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+  const isAr = locale === 'ar';
+
+  const title = isAr
+    ? 'إنجزنا - لتلبية احتياجات بيتك اليومية'
+    : 'Engezna - Your Daily Home Essentials';
+  const description = isAr
+    ? 'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب أكل، خضار، بقالة، دوا، حلويات من أقرب تاجر بأفضل سعر. قارن الأسعار واختار الأنسب بدون رسوم خدمة.'
+    : 'Engezna - An Egyptian platform for your daily home needs. Order food, groceries, pharmacy, and more from the nearest merchant at the best price. Compare prices with no service fees.';
+  const shortDescription = isAr
+    ? 'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب من أقرب تاجر بأفضل سعر وبدون رسوم خدمة.'
+    : 'Engezna - Order from the nearest merchant at the best price with no service fees.';
+
   return {
-    // SEO: Include both Arabic variations (with/without hamza) for better search coverage
-    title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
-    description:
-      'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب أكل، خضار، بقالة، دوا، حلويات من أقرب تاجر بأفضل سعر. قارن الأسعار واختار الأنسب بدون رسوم خدمة.',
-    // SEO: Keywords for Arabic search variations
-    keywords: [
-      'إنجزنا',
-      'انجزنا',
-      'Engezna',
-      'احتياجات البيت',
-      'طلبات',
-      'مطاعم',
-      'سوبر ماركت',
-      'صيدليات',
-      'خضار',
-      'حلويات',
-    ],
+    title,
+    description,
+    // SEO: Keywords for search variations in both languages
+    keywords: isAr
+      ? [
+          'إنجزنا',
+          'انجزنا',
+          'Engezna',
+          'احتياجات البيت',
+          'طلبات',
+          'مطاعم',
+          'سوبر ماركت',
+          'صيدليات',
+          'خضار',
+          'حلويات',
+        ]
+      : [
+          'Engezna',
+          'Egypt delivery',
+          'grocery delivery',
+          'food delivery Egypt',
+          'compare prices',
+          'no service fees',
+          'restaurants',
+          'supermarket',
+          'pharmacy',
+        ],
     manifest: '/manifest.json',
     appleWebApp: {
       capable: true,
       statusBarStyle: 'black-translucent',
-      title: 'إنجزنا',
+      title: isAr ? 'إنجزنا' : 'Engezna',
     },
     formatDetection: {
       telephone: true,
@@ -69,29 +91,27 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     // Open Graph for social sharing and SEO
     openGraph: {
-      title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
-      description:
-        'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب من أقرب تاجر بأفضل سعر وبدون رسوم خدمة.',
-      url: 'https://www.engezna.com',
-      siteName: 'إنجزنا',
-      locale: 'ar_EG',
-      alternateLocale: 'en_US',
+      title,
+      description: shortDescription,
+      url: `https://www.engezna.com/${locale}`,
+      siteName: isAr ? 'إنجزنا' : 'Engezna',
+      locale: isAr ? 'ar_EG' : 'en_US',
+      alternateLocale: isAr ? 'en_US' : 'ar_EG',
       type: 'website',
       images: [
         {
           url: '/images/og-image.png',
           width: 1200,
           height: 630,
-          alt: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
+          alt: title,
         },
       ],
     },
     // Twitter Card
     twitter: {
       card: 'summary_large_image',
-      title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
-      description:
-        'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب من أقرب تاجر بأفضل سعر وبدون رسوم خدمة.',
+      title,
+      description: shortDescription,
       images: ['/images/og-image.png'],
     },
     // Robots for SEO
