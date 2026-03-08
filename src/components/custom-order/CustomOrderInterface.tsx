@@ -726,6 +726,15 @@ export function CustomOrderInterface({
                             </div>
                           </button>
                         ))}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => router.push(`/${locale}/profile/addresses`)}
+                        >
+                          <MapPin className="w-4 h-4" />
+                          {isRTL ? 'إضافة عنوان جديد' : 'Add New Address'}
+                        </Button>
                       </div>
                     ) : (
                       <div className="text-center py-4 bg-amber-50 rounded-xl border border-amber-200">

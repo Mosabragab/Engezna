@@ -32,9 +32,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return {
     // SEO: Include both Arabic variations (with/without hamza) for better search coverage
-    title: 'إنجزنا | احتياجات بيتك اليومية',
+    title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
     description:
-      'اطلب كل اللي بيتك محتاجه: أكل، دوا، خضار، بقالة، حلويات. من محلات قريبة منك وبأسعار مناسبة.',
+      'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب أكل، خضار، بقالة، دوا، حلويات من أقرب تاجر بأفضل سعر. قارن الأسعار واختار الأنسب بدون رسوم خدمة.',
     // SEO: Keywords for Arabic search variations
     keywords: [
       'إنجزنا',
@@ -69,8 +69,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     },
     // Open Graph for social sharing and SEO
     openGraph: {
-      title: 'إنجزنا | احتياجات بيتك اليومية 💙',
-      description: 'اطلب كل اللي بيتك محتاجه: أكل، دوا، خضار، بقالة، حلويات. من محلات قريبة منك.',
+      title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
+      description:
+        'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب من أقرب تاجر بأفضل سعر وبدون رسوم خدمة.',
       url: 'https://www.engezna.com',
       siteName: 'إنجزنا',
       locale: 'ar_EG',
@@ -81,15 +82,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
           url: '/images/og-image.png',
           width: 1200,
           height: 630,
-          alt: 'إنجزنا | احتياجات بيتك اليومية',
+          alt: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
         },
       ],
     },
     // Twitter Card
     twitter: {
       card: 'summary_large_image',
-      title: 'إنجزنا | احتياجات بيتك اليومية 💙',
-      description: 'اطلب كل اللي بيتك محتاجه: أكل، دوا، خضار، بقالة، حلويات.',
+      title: 'إنجزنا - لتلبية احتياجات بيتك اليومية',
+      description:
+        'إنجزنا - منصة مصرية لتلبية احتياجات بيتك اليومية. اطلب من أقرب تاجر بأفضل سعر وبدون رسوم خدمة.',
       images: ['/images/og-image.png'],
     },
     // Robots for SEO
