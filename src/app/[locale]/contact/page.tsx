@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { csrfHeaders } from '@/lib/security/csrf-client';
+import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { CustomerLayout } from '@/components/customer/layout';
 import {
