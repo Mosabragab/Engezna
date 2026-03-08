@@ -24,7 +24,10 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale } = await params;
   return {
-    title: locale === 'ar' ? 'مرحباً | إنجزنا' : 'Welcome | Engezna',
+    title:
+      locale === 'ar'
+        ? 'إنجزنا - لتلبية احتياجات بيتك اليومية'
+        : 'Engezna - Your Daily Home Essentials',
     description:
       locale === 'ar'
         ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة'
