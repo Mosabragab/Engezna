@@ -89,7 +89,7 @@ export const BottomNavigation = memo(function BottomNavigation() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[9999] bg-white border-t border-slate-100 shadow-elegant-lg md:hidden pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))]">
+    <nav className="fixed bottom-0 left-0 right-0 z-[var(--z-bottom-nav,40)] bg-white border-t border-slate-100 shadow-elegant-lg md:hidden pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))]">
       {/* Left/right safe area for landscape */}
       <div className="relative pl-[var(--safe-area-left,env(safe-area-inset-left,0px))] pr-[var(--safe-area-right,env(safe-area-inset-right,0px))]">
         <div className="flex items-center justify-around h-16 px-2">
