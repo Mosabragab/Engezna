@@ -100,7 +100,11 @@ export function OrderChat({
       .single();
 
     if (!error && data) {
-      setMessages((prev) => [...prev, data]);
+      // Use duplicate check to avoid race condition with realtime subscription
+      setMessages((prev) => {
+        if (prev.find((m) => m.id === data.id)) return prev;
+        return [...prev, data];
+      });
       setNewMessage('');
       setTimeout(scrollToBottom, 100);
       // Customer notification is now handled by database trigger
