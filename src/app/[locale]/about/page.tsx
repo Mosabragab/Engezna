@@ -1,33 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
-import { Footer } from '@/components/shared/Footer';
-import { BottomNavigation } from '@/components/customer/layout/BottomNavigation';
-import { useUserLocation } from '@/lib/contexts';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Target,
-  Eye,
-  Heart,
-  Users,
-  MapPin,
-  Zap,
-  Shield,
-  Sparkles,
-  Building2,
-  Home,
-} from 'lucide-react';
+import { CustomerLayout } from '@/components/customer/layout';
+import { Target, Eye, Heart, Users, MapPin, Zap, Shield, Sparkles, Building2 } from 'lucide-react';
 
 export default function AboutPage() {
   const locale = useLocale();
   const isArabic = locale === 'ar';
-
-  // Check if user has selected location
-  const { governorateId, isLoading: isLocationLoading } = useUserLocation();
-  const hasLocation = !isLocationLoading && !!governorateId;
 
   const content = {
     ar: {
@@ -93,7 +72,6 @@ export default function AboutPage() {
       registryNumber: 'سجل تجاري: 2767',
       address: 'ش صالح حمام بجوار مسجد الاباصيري - بني سويف، مصر',
       tagline: 'عايز تطلب؟ إنجزنا!',
-      backToHome: 'الرئيسية',
     },
     en: {
       pageTitle: 'About Us',
@@ -158,40 +136,13 @@ export default function AboutPage() {
       registryNumber: 'Commercial Registry: 2767',
       address: 'Saleh Hammam St., next to Al-Abasiri Mosque, Beni Suef, Egypt',
       tagline: 'Want to order? Engezna!',
-      backToHome: 'Home',
     },
   };
 
   const t = isArabic ? content.ar : content.en;
 
   return (
-    <div className={`min-h-screen bg-white ${hasLocation ? 'pb-20 md:pb-0' : ''}`}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href={`/${locale}`}
-              className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors"
-            >
-              {isArabic ? (
-                <ArrowRight className="w-5 h-5" strokeWidth={1.8} />
-              ) : (
-                <ArrowLeft className="w-5 h-5" strokeWidth={1.8} />
-              )}
-              <Home className="w-5 h-5" strokeWidth={1.8} />
-              <span className="font-medium">{t.backToHome}</span>
-            </Link>
-
-            <Link href={`/${locale}`}>
-              <EngeznaLogo size="md" showPen={false} static />
-            </Link>
-
-            <div className="w-24" />
-          </div>
-        </div>
-      </header>
-
+    <CustomerLayout showBottomNav={true}>
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 bg-gradient-to-br from-primary/5 via-white to-[#00C27A]/5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
@@ -339,14 +290,6 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer - Hidden on mobile */}
-      <div className="hidden md:block">
-        <Footer />
-      </div>
-
-      {/* Bottom Navigation for Mobile - Only show if user has selected location */}
-      {hasLocation && <BottomNavigation />}
-    </div>
+    </CustomerLayout>
   );
 }
