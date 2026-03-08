@@ -59,7 +59,7 @@ export function ProviderBottomNav({
   ];
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-elegant-lg z-[9999] pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 shadow-elegant-lg z-[var(--z-bottom-nav,40)] pb-[var(--safe-area-bottom,env(safe-area-inset-bottom,0px))]">
       <div>
         <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item) => {
