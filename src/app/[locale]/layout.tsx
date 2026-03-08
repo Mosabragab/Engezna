@@ -93,7 +93,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     openGraph: {
       title,
       description: shortDescription,
-      url: `https://www.engezna.com/${locale}`,
+      // Note: openGraph.url is intentionally omitted here so child pages
+      // can set their own canonical URL without inheriting a wrong one
+      // via Next.js shallow merge. Set openGraph.url in leaf page metadata.
       siteName: isAr ? 'إنجزنا' : 'Engezna',
       locale: isAr ? 'ar_EG' : 'en_US',
       alternateLocale: isAr ? 'en_US' : 'ar_EG',
