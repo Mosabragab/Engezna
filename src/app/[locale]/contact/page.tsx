@@ -4,18 +4,13 @@ import { useState } from 'react';
 import { csrfHeaders } from '@/lib/security/csrf-client';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
-import { BottomNavigation } from '@/components/customer/layout/BottomNavigation';
-import { useUserLocation } from '@/lib/contexts';
+import { CustomerLayout } from '@/components/customer/layout';
 import {
-  ArrowLeft,
-  ArrowRight,
   Mail,
   MapPin,
   Clock,
   HelpCircle,
   FileText,
-  Home,
   Send,
   Loader2,
   CheckCircle2,
@@ -28,10 +23,6 @@ type InquiryType = 'general' | 'complaint' | 'suggestion' | 'partnership';
 export default function ContactPage() {
   const locale = useLocale();
   const isArabic = locale === 'ar';
-
-  // Check if user has selected location
-  const { governorateId, isLoading: isLocationLoading } = useUserLocation();
-  const hasLocation = !isLocationLoading && !!governorateId;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -127,7 +118,6 @@ export default function ContactPage() {
         { label: 'الخصوصية', email: 'privacy@engezna.com' },
         { label: 'الاستفسارات القانونية', email: 'legal@engezna.com' },
       ],
-      backToHome: 'الرئيسية',
     },
     en: {
       pageTitle: 'Contact Us',
@@ -210,7 +200,6 @@ export default function ContactPage() {
         { label: 'Privacy', email: 'privacy@engezna.com' },
         { label: 'Legal Inquiries', email: 'legal@engezna.com' },
       ],
-      backToHome: 'Home',
     },
   };
 
@@ -248,33 +237,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className={`min-h-screen bg-white ${hasLocation ? 'pb-20 md:pb-0' : ''}`}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <Link
-              href={`/${locale}`}
-              className="flex items-center gap-2 text-slate-600 hover:text-primary transition-colors"
-            >
-              {isArabic ? (
-                <ArrowRight className="w-5 h-5" strokeWidth={1.8} />
-              ) : (
-                <ArrowLeft className="w-5 h-5" strokeWidth={1.8} />
-              )}
-              <Home className="w-5 h-5" strokeWidth={1.8} />
-              <span className="font-medium">{t.backToHome}</span>
-            </Link>
-
-            <Link href={`/${locale}`}>
-              <EngeznaLogo size="md" showPen={false} static />
-            </Link>
-
-            <div className="w-24" />
-          </div>
-        </div>
-      </header>
-
+    <CustomerLayout showBottomNav={true}>
       {/* Hero Section */}
       <section className="relative py-12 md:py-20 bg-gradient-to-br from-primary/5 via-white to-[#00C27A]/5 overflow-hidden">
         <div className="absolute inset-0 opacity-5">
@@ -528,9 +491,6 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-
-      {/* Bottom Navigation for Mobile - Only show if user has selected location */}
-      {hasLocation && <BottomNavigation />}
-    </div>
+    </CustomerLayout>
   );
 }

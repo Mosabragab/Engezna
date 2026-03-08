@@ -244,7 +244,7 @@ export function OrderChat({
 
           <div className="flex flex-col bg-white w-full sm:max-w-md sm:mx-auto sm:my-auto sm:rounded-2xl sm:max-h-[80vh] h-full sm:h-auto overflow-hidden">
             {/* Header */}
-            <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0 safe-area-top">
+            <div className="bg-primary text-white p-4 flex items-center justify-between flex-shrink-0 pt-[calc(1rem+var(--safe-area-top,env(safe-area-inset-top,0px)))]">
               <div>
                 <h3 className="font-bold">{locale === 'ar' ? 'محادثة الطلب' : 'Order Chat'}</h3>
                 <p className="text-sm opacity-80">
