@@ -178,10 +178,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-192x192.png" />
-        {/* Apple Startup Image / Splash Screen */}
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="إنجزنا" />
+        {/* Apple Web App meta tags are handled by the metadata API (appleWebApp) */}
         {/* Theme Color for all browsers */}
         <meta name="theme-color" content="#0F172A" />
         <meta name="msapplication-TileColor" content="#0F172A" />
