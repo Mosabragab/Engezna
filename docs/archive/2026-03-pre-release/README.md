@@ -5,27 +5,28 @@ They are either completed implementation plans, superseded by `DEPLOYMENT_MASTER
 
 ## Archived Files
 
-| File | Reason |
-|------|--------|
-| `MASTER_IMPLEMENTATION_PLAN.md` | Completed (Jan 2026), superseded by DEPLOYMENT_MASTER_PLAN |
-| `EXECUTION_PLAN.md` | Superseded by DEPLOYMENT_MASTER_PLAN |
-| `PLAN_REVIEW_2026_02_22.md` | Superseded by DEPLOYMENT_MASTER_PLAN |
-| `PRE_RELEASE_REVIEW_REPORT.md` | Superseded by new FINAL_PRE_RELEASE_AUDIT |
-| `ENGINEERING_DESIGN_AUDIT_2026.md` | Completed (100% of roadmap done) |
-| `CUSTOM_ORDER_IMPLEMENTATION_PLAN.md` | Implementation completed |
-| `DATABASE_DRIVEN_SETTINGS_PLAN.md` | Implementation completed |
-| `DISTRICT_DELIVERY_PRICING_PLAN.md` | Implementation completed |
-| `PROMOTIONS_BANNERS_IMPROVEMENTS.md` | Implementation completed |
-| `QUALITY_LAYERS_ROADMAP.md` | Roadmap completed |
-| `REALTIME_OPTIMIZATION_BASELINE.md` | Baseline established |
-| `SECURITY_ISSUES_FOUND.md` | All 6 issues resolved |
-| `ADMIN_PROVIDERS_FIXES.md` | All 9 fixes completed |
-| `EDGE_FUNCTIONS_DEPLOYMENT.md` | Deployment completed |
-| `SETTINGS_VERIFICATION_QUERIES.sql` | Verification completed |
+| File                                  | Reason                                                     |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `MASTER_IMPLEMENTATION_PLAN.md`       | Completed (Jan 2026), superseded by DEPLOYMENT_MASTER_PLAN |
+| `EXECUTION_PLAN.md`                   | Superseded by DEPLOYMENT_MASTER_PLAN                       |
+| `PLAN_REVIEW_2026_02_22.md`           | Superseded by DEPLOYMENT_MASTER_PLAN                       |
+| `PRE_RELEASE_REVIEW_REPORT.md`        | Superseded by new FINAL_PRE_RELEASE_AUDIT                  |
+| `ENGINEERING_DESIGN_AUDIT_2026.md`    | Completed (100% of roadmap done)                           |
+| `CUSTOM_ORDER_IMPLEMENTATION_PLAN.md` | Implementation completed                                   |
+| `DATABASE_DRIVEN_SETTINGS_PLAN.md`    | Implementation completed                                   |
+| `DISTRICT_DELIVERY_PRICING_PLAN.md`   | Implementation completed                                   |
+| `PROMOTIONS_BANNERS_IMPROVEMENTS.md`  | Implementation completed                                   |
+| `QUALITY_LAYERS_ROADMAP.md`           | Roadmap completed                                          |
+| `REALTIME_OPTIMIZATION_BASELINE.md`   | Baseline established                                       |
+| `SECURITY_ISSUES_FOUND.md`            | All 6 issues resolved                                      |
+| `ADMIN_PROVIDERS_FIXES.md`            | All 9 fixes completed                                      |
+| `EDGE_FUNCTIONS_DEPLOYMENT.md`        | Deployment completed                                       |
+| `SETTINGS_VERIFICATION_QUERIES.sql`   | Verification completed                                     |
 
 ## Active Documents (Not Archived)
 
 The following remain active in `docs/`:
+
 - `DEPLOYMENT_MASTER_PLAN.md` — Current consolidated deployment plan
 - `APP_STORES_RELEASE_ROADMAP.md` — Active release roadmap
 - `LAUNCH_READINESS_CHECKLIST.md` — Pre-launch checklist
