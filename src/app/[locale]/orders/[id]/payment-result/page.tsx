@@ -244,7 +244,7 @@ export default function PaymentResultPage({ params }: PaymentResultPageProps) {
                 : 'We could not complete your payment. Please try again or use a different payment method.'}
             </p>
             <div className="flex gap-3">
-              <Button onClick={() => router.push(`/${locale}/orders/${orderId}`)}>
+              <Button onClick={() => router.push(`/${locale}/checkout`)}>
                 {locale === 'ar' ? 'المحاولة مرة أخرى' : 'Try Again'}
               </Button>
               <Button variant="outline" onClick={() => router.push(`/${locale}`)}>
