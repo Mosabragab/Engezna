@@ -1136,6 +1136,103 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient();
 
+      // Re-check product & variant availability from database before placing order
+      // Cart stores is_available from when items were added, which may be stale
+      const menuItemIds = [...new Set(cart.map((item) => item.menuItem.id))];
+      const { data: freshItems, error: availError } = await supabase
+        .from('menu_items')
+        .select('id, is_available, name_ar, name_en')
+        .in('id', menuItemIds);
+
+      if (availError) {
+        setError(
+          locale === 'ar'
+            ? 'تعذر التحقق من توفر المنتجات. يرجى المحاولة مرة أخرى.'
+            : 'Could not verify product availability. Please try again.'
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for deleted menu items (returned fewer rows than requested)
+      const freshItemIds = new Set(freshItems?.map((item) => item.id) || []);
+      const deletedItems = cart.filter((item) => !freshItemIds.has(item.menuItem.id));
+      if (deletedItems.length > 0) {
+        const names = deletedItems
+          .map((item) => (locale === 'ar' ? item.menuItem.name_ar : item.menuItem.name_en))
+          .join(', ');
+        setError(
+          locale === 'ar'
+            ? `المنتجات التالية لم تعد موجودة: ${names}. يرجى إزالتها من السلة.`
+            : `The following items no longer exist: ${names}. Please remove them from your cart.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Check for unavailable menu items
+      const unavailableItems = freshItems?.filter((item) => !item.is_available) || [];
+      if (unavailableItems.length > 0) {
+        const names = unavailableItems
+          .map((item) => (locale === 'ar' ? item.name_ar : item.name_en))
+          .join(', ');
+        setError(
+          locale === 'ar'
+            ? `المنتجات التالية لم تعد متوفرة: ${names}. يرجى تعديل السلة.`
+            : `The following items are no longer available: ${names}. Please update your cart.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Check variant availability for cart items with selected variants
+      const variantCartItems = cart.filter((item) => item.selectedVariant?.id);
+      if (variantCartItems.length > 0) {
+        const variantIds = [...new Set(variantCartItems.map((item) => item.selectedVariant!.id))];
+        const { data: freshVariants, error: variantError } = await supabase
+          .from('product_variants')
+          .select('id, is_available')
+          .in('id', variantIds);
+
+        if (variantError) {
+          setError(
+            locale === 'ar'
+              ? 'تعذر التحقق من توفر المنتجات. يرجى المحاولة مرة أخرى.'
+              : 'Could not verify product availability. Please try again.'
+          );
+          setIsLoading(false);
+          return;
+        }
+
+        const freshVariantMap = new Map(freshVariants?.map((v) => [v.id, v.is_available]) || []);
+
+        // Find deleted or unavailable variants
+        const badVariantItems = variantCartItems.filter((item) => {
+          const available = freshVariantMap.get(item.selectedVariant!.id);
+          return available === undefined || available === false;
+        });
+
+        if (badVariantItems.length > 0) {
+          const names = badVariantItems
+            .map((item) => {
+              const productName = locale === 'ar' ? item.menuItem.name_ar : item.menuItem.name_en;
+              const variantName =
+                locale === 'ar'
+                  ? item.selectedVariant!.name_ar
+                  : item.selectedVariant!.name_en || item.selectedVariant!.name_ar;
+              return `${productName} (${variantName})`;
+            })
+            .join(', ');
+          setError(
+            locale === 'ar'
+              ? `الخيارات التالية لم تعد متوفرة: ${names}. يرجى تعديل السلة.`
+              : `The following options are no longer available: ${names}. Please update your cart.`
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
+
       // Calculate final total with discount (use calculated delivery fee based on order type)
       const finalTotal = subtotal + calculatedDeliveryFee - discountAmount;
 
@@ -1280,13 +1377,32 @@ export default function CheckoutPage() {
       };
 
       // Initiate payment (creates order in DB + returns Kashier URL)
-      const paymentResponse = await fetch('/api/payment/kashier/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ orderData: pendingOrderData }),
-      });
+      let paymentData: { success?: boolean; checkoutUrl?: string; error?: string };
+      try {
+        const paymentResponse = await fetch('/api/payment/kashier/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          body: JSON.stringify({ orderData: pendingOrderData }),
+        });
 
-      const paymentData = await paymentResponse.json();
+        if (!paymentResponse.ok) {
+          throw new Error(`HTTP ${paymentResponse.status}`);
+        }
+
+        paymentData = await paymentResponse.json();
+      } catch (fetchErr) {
+        const msg =
+          fetchErr instanceof TypeError
+            ? locale === 'ar'
+              ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.'
+              : 'Could not connect to the server. Please check your internet connection and try again.'
+            : locale === 'ar'
+              ? 'حدث خطأ أثناء بدء الدفع. يرجى المحاولة مرة أخرى.'
+              : 'An error occurred while initiating payment. Please try again.';
+        setError(msg);
+        setIsLoading(false);
+        return;
+      }
 
       if (paymentData.success && paymentData.checkoutUrl) {
         // Order is now safely in DB with pending_payment status

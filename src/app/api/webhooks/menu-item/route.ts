@@ -15,6 +15,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { timingSafeEqual } from 'crypto';
 import { withErrorHandler } from '@/lib/api/error-handler';
 import { validateBody } from '@/lib/api/validate';
 import { logger } from '@/lib/logger';
@@ -53,19 +54,32 @@ const webhookPayloadSchema = z
   })
   .passthrough();
 
-// Verify webhook signature (if configured)
+// Verify webhook signature using timing-safe comparison
 function verifyWebhookSignature(request: NextRequest): boolean {
-  const signature = request.headers.get('x-webhook-signature');
   const secret = process.env.SUPABASE_WEBHOOK_SECRET;
 
-  // If no secret is configured, skip verification (not recommended for production)
+  // Reject if secret is not configured — do not allow unauthenticated webhooks
   if (!secret) {
-    logger.warn('SUPABASE_WEBHOOK_SECRET not configured - skipping signature verification');
-    return true;
+    logger.error('SUPABASE_WEBHOOK_SECRET not configured — rejecting webhook');
+    return false;
   }
 
-  // Verify signature matches
-  return signature === secret;
+  const signature = request.headers.get('x-webhook-signature');
+  if (!signature) {
+    return false;
+  }
+
+  // Use timing-safe comparison to prevent timing attacks
+  try {
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const secretBuf = Buffer.from(secret, 'utf8');
+    if (sigBuf.length !== secretBuf.length) {
+      return false;
+    }
+    return timingSafeEqual(sigBuf, secretBuf);
+  } catch {
+    return false;
+  }
 }
 
 // Helper to get the Supabase config

@@ -298,7 +298,7 @@ export default function CartPage() {
           <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4">
             <ShoppingBag className="w-12 h-12 text-slate-300" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">{t('empty')}</h2>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">{t('empty')}</h1>
           <p className="text-slate-500 text-center mb-6">{t('emptyDescription')}</p>
           <button
             onClick={() => router.push(`/${locale}/providers`)}
@@ -314,6 +314,7 @@ export default function CartPage() {
   return (
     <CustomerLayout headerTitle={t('title')} showBackButton={false} showBottomNav={true}>
       <div className="px-4 py-4 pb-6">
+        <h1 className="sr-only">{t('title')}</h1>
         {/* Provider Info */}
         {provider && (
           <div className="bg-slate-50 rounded-xl p-4 mb-4 flex items-center justify-between">

@@ -1,7 +1,11 @@
 -- ============================================================================
--- PHASE 3: RLS POLICIES (REQUIRES TESTING BEFORE PRODUCTION)
+-- PHASE 3: RLS POLICIES — CRITICAL: MUST APPLY BEFORE RELEASE
 -- ============================================================================
 -- ⚠️ WARNING: This migration changes access control!
+-- STATUS: NOT YET APPLIED — approval_requests, activity_log, support_tickets
+--         currently have NO RLS, exposing user data.
+-- DEPENDS ON: 20260121000002_phase2_security_functions.sql (is_admin, etc.)
+-- APPLY: supabase db push  OR  supabase migration up
 -- Run the TEST CASES at the bottom BEFORE applying to production.
 -- Each table section includes its own rollback script.
 -- ============================================================================
