@@ -1136,6 +1136,38 @@ export default function CheckoutPage() {
     try {
       const supabase = createClient();
 
+      // Re-check product availability from database before placing order
+      // Cart stores is_available from when items were added, which may be stale
+      const menuItemIds = [...new Set(cart.map((item) => item.menuItem.id))];
+      const { data: freshItems, error: availError } = await supabase
+        .from('menu_items')
+        .select('id, is_available, name_ar, name_en')
+        .in('id', menuItemIds);
+
+      if (availError) {
+        setError(
+          locale === 'ar'
+            ? 'تعذر التحقق من توفر المنتجات. يرجى المحاولة مرة أخرى.'
+            : 'Could not verify product availability. Please try again.'
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      const unavailableItems = freshItems?.filter((item) => !item.is_available) || [];
+      if (unavailableItems.length > 0) {
+        const names = unavailableItems
+          .map((item) => (locale === 'ar' ? item.name_ar : item.name_en))
+          .join(', ');
+        setError(
+          locale === 'ar'
+            ? `المنتجات التالية لم تعد متوفرة: ${names}. يرجى تعديل السلة.`
+            : `The following items are no longer available: ${names}. Please update your cart.`
+        );
+        setIsLoading(false);
+        return;
+      }
+
       // Calculate final total with discount (use calculated delivery fee based on order type)
       const finalTotal = subtotal + calculatedDeliveryFee - discountAmount;
 
