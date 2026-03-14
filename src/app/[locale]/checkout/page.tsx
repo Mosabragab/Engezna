@@ -1312,13 +1312,32 @@ export default function CheckoutPage() {
       };
 
       // Initiate payment (creates order in DB + returns Kashier URL)
-      const paymentResponse = await fetch('/api/payment/kashier/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
-        body: JSON.stringify({ orderData: pendingOrderData }),
-      });
+      let paymentData: { success?: boolean; checkoutUrl?: string; error?: string };
+      try {
+        const paymentResponse = await fetch('/api/payment/kashier/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          body: JSON.stringify({ orderData: pendingOrderData }),
+        });
 
-      const paymentData = await paymentResponse.json();
+        if (!paymentResponse.ok) {
+          throw new Error(`HTTP ${paymentResponse.status}`);
+        }
+
+        paymentData = await paymentResponse.json();
+      } catch (fetchErr) {
+        const msg =
+          fetchErr instanceof TypeError
+            ? locale === 'ar'
+              ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.'
+              : 'Could not connect to the server. Please check your internet connection and try again.'
+            : locale === 'ar'
+              ? 'حدث خطأ أثناء بدء الدفع. يرجى المحاولة مرة أخرى.'
+              : 'An error occurred while initiating payment. Please try again.';
+        setError(msg);
+        setIsLoading(false);
+        return;
+      }
 
       if (paymentData.success && paymentData.checkoutUrl) {
         // Order is now safely in DB with pending_payment status
