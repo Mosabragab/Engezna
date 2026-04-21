@@ -1,7 +1,7 @@
 # خطة تنفيذ نظام صندوق الهدايا + الولاء + الريفيرال — Engezna
 
 **تاريخ الإعداد:** ٢١ أبريل ٢٠٢٦
-**الإصدار:** 2.0 (تحول من كاش باك إلى Gift Box)
+**الإصدار:** 2.1 (تصحيحات Phase 0 بناءً على DB Discovery الفعلي)
 **الحالة:** مرجع تنفيذي — يُناقش قبل البدء
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
@@ -12,6 +12,7 @@
 أنت مُكلّف بتنفيذ نظام صندوق الهدايا (Gift Box) ونقاط الولاء والريفيرال لتطبيق Engezna. هذا الملف هو المرجع الوحيد والنهائي لكل القرارات. لا تجتهد أو تفترض — إذا وجدت تعارضًا مع أي ملف آخر في المشروع، هذا الملف يتقدّم.
 
 **قواعد صارمة:**
+
 1. لا تبدأ أي كود قبل مناقشة خطة التنفيذ مع المستخدم والحصول على موافقته.
 2. راجع قاعدة البيانات أولًا (المرحلة 0) وأعطِ المستخدم SQL للتشغيل على Supabase قبل التنفيذ.
 3. راجع Prettier قبل أي commit لضمان مرور الفرع من الاختبار.
@@ -31,6 +32,7 @@
 بدلًا من كاش باك بسيط يبدو رخيصًا عند أرقام صغيرة (٣ ج.م مثلًا)، نستخدم **صندوق هدايا** يفتحه العميل ليكتشف ما بداخله. القيمة المُدركة (Perceived Value) أعلى بكثير من القيمة المالية الفعلية، وتجربة "فتح الصندوق" نفسها محفزّة عاطفيًا.
 
 **المبادئ الأساسية:**
+
 - **مفاجأة دائمًا:** العميل لا يعرف ما بداخل الصندوق قبل فتحه.
 - **تنوع في الهدايا:** مش دايمًا فلوس — أحيانًا توصيل مجاني، نقاط ولاء، كوبون شريك، هدية ذهبية.
 - **ندرة مُتحكم بها:** الصناديق الذهبية نادرة — تُخلق FOMO حقيقي.
@@ -44,19 +46,25 @@
 
 ### 1.1 رسوم المعالجة (Service/Processing Fee)
 
-| البند | القيمة |
-|-------|--------|
-| النسبة | **٣٪** على كل طلب |
-| التطبيق | على الأونلاين + الكاش عند التوصيل (COD) |
-| التسمية في الـ UI | "رسوم معالجة" (Processing Fee) |
-| الحالة عند الإطلاق | **مُعطّلة** — تُفعّل لاحقًا من داشبورد الإدارة |
-| التحكم | الأدمن يقدر يُفعّل/يُعطّل + يعدّل النسبة من الداشبورد |
+| البند              | القيمة                                                |
+| ------------------ | ----------------------------------------------------- |
+| النسبة             | **٣٪** على كل طلب                                     |
+| التطبيق            | على الأونلاين + الكاش عند التوصيل (COD)               |
+| التسمية في الـ UI  | "رسوم معالجة" (Processing Fee)                        |
+| الحالة عند الإطلاق | **مُعطّلة** — تُفعّل لاحقًا من داشبورد الإدارة        |
+| التحكم             | الأدمن يقدر يُفعّل/يُعطّل + يعدّل النسبة من الداشبورد |
 
 **مهم:** راجع صفحة الترحيب `/welcome` وصفحة `/terms` وأي صفحة تسويقية — تأكد من عدم وجود أي ذكر لـ "٠٪ رسوم خدمة" أو "بدون رسوم إضافية". إذا وُجد، احذفه أو عدّله لـ "رسوم معالجة بسيطة" — أو أخفيها حتى يُفعّل الزر.
 
 **تطبيق تقني:**
-- جدول `platform_settings` يحتوي مفتاح `processing_fee_enabled` (bool, default false) ومفتاح `processing_fee_percent` (numeric, default 3.0).
-- الـ checkout يقرأ القيمتين مع كل طلب.
+
+- **⚠️ ملاحظة DB Discovery:** لا يوجد جدول `platform_settings` في قاعدة البيانات الفعلية. الإعدادات الحالية موجودة في:
+  - `src/lib/settings/defaults.ts` → `service_fee_enabled: false`, `service_fee_amount: 0`
+  - `src/lib/settings/schemas.ts` → Zod validation schemas
+  - `src/app/[locale]/admin/settings-v2/components/CommissionSettings.tsx` → UI controls
+  - جدول `commission_settings` موجود في DB مع RLS policy "Everyone can view commission settings"
+- **القرار:** نستخدم `commission_settings` الموجود بالفعل لإضافة الرسوم، أو نضيف الحقول في `retention_settings` الجديد (§18). لا نُنشئ جدول `platform_settings`.
+- الـ checkout يقرأ `service_fee_enabled` و `service_fee_amount` من الإعدادات الموجودة.
 - الـ settlement engine يحسم الرسم تلقائيًا إذا كان مُفعّلًا.
 
 ### 1.2 ميزانية التسويق الشهرية (Marketing Budget)
@@ -65,15 +73,16 @@
 
 تُقسَّم كالآتي:
 
-| البند | النسبة | المبلغ الشهري |
-|-------|--------|----------------|
-| Mystery Box (صناديق المفاجآت) | ٣٠٪ | ٦,٠٠٠ ج.م |
-| Stamp Card (بطاقة الختم + الصندوق الذهبي) | ٢٥٪ | ٥,٠٠٠ ج.م |
-| Referral (الريفيرال) | ٢٠٪ | ٤,٠٠٠ ج.م |
-| Win-back (استعادة العملاء) | ١٥٪ | ٣,٠٠٠ ج.م |
-| Welcome (ترحيب العملاء الجدد) | ١٠٪ | ٢,٠٠٠ ج.م |
+| البند                                     | النسبة | المبلغ الشهري |
+| ----------------------------------------- | ------ | ------------- |
+| Mystery Box (صناديق المفاجآت)             | ٣٠٪    | ٦,٠٠٠ ج.م     |
+| Stamp Card (بطاقة الختم + الصندوق الذهبي) | ٢٥٪    | ٥,٠٠٠ ج.م     |
+| Referral (الريفيرال)                      | ٢٠٪    | ٤,٠٠٠ ج.م     |
+| Win-back (استعادة العملاء)                | ١٥٪    | ٣,٠٠٠ ج.م     |
+| Welcome (ترحيب العملاء الجدد)             | ١٠٪    | ٢,٠٠٠ ج.م     |
 
 **مبادئ الميزانية:**
+
 - كل دلو (bucket) له حد شهري صارم في جدول `retention_settings`.
 - إذا امتلأ الدلو قبل نهاية الشهر → المُحرّك يوقف الدلو تلقائيًا ويُبلِغ الأدمن.
 - الأدمن يقدر يرفع/يخفض الحد من داشبورد الإدارة في أي لحظة.
@@ -82,11 +91,11 @@
 
 ### 1.3 من يتحمل تكلفة الهدايا؟
 
-| نوع الهدية | المُموّل |
-|------------|---------|
+| نوع الهدية                                           | المُموّل                 |
+| ---------------------------------------------------- | ------------------------ |
 | Mystery Box, Stamp Card, Welcome, Win-back, Referral | إنجزنا (ميزانية التسويق) |
-| Partner Gifts (هدايا شركاء) | التاجر (الشريك) بالكامل |
-| Loyalty Boost (مضاعفة النقاط) | إنجزنا (تكلفة افتراضية) |
+| Partner Gifts (هدايا شركاء)                          | التاجر (الشريك) بالكامل  |
+| Loyalty Boost (مضاعفة النقاط)                        | إنجزنا (تكلفة افتراضية)  |
 
 **السيناريو A** (إنجزنا تتحمل ١٠٠٪) مطبّق على كل الهدايا الممولة من إنجزنا. التاجر لا يتأثر في تسويته إطلاقًا — يحصل على كامل قيمة الطلب.
 
@@ -107,17 +116,18 @@
 
 قاعدة البيانات تدعم ٧ أنواع موحّدة:
 
-| النوع | المفتاح (enum) | الوصف | التكلفة النموذجية |
-|------|----------------|-------|-------------------|
-| كوبون خصم بقيمة ثابتة | `discount_code` | خصم X جنيه من الطلب | ٥-٢٠ ج.م |
-| كوبون خصم بنسبة | `discount_percent` | خصم X% (بحد أقصى) | ١٠-٢٥٪ (حد ٢٠ ج.م) |
-| توصيل مجاني | `free_delivery` | إلغاء رسوم التوصيل | متوسط ١٠ ج.م |
-| هدية شريك | `partner_gift` | عرض من تاجر ترويجي | ممول من التاجر |
-| مضاعفة نقاط ولاء | `loyalty_boost` | ×٢ أو ×٣ نقاط لفترة | غير نقدي مباشر |
-| صندوق مفاجأة | `mystery` | يحتوي على أحد الأنواع السابقة عشوائيًا | متغير |
-| الصندوق الذهبي | `golden_box` | مكافأة بطاقة الختم (حد ١٠٠ ج.م) | ٥٠ ج.م افتراضي |
+| النوع                 | المفتاح (enum)     | الوصف                                  | التكلفة النموذجية  |
+| --------------------- | ------------------ | -------------------------------------- | ------------------ |
+| كوبون خصم بقيمة ثابتة | `discount_code`    | خصم X جنيه من الطلب                    | ٥-٢٠ ج.م           |
+| كوبون خصم بنسبة       | `discount_percent` | خصم X% (بحد أقصى)                      | ١٠-٢٥٪ (حد ٢٠ ج.م) |
+| توصيل مجاني           | `free_delivery`    | إلغاء رسوم التوصيل                     | متوسط ١٠ ج.م       |
+| هدية شريك             | `partner_gift`     | عرض من تاجر ترويجي                     | ممول من التاجر     |
+| مضاعفة نقاط ولاء      | `loyalty_boost`    | ×٢ أو ×٣ نقاط لفترة                    | غير نقدي مباشر     |
+| صندوق مفاجأة          | `mystery`          | يحتوي على أحد الأنواع السابقة عشوائيًا | متغير              |
+| الصندوق الذهبي        | `golden_box`       | مكافأة بطاقة الختم (حد ١٠٠ ج.م)        | ٥٠ ج.م افتراضي     |
 
 **ملاحظات:**
+
 - كل هدية لها تاريخ انتهاء صلاحية افتراضي ٧ أيام (قابل للتخصيص لكل قاعدة).
 - الهدايا غير قابلة للتحويل بين الحسابات (باستثناء Gift-it Forward عبر آلية مُحددة).
 - الهدايا غير قابلة للتجميع على نفس الطلب (قاعدة "خصم واحد لكل طلب" — انظر §11).
@@ -132,14 +142,14 @@
 
 ### 3.2 التوزيع الافتراضي (Weights)
 
-| الهدية | الوزن | الاحتمال | التكلفة المتوقعة |
-|--------|-------|----------|-------------------|
-| خصم ٥ ج.م | 40 | ٤٠٪ | ٢ ج.م متوسط |
-| خصم ١٠ ج.م | 25 | ٢٥٪ | ٢.٥ ج.م |
-| توصيل مجاني | 20 | ٢٠٪ | ٢ ج.م |
-| خصم ١٥ ج.م | 10 | ١٠٪ | ١.٥ ج.م |
-| خصم ٢٠ ج.م (نادر) | 4 | ٤٪ | ٠.٨ ج.م |
-| صندوق ذهبي (نادر جدًا) | 1 | ١٪ | ٠.٥ ج.م |
+| الهدية                 | الوزن | الاحتمال | التكلفة المتوقعة |
+| ---------------------- | ----- | -------- | ---------------- |
+| خصم ٥ ج.م              | 40    | ٤٠٪      | ٢ ج.م متوسط      |
+| خصم ١٠ ج.م             | 25    | ٢٥٪      | ٢.٥ ج.م          |
+| توصيل مجاني            | 20    | ٢٠٪      | ٢ ج.م            |
+| خصم ١٥ ج.م             | 10    | ١٠٪      | ١.٥ ج.م          |
+| خصم ٢٠ ج.م (نادر)      | 4     | ٤٪       | ٠.٨ ج.م          |
+| صندوق ذهبي (نادر جدًا) | 1     | ١٪       | ٠.٥ ج.م          |
 
 **تكلفة متوقعة لكل صندوق: ~٩ ج.م** (قابلة للتعديل من الأدمن).
 
@@ -206,16 +216,17 @@
 
 ### 5.2 القواعد
 
-| البند | القيمة |
-|-------|--------|
-| عدد الأختام للصندوق الذهبي | ٤ |
-| الحد الأدنى للطلب المؤهل للختم | ٥٠ ج.م |
-| قيمة الصندوق الذهبي الافتراضية | ٥٠ ج.م |
+| البند                              | القيمة                        |
+| ---------------------------------- | ----------------------------- |
+| عدد الأختام للصندوق الذهبي         | ٤                             |
+| الحد الأدنى للطلب المؤهل للختم     | ٥٠ ج.م                        |
+| قيمة الصندوق الذهبي الافتراضية     | ٥٠ ج.م                        |
 | الحد الأقصى للصندوق الذهبي (حماية) | **١٠٠ ج.م** (لا يتجاوز أبدًا) |
-| مدة صلاحية البطاقة | ٦٠ يومًا من أول ختم |
-| عدد البطاقات النشطة في نفس الوقت | ١ فقط |
+| مدة صلاحية البطاقة                 | ٦٠ يومًا من أول ختم           |
+| عدد البطاقات النشطة في نفس الوقت   | ١ فقط                         |
 
 **ملاحظات:**
+
 - الطلب المُلغى لا يُحتسب ختم.
 - الطلب المُسترد (refund) → يُحذف الختم (انظر §13 Clawback).
 - عند اكتمال ٤ أختام → يُنشأ صندوق ذهبي تلقائيًا ويُرسل إشعار FCM.
@@ -243,13 +254,13 @@
 
 ### 6.2 أمثلة الحملات
 
-| الحملة | المُحفّز | الهدية النموذجية |
-|--------|----------|-------------------|
-| "يوم ممطر" | الأدمن يفعّل يدويًا | توصيل مجاني لمدة ٣ ساعات |
-| "ماتش مصر" | الأدمن يفعّل يدويًا | خصم ٢٠ ج.م لمدة ٥ ساعات |
-| "عيد ميلادك" | تاريخ الميلاد في profile | خصم ٢٠ ج.م صالح ٧ أيام |
-| "عيد الفطر / الأضحى" | الأدمن يفعّل يدويًا | صندوق مفاجأة مُحسّن |
-| "مناسبة مخصصة" | الأدمن يكتب اسم وهدية | حسب الأدمن |
+| الحملة               | المُحفّز                 | الهدية النموذجية         |
+| -------------------- | ------------------------ | ------------------------ |
+| "يوم ممطر"           | الأدمن يفعّل يدويًا      | توصيل مجاني لمدة ٣ ساعات |
+| "ماتش مصر"           | الأدمن يفعّل يدويًا      | خصم ٢٠ ج.م لمدة ٥ ساعات  |
+| "عيد ميلادك"         | تاريخ الميلاد في profile | خصم ٢٠ ج.م صالح ٧ أيام   |
+| "عيد الفطر / الأضحى" | الأدمن يفعّل يدويًا      | صندوق مفاجأة مُحسّن      |
+| "مناسبة مخصصة"       | الأدمن يكتب اسم وهدية    | حسب الأدمن               |
 
 **لا يوجد APIs طقس/رياضة/أخبار** — كل شيء manual من داشبورد الأدمن.
 
@@ -316,17 +327,17 @@
 
 يوميًا عبر Cron، نُصنّف كل عميل إلى شريحة واحدة:
 
-| الشريحة | المفتاح | التعريف |
-|---------|---------|---------|
-| عميل جديد | `new_user` | ٠ طلبات أو مسجل أقل من ٧ أيام |
-| شمبانزي (فعّال جدًا) | `champion` | ≥١٠ طلبات في آخر ٣٠ يوم + تقييم متوسط ≥٤ |
-| متوسط النشاط | `regular` | ٣-٩ طلبات في آخر ٣٠ يوم |
-| نائم (معرّض للفقد) | `at_risk` | لم يطلب من ١٤-٢٩ يوم |
-| فاقد (مفقود) | `churned` | لم يطلب منذ ٣٠+ يوم |
-| باحث عن العروض | `bargain_hunter` | ≥٦٠٪ من طلباته استخدمت خصم |
-| متوسط القيمة مرتفع | `high_value` | متوسط قيمة طلب ≥٢٥٠ ج.م |
-| جغرافي نائي | `remote_area` | يطلب في منطقة حول بني سويف الخارجية |
-| مُكتشف (لا تصنيف) | `undefined` | لم تُحسم بياناته بعد |
+| الشريحة              | المفتاح          | التعريف                                  |
+| -------------------- | ---------------- | ---------------------------------------- |
+| عميل جديد            | `new_user`       | ٠ طلبات أو مسجل أقل من ٧ أيام            |
+| شمبانزي (فعّال جدًا) | `champion`       | ≥١٠ طلبات في آخر ٣٠ يوم + تقييم متوسط ≥٤ |
+| متوسط النشاط         | `regular`        | ٣-٩ طلبات في آخر ٣٠ يوم                  |
+| نائم (معرّض للفقد)   | `at_risk`        | لم يطلب من ١٤-٢٩ يوم                     |
+| فاقد (مفقود)         | `churned`        | لم يطلب منذ ٣٠+ يوم                      |
+| باحث عن العروض       | `bargain_hunter` | ≥٦٠٪ من طلباته استخدمت خصم               |
+| متوسط القيمة مرتفع   | `high_value`     | متوسط قيمة طلب ≥٢٥٠ ج.م                  |
+| جغرافي نائي          | `remote_area`    | يطلب في منطقة حول بني سويف الخارجية      |
+| مُكتشف (لا تصنيف)    | `undefined`      | لم تُحسم بياناته بعد                     |
 
 **الجدول المستهدف:** `customer_segments_daily` (snapshot يومي، لا يتغير بأثر رجعي).
 
@@ -339,9 +350,9 @@
   "trigger": "order_completed",
   "conditions": {
     "all": [
-      {"fact": "segment", "op": "eq", "value": "at_risk"},
-      {"fact": "days_since_last_order", "op": ">=", "value": 14},
-      {"fact": "total_orders", "op": ">=", "value": 3}
+      { "fact": "segment", "op": "eq", "value": "at_risk" },
+      { "fact": "days_since_last_order", "op": ">=", "value": 14 },
+      { "fact": "total_orders", "op": ">=", "value": 3 }
     ]
   },
   "action": {
@@ -354,6 +365,7 @@
 ```
 
 **Triggers المدعومة:**
+
 - `order_completed` — عند اكتمال طلب (delivered + payment_completed).
 - `order_cancelled` — عند إلغاء.
 - `user_registered` — تسجيل جديد.
@@ -363,12 +375,15 @@
 - `referral_completed` — إتمام ريفيرال ناجح.
 
 **Facts المتاحة:**
-- `segment`, `total_orders`, `days_since_last_order`, `total_spent`, `avg_order_value`, `city`, `governorate`, `has_used_gift_before`, `referrals_count`, `loyalty_tier`, `stamp_count`, `age_days`.
+
+- `segment`, `total_orders`, `days_since_last_order`, `total_spent`, `avg_order_value`, `city`, `governorate`, `has_used_gift_before`, `referrals_count`, `loyalty_tier`, `stamp_count`, `age_days`, `first_order_from_provider`, `unique_providers_ordered_from`, `last_order_value`.
 
 **Operators:**
+
 - `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `in`, `not_in`, `between`.
 
 **Aggregators:**
+
 - `all` (AND), `any` (OR), `none` (NOT).
 
 ### 8.3 داشبورد القواعد
@@ -378,21 +393,98 @@
 - كل قاعدة يمكن تفعيلها/إيقافها.
 - إحصائيات: عدد المرات التي طُبّقت + تكلفة إجمالية.
 
+### 8.4 قواعد افتراضية مقترحة (تُنشأ مع الـ seed)
+
+**قاعدة 1: "توصيل عليك وتوصيل علينا"**
+
+```json
+{
+  "name": "delivery_on_us_alternating",
+  "trigger": "order_completed",
+  "conditions": {
+    "all": [
+      { "fact": "last_order_value", "op": ">=", "value": 15000 },
+      { "fact": "governorate", "op": "eq", "value": "<beni_suef_id>" }
+    ]
+  },
+  "action": {
+    "gift_type": "free_delivery",
+    "bucket": "mystery",
+    "mystery_wrapper": true,
+    "expiry_days": 7,
+    "message_ar": "طلبك الجاي التوصيل علينا! 🎁"
+  }
+}
+```
+
+- العميل يطلب (توصيل عليه) → يحصل على صندوق فيه "توصيل مجاني للطلب التالي" (توصيل علينا)
+- التكلفة = رسوم توصيل واحدة فقط (الطلب الثاني)
+- يحفّز العميل يطلب مرتين بدل مرة
+
+**قاعدة 2: "أول طلب من محل جديد"**
+
+```json
+{
+  "name": "first_order_new_provider",
+  "trigger": "order_completed",
+  "conditions": {
+    "all": [
+      { "fact": "first_order_from_provider", "op": "eq", "value": true },
+      { "fact": "total_orders", "op": ">=", "value": 2 }
+    ]
+  },
+  "action": {
+    "gift_type": "discount_code",
+    "value_piasters": 1500,
+    "bucket": "welcome",
+    "mystery_wrapper": true,
+    "expiry_days": 7,
+    "message_ar": "جربت محل جديد! هديتك جاهزة 🎉"
+  }
+}
+```
+
+- يحقق هدفين: يكافئ العميل على التنوع + يدعم التجار الجدد
+- `first_order_from_provider` = fact جديد يُحسب بمقارنة `orders.provider_id` مع تاريخ طلبات العميل
+
+**قاعدة 3: "توصيل مجاني من محلات مختارة"**
+
+```json
+{
+  "name": "free_delivery_selected_providers",
+  "trigger": "manual_campaign",
+  "conditions": {
+    "all": [{ "fact": "governorate", "op": "eq", "value": "<beni_suef_id>" }]
+  },
+  "action": {
+    "gift_type": "free_delivery",
+    "applicable_provider_ids": ["<provider_1>", "<provider_2>"],
+    "bucket": "win_back",
+    "mystery_wrapper": true,
+    "expiry_days": 3,
+    "message_ar": "توصيل مجاني من محلاتك المفضلة!"
+  }
+}
+```
+
+- الأدمن يختار مجموعة محلات (مثلاً محلات جديدة تحتاج دعم)
+- الهدية تعمل فقط عند الطلب من هذه المحلات المحددة
+
 ---
 
 ## 9. الريفيرال (Referral) — 20 ج.م كهدية
 
 ### 9.1 القواعد الأساسية
 
-| البند | القيمة |
-|-------|--------|
-| المكافأة للمُحيل (referrer) | **٢٠ ج.م داخل صندوق هدايا** (ليس رصيد نقدي مباشر) |
-| المكافأة للمُحال إليه (referee) | صندوق ترحيب (welcome box) |
-| شرط أول طلب للمُحال إليه | **≥٣٠٠ ج.م** ومكتمل ومُدفوع |
-| تأكيد البريد الإلكتروني | **مطلوب** قبل التفعيل |
-| عدد الريفيرالات/شهر | ١٠ كحد أقصى للمُحيل الواحد |
-| صلاحية الكود | دائم للمُحيل |
-| صلاحية الصندوق بعد المنح | ٧ أيام |
+| البند                           | القيمة                                            |
+| ------------------------------- | ------------------------------------------------- |
+| المكافأة للمُحيل (referrer)     | **٢٠ ج.م داخل صندوق هدايا** (ليس رصيد نقدي مباشر) |
+| المكافأة للمُحال إليه (referee) | صندوق ترحيب (welcome box)                         |
+| شرط أول طلب للمُحال إليه        | **≥٣٠٠ ج.م** ومكتمل ومُدفوع                       |
+| تأكيد البريد الإلكتروني         | **مطلوب** قبل التفعيل                             |
+| عدد الريفيرالات/شهر             | ١٠ كحد أقصى للمُحيل الواحد                        |
+| صلاحية الكود                    | دائم للمُحيل                                      |
+| صلاحية الصندوق بعد المنح        | ٧ أيام                                            |
 
 ### 9.2 ملاحظات ثقافية مهمة
 
@@ -403,6 +495,7 @@
 ### 9.3 رسائل التأكيد
 
 **إيميل تأكيد التسجيل للمُحال إليه:**
+
 ```
 أهلًا بك في إنجزنا!
 صديقك {referrer_name} قدّم لك دعوة خاصة.
@@ -412,6 +505,7 @@
 ```
 
 **إيميل تأكيد الريفيرال للمُحيل:**
+
 ```
 مبروك! صديقك {referee_name} أتمّ أول طلب بنجاح.
 فتحنا لك صندوق هدية بقيمة ٢٠ ج.م في تطبيق إنجزنا.
@@ -435,12 +529,12 @@
 
 ### 10.2 المستويات (Tiers)
 
-| المستوى | النقاط | المزايا |
-|---------|--------|---------|
-| Bronze (برونزي) | ٠-٤٩٩ | الأساسيات |
-| Silver (فضّي) | ٥٠٠-١٤٩٩ | احتمال صندوق مفاجأة أعلى ١٠٪ |
-| Gold (ذهبي) | ١٥٠٠-٤٩٩٩ | توصيل مجاني مرّتين/شهر |
-| Platinum (بلاتيني) | ٥٠٠٠+ | صندوق شهري مضمون + أولوية دعم |
+| المستوى            | النقاط    | المزايا                       |
+| ------------------ | --------- | ----------------------------- |
+| Bronze (برونزي)    | ٠-٤٩٩     | الأساسيات                     |
+| Silver (فضّي)      | ٥٠٠-١٤٩٩  | احتمال صندوق مفاجأة أعلى ١٠٪  |
+| Gold (ذهبي)        | ١٥٠٠-٤٩٩٩ | توصيل مجاني مرّتين/شهر        |
+| Platinum (بلاتيني) | ٥٠٠٠+     | صندوق شهري مضمون + أولوية دعم |
 
 ### 10.3 استخدام النقاط
 
@@ -513,15 +607,15 @@
 
 ### 13.1 الأنواع
 
-| الحدث | القناة | التوقيت |
-|------|-------|---------|
-| منح صندوق هدية | Push + In-app | فورًا |
-| تذكير قبل انتهاء الصلاحية | Push | ٤٨ ساعة قبل |
-| تذكير أخير | Push | ٢ ساعة قبل |
-| اكتمال بطاقة ختم | Push + In-app | فورًا |
-| ريفيرال ناجح (للمُحيل) | Push + Email | فورًا |
-| ترقية مستوى ولاء | Push + In-app | فورًا |
-| حملة Micro-Moment نشطة | Push | بداية الحملة |
+| الحدث                     | القناة        | التوقيت      |
+| ------------------------- | ------------- | ------------ |
+| منح صندوق هدية            | Push + In-app | فورًا        |
+| تذكير قبل انتهاء الصلاحية | Push          | ٤٨ ساعة قبل  |
+| تذكير أخير                | Push          | ٢ ساعة قبل   |
+| اكتمال بطاقة ختم          | Push + In-app | فورًا        |
+| ريفيرال ناجح (للمُحيل)    | Push + Email  | فورًا        |
+| ترقية مستوى ولاء          | Push + In-app | فورًا        |
+| حملة Micro-Moment نشطة    | Push          | بداية الحملة |
 
 ### 13.2 جدول الإشعارات
 
@@ -536,26 +630,64 @@
 
 ---
 
-## 14. فترة السماح للتجار (Grace Period)
+## 14. فترة السماح للتجار (Grace Period) — تعديل النظام الموجود
 
 ### 14.1 الفكرة
 
-كل تاجر جديد له فترة سماح ٦ أشهر بعمولة ٠٪. الأدمن يقدر يعدّل الفترة لكل تاجر على حدة.
+كل تاجر جديد له فترة سماح **شهر واحد (30 يوم) كـ default** بعمولة ٠٪. الأدمن يقدر يعدّل الفترة **لكل تاجر على حدة** عند الموافقة عليه — كأداة تسويقية لفريق المبيعات ("سجّل معانا وهنديك 3 شهور مجاني" مثلاً).
 
-### 14.2 التطبيق
+### 14.2 ⚠️ الوضع الحالي في قاعدة البيانات (DB Discovery)
 
-- عمود `grace_period_months` في جدول `providers` (default 6).
-- عمود `grace_period_start_date` (يُضبط عند approved).
-- الـ settlement engine يفحص هذا لكل تاجر عند الحساب.
-- بعد انتهاء الفترة → العمولة تُطبّق تلقائيًا (٥-٧٪ حسب الإعداد).
+الأعمدة التالية **موجودة بالفعل** على جدول `providers`:
 
-### 14.3 داشبورد الأدمن
+- `grace_period_start` (TIMESTAMPTZ) — يُضبط عند أول طلب ناجح
+- `grace_period_end` (TIMESTAMPTZ) — يُحسب تلقائيًا
+- `commission_status` (ENUM: `in_grace_period`, `active`, `exempt`)
+- `custom_commission_rate` (NUMERIC, nullable)
+- `commission_rate` (NUMERIC, default 7.0)
 
-- `/admin/providers/[id]` → قسم "فترة السماح":
-  - تاريخ البدء.
-  - عدد الشهور المتبقية.
-  - زر "تمديد" / "إنهاء الآن".
-- كل تعديل يُسجّل في `permission_audit_log`.
+الكود الحالي في `src/lib/commission/utils.ts`:
+
+- `COMMISSION_CONFIG.GRACE_PERIOD_DAYS = 90` ← **ثابت عام**
+- دالة `isInGracePeriod()` تفحص `commission_status` و `grace_period_end`
+- Migration `20260210000001` عدّل النظام ليبدأ من أول طلب ناجح
+
+### 14.3 التعديل المطلوب (لا إنشاء نظام جديد)
+
+1. **إضافة عمود واحد فقط** على `providers`:
+   ```sql
+   ALTER TABLE providers ADD COLUMN IF NOT EXISTS grace_period_days INT DEFAULT 30;
+   ```
+2. **تعديل `COMMISSION_CONFIG.GRACE_PERIOD_DAYS`** من `90` إلى قراءة من عمود التاجر:
+   - `commission/utils.ts` → دالة `calculateGracePeriodEnd()` تقرأ `provider.grace_period_days` بدل الثابت `90`
+   - إذا لم يوجد (null) → يستخدم الـ default `30` يوم
+3. **تعديل trigger أول طلب** (`20260210000001`) ليحسب:
+   ```sql
+   grace_period_end = grace_period_start + (grace_period_days || ' days')::interval
+   ```
+
+### 14.4 داشبورد الأدمن
+
+- **عند الموافقة على تاجر جديد** `/admin/providers/[id]`:
+  - حقل "مدة فترة السماح" (dropdown: 30 / 60 / 90 / 180 يوم، أو رقم مخصص)
+  - القيمة تُحفظ في `providers.grace_period_days`
+  - عند الضغط "موافقة" → يُحفظ `grace_period_days` مع تغيير `status` لـ `approved`
+- **بعد الموافقة** — قسم "فترة السماح":
+  - تاريخ البدء (`grace_period_start`)
+  - تاريخ الانتهاء (`grace_period_end`)
+  - الأيام المتبقية
+  - زر "تمديد" → يعدّل `grace_period_end` مباشرة
+  - زر "إنهاء الآن" → يضبط `grace_period_end = NOW()` و `commission_status = 'active'`
+- كل تعديل يُسجّل في `permission_audit_log`
+
+### 14.5 الاستخدام كأداة تسويقية
+
+فريق المبيعات يستطيع التفاوض مع التاجر:
+
+- "سجّل معانا وهنديك **شهر مجاني**" (default)
+- "أنت تاجر كبير — هنديك **3 شهور مجاني**" (90 يوم)
+- "اتفاقية خاصة — **6 شهور بدون عمولة**" (180 يوم)
+- المدة تُعتمد عند الموافقة من الأدمن ولا تتغير تلقائيًا
 
 ---
 
@@ -563,11 +695,11 @@
 
 ### 15.1 الخطط
 
-| الخطة | السعر الشهري | المزايا |
-|-------|---------------|---------|
-| Basic (مجانية) | ٠ ج.م | تقارير مبسطة (إيرادات شهر، عدد طلبات، متوسط تقييم) |
-| Pro | ٢٩٩ ج.م | تحليلات متقدمة (Cohort analysis، ساعات الذروة، أفضل المنتجات، مقارنة مع منافسين) |
-| Elite | ٥٩٩ ج.م | كل Pro + تقارير ديموغرافية + توقعات AI + دعم أولوية |
+| الخطة          | السعر الشهري | المزايا                                                                          |
+| -------------- | ------------ | -------------------------------------------------------------------------------- |
+| Basic (مجانية) | ٠ ج.م        | تقارير مبسطة (إيرادات شهر، عدد طلبات، متوسط تقييم)                               |
+| Pro            | ٢٩٩ ج.م      | تحليلات متقدمة (Cohort analysis، ساعات الذروة، أفضل المنتجات، مقارنة مع منافسين) |
+| Elite          | ٥٩٩ ج.م      | كل Pro + تقارير ديموغرافية + توقعات AI + دعم أولوية                              |
 
 ### 15.2 التطبيق
 
@@ -593,11 +725,13 @@
 ### 16.2 الأقسام
 
 #### 16.2.1 ميزانية التسويق
+
 - استهلاك كل دلو (Mystery, Stamp, Referral, Win-back, Welcome).
 - التوقع حتى نهاية الشهر.
 - مقارنة مع الشهر السابق.
 
 #### 16.2.2 مصاريف تشغيلية
+
 - SaaS fees (Vercel, Supabase, Deepgram, OpenAI, FCM).
 - رواتب الفريق (input يدوي).
 - مكاتب + أدوات.
@@ -605,17 +739,20 @@
 - جدول `operational_expenses` (category، amount، date، notes).
 
 #### 16.2.3 الإيرادات
+
 - عمولات التجار (بعد grace period).
 - رسوم المعالجة (إذا مُفعّلة).
 - اشتراكات التحليلات.
 - Partner Gifts deposits (تدفق نقدي).
 
 #### 16.2.4 التدفق النقدي (Cash Flow)
+
 - رسم بياني شهري (آخر ١٢ شهر).
 - مؤشر Burn Rate.
 - Runway تقديري.
 
 #### 16.2.5 KPIs
+
 - MAU / WAU / DAU.
 - Retention rate (7d, 30d).
 - CAC (Customer Acquisition Cost).
@@ -660,9 +797,22 @@
 
 ## 18. قاعدة البيانات (Database Schema)
 
-### 18.1 الجداول الجديدة (11 جدول)
+### 18.1 الجداول الجديدة والمُعدّلة
+
+**⚠️ تنبيه DB Discovery — جداول موجودة بالفعل (ALTER وليس CREATE):**
+
+| الجدول                   | الحالة   | الأعمدة الموجودة                                                                                                                                                | التعديل المطلوب                                                                                                                                                                                         |
+| ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loyalty_points`         | ✅ موجود | `user_id`, `points_balance`, `lifetime_points`, `tier` (default 'bronze')                                                                                       | لا تعديل مطلوب — الهيكل مطابق                                                                                                                                                                           |
+| `loyalty_transactions`   | ✅ موجود | `user_id`, `order_id`, `points`, `transaction_type`, `description`, `balance_after`                                                                             | لا تعديل مطلوب — الهيكل مطابق                                                                                                                                                                           |
+| `referrals`              | ✅ موجود | `referrer_id`, `referee_id`, `referral_code`, `status`, `referrer_credit` (default 30), `referee_credit` (default 30), `completed_at`, `referee_first_order_id` | تعديل: `ALTER TABLE referrals ALTER COLUMN referrer_credit SET DEFAULT 20; ALTER TABLE referrals ALTER COLUMN referee_credit SET DEFAULT 20;`                                                           |
+| `notifications`          | ✅ موجود | `user_id`, `type` (notification_type ENUM), `title_ar/en`, `message_ar/en`, `order_id`, `provider_id`, `action_url`, `is_read`                                  | notification_type ENUM الحالي: `order_update`, `promo`, `system`, `chat`, `banner_approved`, `banner_rejected` — نحتاج إضافة: `gift_box`, `loyalty`, `referral_reward`, `stamp_complete`, `gift_expiry` |
+| `customer_notifications` | ✅ موجود | `customer_id`, `type` (VARCHAR), `title_ar/en`, `body_ar/en`, `related_order_id`, `related_provider_id`, `is_read`, `data` (JSONB)                              | نستخدم `data` JSONB لتخزين gift_entry_id — مرن بما يكفي                                                                                                                                                 |
+
+**الجداول الجديدة تمامًا (8 جداول):**
 
 #### `gifts`
+
 ```sql
 CREATE TYPE gift_type AS ENUM (
   'discount_code', 'discount_percent', 'free_delivery',
@@ -691,6 +841,7 @@ CREATE TABLE gifts (
 ```
 
 #### `gift_box_entries`
+
 ```sql
 CREATE TYPE gift_entry_status AS ENUM (
   'granted', 'opened', 'used', 'expired', 'revoked', 'forwarded'
@@ -720,6 +871,7 @@ CREATE INDEX idx_gift_box_entries_expires ON gift_box_entries(expires_at) WHERE 
 ```
 
 #### `gift_rules`
+
 ```sql
 CREATE TABLE gift_rules (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -742,6 +894,7 @@ CREATE TABLE gift_rules (
 ```
 
 #### `customer_segments_daily`
+
 ```sql
 CREATE TYPE customer_segment AS ENUM (
   'new_user', 'champion', 'regular', 'at_risk',
@@ -760,6 +913,7 @@ CREATE INDEX idx_segments_date_segment ON customer_segments_daily(snapshot_date,
 ```
 
 #### `gift_stamps`
+
 ```sql
 CREATE TABLE gift_stamps (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -777,6 +931,7 @@ CREATE UNIQUE INDEX idx_active_card_per_user ON gift_stamps(user_id) WHERE is_co
 ```
 
 #### `gift_forwards`
+
 ```sql
 CREATE TABLE gift_forwards (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -793,6 +948,7 @@ CREATE TABLE gift_forwards (
 ```
 
 #### `gift_partner_offers`
+
 ```sql
 CREATE TYPE partner_offer_status AS ENUM (
   'draft', 'pending_approval', 'approved', 'active', 'paused', 'ended', 'rejected'
@@ -817,6 +973,7 @@ CREATE TABLE gift_partner_offers (
 ```
 
 #### `gift_financial_log`
+
 ```sql
 CREATE TYPE financial_log_type AS ENUM (
   'grant', 'use', 'expire', 'revoke', 'clawback', 'partner_deposit', 'partner_refund'
@@ -841,6 +998,7 @@ CREATE INDEX idx_fin_log_provider ON gift_financial_log(funder_provider_id) WHER
 ```
 
 #### `retention_settings`
+
 ```sql
 CREATE TABLE retention_settings (
   id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1), -- single row
@@ -872,6 +1030,7 @@ INSERT INTO retention_settings DEFAULT VALUES;
 ```
 
 #### `provider_subscriptions`
+
 ```sql
 CREATE TYPE subscription_tier AS ENUM ('basic', 'pro', 'elite');
 
@@ -890,6 +1049,7 @@ CREATE TABLE provider_subscriptions (
 ```
 
 #### `operational_expenses`
+
 ```sql
 CREATE TYPE expense_category AS ENUM (
   'saas', 'salary', 'office', 'legal', 'marketing_external', 'other'
@@ -908,20 +1068,50 @@ CREATE TABLE operational_expenses (
 
 ### 18.2 الأعمدة المُضافة على جداول قائمة
 
+**⚠️ تنبيه DB Discovery:** الأعمدة التالية تأخذ في الاعتبار ما هو موجود فعلاً في قاعدة البيانات.
+
 ```sql
+-- ═══════════════════════════════════════════════════════════════
+-- providers: الأعمدة الموجودة بالفعل (لا تُنشأ):
+--   grace_period_start (TIMESTAMPTZ) ✅ موجود
+--   grace_period_end (TIMESTAMPTZ) ✅ موجود
+--   commission_status (commission_status ENUM) ✅ موجود
+--   custom_commission_rate (NUMERIC) ✅ موجود
+-- الأعمدة الجديدة فقط:
+-- ═══════════════════════════════════════════════════════════════
 ALTER TABLE providers
-  ADD COLUMN grace_period_months INT DEFAULT 6,
-  ADD COLUMN grace_period_start_date DATE;
+  ADD COLUMN IF NOT EXISTS grace_period_days INT DEFAULT 30;
+  -- grace_period_months و grace_period_start_date لا نحتاجهم
+  -- النظام الحالي يستخدم grace_period_start/end بالفعل
 
+-- ═══════════════════════════════════════════════════════════════
+-- profiles: الأعمدة الموجودة بالفعل (لا تُنشأ):
+--   referral_code (TEXT, UNIQUE) ✅ موجود
+--   wallet_balance (NUMERIC, default 0.00) ✅ موجود
+--   governorate_id (UUID) ✅ موجود
+--   city_id (UUID) ✅ موجود
+-- الأعمدة الجديدة فقط:
+-- ═══════════════════════════════════════════════════════════════
 ALTER TABLE profiles
-  ADD COLUMN loyalty_tier TEXT DEFAULT 'bronze',
-  ADD COLUMN loyalty_points_cache INT DEFAULT 0,
-  ADD COLUMN birthdate DATE,
-  ADD COLUMN last_segment customer_segment;
+  ADD COLUMN IF NOT EXISTS loyalty_tier TEXT DEFAULT 'bronze',
+  ADD COLUMN IF NOT EXISTS loyalty_points_cache INT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS birthdate DATE,
+  ADD COLUMN IF NOT EXISTS last_segment customer_segment;
 
+-- ═══════════════════════════════════════════════════════════════
+-- orders: الأعمدة الموجودة بالفعل (لا تُنشأ):
+--   discount (NUMERIC, default 0) ✅ موجود — اسم العمود "discount" وليس "discount_amount"
+--   promo_code (TEXT) ✅ موجود
+--   settlement_status (TEXT) ✅ موجود
+--   idempotency_key (UUID) ✅ موجود
+-- الأعمدة الجديدة فقط:
+-- ═══════════════════════════════════════════════════════════════
 ALTER TABLE orders
-  ADD COLUMN gift_entry_id UUID REFERENCES gift_box_entries(id),
-  ADD COLUMN processing_fee_piasters BIGINT DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS gift_entry_id UUID REFERENCES gift_box_entries(id),
+  ADD COLUMN IF NOT EXISTS processing_fee_piasters BIGINT DEFAULT 0;
+  -- ملاحظة: عمود الخصم الحالي اسمه "discount" (NUMERIC, default 0)
+  -- عند استخدام هدية، نكتب قيمة الخصم في "discount" نفسه
+  -- و gift_entry_id يربط الطلب بالهدية المُستخدمة
 ```
 
 ### 18.3 RLS Policies
@@ -945,46 +1135,147 @@ ALTER TABLE orders
 ## 19. خطة التنفيذ الموزّعة (17 مرحلة، ~37 يومًا)
 
 ### Phase 0 — مراجعة قاعدة البيانات + SQL للمستخدم (١-٢ أيام)
+
 - راجع كل الـ migrations الحالية.
 - ابنِ SQL script واحد شامل لكل الجداول الجديدة والأعمدة.
 - أعطِ المستخدم الـ SQL للتشغيل على Supabase بعد مراجعته.
 - **لا تُشغّل الـ migration على الإنتاج قبل موافقة المستخدم.**
 
+**⚠️ SQL استكشاف قاعدة البيانات الإلزامي (يُشغّل أولًا على Supabase SQL Editor):**
+
+```sql
+-- ═══════════════════════════════════════════════════════════════
+-- Phase 0: DB Discovery — شغّل هذا قبل أي migration
+-- ═══════════════════════════════════════════════════════════════
+
+-- 1. استكشاف أعمدة الجداول المتأثرة
+SELECT table_name, column_name, data_type, column_default, is_nullable
+FROM information_schema.columns
+WHERE table_schema = 'public'
+AND table_name IN (
+  'profiles', 'providers', 'orders', 'loyalty_points',
+  'loyalty_transactions', 'referrals', 'settlements',
+  'notifications', 'customer_notifications', 'promo_codes',
+  'promo_code_usage', 'commission_settings', 'notification_preferences'
+)
+ORDER BY table_name, ordinal_position;
+
+-- 2. استكشاف الـ enums الموجودة (لتجنب إعادة إنشائها)
+SELECT t.typname AS enum_name, e.enumlabel AS enum_value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+WHERE t.typname IN (
+  'notification_type', 'commission_status', 'order_status',
+  'payment_status', 'payment_method', 'provider_status',
+  'user_role', 'refund_status', 'refund_method'
+)
+ORDER BY t.typname, e.enumsortorder;
+
+-- 3. استكشاف الـ RLS policies على الجداول المتأثرة
+SELECT tablename, policyname, cmd, permissive
+FROM pg_policies
+WHERE schemaname = 'public'
+AND tablename IN (
+  'loyalty_points', 'loyalty_transactions', 'referrals',
+  'notifications', 'customer_notifications', 'profiles', 'orders'
+)
+ORDER BY tablename, policyname;
+
+-- 4. استكشاف الـ functions المالية الموجودة
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_schema = 'public'
+AND (routine_name LIKE '%settlement%'
+  OR routine_name LIKE '%commission%'
+  OR routine_name LIKE '%grace%'
+  OR routine_name LIKE '%refund%')
+ORDER BY routine_name;
+
+-- 5. فحص هل الجداول الجديدة تتعارض مع جداول موجودة
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public'
+AND table_name IN (
+  'gifts', 'gift_box_entries', 'gift_rules', 'gift_stamps',
+  'gift_forwards', 'gift_partner_offers', 'gift_financial_log',
+  'retention_settings', 'customer_segments_daily',
+  'provider_subscriptions', 'operational_expenses'
+);
+-- إذا رجعت نتائج → الجدول موجود بالفعل → استخدم ALTER بدل CREATE
+
+-- 6. فحص الـ indexes الموجودة على الجداول المتأثرة
+SELECT indexname, tablename, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+AND tablename IN ('loyalty_points', 'loyalty_transactions', 'referrals', 'orders', 'profiles')
+ORDER BY tablename;
+
+-- 7. فحص إعدادات العمولة الحالية
+SELECT * FROM commission_settings LIMIT 5;
+
+-- 8. فحص الـ triggers الموجودة على orders
+SELECT trigger_name, event_manipulation, action_statement
+FROM information_schema.triggers
+WHERE event_object_table = 'orders'
+AND trigger_schema = 'public';
+```
+
+**⚠️ نتائج DB Discovery الفعلية (تم التشغيل ٢١ أبريل ٢٠٢٦):**
+
+- `platform_settings` → **غير موجود** — الإعدادات في `commission_settings` + code defaults
+- `loyalty_points` → **موجود** بأعمدة: `user_id`, `points_balance`, `lifetime_points`, `tier`
+- `loyalty_transactions` → **موجود** بأعمدة: `user_id`, `order_id`, `points`, `transaction_type`, `description`, `balance_after`
+- `referrals` → **موجود** بقيم default: `referrer_credit = 30`, `referee_credit = 30` (تحتاج تعديل لـ 20)
+- `orders.discount` → اسم العمود **`discount`** وليس `discount_amount` (NUMERIC, default 0)
+- `providers.grace_period_start/end` → **موجودين** — لا نحتاج `grace_period_months`
+- `notification_type` ENUM → يحتوي: `order_update`, `promo`, `system`, `chat`, `banner_approved`, `banner_rejected`
+- `profiles.referral_code` → **موجود** (TEXT, UNIQUE)
+- `profiles.wallet_balance` → **موجود** (NUMERIC, default 0.00)
+- `admin_users.id` → UUID مستقل (ليس = `auth.uid()`) — يحتاج lookup: `SELECT id FROM admin_users WHERE user_id = auth.uid()`
+
 ### Phase 1 — كلاس Money + Helpers + Settlement Hooks (٢ أيام)
+
 - راجع `src/lib/finance/money.ts`.
 - أضف helpers لحساب تكلفة الهدية، clawback، ميزانية الدلو.
 - اختبر كل حالة حافة (0 piasters, negative, overflow).
 
 ### Phase 2 — Gift Engine Core (٣ أيام)
+
 - `src/lib/gifts/engine.ts` — grantGift، useGift، expireGift، revokeGift.
 - كل عملية transactional مع gift_financial_log.
 - اختبارات unit شاملة.
 
 ### Phase 3 — Rule Engine (٣ أيام)
+
 - `src/lib/gifts/rule-engine.ts` — parser للـ JSONB conditions.
 - دعم كل الـ facts والـ operators والـ aggregators.
 - triggers واضحة: كيف ومتى يُستدعى الـ engine.
 
 ### Phase 4 — Customer Segmentation Cron (٢ أيام)
+
 - Cron job يومي (Supabase pg_cron).
 - يحسب الشرائح لكل العملاء ويكتبها في `customer_segments_daily`.
 - يُحدّث `profiles.last_segment` و `loyalty_tier`.
 
 ### Phase 5 — Mystery Box Logic + UI (٣ أيام)
+
 - weighted random picker.
 - Framer Motion animation للفتح.
 - صفحة `/rewards/mystery` + widget في الصفحة الرئيسية.
 
 ### Phase 6 — Stamp Card Logic + UI (٢ أيام)
+
 - trigger عند `order_completed`.
 - صفحة `/rewards/stamp-card`.
 - widget progress bar.
 
 ### Phase 7 — Welcome + Win-back Flows (٢ أيام)
+
 - قواعد افتراضية في `gift_rules` للترحيب والاستعادة.
 - اختبار end-to-end.
 
 ### Phase 8 — Referral System (٣ أيام)
+
 - صفحة `/referral` للعميل.
 - تأكيد الإيميل.
 - trigger عند إتمام أول طلب ≥٣٠٠ ج.م.
@@ -992,46 +1283,55 @@ ALTER TABLE orders
 - حد ١٠ شهريًا لكل مستخدم.
 
 ### Phase 9 — Partner Gifts (٣ أيام)
+
 - صفحة التاجر `/provider/gifts`.
 - صفحة الأدمن `/admin/gifts/partners`.
 - deposit + approval workflow.
 
 ### Phase 10 — Micro-Moments Campaigns (٢ أيام)
+
 - صفحة الأدمن `/admin/gifts/campaigns`.
 - triggers يدوية + birthday cron.
 - لوحة real-time للاستهلاك.
 
 ### Phase 11 — Gift-it Forward (٢ أيام)
+
 - توليد الرابط، WhatsApp share.
 - صفحة الاستلام `/gift/[token]`.
 - مكافحة الاحتيال الأساسية.
 
 ### Phase 12 — Loyalty Points + Tiers (٢ أيام)
+
 - trigger لكل `order_completed`.
 - صفحة `/rewards/points`.
 - tier badges في الـ profile.
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
+
 - كل صفحات `/admin/gifts/*`.
 - الأمان + RLS + audit log.
 - Charts (Recharts).
 
 ### Phase 14 — ERP Page (٣ أيام)
+
 - `/admin/erp` مع كل الأقسام.
 - تصدير Excel + PDF.
 - KPIs calculation.
 
 ### Phase 15 — Provider Analytics Subscriptions (٢ أيام)
+
 - billing flow + payment via settlements.
 - upgrade/downgrade UI.
 - feature gating per tier.
 
 ### Phase 16 — Notifications + Reminders (٢ أيام)
+
 - Push (FCM) + Email + In-app.
 - Cron reminder قبل انتهاء الهدايا.
 - AR/EN كامل.
 
 ### Phase 17 — E2E Tests + Observability (٢ أيام)
+
 - Playwright tests لكل flow حرج.
 - dashboards في Supabase logs.
 - alerts للأدمن عند شذوذ ميزانية.
@@ -1052,31 +1352,101 @@ ALTER TABLE orders
 ## 21. ملاحظات تقنية حرجة
 
 ### 21.1 تجنب float في المال
+
 كل حساب مالي عبر `Money` class فقط. استخدم `Money.fromPounds(20)` لتحويل ٢٠ ج.م إلى ٢٠٠٠ piasters. استخدم `.percent(3)` لحساب ٣٪ — ليس `amount * 0.03`.
 
 ### 21.2 تجنب RLS infinite recursion
+
 عند إضافة RLS policies على جداول تتضمن references متبادلة، استخدم `SECURITY DEFINER` functions. تجنّب `!foreign_key` syntax في Supabase queries لعلاقات nullable.
 
 ### 21.3 Transactional Integrity
+
 كل عملية grantGift/useGift/clawback في RPC function واحد على Supabase، بحيث لا يُسجّل شيء جزئيًا. استخدم `BEGIN ... COMMIT` بوضوح.
 
 ### 21.4 Race Conditions على الميزانية
+
 عند تزاحم طلبات منح هدايا في نفس اللحظة، استخدم `SELECT ... FOR UPDATE` على صف الدلو في `retention_settings` لتجنب التجاوز.
 
 ### 21.5 Idempotency
+
 كل endpoint منح هدية يقبل `idempotency_key` لمنع التكرار العرضي (مهم لـ webhooks وإعادة المحاولة).
 
 ### 21.6 مراقبة الميزانية (Observability)
+
 كل ١٥ دقيقة، Cron يحسب استهلاك كل دلو ويُرسل alert للأدمن إذا تجاوز ٨٠٪.
 
 ### 21.7 Beni Suef Pilot
+
 - كل القواعد الافتراضية مُقيّدة بـ `governorate_id = <Beni Suef>`.
 - قبل التوسع، يُراجع التحليل الشهري ويُقرّر المستخدم التوسع.
 
 ### 21.8 الخصوصية (Privacy)
+
 - عيد الميلاد اختياري (opt-in).
 - بيانات الشرائح لا تُعرض على العميل نفسه.
 - Gift Forward لا يكشف رقم الهاتف بين الطرفين.
+
+### 21.9 تكامل Checkout (ملف `src/app/[locale]/checkout/page.tsx`)
+
+الـ Checkout الحالي يحتوي:
+
+- `promoCodeInput` + `appliedPromoCode` + `discountAmount` (state variables)
+- نظام validation كامل عبر `/api/promo/validate`
+- عمود `orders.discount` (NUMERIC, default 0) و `orders.promo_code` (TEXT)
+
+**التعديل المطلوب:**
+
+- إضافة قسم "الخصم" في الـ Checkout يعرض 3 خيارات:
+  1. **كود خصم** (الموجود حاليًا — `promoCodeInput`)
+  2. **هدية من الصندوق** (قائمة هدايا متاحة من `gift_box_entries` حيث `status IN ('granted', 'opened')`)
+  3. **نقاط ولاء** (استبدال 100 نقطة = 5 ج.م)
+- **سياسة الخصم الواحد (§11):** عند اختيار أحدها → باقي الخيارات تُعطّل
+- المتغير المشترك: `discountAmount` — يُملأ من أي مصدر
+- عند استخدام هدية: `orders.gift_entry_id` يُربط + `orders.discount` يُملأ بقيمة الهدية
+- **استثناء:** `free_delivery` يمكن جمعها مع كوبون خصم (لأن `delivery_fee` بند منفصل)
+
+### 21.10 جدول Cron Jobs الزمني
+
+| Cron Job                 | الوقت (Cairo)    | التكرار      | الملاحظات                                      |
+| ------------------------ | ---------------- | ------------ | ---------------------------------------------- |
+| Settlement generation    | 00:00            | يومي         | **موجود** — لا يتعارض                          |
+| Settlement overdue check | 06:00            | يومي         | **موجود**                                      |
+| Expire pending payments  | كل 30 دقيقة      | مستمر        | **موجود**                                      |
+| Customer segmentation    | 02:00            | يومي         | **جديد** — بعد الـ settlement                  |
+| Birthday gifts           | 03:00            | يومي         | **جديد** — بعد الـ segmentation                |
+| Gift expiry + reminders  | 08:00 و 20:00    | مرتين يوميًا | **جديد** — أوقات نشاط العملاء                  |
+| Budget monitoring        | كل 15 دقيقة      | مستمر        | **جديد** — alert عند 80%                       |
+| Clawback processing      | كل 15 دقيقة      | مستمر        | **جديد** — يفحص refunds جديدة                  |
+| Monthly budget reset     | 00:30 أول كل شهر | شهري         | **جديد** — يُصفّر spent الدلاء                 |
+| Rule Engine daily run    | 04:00            | يومي         | **جديد** — يُشغّل قواعد `daily_segment_update` |
+
+### 21.11 Supabase Realtime
+
+الجداول التالية تحتاج `ALTER PUBLICATION` لدعم التحديث الفوري:
+
+- `gift_box_entries` — لتحديث أيقونة الصندوق live عند منح هدية جديدة
+- `gift_stamps` — لتحديث شريط التقدم مباشرة بعد الطلب
+- `loyalty_points` — لتحديث رصيد النقاط فورًا
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE gift_box_entries;
+ALTER PUBLICATION supabase_realtime ADD TABLE gift_stamps;
+-- loyalty_points قد يكون مُضافًا بالفعل — يُفحص أولاً
+```
+
+### 21.12 خطة التراجع (Rollback Plan)
+
+لكل migration، يُكتب `DOWN` script جاهز:
+
+| المرحلة             | Rollback                                                                                                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 0 (DB)        | `DROP TABLE IF EXISTS gifts, gift_box_entries, gift_rules, ...` + `ALTER TABLE providers DROP COLUMN IF EXISTS grace_period_days` |
+| Phase 1-2 (Backend) | حذف الملفات الجديدة في `src/lib/gifts/` — لا تأثير على الكود الموجود                                                              |
+| Phase 3 (Admin)     | حذف صفحات `/admin/gifts/*` — AdminSidebar يعود لوضعه السابق                                                                       |
+| Phase 4 (Customer)  | حذف صفحة `/rewards/*` + إزالة قسم الهدايا من Checkout                                                                             |
+| Phase 5 (Loyalty)   | `TRUNCATE loyalty_transactions; UPDATE loyalty_points SET points_balance = 0;`                                                    |
+
+**قاعدة الأمان:** كل migration ملف منفصل + كل جدول `IF NOT EXISTS` + كل عمود `IF NOT EXISTS` — بحيث إعادة التشغيل آمنة (idempotent).
 
 ---
 
@@ -1084,22 +1454,22 @@ ALTER TABLE orders
 
 هذه القيم الافتراضية التي اخترتها. **راجعها وأكّد أو عدّل:**
 
-| البند | القيمة المقترحة |
-|-------|-----------------|
-| توزيع احتمالات Mystery Box | ٤٠/٢٥/٢٠/١٠/٤/١ (كما في §3.2) |
-| قيمة الصندوق الذهبي الافتراضية | ٥٠ ج.م |
-| الحد الأقصى للصندوق الذهبي | ١٠٠ ج.م |
-| مكافأة Gift-it Forward للمرسل | ١٠ نقاط ولاء |
-| مكافأة عيد الميلاد | صندوق مفاجأة محسّن بقيمة ≤٢٠ ج.م |
-| هل Partner Gifts تحتاج موافقة الأدمن؟ | **نعم** (pending_approval → approved) |
-| هل التاجر يضع deposit بالكامل قبل التفعيل؟ | **نعم** (١٠٠٪ من الميزانية) |
-| مدة صلاحية بطاقة الختم | ٦٠ يومًا |
-| الحد الأدنى للطلب المؤهل للختم | ٥٠ ج.م |
-| مدة صلاحية هدية Gift-it Forward | ٤٨ ساعة لقبولها |
-| الشرائح: حد "champion" | ≥١٠ طلبات في ٣٠ يوم + تقييم ≥٤ |
-| الشرائح: حد "high_value" | متوسط طلب ≥٢٥٠ ج.م |
-| الشرائح: حد "bargain_hunter" | ≥٦٠٪ من الطلبات بها خصم |
-| Pilot city | بني سويف فقط حتى مراجعة شهرية |
+| البند                                      | القيمة المقترحة                       |
+| ------------------------------------------ | ------------------------------------- |
+| توزيع احتمالات Mystery Box                 | ٤٠/٢٥/٢٠/١٠/٤/١ (كما في §3.2)         |
+| قيمة الصندوق الذهبي الافتراضية             | ٥٠ ج.م                                |
+| الحد الأقصى للصندوق الذهبي                 | ١٠٠ ج.م                               |
+| مكافأة Gift-it Forward للمرسل              | ١٠ نقاط ولاء                          |
+| مكافأة عيد الميلاد                         | صندوق مفاجأة محسّن بقيمة ≤٢٠ ج.م      |
+| هل Partner Gifts تحتاج موافقة الأدمن؟      | **نعم** (pending_approval → approved) |
+| هل التاجر يضع deposit بالكامل قبل التفعيل؟ | **نعم** (١٠٠٪ من الميزانية)           |
+| مدة صلاحية بطاقة الختم                     | ٦٠ يومًا                              |
+| الحد الأدنى للطلب المؤهل للختم             | ٥٠ ج.م                                |
+| مدة صلاحية هدية Gift-it Forward            | ٤٨ ساعة لقبولها                       |
+| الشرائح: حد "champion"                     | ≥١٠ طلبات في ٣٠ يوم + تقييم ≥٤        |
+| الشرائح: حد "high_value"                   | متوسط طلب ≥٢٥٠ ج.م                    |
+| الشرائح: حد "bargain_hunter"               | ≥٦٠٪ من الطلبات بها خصم               |
+| Pilot city                                 | بني سويف فقط حتى مراجعة شهرية         |
 
 ---
 
@@ -1137,6 +1507,21 @@ ALTER TABLE orders
 
 ---
 
-**الإصدار:** 2.0 — Gift Box Edition
+**الإصدار:** 2.1 — Gift Box Edition (DB Discovery Corrections)
 **آخر تحديث:** ٢١ أبريل ٢٠٢٦
 **الحالة:** جاهز للمراجعة قبل البدء
+
+### ملخص تعديلات v2.1
+
+1. ✅ حل تعارض Grace Period — استخدام النظام الموجود + `grace_period_days` per-provider (default 30 يوم)
+2. ✅ إضافة SQL استكشاف قاعدة البيانات لـ Phase 0 مع نتائج DB Discovery الفعلية
+3. ✅ توضيح أن `loyalty_points`, `loyalty_transactions`, `referrals` موجودين بالفعل (ALTER مش CREATE)
+4. ✅ توضيح أن `service_fee` موجودة في `commission_settings` + code defaults (لا `platform_settings`)
+5. ✅ تصحيح اسم العمود `orders.discount` (وليس `discount_amount`)
+6. ✅ إضافة قاعدة "توصيل عليك وتوصيل علينا" كـ default rule
+7. ✅ إضافة fact `first_order_from_provider` وقاعدة "أول طلب من محل جديد"
+8. ✅ إضافة تفصيل Checkout Integration (§21.9)
+9. ✅ إضافة جدول Cron Jobs الزمني (§21.10)
+10. ✅ إضافة Supabase Realtime requirements (§21.11)
+11. ✅ إضافة Rollback Plan (§21.12)
+12. ✅ تصحيح `admin_users.id` ≠ `auth.uid()` — يحتاج lookup
