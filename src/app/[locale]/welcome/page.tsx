@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         : 'Engezna - Your Daily Home Essentials',
     description:
       locale === 'ar'
-        ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة'
-        : 'For your daily home essentials from the nearest merchant - no service fees',
+        ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - رسوم خدمة منخفضة'
+        : 'For your daily home essentials from the nearest merchant - low service fees',
     alternates: {
       canonical: `https://www.engezna.com/${locale}/welcome`,
       languages: {
@@ -103,8 +103,8 @@ const features_ar = [
   },
   {
     Icon: ShieldCheck,
-    title: 'بدون رسوم خدمة',
-    description: '0% رسوم خدمة على طلباتك - ادفع فقط ثمن الطلب والتوصيل',
+    title: 'رسوم خدمة منخفضة',
+    description: 'حاليًا 0% رسوم خدمة على طلباتك - ادفع ثمن الطلب والتوصيل فقط',
     color: 'bg-green-50 text-green-600',
   },
   {
@@ -142,8 +142,8 @@ const features_en = [
   },
   {
     Icon: ShieldCheck,
-    title: 'No Service Fees',
-    description: '0% service fees on your orders - pay only for your order and delivery',
+    title: 'Low Service Fees',
+    description: 'Currently 0% service fees on your orders - pay only for your order and delivery',
     color: 'bg-green-50 text-green-600',
   },
   {
@@ -228,8 +228,8 @@ export default async function WelcomePage({ params }: PageProps) {
               </h1>
               <p className="text-lg text-slate-600 mb-6">
                 {isRTL
-                  ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - بدون رسوم خدمة'
-                  : 'For your daily home essentials from the nearest merchant - no service fees'}
+                  ? 'لتلبية احتياجات بيتك اليومية من أقرب تاجر - رسوم خدمة منخفضة'
+                  : 'For your daily home essentials from the nearest merchant - low service fees'}
               </p>
 
               <Link href={`/${locale}/profile/governorate`}>
@@ -298,8 +298,8 @@ export default async function WelcomePage({ params }: PageProps) {
             </h2>
             <p className="text-slate-600 text-center mb-8 max-w-xl mx-auto">
               {isRTL
-                ? 'تجربة طلب مختلفة - سهلة وسريعة ومن غير رسوم خدمة'
-                : 'A different ordering experience - easy, fast, and with no service fees'}
+                ? 'تجربة طلب مختلفة - سهلة وسريعة ورسوم خدمة منخفضة'
+                : 'A different ordering experience - easy, fast, and with low service fees'}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

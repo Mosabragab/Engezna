@@ -29,7 +29,7 @@
 #### Key Differentiator
 
 - **30-day 0% commission** (configurable per merchant) then **max 7%** (vs competitors' 25-30%)
-- **0% customer service fees** - always!
+- **0% customer service fees** (currently — subject to change with notice)
 - Providers manage their own operations
 - Arabic-first user experience with full RTL support
 
@@ -140,7 +140,7 @@ engezna/
 #### ميزتنا الرئيسية
 
 - **30 يوم بدون عمولة** (قابل للتعديل لكل تاجر) ثم **حد أقصى 7%** (مقارنة بـ 25-30% للمنافسين)
-- **0% رسوم خدمة للعملاء** - دائماً!
+- **0% رسوم خدمة للعملاء** (حاليًا — قابلة للتعديل مع إشعار مسبق)
 - المتاجر تدير عملياتها بشكل مستقل
 - تجربة مستخدم بالعربية أولاً مع دعم RTL كامل
 

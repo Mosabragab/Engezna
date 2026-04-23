@@ -42,7 +42,7 @@ export default function AboutPage() {
         {
           icon: Shield,
           title: 'العدالة',
-          description: 'رسوم منخفضة للجميع - 7% فقط كحد أقصى للتجار، صفر للعملاء',
+          description: 'رسوم منخفضة للجميع - 7% فقط كحد أقصى للتجار، حاليًا بدون رسوم خدمة للعملاء',
         },
         {
           icon: MapPin,
@@ -63,8 +63,8 @@ export default function AboutPage() {
       numbersTitle: 'إنجزنا بالأرقام',
       numbers: [
         { value: '7%', label: 'عمولة كحد أقصى' },
-        { value: '0%', label: 'رسوم خدمة للعملاء' },
-        { value: '3', label: 'شهور بدون عمولة' },
+        { value: '0%', label: 'رسوم خدمة للعملاء (حاليًا)' },
+        { value: '30', label: 'يوم بدون عمولة' },
         { value: '24/7', label: 'خدمة متاحة' },
       ],
       companyTitle: 'معلومات الشركة',

@@ -1,22 +1,29 @@
 # خطة تعديل السياسات على الواجهة الأمامية
 
 **الحالة:** مُوثّقة — تُنفّذ عند تفعيل رسوم المعالجة
-**تاريخ التوثيق:** ٢٢ أبريل ٢٠٢٦
-**القرار الحالي:** رسوم المعالجة مُعطّلة — النصوص تبقى كما هي حتى التفعيل
+**تاريخ التوثيق:** ٢٢ أبريل ٢٠٢٦ (محدّث ٢٣ أبريل ٢٠٢٦)
+**القرار الحالي:** تم تليين اللغة من "دائمًا" إلى "حاليًا" لتجنب الالتزام القانوني طويل المدى
 
 ---
 
-## المواقع التي تذكر "0% رسوم خدمة"
+## المواقع التي عُدّلت (تليين اللغة)
 
-| #   | الملف                               | السطر            | النص الحالي                         | التعديل المطلوب عند التفعيل     |
-| --- | ----------------------------------- | ---------------- | ----------------------------------- | ------------------------------- |
-| 1   | `src/app/[locale]/welcome/page.tsx` | meta description | "بدون رسوم خدمة"                    | "رسوم معالجة بسيطة" أو إزالة    |
-| 2   | `src/app/[locale]/welcome/page.tsx` | feature card     | "0% رسوم خدمة على طلباتك"           | "رسوم معالجة بسيطة على الطلبات" |
-| 3   | `src/app/[locale]/welcome/page.tsx` | EN feature       | "No Service Fees / 0% service fees" | "Low processing fees"           |
-| 4   | `src/app/[locale]/about/page.tsx`   | value statement  | "صفر للعملاء"                       | تعديل أو إزالة                  |
-| 5   | `src/app/[locale]/about/page.tsx`   | stat             | "0% رسوم خدمة للعملاء"              | تعديل أو إزالة                  |
-| 6   | `src/app/[locale]/layout.tsx`       | meta keywords    | "no service fees"                   | إزالة من keywords               |
-| 7   | `src/hooks/sdui/useSDUI.ts`         | subtitle         | "بدون رسوم خدمة"                    | تعديل                           |
+| #   | الملف                                            | التعديل الذي تم                                                                      |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| 1   | `README.md` (EN + AR)                            | حذف "always!/دائماً!" → "(currently — subject to change with notice)"                |
+| 2   | `src/app/[locale]/welcome/page.tsx` feature card | "بدون رسوم خدمة" → "رسوم خدمة منخفضة" + "حاليًا 0% رسوم خدمة"                        |
+| 3   | `src/app/[locale]/welcome/page.tsx` EN feature   | "No Service Fees" → "Low Service Fees" + "Currently 0%"                              |
+| 4   | `src/app/[locale]/welcome/page.tsx` meta         | "no service fees" → "low service fees" (EN + AR)                                     |
+| 5   | `src/app/[locale]/welcome/page.tsx` body         | "من غير رسوم خدمة" → "رسوم خدمة منخفضة"                                              |
+| 6   | `src/app/[locale]/about/page.tsx` value          | "صفر للعملاء" → "حاليًا بدون رسوم خدمة للعملاء"                                      |
+| 7   | `src/app/[locale]/about/page.tsx` stat           | "0% رسوم خدمة للعملاء" → "0% رسوم خدمة للعملاء (حاليًا)" + تحديث "3 شهور" → "30 يوم" |
+
+## المواقع المتبقية (للتعديل عند تفعيل رسوم المعالجة)
+
+| #   | الملف                         | السطر         | التعديل المطلوب                     |
+| --- | ----------------------------- | ------------- | ----------------------------------- |
+| 1   | `src/app/[locale]/layout.tsx` | meta keywords | إزالة "no service fees" من keywords |
+| 2   | `src/hooks/sdui/useSDUI.ts`   | subtitle      | تعديل "بدون رسوم خدمة" عند التفعيل  |
 
 ## ملاحظات قانونية
 
