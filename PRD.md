@@ -27,7 +27,7 @@ local businesses and creating economic opportunities through fair, transparent p
 
 **Key Differentiator:**
 
-- **3 months 0% commission** then **max 7%** (vs competitors' 25-30%)
+- **30-day 0% commission** (configurable per merchant) then **max 7%** (vs competitors' 25-30%)
 - **0% customer service fees** - always!
 - Providers manage their own delivery staff
 - Arabic-first UX with full RTL support
