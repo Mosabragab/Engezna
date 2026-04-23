@@ -82,8 +82,25 @@
 - B2C local marketplace for daily home needs — Egypt, starting from Upper Egypt
 - Engezna is NOT a delivery app — delivery is always the merchant's responsibility
 - Engezna connects local stores with customers; it does not provide delivery services
-- 3 months 0% commission, then max 7% (vs competitors' 25-30%)
-- 6 business categories: Restaurant, Cafe, Supermarket, Juice, Pharmacy, Vegetables
+- **30 days 0% commission (default, configurable per-provider by admin)**, then max 7% (vs competitors' 25-30%)
+- 6 business categories: Restaurant, Coffee & Patisserie, Supermarket, Pharmacy, Vegetables & Fruits, **Home-Cooked Food (أكل بيتي)**
+- **Expansion strategy:** Capital city of each governorate first, stabilize, then expand to secondary cities
+- **AOV (Average Order Value):** 300 EGP (used in all financial calculations)
+
+### Leadership
+
+- **CEO & Co-founder:** Dr. Amanallah Sadek (د. أمان الله صادق)
+- **Founder:** Mosab (مصعب)
+
+### Gift Box + Loyalty System (Planned)
+
+- **Plan document:** [docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md](docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md) — **this is the single source of truth for all retention system decisions**
+- Mystery Box, Stamp Card (4 stamps × 300+ EGP), Loyalty Points, Referral (20 EGP), Partner Gifts, Gift-it Forward
+- Gift values are tiered: 10/15/20 EGP based on order value (300-499/500-799/800+)
+- Minimum order for any gift/stamp/referral: **300 EGP**
+- Monthly marketing budget: 20,000 EGP (5 buckets with caps)
+- Rule Engine for automated gift distribution
+- Clawback is fault-based: no penalty for provider/delivery errors
 
 ### Key Patterns
 
@@ -132,6 +149,12 @@ settlement_status: pending | processing | completed | failed | overdue | cancell
 | `src/types/finance.ts`                                               | Finance TypeScript types          |
 | `src/app/api/cron/settlements/route.ts`                              | Daily settlement cron job         |
 
+### Retention System (Gift Box + Loyalty) — Planned
+
+| File                                     | Purpose                              |
+| ---------------------------------------- | ------------------------------------ |
+| `docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md` | Master plan (single source of truth) |
+
 ### Admin
 
 | File                                          | Purpose                |
@@ -170,17 +193,17 @@ settlement_status: pending | processing | completed | failed | overdue | cancell
 
 ## Lessons Learned
 
-| Problem                                    | Root Cause                                                       | Solution                                                                     |
-| ------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `CREATE POLICY IF NOT EXISTS` fails        | PostgreSQL doesn't support it                                    | Use `DO $$ ... END $$` with `pg_policies` check                              |
-| Supabase JOIN excludes NULL relations      | `!foreign_key` creates INNER JOIN                                | Use separate queries + manual mapping                                        |
-| Admin analytics show zeros for governorate | Old orders lack geographic IDs                                   | Hybrid filtering: match by ID first, fallback to name                        |
-| Products disappear on JOIN                 | Nullable category_id excluded                                    | Separate queries instead of JOIN                                             |
-| Dropdown closes on hover                   | CSS gap between trigger and menu                                 | Use `mt-0` and `top-full`                                                    |
-| RTL arrows wrong direction                 | Hardcoded arrow icons                                            | Check `isRTL` and swap icons                                                 |
-| Ghost buttons invisible                    | No hover background defined                                      | Add `hover:bg-muted`                                                         |
-| Partial refunds zero entire commission     | No proportional reduction                                        | `commission_reduction = original_commission * (refund_amount / order_total)` |
-| Grace period config conflict               | `COMMISSION_CONFIG.GRACE_PERIOD_DAYS = 90` vs `defaults.ts: 180` | Needs resolution — verify which is authoritative                             |
+| Problem                                    | Root Cause                                                       | Solution                                                                                          |
+| ------------------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `CREATE POLICY IF NOT EXISTS` fails        | PostgreSQL doesn't support it                                    | Use `DO $$ ... END $$` with `pg_policies` check                                                   |
+| Supabase JOIN excludes NULL relations      | `!foreign_key` creates INNER JOIN                                | Use separate queries + manual mapping                                                             |
+| Admin analytics show zeros for governorate | Old orders lack geographic IDs                                   | Hybrid filtering: match by ID first, fallback to name                                             |
+| Products disappear on JOIN                 | Nullable category_id excluded                                    | Separate queries instead of JOIN                                                                  |
+| Dropdown closes on hover                   | CSS gap between trigger and menu                                 | Use `mt-0` and `top-full`                                                                         |
+| RTL arrows wrong direction                 | Hardcoded arrow icons                                            | Check `isRTL` and swap icons                                                                      |
+| Ghost buttons invisible                    | No hover background defined                                      | Add `hover:bg-muted`                                                                              |
+| Partial refunds zero entire commission     | No proportional reduction                                        | `commission_reduction = original_commission * (refund_amount / order_total)`                      |
+| Grace period config conflict               | `COMMISSION_CONFIG.GRACE_PERIOD_DAYS = 90` vs `defaults.ts: 180` | **Resolved:** default is now 30 days, configurable per-provider via `providers.grace_period_days` |
 
 ---
 
@@ -195,7 +218,7 @@ PASSWORD_RESET_LIMIT: { maxAttempts: 3,  window: 60min, block: 60min }
 
 ---
 
-## Missing Features
+## Missing / Planned Features
 
 - Email notifications (needs Resend/SendGrid)
 - SMS notifications (no Twilio integration)
@@ -203,3 +226,6 @@ PASSWORD_RESET_LIMIT: { maxAttempts: 3,  window: 60min, block: 60min }
 - Google Maps integration
 - Multi-user support for providers
 - Inventory/stock management
+- **Gift Box + Loyalty + Referral System** (planned — see `docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md`)
+- **ERP Dashboard** (planned — `/admin/erp`)
+- **Provider Analytics Subscriptions** (planned — Basic/Pro/Elite tiers)

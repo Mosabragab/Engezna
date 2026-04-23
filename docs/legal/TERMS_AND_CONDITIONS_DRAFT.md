@@ -290,9 +290,10 @@ As a service provider, you are responsible for:
 
 ##### 10.1 Grace Period
 
-- **First 3 Months:** 0% commission on all orders
-- This grace period begins from the Provider's first order on the Platform
-- The grace period is non-transferable and cannot be extended
+- **Default Grace Period:** 30 days of 0% commission on all orders (configurable per agreement)
+- This grace period begins from the Provider's first delivered order on the Platform
+- The grace period duration may vary per individual agreement between Engezna and the Provider
+- The grace period is non-transferable
 
 ##### 10.2 Standard Commission
 
@@ -454,6 +455,30 @@ Any disputes shall be subject to the exclusive jurisdiction of the Egyptian cour
 ##### 16.3 Consumer Rights
 
 Nothing in these Terms affects your statutory rights under the Egyptian Consumer Protection Law (Law No. 181 of 2018).
+
+#### 16A. Gift Box & Loyalty Program (Planned)
+
+##### 16A.1 Gift Box
+
+Engezna may offer a Gift Box feature where eligible customers receive promotional gifts (discount codes, free delivery, partner offers). Gifts are:
+
+- Subject to expiry dates and usage conditions specified at the time of granting
+- Non-transferable except through the "Gift-it Forward" feature where available
+- Limited to one discount per order (free delivery may be combined with a discount code)
+- Subject to modification or discontinuation at Engezna's discretion
+
+##### 16A.2 Loyalty Points
+
+Engezna may offer a loyalty points program where customers earn points on qualifying orders. Points:
+
+- Have no cash value and cannot be exchanged for money
+- May expire after 90 days of account inactivity
+- Are subject to clawback in case of order cancellation or refund initiated by the customer
+- Are NOT subject to clawback when refunds are due to merchant or delivery errors
+
+##### 16A.3 Referral Program
+
+Engezna may offer a referral program where existing customers can invite new users. Referral rewards are subject to verification and fraud prevention measures.
 
 #### 17. Contact Information
 
@@ -746,9 +771,10 @@ For questions about these Terms:
 
 ##### ١٠.١ فترة السماح
 
-- **أول ٣ أشهر:** عمولة ٠٪ على جميع الطلبات
-- تبدأ فترة السماح من أول طلب لمقدم الخدمة على المنصة
-- فترة السماح غير قابلة للتحويل ولا يمكن تمديدها
+- **فترة السماح الافتراضية:** ٣٠ يومًا بعمولة ٠٪ على جميع الطلبات (قابلة للتعديل حسب الاتفاق)
+- تبدأ فترة السماح من أول طلب مُسلّم لمقدم الخدمة على المنصة
+- قد تختلف مدة فترة السماح حسب الاتفاق الفردي بين إنجزنا ومقدم الخدمة
+- فترة السماح غير قابلة للتحويل
 
 ##### ١٠.٢ العمولة القياسية
 
@@ -910,6 +936,30 @@ For questions about these Terms:
 ##### ١٦.٣ حقوق المستهلك
 
 لا شيء في هذه الشروط يؤثر على حقوقك القانونية بموجب قانون حماية المستهلك المصري (القانون رقم ١٨١ لسنة ٢٠١٨).
+
+#### ١٦أ. صندوق الهدايا وبرنامج الولاء (مُخطط)
+
+##### ١٦أ.١ صندوق الهدايا
+
+قد تقدم إنجزنا ميزة صندوق الهدايا حيث يحصل العملاء المؤهلون على هدايا ترويجية (أكواد خصم، توصيل مجاني، عروض شركاء). الهدايا:
+
+- تخضع لتواريخ انتهاء الصلاحية وشروط الاستخدام المحددة عند المنح
+- غير قابلة للتحويل إلا من خلال ميزة "أهدها لصديق" حيثما تكون متاحة
+- مقيدة بخصم واحد لكل طلب (التوصيل المجاني يمكن جمعه مع كود خصم)
+- قابلة للتعديل أو الإيقاف وفقًا لتقدير إنجزنا
+
+##### ١٦أ.٢ نقاط الولاء
+
+قد تقدم إنجزنا برنامج نقاط ولاء حيث يكسب العملاء نقاطًا على الطلبات المؤهلة. النقاط:
+
+- ليس لها قيمة نقدية ولا يمكن استبدالها بأموال
+- قد تنتهي صلاحيتها بعد ٩٠ يومًا من عدم نشاط الحساب
+- تخضع للاسترداد في حالة إلغاء الطلب أو الاسترجاع بمبادرة من العميل
+- لا تُسترد عندما يكون الاسترجاع بسبب أخطاء التاجر أو التوصيل
+
+##### ١٦أ.٣ برنامج الإحالة
+
+قد تقدم إنجزنا برنامج إحالة حيث يمكن للعملاء الحاليين دعوة مستخدمين جدد. مكافآت الإحالة تخضع للتحقق وإجراءات مكافحة الاحتيال.
 
 #### ١٧. معلومات التواصل
 
