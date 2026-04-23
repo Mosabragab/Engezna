@@ -29,3 +29,4 @@ This folder contains marketing materials for Engezna.
 3. **السوبر ماركت** (Supermarkets)
 4. **الخضراوات والفاكهه** (Vegetables & Fruits)
 5. **البن والحلويات** (Coffee & Patisserie)
+6. **أكل بيتي (Home-Cooked Food) 🍲**
