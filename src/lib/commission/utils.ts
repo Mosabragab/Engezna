@@ -9,7 +9,7 @@
 
 export const COMMISSION_CONFIG = {
   // Grace period duration in days
-  GRACE_PERIOD_DAYS: 90, // 3 months
+  GRACE_PERIOD_DAYS: 90, // Legacy default — will be changed to 30 in Phase 0B (per-provider configurable)
 
   // Default commission rate (percentage)
   DEFAULT_RATE: 7.0,
