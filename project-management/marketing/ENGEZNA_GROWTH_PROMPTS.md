@@ -18,7 +18,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 - **Target Market:** All Egyptian governorates with **phased expansion strategy**
   - **Phase 1-2 (الأولوية):** Secondary cities and governorates (المحافظات الثانوية)
   - **Phase 3-4 (المرحلة النهائية):** Cairo, Giza, Alexandria, North Coast
-- **B2B:** Restaurants, supermarkets, cafés, pharmacies, fruits & vegetables shops, coffee & patisserie shops
+- **B2B:** Restaurants, supermarkets, cafés, pharmacies, fruits & vegetables shops, coffee & patisserie shops, home-cooked food
 - **B2C:** Class B & C customers accustomed to phone ordering
 - **USP:** Zero registration fees, zero customer fees, max 7% merchant commission
 - **Delivery Model:** Merchant-handled (not Engezna fleet)
@@ -51,8 +51,8 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 
 **السياق:**
 - المنتج: منصة تحويل الطلبات الهاتفية إلى طلبات رقمية
-- الفئات المستهدفة: مطاعم، سوبرماركت، كافيهات، صيدليات، محلات خضار وفاكهة، البن والحلويات
-- USP: صفر رسوم تسجيل، صفر عمولة أول 3 شهور، حد أقصى 7% بعدها
+- الفئات المستهدفة: مطاعم، سوبرماركت، كافيهات، صيدليات، محلات خضار وفاكهة، البن والحلويات، أكل بيتي (Home-Cooked Food) 🍲
+- USP: صفر رسوم تسجيل، صفر عمولة أول 30 يوم، حد أقصى 7% بعدها
 - نموذج التوصيل: التاجر يستخدم سائقه الخاص
 
 **المطلوب:**
@@ -863,7 +863,7 @@ This document contains AI-optimized prompts tailored specifically for Engezna's 
 أنت Social Media Manager لـ Engezna. اكتب منشور [Facebook/Instagram/TikTok] عن [الموضوع]. النبرة: واثقة، محلية، عامية مصرية بسيطة. الهدف: [engagement/awareness/conversion]. المحافظة المستهدفة: [اسم المحافظة].
 
 # Write Merchant Outreach Message
-أنت Sales Representative لـ Engezna. اكتب رسالة WhatsApp لتاجر [مطعم/سوبرماركت/صيدلية] في [المدينة] لدعوته للتسجيل. ركز على: صفر رسوم، صفر عمولة 3 شهور، حل مشكلة الطلبات الهاتفية.
+أنت Sales Representative لـ Engezna. اكتب رسالة WhatsApp لتاجر [مطعم/سوبرماركت/صيدلية] في [المدينة] لدعوته للتسجيل. ركز على: صفر رسوم، صفر عمولة 30 يوم، حل مشكلة الطلبات الهاتفية.
 
 # Create Customer Support Response
 أنت Customer Support Agent لـ Engezna. رد على شكوى عميل يقول: "[الشكوى]". كن متعاطفاً، قدم حل عملي، حافظ على صورة العلامة.
@@ -927,13 +927,14 @@ _من المحافظات... للعاصمة... لكل مصر!_
 - الشراكات الاستراتيجية
 - إدارة الأزمات
 
-### الفئات المستهدفة:
+### الفئات المستهدفة (6 فئات):
 
 1. **المطاعم** (Restaurants)
 2. **الصيدليات** (Pharmacies)
 3. **السوبر ماركت** (Supermarkets)
 4. **الخضراوات والفاكهه** (Vegetables & Fruits)
 5. **البن والحلويات** (Coffee & Patisserie)
+6. **أكل بيتي** (Home-Cooked Food) 🍲
 
 ### فلسفة التوسع:
 

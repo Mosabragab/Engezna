@@ -7,7 +7,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'انضم كشريك | إنجزنا - انجزنا | Partner with Engezna',
   description:
-    'سجل متجرك أو مطعمك في منصة إنجزنا (انجزنا). 0% عمولة أول 3 شهور، ثم 7% كحد أقصى. توصيل سريع في جميع محافظات مصر. Register your store on Engezna - 0% commission for first 3 months.',
+    'سجل متجرك أو مطعمك في منصة إنجزنا (انجزنا). 0% عمولة أول 30 يوم، ثم 7% كحد أقصى. توصيل سريع في جميع محافظات مصر. Register your store on Engezna - 0% commission for first 30 days.',
   keywords: [
     'إنجزنا شريك',
     'انجزنا شريك',
@@ -17,12 +17,12 @@ export const metadata: Metadata = {
     'restaurant registration Egypt',
     '0% commission',
     'بدون عمولة',
-    '3 شهور بدون عمولة',
+    '30 يوم بدون عمولة',
   ],
   openGraph: {
-    title: 'انضم كشريك في إنجزنا - انجزنا | 3 شهور بدون عمولة',
+    title: 'انضم كشريك في إنجزنا - انجزنا | 30 يوم بدون عمولة',
     description:
-      'سجل متجرك في منصة إنجزنا (انجزنا). 0% عمولة أول 3 شهور، ثم 7% كحد أقصى. Register on Engezna - 0% commission for 3 months.',
+      'سجل متجرك في منصة إنجزنا (انجزنا). 0% عمولة أول 30 يوم، ثم 7% كحد أقصى. Register on Engezna - 0% commission for 30 days.',
     url: 'https://www.engezna.com/ar/partner',
     siteName: 'Engezna - إنجزنا',
     locale: 'ar_EG',
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
         url: '/images/og-partner.png',
         width: 1200,
         height: 630,
-        alt: 'انضم كشريك في إنجزنا - 3 شهور بدون عمولة',
+        alt: 'انضم كشريك في إنجزنا - 30 يوم بدون عمولة',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'انضم كشريك في إنجزنا - انجزنا | 3 شهور بدون عمولة',
-    description: 'سجل متجرك في منصة إنجزنا. 0% عمولة أول 3 شهور.',
+    title: 'انضم كشريك في إنجزنا - انجزنا | 30 يوم بدون عمولة',
+    description: 'سجل متجرك في منصة إنجزنا. 0% عمولة أول 30 يوم.',
     images: ['/images/og-partner.png'],
   },
   robots: {

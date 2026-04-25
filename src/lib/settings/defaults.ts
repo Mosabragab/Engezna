@@ -26,7 +26,7 @@ import type {
 export const DEFAULT_COMMISSION_SETTINGS: Omit<CommissionSettings, 'id'> = {
   commission_enabled: false,
   default_commission_rate: 0,
-  default_grace_period_days: 90,
+  default_grace_period_days: 90, // Legacy — will be updated to 30 in Phase 0B
   max_commission_rate: 7,
   service_fee_enabled: false,
   service_fee_amount: 0,

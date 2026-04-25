@@ -42,7 +42,7 @@ export default function AboutPage() {
         {
           icon: Shield,
           title: 'العدالة',
-          description: 'رسوم منخفضة للجميع - 7% فقط كحد أقصى للتجار، صفر للعملاء',
+          description: 'رسوم منخفضة للجميع - 7% فقط كحد أقصى للتجار، حاليًا بدون رسوم خدمة للعملاء',
         },
         {
           icon: MapPin,
@@ -63,8 +63,8 @@ export default function AboutPage() {
       numbersTitle: 'إنجزنا بالأرقام',
       numbers: [
         { value: '7%', label: 'عمولة كحد أقصى' },
-        { value: '0%', label: 'رسوم خدمة للعملاء' },
-        { value: '3', label: 'شهور بدون عمولة' },
+        { value: '0%', label: 'رسوم خدمة للعملاء (حاليًا)' },
+        { value: '30', label: 'يوم بدون عمولة' },
         { value: '24/7', label: 'خدمة متاحة' },
       ],
       companyTitle: 'معلومات الشركة',
@@ -106,7 +106,8 @@ export default function AboutPage() {
         {
           icon: Shield,
           title: 'Fairness',
-          description: 'Low fees for everyone - max 7% for merchants, zero for customers',
+          description:
+            'Low fees for everyone - max 7% for merchants, currently no service fees for customers',
         },
         {
           icon: MapPin,
@@ -127,8 +128,8 @@ export default function AboutPage() {
       numbersTitle: 'Engezna by Numbers',
       numbers: [
         { value: '7%', label: 'Maximum Commission' },
-        { value: '0%', label: 'Customer Service Fees' },
-        { value: '3', label: 'Months Zero Commission' },
+        { value: '0%', label: 'Customer Service Fees (Currently)' },
+        { value: '30', label: 'Days Zero Commission' },
         { value: '24/7', label: 'Service Available' },
       ],
       companyTitle: 'Company Information',
