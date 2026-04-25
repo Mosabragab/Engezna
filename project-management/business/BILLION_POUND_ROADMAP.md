@@ -273,22 +273,22 @@
 
 ### تكاليف Phase 3 (Delta + Suez — 2029-2030) — مع التكاليف المخفية
 
-| البند                                    | المبلغ الشهري                                      |
-| ---------------------------------------- | -------------------------------------------------- |
-| التقنية (Self-hosted Postgres/Hetzner)   | 5,000 ج.م                                          |
-| التقنية (Vercel + APIs + Sentry + Redis) | 25,000 ج.م                                         |
-| ميزانية تسويقية                          | 20% من الإيراد (~400K-800K)                        |
-| **CTO**                                  | 60,000 ج.م                                         |
-| **CFO**                                  | 50,000 ج.م                                         |
-| **VP Operations**                        | 40,000 ج.م                                         |
-| Ops Managers (3 إقليمي)                  | 30,000 ج.م                                         |
-| 8 وكلاء محليين (freelance)               | 40,000 ج.م                                         |
-| Customer Support (5 موظفين)              | 40,000 ج.م                                         |
-| **Payment Gateway Fees (Kashier)**       | **~200K ج.م** (على الأونلاين فقط — 20% من الطلبات) |
-| تأمينات اجتماعية (14% صاحب عمل)          | 40,000 ج.م                                         |
-| Office (Cairo HQ صغير)                   | 30,000 ج.م                                         |
-| Legal + محاسبة                           | 15,000 ج.م                                         |
-| **الإجمالي**                             | **~975K-1.37M ج.م**                                |
+| البند                                    | المبلغ الشهري                                                         |
+| ---------------------------------------- | --------------------------------------------------------------------- |
+| التقنية (Self-hosted Postgres/Hetzner)   | 5,000 ج.م                                                             |
+| التقنية (Vercel + APIs + Sentry + Redis) | 25,000 ج.م                                                            |
+| ميزانية تسويقية                          | 20% من الإيراد (~400K-800K)                                           |
+| **CTO**                                  | 60,000 ج.م                                                            |
+| **CFO**                                  | 50,000 ج.م                                                            |
+| **VP Operations**                        | 40,000 ج.م                                                            |
+| Ops Managers (3 إقليمي)                  | 30,000 ج.م                                                            |
+| 8 وكلاء محليين (freelance)               | 40,000 ج.م                                                            |
+| Customer Support (5 موظفين)              | 40,000 ج.م                                                            |
+| **Payment Gateway Fees (Kashier 2.75%)** | **~220K ج.م** (على الأونلاين فقط — 20% من الطلبات — TODO: تأكيد عقدي) |
+| تأمينات اجتماعية (14% صاحب عمل)          | 40,000 ج.م                                                            |
+| Office (Cairo HQ صغير)                   | 30,000 ج.م                                                            |
+| Legal + محاسبة                           | 15,000 ج.م                                                            |
+| **الإجمالي**                             | **~975K-1.37M ج.م**                                                   |
 
 **نقطة توظيف Corporate (CTO/CFO/VP Ops): يونيو 2028** (مع وصول الإيراد ~500K-600K ج.م)
 
@@ -358,7 +358,8 @@
 **التكتيكات:**
 
 1. **Phase 1-2:** لا نروّج للدفع الأونلاين — نتركه متاح لمن يريد
-2. **Phase 3+:** عند volume كبير (+50K معاملة/شهر) — نتفاوض مع Kashier على volume rate (~1.5% بدل 2.5%)
+2. **Phase 3+:** عند volume كبير (+50K معاملة/شهر) — نتفاوض مع Kashier على volume rate (مستهدف 1.8-2.2% بدل 2.75% — يحتاج تأكيد عقدي)
+   - **TODO:** الحصول على عرض أسعار رسمي من Kashier قبل Phase 3 + دراسة بدائل (Telr, Integrez)
 3. **لا نفرض رسوم إضافية على العميل للدفع الأونلاين** — نتحمّلها كتكلفة تشغيلية
 4. الـ Settlement engine الحالي **لا يُعدّل** — يدعم COD و Online بالفعل
 
@@ -527,10 +528,23 @@
 | 11  | `docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md` (lines 678, 1227)                       | مراجعة CodeRabbit critical comments                                                   | Phase 0B                      | يحتاج مراجعة تفصيلية                                  |
 | 12  | `docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md` (line 222)                              | تحديث partner gifts deposit references                                                | Phase 0B                      | جزئيًا تم في v2.2 — يحتاج تأكيد كامل                  |
 
-**ملاحظة:** كل هذه المهام **لا تمنع** التقدم في الـ Roadmap. تُنفّذ بشكل غير حرج عند الانتقال للمرحلة التالية.
+### مهام DB Optimization (مطلوبة قبل Phase 2 — انتقال من Supabase Pro → Team)
+
+| #   | المهمة                                                                              | Migration المقترح                               | المرحلة              | السبب                                                    |
+| --- | ----------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------- | -------------------------------------------------------- |
+| 13  | **Materialized View** للـ `financial_settlement_engine` مع CRON refresh كل 15 دقيقة | `YYYYMMDD_add_settlement_materialized_view.sql` | Phase 1→2 transition | الـ View الحالي سيُسبب timeout عند 50K+ طلب تراكمي       |
+| 14  | **Table Partitioning** لجدول `orders` (تقسيم شهري)                                  | `YYYYMMDD_partition_orders_table.sql`           | Phase 1→2 transition | تسريع queries على جداول كبيرة (9M+ rows بحلول سنة 3)     |
+| 15  | **Archiving** طلبات أقدم من 6 شهور → `orders_archive`                               | `YYYYMMDD_create_orders_archive.sql` + Cron job | Phase 2 (2027)       | تقليل حجم الجدول الأساسي + تسريع settlement engine       |
+| 16  | **استبدال Realtime بـ FCM** حيث أمكن (order notifications, gift updates)            | تعديل كود + `ALTER PUBLICATION`                 | Phase 2 (2027)       | Supabase Realtime limit (5K concurrent) — FCM أرخص وأقوى |
+| 17  | **Database Indexing Audit** — مراجعة كل الـ queries البطيئة وإضافة indexes          | `YYYYMMDD_phase2_performance_indexes.sql`       | Phase 1→2 transition | تقليل query time بنسبة 60-80% على الجداول الكبيرة        |
+| 18  | **التفاوض مع Kashier** على volume rate + دراسة بدائل (Telr, Integrez)               | عقد تجاري — ليس migration                       | قبل Phase 3          | رسوم Gateway 2.75% تأكل ~10% من الإيراد عند النضج        |
+
+**ملاحظة:** المهام 13-17 **مطلوبة قبل الانتقال من Phase 1 لـ Phase 2** لتجنب انهيار الأداء. المهمة 18 مطلوبة قبل Phase 3 لتقليل التكاليف.
+
+**ملاحظة عامة:** كل المهام أعلاه **لا تمنع** التقدم في الـ Roadmap. تُنفّذ بشكل غير حرج عند الانتقال للمرحلة التالية.
 
 ---
 
-**الإصدار:** 1.0
+**الإصدار:** 1.1 (تصحيح Gateway fees + إضافة DB optimization tasks)
 **آخر تحديث:** ٢٥ أبريل ٢٠٢٦
 **المعتمد:** د. أمان الله صادق + مصعب
