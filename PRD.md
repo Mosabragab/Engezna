@@ -1138,7 +1138,7 @@ reviews (
    - Competitive advantage for providers
    - Commission structure:
      - Maximum commission: 7%
-     - 0% commission for first 3 months (grace period)
+     - 0% commission for first 30 days (grace period, configurable per merchant)
      - Governorate-specific rates may apply
 
 **Note:** Providers handle their own delivery using existing staff. They set their own delivery fees directly with customers. Engezna does NOT charge delivery fees or manage drivers.
@@ -1236,7 +1236,7 @@ reviews (
 
 ### **4. Simple, Transparent Pricing**
 
-- Maximum 7% commission (0% for first 3 months)
+- Maximum 7% commission (0% for first 30 days, configurable)
 - No hidden fees
 - No delivery fee split confusion
 - Providers set their own delivery charges

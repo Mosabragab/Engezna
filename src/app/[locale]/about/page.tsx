@@ -106,7 +106,8 @@ export default function AboutPage() {
         {
           icon: Shield,
           title: 'Fairness',
-          description: 'Low fees for everyone - max 7% for merchants, zero for customers',
+          description:
+            'Low fees for everyone - max 7% for merchants, currently no service fees for customers',
         },
         {
           icon: MapPin,
@@ -127,8 +128,8 @@ export default function AboutPage() {
       numbersTitle: 'Engezna by Numbers',
       numbers: [
         { value: '7%', label: 'Maximum Commission' },
-        { value: '0%', label: 'Customer Service Fees' },
-        { value: '3', label: 'Months Zero Commission' },
+        { value: '0%', label: 'Customer Service Fees (Currently)' },
+        { value: '30', label: 'Days Zero Commission' },
         { value: '24/7', label: 'Service Available' },
       ],
       companyTitle: 'Company Information',
