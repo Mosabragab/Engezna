@@ -46,6 +46,8 @@
 
 **ملاحظة:** نستخدم 5% في حسابات السيناريوهات كرقم محافظ (يحسب حالة الطلبات منخفضة العمولة).
 
+> **⚠️ ملاحظة تقنية مهمة:** هذا الجدول للحسابات المالية والتخطيط فقط — **ليس runtime configuration**. النظام الفعلي يحفظ العمولة **per-merchant** في `providers.commission_rate` (موجود بالفعل في الـ schema). عند تسجيل تاجر جديد، الأدمن يضع العمولة المناسبة لفئته (الـ Admin UI سيقترح الـ default في Phase 0B/1). هذا يحافظ على القاعدة الذهبية: **لا تعديل في نظام التسويات الحالي**. لا حاجة لجدول `category_commissions` جديد لأن منطق الـ marketplace القياسي يحدد العمولة عقديًا per-merchant.
+
 ---
 
 ## 🗺️ خريطة التوسع — 23 محافظة عبر 4 مراحل
@@ -530,21 +532,22 @@
 
 ### مهام DB Optimization (مطلوبة قبل Phase 2 — انتقال من Supabase Pro → Team)
 
-| #   | المهمة                                                                              | Migration المقترح                               | المرحلة              | السبب                                                    |
-| --- | ----------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------- | -------------------------------------------------------- |
-| 13  | **Materialized View** للـ `financial_settlement_engine` مع CRON refresh كل 15 دقيقة | `YYYYMMDD_add_settlement_materialized_view.sql` | Phase 1→2 transition | الـ View الحالي سيُسبب timeout عند 50K+ طلب تراكمي       |
-| 14  | **Table Partitioning** لجدول `orders` (تقسيم شهري)                                  | `YYYYMMDD_partition_orders_table.sql`           | Phase 1→2 transition | تسريع queries على جداول كبيرة (9M+ rows بحلول سنة 3)     |
-| 15  | **Archiving** طلبات أقدم من 6 شهور → `orders_archive`                               | `YYYYMMDD_create_orders_archive.sql` + Cron job | Phase 2 (2027)       | تقليل حجم الجدول الأساسي + تسريع settlement engine       |
-| 16  | **استبدال Realtime بـ FCM** حيث أمكن (order notifications, gift updates)            | تعديل كود + `ALTER PUBLICATION`                 | Phase 2 (2027)       | Supabase Realtime limit (5K concurrent) — FCM أرخص وأقوى |
-| 17  | **Database Indexing Audit** — مراجعة كل الـ queries البطيئة وإضافة indexes          | `YYYYMMDD_phase2_performance_indexes.sql`       | Phase 1→2 transition | تقليل query time بنسبة 60-80% على الجداول الكبيرة        |
-| 18  | **التفاوض مع Kashier** على volume rate + دراسة بدائل (Telr, Integrez)               | عقد تجاري — ليس migration                       | قبل Phase 3          | رسوم Gateway 2.75% تأكل ~10% من الإيراد عند النضج        |
+| #   | المهمة                                                                                                    | Migration المقترح                                    | المرحلة              | السبب                                                                      |
+| --- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------- | -------------------------------------------------------------------------- |
+| 13  | **Materialized View** للـ `financial_settlement_engine` مع CRON refresh كل 15 دقيقة                       | `YYYYMMDD_add_settlement_materialized_view.sql`      | Phase 1→2 transition | الـ View الحالي سيُسبب timeout عند 50K+ طلب تراكمي                         |
+| 14  | **Table Partitioning** لجدول `orders` (تقسيم شهري)                                                        | `YYYYMMDD_partition_orders_table.sql`                | Phase 1→2 transition | تسريع queries على جداول كبيرة (9M+ rows بحلول سنة 3)                       |
+| 15  | **Archiving** طلبات أقدم من 6 شهور → `orders_archive`                                                     | `YYYYMMDD_create_orders_archive.sql` + Cron job      | Phase 2 (2027)       | تقليل حجم الجدول الأساسي + تسريع settlement engine                         |
+| 16  | **استبدال Realtime بـ FCM** حيث أمكن (order notifications, gift updates)                                  | تعديل كود + `ALTER PUBLICATION`                      | Phase 2 (2027)       | Supabase Realtime limit (5K concurrent) — FCM أرخص وأقوى                   |
+| 17  | **Database Indexing Audit** — مراجعة كل الـ queries البطيئة وإضافة indexes                                | `YYYYMMDD_phase2_performance_indexes.sql`            | Phase 1→2 transition | تقليل query time بنسبة 60-80% على الجداول الكبيرة                          |
+| 18  | **التفاوض مع Kashier** على volume rate + دراسة بدائل (Telr, Integrez)                                     | عقد تجاري — ليس migration                            | قبل Phase 3          | رسوم Gateway 2.75% تأكل ~10% من الإيراد عند النضج                          |
+| 19  | **Category Commission Default Suggestion** في Admin UI — اقتراح العمولة حسب الفئة عند الموافقة على التاجر | تعديل في `/admin/providers/[id]` فقط (لا DB changes) | Phase 0B/1           | تسهيل عمل الأدمن — يضع العمولة الصحيحة لكل فئة (4-7%) بدون إنشاء جدول جديد |
 
-**ملاحظة:** المهام 13-17 **مطلوبة قبل الانتقال من Phase 1 لـ Phase 2** لتجنب انهيار الأداء. المهمة 18 مطلوبة قبل Phase 3 لتقليل التكاليف.
+**ملاحظة:** المهام 13-17 **مطلوبة قبل الانتقال من Phase 1 لـ Phase 2** لتجنب انهيار الأداء. المهمة 18 مطلوبة قبل Phase 3 لتقليل التكاليف. المهمة 19 تحسين UI بسيط في Phase 0B/1.
 
 **ملاحظة عامة:** كل المهام أعلاه **لا تمنع** التقدم في الـ Roadmap. تُنفّذ بشكل غير حرج عند الانتقال للمرحلة التالية.
 
 ---
 
-**الإصدار:** 1.1 (تصحيح Gateway fees + إضافة DB optimization tasks)
+**الإصدار:** 1.2 (توضيح أن العمولة per-merchant + إضافة UI suggestion task)
 **آخر تحديث:** ٢٥ أبريل ٢٠٢٦
 **المعتمد:** د. أمان الله صادق + مصعب
