@@ -1609,42 +1609,193 @@ UI Components (bilingual AR/EN + Framer Motion):
 - صفحة الاستلام `/gift/[token]`.
 - مكافحة الاحتيال الأساسية.
 
-### Phase 12 — Loyalty Points + Tiers + Order Completion Hook (٣ أيام) ⏳ التالي
+### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام) ⏳ التالي
 
-**🎯 المرحلة الأهم:** هي اللي تفعّل كل ما بُني في المراحل ١-٨. حاليًا الـ engine جاهز لكن مفيش حد بيستدعيه عند تسليم الطلب.
+**🎯 المرحلة الأهم:** هي اللي تفعّل كل ما بُني في المراحل ١-٨. حاليًا الـ engine جاهز لكن مفيش حد بيستدعيه عند تسليم الطلب. كذلك المستخدم لا يقدر يشوف هدياه/نقاطه/مستواه في أي مكان.
+
+تنقسم المرحلة إلى جزأين متتاليين:
+
+#### Phase 12A — Backend Hook + Loyalty (٣ أيام)
 
 **المُكوّنات:**
 
 1. **Order Completion Hook موحَّد** (`src/lib/orders/completion-hook.ts`):
    - يُستدعى عند انتقال طلب لـ `delivered + payment_status='completed'`
-   - يُشغّل بترتيب: `ruleEngine.processOrderCompleted` → `giftEngine.addStamp` → `referralService.completeReferral` → award loyalty points
-   - مُحاط بـ try/catch — لا يفشل مسار الطلب لو فشلت أي خطوة
-   - Idempotent: يستخدم unique key لمنع التشغيل المزدوج
+   - يُشغّل بترتيب: `ruleEngine.processOrderCompleted` → `giftEngine.addStamp` → `referralService.completeReferral` → `loyaltyService.awardOrderPoints`
+   - مُحاط بـ try/catch لكل خطوة — لا يفشل مسار الطلب لو فشلت أي خطوة
+   - Idempotent عبر جدول `order_completion_processed` (PK = order_id)
 
 2. **Cron Trigger** (`/api/cron/process-completed-orders`):
    - يُشغَّل كل ١٥ دقيقة
-   - يجلب الطلبات اللي اتسلمت في آخر ٢٤ ساعة وما اتعالجتش
+   - يجلب الطلبات `delivered + completed` في آخر ٢٤ ساعة وما اتعالجتش
    - يستدعي الهوك لكل طلب
-   - أبسط من الـ DB trigger (يدوي، قابل للتراجع)
+   - أبسط من الـ DB trigger، قابل للتراجع، ومراقب من الـ admin
 
 3. **Loyalty Points Service** (`src/lib/loyalty/`):
-   - `awardOrderPoints(userId, orderId)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم
-   - `redeemPoints(userId, points)` — ١٠٠ نقطة = خصم ٥ ج.م (ينشئ gift entry)
-   - تحديث `loyalty_tier` تلقائيًا (bronze < 500 < silver < 1500 < gold < 5000 < platinum)
+   - `awardOrderPoints(userId, orderId, subtotalPiasters)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم
+   - `redeemPoints(userId, points)` — ١٠٠ نقطة = خصم ٥ ج.م (ينشئ gift entry بـ `source='loyalty_redemption'`)
+   - تحديث `loyalty_tier` تلقائيًا داخل الـ RPC (bronze < 500 ≤ silver < 1500 ≤ gold < 5000 ≤ platinum)
    - Clawback نسبي عند refund customer/fraud
 
-4. **Customer page** (`/[locale]/rewards/points`):
-   - عرض الرصيد الحالي + المستوى
-   - زر استبدال نقاط بكوبون
-   - تاريخ النقاط (`loyalty_transactions`)
+4. **Migration `20260428000006_loyalty_and_completion_hook.sql`**:
+   - جدول `order_completion_processed` (idempotency: PK = order_id)
+   - `award_loyalty_points_atomic` RPC: INSERT في `loyalty_transactions` + UPDATE في `loyalty_points` + tier recalc — all-or-nothing
+   - `redeem_loyalty_points_atomic` RPC: lock balance + deduct + create gift entry via `grant_gift_atomic` + log
+   - `clawback_loyalty_points_atomic` RPC: للـ refund flow
+   - إضافة قيمة `loyalty_redemption` لـ `gift_source` enum
 
-5. **Tier badge** في `/profile`:
-   - أيقونة + اسم المستوى + تقدّم لمستوى التالي
+5. **APIs**:
+   - `GET /api/loyalty` — balance + tier + history (paginated)
+   - `POST /api/loyalty/redeem` — يستبدل نقاط لكوبون
+   - `GET /api/rewards` — combined endpoint: gifts + stamps + loyalty (single round-trip للصفحة)
 
-**Migration مطلوب:**
+#### Phase 12B — Premium Customer Rewards Hub (٣ أيام)
 
-- `award_loyalty_points_atomic(p_user_id, p_order_id, p_points)` — INSERT في loyalty_transactions + UPDATE في loyalty_points + tier recalc، all-or-nothing
-- جدول `order_completion_processed` (idempotency: PK = order_id) لمنع التشغيل المزدوج
+**🎨 الفلسفة:** ليس مجرد صفحة "نقاطي" — تجربة احتفالية تربط العميل عاطفيًا بالمنصة. كل تفاعل يحس بـ: قيمة، تقدّم، مفاجأة، انتماء.
+
+**Stack:**
+
+- Framer Motion (موجود) لكل الأنيميشن
+- `canvas-confetti` (~٣KB) للاحتفالات
+- Supabase Realtime للـ live updates
+- `@capacitor/haptics` للـ haptic feedback (موجود)
+
+**Page structure** (`/[locale]/rewards/page.tsx` — Server Component):
+
+```
+┌─ Hero Header ─────────────────────────┐
+│  مساء الخير، أحمد 👋                  │
+│  👑 Gold Member                        │
+│  ━━━━━━━━━━░░ 1,847 / 5,000 نقطة     │
+│  153 نقطة لـ Platinum                  │
+└────────────────────────────────────────┘
+┌─ 🎁 صناديقك (3) ─ swipeable carousel ─┐
+│  ┌─────┐ ┌─────┐ ┌─────┐              │
+│  │ ⏰ 6h │ │ 5 ج.م│ │10ج.م│             │
+│  └─────┘ └─────┘ └─────┘              │
+└────────────────────────────────────────┘
+┌─ 🎫 بطاقة الختم 3/4 ──────────────────┐
+│  ⓿ ⓿ ⓿ ○                            │
+│  ━━━━━━━━━━━━░░ 75% — 23 يوم متبقية   │
+└────────────────────────────────────────┘
+┌─ ⭐ نقاطي ─────────────────────────────┐
+│        1,847                           │
+│  [استبدل 100]  [استبدل 500]            │
+│  📜 آخر العمليات                       │
+└────────────────────────────────────────┘
+┌─ ⚡ تواصل + اكسب ──────────────────────┐
+│  [👥 ادعُ صديق]  [🎁 الإحالات]         │
+└────────────────────────────────────────┘
+```
+
+**Tier Theme System** (`src/lib/loyalty/tier-themes.ts`):
+
+```ts
+export const TIER_THEMES = {
+  bronze: { gradient: 'from-amber-100 to-orange-200', accent: '#CD7F32', glow: false },
+  silver: { gradient: 'from-slate-100 to-gray-300', accent: '#C0C0C0', glow: false },
+  gold: { gradient: 'from-yellow-100 to-amber-300', accent: '#FFD700', glow: true },
+  platinum: {
+    gradient: 'from-violet-100 to-purple-300',
+    accent: '#E5E4E2',
+    glow: true,
+    shimmer: true,
+  },
+};
+```
+
+**Animation Catalog** (Framer Motion):
+
+| العنصر                 | الـ Animation                                                     |
+| ---------------------- | ----------------------------------------------------------------- |
+| Number counter (نقاط)  | Spring physics, 1.5s                                              |
+| Tier badge             | Subtle pulse 3s loop + shimmer (gold/platinum)                    |
+| Card hover             | Scale 1.02 + shadow expand                                        |
+| Card tap               | Scale 0.98 + haptic feedback                                      |
+| Stamp filled           | Scale bounce + glow ring                                          |
+| Gift open              | 3-stage (closed → opening → revealed) — موجود في `MysteryBoxCard` |
+| Confetti               | على: rare gift, redemption, tier upgrade, stamp completion        |
+| Page enter             | Stagger children 50ms                                             |
+| Real-time gift arrival | Slide-in من الأعلى + pulse glow                                   |
+
+**Components Tree:**
+
+```
+RewardsHubClient.tsx (orchestrator)
+├── HeroHeader.tsx
+│   ├── TierBadge.tsx (reusable, with metallic gradients)
+│   └── AnimatedCounter.tsx (spring physics)
+├── ActiveGiftsCarousel.tsx (uses existing MysteryBoxCard)
+├── StampCardSection.tsx (wraps existing StampCard)
+├── LoyaltyPointsSection.tsx
+│   ├── PointsBalance.tsx (animated counter)
+│   ├── RedeemButtons.tsx
+│   └── TransactionsList.tsx
+├── QuickActionsBar.tsx
+└── shared/
+    ├── EmptyState.tsx (illustrated)
+    ├── SkeletonLoader.tsx
+    └── celebrate.ts (canvas-confetti helpers)
+```
+
+**Real-time subscriptions:**
+
+- `gift_box_entries` — صندوق جديد يظهر فورًا بأنيميشن slide-in
+- `gift_stamps` — ختم جديد يتعبّى live + bounce
+- `loyalty_points` — رصيد يحدّث counter animation
+
+**Premium touches:**
+
+- Pull-to-refresh على الموبايل
+- Haptic feedback عبر Capacitor عند: tap card, redeem, stamp added
+- Native share API للـ referral
+- Skeleton loaders (مش spinners)
+- Empty states بـ illustrations
+- `prefers-reduced-motion` يعطّل الأنيميشن الثقيلة + يحافظ على الوظائف
+- WCAG AA contrast على كل العناصر (خصوصًا tier badges المعدنية)
+- ARIA labels لكل countdown
+- Keyboard navigation كامل
+- Server-rendered shell (instant FCP)
+- Suspense per-section للـ streaming
+- Dynamic imports لـ Framer Motion + confetti
+
+**Checkout Integration** (§21.9):
+
+- إضافة قسم "الخصم" في الـ checkout يعرض ٣ خيارات:
+  1. **كود خصم** (الموجود حاليًا — `promoCodeInput`)
+  2. **هدية من الصندوق** (قائمة هدايا متاحة)
+  3. **نقاط ولاء** (استبدال 100 نقطة = 5 ج.م)
+- عند اختيار أحدها → باقي الخيارات تُعطّل مع رسالة "خصم واحد لكل طلب"
+- المتغير المشترك `discountAmount` يُملأ من أي مصدر
+- عند استخدام هدية: `orders.gift_entry_id` يُربط + `orders.discount` يُملأ بقيمة الهدية
+- استثناء: `free_delivery` يمكن جمعها مع كوبون خصم
+
+**Homepage Integration:**
+
+- شارة "🎁 صندوق جديد!" في الـ header (Header bell badge) لما يكون فيه gift غير مفتوح
+- شريط تقدم مصغر للـ stamp card (إذا فيه بطاقة نشطة)
+- Click → ينقل لـ `/rewards`
+
+**Acceptance Criteria:**
+
+- ✅ صفحة `/rewards` تعمل full RTL/LTR
+- ✅ Animations smooth على mobile (60fps)
+- ✅ كل الـ flows: open gift → confetti، redeem → confetti + counter animation، stamp added → bounce
+- ✅ Real-time updates تشتغل (test: open gift في tab، يظهر في tab آخر فورًا)
+- ✅ `prefers-reduced-motion` يعطّل الأنيميشن الثقيلة
+- ✅ Lighthouse Performance ≥80 على الصفحة
+- ✅ E2E test للـ flow كامل
+
+**خرائط Time Estimate:**
+
+| اليوم | الأكشن                                                        |
+| ----- | ------------------------------------------------------------- |
+| ١     | Phase 12A migration + LoyaltyService + APIs                   |
+| ٢     | Phase 12A: completion-hook + cron + tests                     |
+| ٣     | Phase 12B: shell + Hero + TierBadge + design tokens           |
+| ٤     | Phase 12B: gifts carousel + stamps section + real-time        |
+| ٥     | Phase 12B: loyalty section + redeem flow + transactions       |
+| ٦     | Phase 12B: checkout integration + homepage badge + a11y + E2E |
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
 
