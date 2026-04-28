@@ -49,7 +49,9 @@ export class GiftEngine {
     const { error } = await this.supabase.from('gift_financial_log').insert(entry);
 
     if (error) {
-      console.error('[GiftEngine] Failed to log financial entry:', error);
+      throw new Error(
+        `[GiftEngine] Financial log FAILED — ${error.message}. Entry: ${JSON.stringify({ type: entry.transaction_type, amount: entry.amount_piasters, user: entry.user_id })}`
+      );
     }
   }
 
