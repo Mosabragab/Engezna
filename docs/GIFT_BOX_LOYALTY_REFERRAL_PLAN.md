@@ -1471,19 +1471,30 @@ AND trigger_schema = 'public';
 
 </details>
 
-### Phase 5 — Mystery Box Logic + UI (٣ أيام) ⏳ التالي
+### Phase 5+6 — Mystery Box + Stamp Card Logic + UI (٣ أيام)
 
-- weighted random picker.
-- Framer Motion animation للفتح.
-- صفحة `/rewards/mystery` + widget في الصفحة الرئيسية.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 6 — Stamp Card Logic + UI (٢ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-- trigger عند `order_completed`.
-- صفحة `/rewards/stamp-card`.
-- widget progress bar.
+**ملفات جديدة (360 سطر):**
 
-### Phase 7 — Welcome + Win-back Flows (٢ أيام)
+Backend:
+
+- `src/lib/gifts/mystery-box.ts`: weighted random picker (6 prize tiers — 40/25/20/10/4/1)
+- `src/app/api/gifts/box/route.ts`: GET gift box + stamp card
+- `src/app/api/gifts/open/route.ts`: POST open mystery gift
+
+UI Components (bilingual AR/EN + Framer Motion):
+
+- `MysteryBoxCard.tsx`: 3-state animation (closed→opening→revealed) + confetti for rare gifts
+- `StampCard.tsx`: 4-stamp visual progress + golden box celebration
+- Stamp Card logic (`addStamp`) already in engine.ts (Phase 1+2)
+
+</details>
+
+### Phase 7 — Welcome + Win-back Flows (٢ أيام) ⏳ التالي
 
 - قواعد افتراضية في `gift_rules` للترحيب والاستعادة.
 - اختبار end-to-end.
