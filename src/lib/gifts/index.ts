@@ -1,4 +1,5 @@
 export { GiftEngine, createGiftEngine } from './engine';
+export { RuleEngine, createRuleEngine, evaluateConditions, type Facts } from './rule-engine';
 
 export {
   getDefaultSettings,
