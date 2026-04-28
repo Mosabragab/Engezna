@@ -1451,13 +1451,27 @@ AND trigger_schema = 'public';
 
 </details>
 
-### Phase 4 — Customer Segmentation Cron (٢ أيام) ⏳ التالي
+### Phase 4 — Customer Segmentation Cron (٢ أيام)
 
-- Cron job يومي (Supabase pg_cron).
-- يحسب الشرائح لكل العملاء ويكتبها في `customer_segments_daily`.
-- يُحدّث `profiles.last_segment` و `loyalty_tier`.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 5 — Mystery Box Logic + UI (٣ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملف جديد:** `src/app/api/cron/segmentation/route.ts` (203 سطر)
+
+- Cron يومي الساعة 02:00 بتوقيت القاهرة (00:00 UTC)
+- يصنّف كل عميل لشريحة: `new_user`, `champion`, `regular`, `at_risk`, `churned`, `bargain_hunter`, `high_value`, `undefined`
+- يحدّث `customer_segments_daily` (upsert يومي)
+- يحدّث `profiles.last_segment` + `profiles.loyalty_tier`
+- Loyalty tiers: bronze (<500) → silver (500) → gold (1500) → platinum (5000)
+- Batch processing (50 عميل/batch)
+- محمي بـ CRON_SECRET
+- مُضاف لـ `vercel.json` crons
+
+</details>
+
+### Phase 5 — Mystery Box Logic + UI (٣ أيام) ⏳ التالي
 
 - weighted random picker.
 - Framer Motion animation للفتح.
