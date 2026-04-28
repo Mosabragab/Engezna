@@ -49,9 +49,22 @@ async function handler(request: NextRequest) {
       .lte('expires_at', in48Hours);
 
     for (const gift of expiringGifts || []) {
+      // Idempotency: skip if a reminder for this gift_entry_id was already sent.
+      // Repeat cron runs within the 48h window would otherwise spam the user.
+      const { data: existing } = await supabase
+        .from('customer_notifications')
+        .select('id')
+        .eq('customer_id', gift.user_id)
+        .eq('type', 'gift_expiry')
+        .eq('data->>gift_entry_id', gift.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) continue;
+
       const giftValue = gift.cost_piasters / 100;
 
-      await supabase.from('customer_notifications').insert({
+      const { error: insertError } = await supabase.from('customer_notifications').insert({
         customer_id: gift.user_id,
         type: 'gift_expiry',
         title_ar: 'هديتك على وشك الانتهاء!',
@@ -60,6 +73,11 @@ async function handler(request: NextRequest) {
         body_en: `Your ${giftValue} EGP gift expires in 2 days. Use it before it's gone!`,
         data: { gift_entry_id: gift.id, action_url: '/rewards' },
       });
+
+      if (insertError) {
+        logger.error('[GiftExpiry] reminder insert failed:', { id: gift.id, error: insertError });
+        continue;
+      }
 
       reminded++;
     }

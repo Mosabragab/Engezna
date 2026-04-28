@@ -136,16 +136,17 @@ export class ReferralService {
   }
 
   async getMonthlyCompletedCount(referrerId: string): Promise<number> {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    // UTC month-start to align with complete_referral_atomic's
+    // DATE_TRUNC('month', NOW()) which uses UTC.
+    const now = new Date();
+    const startOfMonthUtc = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     const { count } = await this.supabase
       .from('referrals')
       .select('id', { count: 'exact', head: true })
       .eq('referrer_id', referrerId)
       .eq('status', 'completed')
-      .gte('completed_at', startOfMonth.toISOString());
+      .gte('completed_at', startOfMonthUtc.toISOString());
 
     return count || 0;
   }
