@@ -1494,14 +1494,35 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 7 — Welcome + Win-back Flows (٢ أيام) ⏳ التالي
+### Phase 7 — Welcome + Win-back Flows (٢ أيام)
 
-- قواعد افتراضية في `gift_rules` للترحيب والاستعادة.
-- اختبار end-to-end.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦** (انظر commit `3e0853a`)
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration:** `20260428000003_seed_default_gift_rules.sql`
+
+أربع قواعد افتراضية في `gift_rules`:
+
+1. `welcome_first_order` — صندوق mystery بعد أول طلب delivered
+2. `winback_14_days` — صندوق mystery لعملاء `at_risk` بعد ١٤ يوم
+3. `delivery_on_us_alternating` — توصيل مجاني بعد طلب ≥١٥٠ ج.م
+4. `first_order_new_provider` — خصم ١٥ ج.م عند تجربة محل جديد
+
+**Cron جديد:** `/api/cron/gift-expiry`
+
+- يُشغَّل يوميًا 06:00 UTC (محدّث في `vercel.json`)
+- تذكير ٤٨ ساعة قبل انتهاء الصلاحية + auto-expire
+- بعد الترقية للـ atomic ops يستخدم `expire_overdue_gifts_batch` RPC
+
+**ملاحظة:** الـ trigger التلقائي لـ `processOrderCompleted` عند تسليم الطلب لم يُربط بعد — يُنفّذ ضمن Phase 12 كهوك موحَّد.
+
+</details>
 
 ### Phase 8 — Referral System (٣ أيام)
 
-**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
+**✅ مكتمل + مُحكَم بـ atomic RPCs — ٢٨ أبريل ٢٠٢٦**
 
 <details>
 <summary>سجل التنفيذ (انقر للتوسيع)</summary>
@@ -1510,10 +1531,10 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 - `types.ts`: Referral, ReferralStats, ReferralHistoryEntry, ApplyReferralResult, CompleteReferralResult
 - `service.ts`: ReferralService class
-  - `getOrCreateReferralCode` — توليد كود فريد (6 chars، بدون I/O/0/1) مع retry للتعارض
+  - `getOrCreateReferralCode` — توليد كود فريد (6 chars، بدون I/O/0/1) عبر `crypto.getRandomValues` + rejection sampling لمنع modulo bias؛ يعيد المحاولة فقط على PG `23505`
   - `applyReferralCode` — يتحقق: كود صالح + ليس self-referral + لم يُستخدم من قبل + لا توجد طلبات سابقة
-  - `completeReferral` — يتحقق: طلب delivered + payment_status='completed' + ≥٣٠٠ ج.م + أول طلب + cap شهري — ثم يمنح هديتين (٢٠ ج.م لكل طرف)
-  - `getStats`, `getHistory` — للواجهة
+  - `completeReferral` — pre-validation للطلب ثم يفوّض لـ `complete_referral_atomic` RPC (single transaction)
+  - `getStats`, `getHistory`, `getMonthlyCompletedCount` (UTC month boundary)
 - `index.ts`: Public API
 
 **API endpoints:**
@@ -1525,11 +1546,47 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 - `/[locale]/referral/page.tsx` — Server component يحمّل stats + history
 - `ReferralPageClient.tsx` — كود + Copy + Share (WhatsApp + Native Share API) + سجل الإحالات + شريط تقدم الـ cap الشهري
-- يستخدم SettingsLayout الموجود (نفس نمط صفحات /profile)
 
-**القاعدة الذهبية محفوظة:** `completeReferral` يستخدم GiftEngine.grantGift → Money + bucket budget + financial logging تلقائيًا.
+**ملاحظة:** الـ trigger التلقائي لـ `completeReferral` عند تسليم الطلب يُربط ضمن Phase 12 (هوك order-completion موحَّد).
 
-**ملاحظة:** الـ trigger التلقائي لـ `completeReferral` عند تسليم الطلب سيُربط في مرحلة لاحقة (Phase 12 — Loyalty Trigger) مع هوك واحد لكل order delivered يُشغّل: ruleEngine.processOrderCompleted + giftEngine.addStamp + referralService.completeReferral.
+</details>
+
+### Phase 8.5 — Atomic Operations + RLS Hardening (تكميلي)
+
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦** — استجابة لمراجعة CodeRabbit
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260428000004_gift_atomic_operations.sql`:**
+
+- جدول جديد `gift_stamp_orders` — UNIQUE(stamp_card_id, order_id) + UNIQUE(user_id, order_id) لمنع double-credit
+- 6 RPCs (SECURITY DEFINER + GRANT TO service_role only):
+  - `expire_gift_entry(p_id)` — UPDATE conditional + log في معاملة واحدة
+  - `grant_gift_atomic(...)` — يقفل retention_settings + يفحص budget + queue + insert + log ذرّيًا
+  - `open_gift_atomic(p_id)` — للمستخدم؛ يستخدم `auth.uid()` داخليًا
+  - `use_gift_atomic(...)` — UPDATE conditional + log + auto-expire إذا كان منتهي
+  - `add_gift_stamp_atomic(...)` — Idempotent عبر `gift_stamp_orders` UNIQUE
+  - `complete_referral_atomic(...)` — يقفل referral + يفحص cap + يمنح هديتين + يحدّث referral، all-or-nothing
+- RLS مُحكَم: حُذفت policy الـ UPDATE الواسعة؛ الـ "Service can ..." مُقيَّدة بـ `TO service_role`
+
+**Migration `20260428000005_gift_atomic_operations_v2.sql`:**
+
+- `revoke_gift_atomic(p_id, p_reason)` — UPDATE conditional + log ذرّيًا
+- `clawback_order_atomic(p_order_id, p_fault_source)` — Single CTE: يدخل clawback rows لكل الهدايا المُستخدمة على الطلب
+- `expire_overdue_gifts_batch()` — Single CTE: UPDATE + log INSERT لكل الـ overdue rows
+- `complete_referral_atomic v2` — يفحص subtotal min ذاتيًا (`isReferralEligible` داخل الـ RPC)
+- `idx_gift_financial_log_budget` — partial index لتسريع monthly bucket sums
+
+**Engine code:**
+
+- `engine.ts`: revokeGift / processClawback / expireAllOverdue → RPCs ذرّية
+- `engine.ts`: `grantGoldenBox` يستخدم `.is('golden_box_id', null)` ويلغي الهدية المكررة عند الـ race
+- `engine.ts`: `getSettings` cache بـ TTL 60s + `forceRefresh` param
+- `rule-engine.ts`: `evaluateCondition` numeric coercion + `isFinite` guard + null short-circuit؛ `evaluateGroup` empty=true مع warn؛ `checkRuleDailyBudget` UTC boundary؛ `buildUserFacts` parallel
+- `cron/gift-expiry`: idempotency check (لا إشعارات مكررة عبر cron runs متتالية)
+
+**⚠️ مهم:** كلا الـ migrations (4 و 5) لازم تُشغَّل على Supabase Production قبل النشر.
 
 </details>
 
@@ -1551,11 +1608,42 @@ UI Components (bilingual AR/EN + Framer Motion):
 - صفحة الاستلام `/gift/[token]`.
 - مكافحة الاحتيال الأساسية.
 
-### Phase 12 — Loyalty Points + Tiers (٢ أيام)
+### Phase 12 — Loyalty Points + Tiers + Order Completion Hook (٣ أيام) ⏳ التالي
 
-- trigger لكل `order_completed`.
-- صفحة `/rewards/points`.
-- tier badges في الـ profile.
+**🎯 المرحلة الأهم:** هي اللي تفعّل كل ما بُني في المراحل ١-٨. حاليًا الـ engine جاهز لكن مفيش حد بيستدعيه عند تسليم الطلب.
+
+**المُكوّنات:**
+
+1. **Order Completion Hook موحَّد** (`src/lib/orders/completion-hook.ts`):
+   - يُستدعى عند انتقال طلب لـ `delivered + payment_status='completed'`
+   - يُشغّل بترتيب: `ruleEngine.processOrderCompleted` → `giftEngine.addStamp` → `referralService.completeReferral` → award loyalty points
+   - مُحاط بـ try/catch — لا يفشل مسار الطلب لو فشلت أي خطوة
+   - Idempotent: يستخدم unique key لمنع التشغيل المزدوج
+
+2. **Cron Trigger** (`/api/cron/process-completed-orders`):
+   - يُشغَّل كل ١٥ دقيقة
+   - يجلب الطلبات اللي اتسلمت في آخر ٢٤ ساعة وما اتعالجتش
+   - يستدعي الهوك لكل طلب
+   - أبسط من الـ DB trigger (يدوي، قابل للتراجع)
+
+3. **Loyalty Points Service** (`src/lib/loyalty/`):
+   - `awardOrderPoints(userId, orderId)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم
+   - `redeemPoints(userId, points)` — ١٠٠ نقطة = خصم ٥ ج.م (ينشئ gift entry)
+   - تحديث `loyalty_tier` تلقائيًا (bronze < 500 < silver < 1500 < gold < 5000 < platinum)
+   - Clawback نسبي عند refund customer/fraud
+
+4. **Customer page** (`/[locale]/rewards/points`):
+   - عرض الرصيد الحالي + المستوى
+   - زر استبدال نقاط بكوبون
+   - تاريخ النقاط (`loyalty_transactions`)
+
+5. **Tier badge** في `/profile`:
+   - أيقونة + اسم المستوى + تقدّم لمستوى التالي
+
+**Migration مطلوب:**
+
+- `award_loyalty_points_atomic(p_user_id, p_order_id, p_points)` — INSERT في loyalty_transactions + UPDATE في loyalty_points + tier recalc، all-or-nothing
+- جدول `order_completion_processed` (idempotency: PK = order_id) لمنع التشغيل المزدوج
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
 
