@@ -1423,13 +1423,35 @@ AND trigger_schema = 'public';
 
 </details>
 
-### Phase 3 — Rule Engine (٣ أيام) ⏳ التالي
+### Phase 3 — Rule Engine (٣ أيام)
 
-- `src/lib/gifts/rule-engine.ts` — parser للـ JSONB conditions.
-- دعم كل الـ facts والـ operators والـ aggregators.
-- triggers واضحة: كيف ومتى يُستدعى الـ engine.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 4 — Customer Segmentation Cron (٢ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملف جديد:** `src/lib/gifts/rule-engine.ts` (291 سطر)
+
+- `evaluateConditions`: recursive JSONB parser — `all/any/none` + `eq/neq/gt/gte/lt/lte/in/not_in/between`
+- `RuleEngine.evaluateTrigger`: load rules → evaluate → grant gifts → atomic stats update
+- `RuleEngine.buildUserFacts`: 17 fact من الـ DB
+- `RuleEngine.processOrderCompleted`: convenience مع `first_order_from_provider`
+- `resolveGiftId`: lookup من gifts table (بدل empty string)
+- `checkRuleDailyBudget`: fail-closed + `spent + requested <= cap`
+- `getActiveRules`: throws on DB error (بدل return [])
+
+**Migration:** `20260428000002_increment_gift_rule_stats.sql`
+
+- Postgres RPC function (atomic increment — concurrency-safe)
+- Input validation (NULL/negative guard)
+- REVOKE public + GRANT service_role only
+- تم تشغيلها على Production ✅
+
+**CodeRabbit fixes:** 7 ملاحظات (2 critical + 3 major + 2 minor) — كلها محلولة
+
+</details>
+
+### Phase 4 — Customer Segmentation Cron (٢ أيام) ⏳ التالي
 
 - Cron job يومي (Supabase pg_cron).
 - يحسب الشرائح لكل العملاء ويكتبها في `customer_segments_daily`.
