@@ -1391,19 +1391,39 @@ AND trigger_schema = 'public';
 - `profiles.wallet_balance` → **موجود** (NUMERIC, default 0.00)
 - `admin_users.id` → UUID مستقل (ليس = `auth.uid()`) — يحتاج lookup: `SELECT id FROM admin_users WHERE user_id = auth.uid()`
 
-### Phase 1 — كلاس Money + Helpers + Settlement Hooks (٢ أيام) ⏳ التالي
+### Phase 1+2 — Gift Engine Core + Helpers + Types (٢ أيام)
 
-- راجع `src/lib/finance/money.ts`.
-- أضف helpers لحساب تكلفة الهدية، clawback، ميزانية الدلو.
-- اختبر كل حالة حافة (0 piasters, negative, overflow).
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 2 — Gift Engine Core (٣ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-- `src/lib/gifts/engine.ts` — grantGift، useGift، expireGift، revokeGift.
-- كل عملية transactional مع gift_financial_log.
-- اختبارات unit شاملة.
+**ملفات جديدة (848 سطر) في `src/lib/gifts/`:**
 
-### Phase 3 — Rule Engine (٣ أيام)
+- `types.ts` (169 سطر): كل الأنواع — Gift, GiftBoxEntry, GiftStamp, RetentionSettings, enums, params
+- `helpers.ts` (180 سطر): 15 دالة حسابية بدون DB:
+  - getTieredGiftCap (10/15/20 ج.م)
+  - calculateMaxDiscount (min of tiered + 20%)
+  - clampGiftValue, getBucketLimit, checkBudgetAvailable
+  - isOrderEligibleForStamp/Gift (≥300 ج.م)
+  - shouldClawback (fault-based), calculateClawbackPoints
+  - calculateGiftExpiry (Queue system, 4 max)
+  - calculateLoyaltyPoints (1 per 10 EGP), pointsToDiscount (100 = 5 EGP)
+- `engine.ts` (460 سطر): GiftEngine class — 11 method:
+  - grantGift (budget → queue → insert → log)
+  - openGift (Mystery Box trigger)
+  - useGift (validate → apply → log)
+  - expireGift, revokeGift, processClawback
+  - addStamp (4 stamps → golden box)
+  - expireAllOverdue (cron-compatible)
+  - getUserGiftBox, getUserStampCard
+- `index.ts` (39 سطر): Public API
+
+**القاعدة الذهبية محفوظة:** Money class + piasters + financial logging. Settlement engine لم يُمَس.
+
+</details>
+
+### Phase 3 — Rule Engine (٣ أيام) ⏳ التالي
 
 - `src/lib/gifts/rule-engine.ts` — parser للـ JSONB conditions.
 - دعم كل الـ facts والـ operators والـ aggregators.
