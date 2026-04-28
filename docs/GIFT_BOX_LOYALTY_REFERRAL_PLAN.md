@@ -1501,11 +1501,37 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 ### Phase 8 — Referral System (٣ أيام)
 
-- صفحة `/referral` للعميل.
-- تأكيد الإيميل.
-- trigger عند إتمام أول طلب ≥٣٠٠ ج.م.
-- منح الصندوق ٢٠ ج.م للمُحيل.
-- حد ١٠ شهريًا لكل مستخدم.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملفات جديدة في `src/lib/referrals/`:**
+
+- `types.ts`: Referral, ReferralStats, ReferralHistoryEntry, ApplyReferralResult, CompleteReferralResult
+- `service.ts`: ReferralService class
+  - `getOrCreateReferralCode` — توليد كود فريد (6 chars، بدون I/O/0/1) مع retry للتعارض
+  - `applyReferralCode` — يتحقق: كود صالح + ليس self-referral + لم يُستخدم من قبل + لا توجد طلبات سابقة
+  - `completeReferral` — يتحقق: طلب delivered + payment_status='completed' + ≥٣٠٠ ج.م + أول طلب + cap شهري — ثم يمنح هديتين (٢٠ ج.م لكل طرف)
+  - `getStats`, `getHistory` — للواجهة
+- `index.ts`: Public API
+
+**API endpoints:**
+
+- `GET /api/referrals` — stats + history للمستخدم الحالي
+- `POST /api/referrals/apply` — تطبيق كود إحالة (مع رسائل خطأ AR/EN)
+
+**Customer page:**
+
+- `/[locale]/referral/page.tsx` — Server component يحمّل stats + history
+- `ReferralPageClient.tsx` — كود + Copy + Share (WhatsApp + Native Share API) + سجل الإحالات + شريط تقدم الـ cap الشهري
+- يستخدم SettingsLayout الموجود (نفس نمط صفحات /profile)
+
+**القاعدة الذهبية محفوظة:** `completeReferral` يستخدم GiftEngine.grantGift → Money + bucket budget + financial logging تلقائيًا.
+
+**ملاحظة:** الـ trigger التلقائي لـ `completeReferral` عند تسليم الطلب سيُربط في مرحلة لاحقة (Phase 12 — Loyalty Trigger) مع هوك واحد لكل order delivered يُشغّل: ruleEngine.processOrderCompleted + giftEngine.addStamp + referralService.completeReferral.
+
+</details>
 
 ### Phase 9 — Partner Gifts (٣ أيام)
 
