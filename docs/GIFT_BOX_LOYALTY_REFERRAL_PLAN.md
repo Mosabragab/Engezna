@@ -1249,40 +1249,55 @@ ALTER TABLE orders
 
 ### Phase 0A — إعادة هيكلة الوثائق + تحديث الفريق + أرشفة القديم (١-٢ أيام)
 
-**تُنفّذ أولاً قبل أي كود — البناء على أساس قوي ومتناسق.**
+**✅ مكتمل — ٢٥ أبريل ٢٠٢٦**
 
-**المهام:**
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-1. **تحديث الهيكل القيادي** في كل الملفات:
-   - إضافة د. أمان الله صادق كـ CEO & Co-founder
-   - مصعب + أمان يقومان بدور المندوب في بني سويف (بدون توظيف مندوب)
-2. **تثبيت متوسط الطلب** على ٣٠٠ ج.م في كل الحسابات المالية
-3. **إضافة "أكل بيتي"** كقسم سادس في كل الوثائق (٦ أقسام بدل ٥)
-4. **إعادة هيكلة فولدر project-management:**
-   - نقل الملفات النشطة لـ `active/`
-   - أرشفة الملفات المنتهية في `archive/`
-   - إنشاء `TEAM_STRUCTURE.md` جديد
-5. **تحديث الملفات الجذرية:**
-   - `claude.md` → إضافة مرجع لخطة Gift Box
-   - `README.md` → تحديث الحالة الحالية
-   - `PRD.md` → إضافة قسم Retention System
-6. **مراجعة السياسات القانونية:**
-   - `docs/legal/TERMS_AND_CONDITIONS_DRAFT.md` → التأكد من عدم تعارض مع الولاء/الهدايا
-   - `docs/legal/PRIVACY_POLICY_DRAFT.md` → إضافة بند بيانات الولاء
-   - إنشاء `docs/legal/LOYALTY_PROGRAM_TERMS.md` → شروط صندوق الهدايا
-7. **خطة تعديل الواجهة الأمامية (لا تُنفّذ الآن — تُوثّق فقط):**
-   - `welcome/page.tsx` → عبارة "بدون رسوم خدمة" في ٧ مواقع
-   - `about/page.tsx` → "0% رسوم خدمة للعملاء"
-   - `layout.tsx` → meta keywords
-   - **القرار:** بما أن رسوم المعالجة مُعطّلة، نُبقي النص كما هو ونوثّق: "عند تفعيل الرسوم، عدّل هذه الملفات أولاً"
-8. **تجميع كل وثائق إدارة المشروع** في فولدر واحد منظم
+**ما تم تنفيذه:**
+
+1. ✅ تحديث الهيكل القيادي (CEO د. أمان الله + Founder مصعب) في 35+ ملف
+2. ✅ تثبيت AOV على ٣٠٠ ج.م + أسعار 2026 بعد تحرير سعر الصرف
+3. ✅ إضافة "أكل بيتي" كقسم سادس في كل الوثائق
+4. ✅ أرشفة الملفات المنتهية (Ramadan Strategy + old project-status)
+5. ✅ تحديث claude.md + README.md + PRD.md مع مراجع Gift Box
+6. ✅ تحديث الشروط والأحكام (AR+EN) — grace period 30 يوم + بنود Gift Box/Loyalty
+7. ✅ إنشاء FRONTEND_POLICY_CHANGE_PLAN.md — توثيق 7 مواقع "0% رسوم خدمة"
+8. ✅ تليين لغة "0% دائمًا" إلى "حاليًا" في welcome + about pages
+9. ✅ توحيد تاريخ الإطلاق على مايو 2026 في كل الملفات
+10. ✅ إنشاء Billion Pound Roadmap (v1.3) مع 3 سيناريوهات + Hub & Spoke + AI-First Support
+11. ✅ حل تناقض Partner Gifts deposit (§4 vs §22)
+
+**Commits:** 15 commit على فرع `claude/cashback-loyalty-program-TeoQY`
+
+</details>
 
 ### Phase 0B — مراجعة قاعدة البيانات + SQL للمستخدم (١-٢ أيام)
 
-- راجع كل الـ migrations الحالية.
-- ابنِ SQL script واحد شامل لكل الجداول الجديدة والأعمدة.
-- أعطِ المستخدم الـ SQL للتشغيل على Supabase بعد مراجعته.
-- **لا تُشغّل الـ migration على الإنتاج قبل موافقة المستخدم.**
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦ — Migration نجح على Production**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ما تم تنفيذه:**
+
+1. ✅ DB Discovery شامل (8 استعلامات) — نتائج نظيفة، لا تعارضات
+2. ✅ بناء migration واحد شامل: `20260428000001_gift_box_loyalty_referral_system.sql` (605 سطر)
+3. ✅ تشغيل الـ migration على Supabase Production — **Success**
+
+**محتويات الـ Migration:**
+
+- 8 enums جديدة + 5 قيم مُضافة لـ notification_type
+- 11 جدول جديد (gifts, gift_box_entries, gift_rules, gift_stamps, gift_forwards, gift_partner_offers, gift_financial_log, customer_segments_daily, retention_settings, provider_subscriptions, operational_expenses)
+- أعمدة جديدة على 5 جداول موجودة (providers, profiles, orders, referrals, refunds)
+- 16 index + 19 RLS policy + 2 trigger + 2 Realtime publication
+- Seed data لـ retention_settings
+
+**القاعدة الذهبية:** Settlement engine لم يُمَس ✅
+
+</details>
+
+**DB Discovery السابق (مرجع):**
 
 **⚠️ SQL استكشاف قاعدة البيانات الإلزامي (يُشغّل أولًا على Supabase SQL Editor):**
 
@@ -1376,7 +1391,7 @@ AND trigger_schema = 'public';
 - `profiles.wallet_balance` → **موجود** (NUMERIC, default 0.00)
 - `admin_users.id` → UUID مستقل (ليس = `auth.uid()`) — يحتاج lookup: `SELECT id FROM admin_users WHERE user_id = auth.uid()`
 
-### Phase 1 — كلاس Money + Helpers + Settlement Hooks (٢ أيام)
+### Phase 1 — كلاس Money + Helpers + Settlement Hooks (٢ أيام) ⏳ التالي
 
 - راجع `src/lib/finance/money.ts`.
 - أضف helpers لحساب تكلفة الهدية، clawback، ميزانية الدلو.
