@@ -5,21 +5,30 @@ import type {
   RetentionSettings,
   GrantGiftParams,
   UseGiftParams,
-  GiftFinancialLogEntry,
   FaultSource,
 } from './types';
 import { shouldClawback, getDefaultSettings } from './helpers';
 
+const SETTINGS_TTL_MS = 60_000; // 1 minute
+
 export class GiftEngine {
   private supabase: AnySupabaseClient;
   private settings: RetentionSettings | null = null;
+  private settingsFetchedAt = 0;
 
   constructor(supabase: AnySupabaseClient) {
     this.supabase = supabase;
   }
 
-  async getSettings(): Promise<RetentionSettings> {
-    if (this.settings) return this.settings;
+  /**
+   * Returns retention settings, with a 60-second TTL cache. Pass forceRefresh
+   * after admin updates to invalidate the cache immediately.
+   */
+  async getSettings(forceRefresh = false): Promise<RetentionSettings> {
+    const now = Date.now();
+    if (!forceRefresh && this.settings && now - this.settingsFetchedAt < SETTINGS_TTL_MS) {
+      return this.settings;
+    }
 
     const { data, error } = await this.supabase
       .from('retention_settings')
@@ -32,24 +41,14 @@ export class GiftEngine {
     } else {
       this.settings = data as RetentionSettings;
     }
-
+    this.settingsFetchedAt = now;
     return this.settings;
-  }
-
-  private async logFinancial(entry: GiftFinancialLogEntry): Promise<void> {
-    const { error } = await this.supabase.from('gift_financial_log').insert(entry);
-
-    if (error) {
-      throw new Error(
-        `[GiftEngine] Financial log FAILED — ${error.message}. Entry: ${JSON.stringify({ type: entry.transaction_type, amount: entry.amount_piasters, user: entry.user_id })}`
-      );
-    }
   }
 
   /**
    * Grant a gift atomically via grant_gift_atomic RPC.
-   * - Budget check, queue check, insert, and financial log all in one transaction.
-   * - Returns the created entry, or null on budget/queue failure.
+   * Budget check, queue check, insert, and financial log all in one transaction.
+   * Returns the created entry, or null on budget/queue failure.
    */
   async grantGift(params: GrantGiftParams): Promise<GiftBoxEntry | null> {
     const { data, error } = await this.supabase.rpc('grant_gift_atomic', {
@@ -131,66 +130,47 @@ export class GiftEngine {
     return Boolean(data);
   }
 
+  /**
+   * Revoke a gift atomically via revoke_gift_atomic RPC.
+   * Conditional update (only revokes non-used gifts) + log in one transaction.
+   */
   async revokeGift(giftEntryId: string, reason: string): Promise<boolean> {
-    const { data: entry } = await this.supabase
-      .from('gift_box_entries')
-      .select('user_id, cost_piasters, bucket_name, funder_type, funder_provider_id, status')
-      .eq('id', giftEntryId)
-      .single();
-
-    if (!entry || entry.status === 'used') return false;
-
-    const { error } = await this.supabase
-      .from('gift_box_entries')
-      .update({ status: 'revoked' })
-      .eq('id', giftEntryId)
-      .neq('status', 'used');
-
-    if (error) return false;
-
-    await this.logFinancial({
-      transaction_type: 'revoke',
-      amount_piasters: entry.cost_piasters,
-      bucket: entry.bucket_name,
-      funder_type: entry.funder_type,
-      funder_provider_id: entry.funder_provider_id,
-      user_id: entry.user_id,
-      gift_entry_id: giftEntryId,
-      notes: reason,
+    const { data, error } = await this.supabase.rpc('revoke_gift_atomic', {
+      p_id: giftEntryId,
+      p_reason: reason,
     });
 
-    return true;
+    if (error) {
+      console.error('[GiftEngine] revoke_gift_atomic failed:', error);
+      return false;
+    }
+    return Boolean(data);
   }
 
-  async processClawback(orderId: string, faultSource: FaultSource): Promise<void> {
-    if (!shouldClawback(faultSource)) return;
+  /**
+   * Process clawback atomically via clawback_order_atomic RPC.
+   * Single transaction inserts a clawback row for every used gift on the order.
+   * Throws on failure so callers (refund cron) can retry.
+   */
+  async processClawback(orderId: string, faultSource: FaultSource): Promise<number> {
+    if (!shouldClawback(faultSource)) return 0;
 
-    const { data: entries } = await this.supabase
-      .from('gift_box_entries')
-      .select('id, status, cost_piasters, user_id, bucket_name, funder_type, funder_provider_id')
-      .eq('used_order_id', orderId)
-      .eq('status', 'used');
+    const { data, error } = await this.supabase.rpc('clawback_order_atomic', {
+      p_order_id: orderId,
+      p_fault_source: faultSource,
+    });
 
-    if (!entries || entries.length === 0) return;
-
-    for (const entry of entries) {
-      await this.logFinancial({
-        transaction_type: 'clawback',
-        amount_piasters: entry.cost_piasters,
-        bucket: entry.bucket_name,
-        funder_type: entry.funder_type,
-        funder_provider_id: entry.funder_provider_id,
-        user_id: entry.user_id,
-        gift_entry_id: entry.id,
-        order_id: orderId,
-        notes: `Clawback due to ${faultSource} refund on order ${orderId}`,
-      });
+    if (error) {
+      throw new Error(`[GiftEngine] clawback_order_atomic failed: ${error.message}`);
     }
+    return Number(data) || 0;
   }
 
   /**
    * Add a stamp atomically via add_gift_stamp_atomic RPC.
    * Idempotent — duplicate orderId is silently ignored via UNIQUE constraint.
+   * If the card just completed, grants the golden box and assigns it
+   * conditionally (only if golden_box_id is still null).
    */
   async addStamp(
     userId: string,
@@ -212,7 +192,6 @@ export class GiftEngine {
 
     const card = data as GiftStamp;
 
-    // If card just completed, grant the golden box
     if (card.is_completed && !card.golden_box_id) {
       await this.grantGoldenBox(userId, card.id);
     }
@@ -224,7 +203,6 @@ export class GiftEngine {
     const settings = await this.getSettings();
     const value = Math.min(settings.golden_box_default_piasters, settings.golden_box_max_piasters);
 
-    // Resolve a golden_box gift template if one exists; otherwise grant with NULL gift_id
     const { data: goldenGift } = await this.supabase
       .from('gifts')
       .select('id')
@@ -241,30 +219,36 @@ export class GiftEngine {
       costPiasters: value,
     });
 
-    if (goldenEntry) {
-      await this.supabase
-        .from('gift_stamps')
-        .update({ golden_box_id: goldenEntry.id })
-        .eq('id', stampCardId);
+    if (!goldenEntry) return;
+
+    // Conditional assignment: only set golden_box_id if it's still null.
+    // If a concurrent request already assigned a golden box, revoke this one
+    // so we don't double-credit the user.
+    const { data: assigned } = await this.supabase
+      .from('gift_stamps')
+      .update({ golden_box_id: goldenEntry.id })
+      .eq('id', stampCardId)
+      .is('golden_box_id', null)
+      .select('id')
+      .maybeSingle();
+
+    if (!assigned) {
+      await this.revokeGift(goldenEntry.id, 'duplicate_golden_box_race');
     }
   }
 
+  /**
+   * Batch-expire overdue gifts via expire_overdue_gifts_batch RPC.
+   * Single transaction updates all overdue rows + inserts log entries.
+   */
   async expireAllOverdue(): Promise<number> {
-    const now = new Date().toISOString();
-    const { data: expired } = await this.supabase
-      .from('gift_box_entries')
-      .select('id')
-      .in('status', ['granted', 'opened'])
-      .lt('expires_at', now);
+    const { data, error } = await this.supabase.rpc('expire_overdue_gifts_batch');
 
-    if (!expired || expired.length === 0) return 0;
-
-    let count = 0;
-    for (const entry of expired) {
-      const success = await this.expireGift(entry.id);
-      if (success) count++;
+    if (error) {
+      console.error('[GiftEngine] expire_overdue_gifts_batch failed:', error);
+      return 0;
     }
-    return count;
+    return Number(data) || 0;
   }
 
   async getUserGiftBox(userId: string): Promise<GiftBoxEntry[]> {

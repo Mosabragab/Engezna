@@ -43,9 +43,14 @@ interface Rule {
 
 export type Facts = Record<string, unknown>;
 
+function toFiniteNumber(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function evaluateCondition(condition: Condition, facts: Facts): boolean {
   const factValue = facts[condition.fact];
-  if (factValue === undefined) return false;
+  if (factValue === undefined || factValue === null) return false;
 
   switch (condition.op) {
     case 'eq':
@@ -53,20 +58,28 @@ function evaluateCondition(condition: Condition, facts: Facts): boolean {
     case 'neq':
       return factValue !== condition.value;
     case 'gt':
-      return (factValue as number) > (condition.value as number);
     case 'gte':
-      return (factValue as number) >= (condition.value as number);
     case 'lt':
-      return (factValue as number) < (condition.value as number);
-    case 'lte':
-      return (factValue as number) <= (condition.value as number);
+    case 'lte': {
+      const a = toFiniteNumber(factValue);
+      const b = toFiniteNumber(condition.value);
+      if (a === null || b === null) return false;
+      if (condition.op === 'gt') return a > b;
+      if (condition.op === 'gte') return a >= b;
+      if (condition.op === 'lt') return a < b;
+      return a <= b;
+    }
     case 'in':
       return Array.isArray(condition.value) && condition.value.includes(factValue);
     case 'not_in':
       return Array.isArray(condition.value) && !condition.value.includes(factValue);
     case 'between': {
-      const [min, max] = condition.value as [number, number];
-      return (factValue as number) >= min && (factValue as number) <= max;
+      if (!Array.isArray(condition.value) || condition.value.length !== 2) return false;
+      const a = toFiniteNumber(factValue);
+      const lo = toFiniteNumber(condition.value[0]);
+      const hi = toFiniteNumber(condition.value[1]);
+      if (a === null || lo === null || hi === null) return false;
+      return a >= lo && a <= hi;
     }
     default:
       return false;
@@ -94,7 +107,9 @@ function evaluateGroup(group: ConditionGroup, facts: Facts): boolean {
         !(isConditionGroup(item) ? evaluateGroup(item, facts) : evaluateCondition(item, facts))
     );
   }
-  return false;
+  // Empty group is vacuously true; warn so misconfigured rules surface.
+  console.warn('[RuleEngine] Empty ConditionGroup evaluated as true:', JSON.stringify(group));
+  return true;
 }
 
 export function evaluateConditions(conditions: ConditionGroup, facts: Facts): boolean {
@@ -130,8 +145,9 @@ export class RuleEngine {
   private async checkRuleDailyBudget(rule: Rule, requestedAmount: number): Promise<boolean> {
     if (!rule.budget_cap_per_day) return true;
 
+    // Use UTC midnight to match created_at storage (timestamptz is stored as UTC).
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
     const { data, error } = await this.supabase
       .from('gift_financial_log')
@@ -164,6 +180,16 @@ export class RuleEngine {
     return data?.id || null;
   }
 
+  /**
+   * Evaluates all active rules for a trigger in priority order, granting a
+   * gift for each rule whose conditions match (subject to the rule's daily
+   * budget cap and the bucket budget enforced by grant_gift_atomic).
+   *
+   * NOTE: gifts intentionally stack — multiple matching rules can each grant
+   * a gift in the same trigger. The user's queue cap (gift_max_queue_size)
+   * is the ultimate guard against over-stacking. If you need single-rule
+   * semantics, set rule priorities so only one rule matches at a time.
+   */
   async evaluateTrigger(trigger: string, facts: Facts, userId: string): Promise<GiftBoxEntry[]> {
     const rules = await this.getActiveRules(trigger);
     const results: GiftBoxEntry[] = [];
@@ -203,37 +229,42 @@ export class RuleEngine {
   }
 
   async buildUserFacts(userId: string): Promise<Facts> {
-    const { data: profile } = await this.supabase
-      .from('profiles')
-      .select('created_at, governorate_id, city_id, last_segment, loyalty_tier')
-      .eq('id', userId)
-      .single();
-
-    const { data: orders } = await this.supabase
-      .from('orders')
-      .select('id, subtotal, provider_id, created_at, discount, status')
-      .eq('customer_id', userId)
-      .eq('status', 'delivered')
-      .order('created_at', { ascending: false });
-
-    const { count: giftCount } = await this.supabase
-      .from('gift_box_entries')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('status', 'used');
-
-    const { count: referralCount } = await this.supabase
-      .from('referrals')
-      .select('id', { count: 'exact', head: true })
-      .eq('referrer_id', userId)
-      .eq('status', 'completed');
-
-    const { data: stampCard } = await this.supabase
-      .from('gift_stamps')
-      .select('stamp_count')
-      .eq('user_id', userId)
-      .eq('is_completed', false)
-      .single();
+    // Fire all 5 reads in parallel — independent queries, no waterfall.
+    const [
+      { data: profile },
+      { data: orders },
+      { count: giftCount },
+      { count: referralCount },
+      { data: stampCard },
+    ] = await Promise.all([
+      this.supabase
+        .from('profiles')
+        .select('created_at, governorate_id, city_id, last_segment, loyalty_tier')
+        .eq('id', userId)
+        .single(),
+      this.supabase
+        .from('orders')
+        .select('id, subtotal, provider_id, created_at, discount, status')
+        .eq('customer_id', userId)
+        .eq('status', 'delivered')
+        .order('created_at', { ascending: false }),
+      this.supabase
+        .from('gift_box_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('status', 'used'),
+      this.supabase
+        .from('referrals')
+        .select('id', { count: 'exact', head: true })
+        .eq('referrer_id', userId)
+        .eq('status', 'completed'),
+      this.supabase
+        .from('gift_stamps')
+        .select('stamp_count')
+        .eq('user_id', userId)
+        .eq('is_completed', false)
+        .maybeSingle(),
+    ]);
 
     const orderList = orders || [];
     const totalOrders = orderList.length;

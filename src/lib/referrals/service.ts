@@ -12,15 +12,30 @@ import type {
 const REFERRAL_CODE_LENGTH = 6;
 const REFERRAL_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, O, 0, 1
 
+/**
+ * CSPRNG-backed code generation, unbiased via rejection sampling.
+ * Ambiguous characters (I, O, 0, 1) are excluded from the alphabet.
+ */
 function generateCandidateCode(): string {
-  let code = '';
-  for (let i = 0; i < REFERRAL_CODE_LENGTH; i++) {
-    code += REFERRAL_CODE_ALPHABET.charAt(
-      Math.floor(Math.random() * REFERRAL_CODE_ALPHABET.length)
-    );
+  const alphabetSize = REFERRAL_CODE_ALPHABET.length;
+  // Largest multiple of alphabetSize that fits in a byte; reject above to avoid bias.
+  const acceptCutoff = Math.floor(256 / alphabetSize) * alphabetSize;
+
+  const out: string[] = [];
+  const buf = new Uint8Array(REFERRAL_CODE_LENGTH * 2);
+  while (out.length < REFERRAL_CODE_LENGTH) {
+    crypto.getRandomValues(buf);
+    for (let i = 0; i < buf.length && out.length < REFERRAL_CODE_LENGTH; i++) {
+      const b = buf[i];
+      if (b < acceptCutoff) {
+        out.push(REFERRAL_CODE_ALPHABET[b % alphabetSize]);
+      }
+    }
   }
-  return code;
+  return out.join('');
 }
+
+const PG_UNIQUE_VIOLATION = '23505';
 
 export class ReferralService {
   private supabase: AnySupabaseClient;
@@ -58,6 +73,15 @@ export class ReferralService {
         .is('referral_code', null);
 
       if (!error) return candidate;
+
+      // Only retry on unique-constraint races; surface other failures.
+      const isUniqueViolation =
+        (error as { code?: string }).code === PG_UNIQUE_VIOLATION ||
+        /duplicate key|unique/i.test(error.message || '');
+      if (!isUniqueViolation) {
+        console.error('[ReferralService] Failed to assign referral_code:', error);
+        return null;
+      }
     }
 
     return null;
