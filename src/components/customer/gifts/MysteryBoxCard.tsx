@@ -18,14 +18,11 @@ export function MysteryBoxCard({ entry, onOpen, onUse }: MysteryBoxCardProps) {
   const isRTL = locale === 'ar';
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealed, setIsRevealed] = useState(entry.status === 'opened');
+  const [now] = useState(() => Date.now());
 
-  const isExpiringSoon =
-    new Date(entry.expires_at).getTime() - Date.now() < 2 * 24 * 60 * 60 * 1000;
-
-  const daysLeft = Math.max(
-    0,
-    Math.ceil((new Date(entry.expires_at).getTime() - Date.now()) / 86400000)
-  );
+  const expiresAt = new Date(entry.expires_at).getTime();
+  const isExpiringSoon = expiresAt - now < 2 * 24 * 60 * 60 * 1000;
+  const daysLeft = Math.max(0, Math.ceil((expiresAt - now) / 86400000));
 
   const handleOpen = async () => {
     setIsOpening(true);

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Stamp, Trophy } from 'lucide-react';
 import type { GiftStamp } from '@/lib/gifts/types';
@@ -12,15 +13,13 @@ interface StampCardProps {
 export function StampCard({ stampCard, totalStamps = 4 }: StampCardProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
+  const [now] = useState(() => Date.now());
 
   const currentStamps = stampCard?.stamp_count || 0;
   const progress = (currentStamps / totalStamps) * 100;
 
   const daysLeft = stampCard
-    ? Math.max(
-        0,
-        Math.ceil((new Date(stampCard.card_expires_at).getTime() - Date.now()) / 86400000)
-      )
+    ? Math.max(0, Math.ceil((new Date(stampCard.card_expires_at).getTime() - now) / 86400000))
     : 0;
 
   return (
