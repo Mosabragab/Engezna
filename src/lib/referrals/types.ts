@@ -65,5 +65,7 @@ export type CompleteReferralResult =
         | 'order_below_minimum'
         | 'monthly_cap_reached'
         | 'email_not_verified'
-        | 'order_not_qualifying';
+        | 'order_not_qualifying'
+        | 'budget_exhausted'
+        | 'system_error';
     };
