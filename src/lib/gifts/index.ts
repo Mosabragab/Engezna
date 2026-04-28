@@ -1,5 +1,11 @@
 export { GiftEngine, createGiftEngine } from './engine';
 export { RuleEngine, createRuleEngine, evaluateConditions, type Facts } from './rule-engine';
+export {
+  pickWeightedRandom,
+  calculateExpectedCost,
+  getDefaultPrizes,
+  type MysteryBoxPrize,
+} from './mystery-box';
 
 export {
   getDefaultSettings,
