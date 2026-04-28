@@ -9,6 +9,10 @@
     {
       "path": "/api/cron/settlement-overdue",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/segmentation",
+      "schedule": "0 0 * * *"
     }
   ]
 }
