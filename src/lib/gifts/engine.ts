@@ -397,9 +397,17 @@ export class GiftEngine {
   ): Promise<void> {
     const value = Math.min(settings.golden_box_default_piasters, settings.golden_box_max_piasters);
 
+    const { data: goldenGift } = await this.supabase
+      .from('gifts')
+      .select('id')
+      .eq('type', 'golden_box')
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
     const goldenEntry = await this.grantGift({
       userId,
-      giftId: '',
+      giftId: goldenGift?.id || '',
       source: 'stamp_card',
       bucketName: 'stamp',
       costPiasters: value,

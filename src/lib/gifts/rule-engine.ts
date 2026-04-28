@@ -2,7 +2,6 @@ import type { AnySupabaseClient, GiftBoxEntry, BucketName } from './types';
 import { GiftEngine } from './engine';
 
 type Operator = 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'between';
-type Aggregator = 'all' | 'any' | 'none';
 
 interface Condition {
   fact: string;
@@ -38,6 +37,8 @@ interface Rule {
   budget_bucket: string;
   budget_cap_per_day: number | null;
   budget_cap_per_month: number | null;
+  applied_count: number;
+  total_cost_piasters: number;
 }
 
 export type Facts = Record<string, unknown>;
@@ -117,28 +118,50 @@ export class RuleEngine {
       .eq('is_active', true)
       .order('priority', { ascending: true });
 
-    if (error || !data) return [];
-    return data as Rule[];
+    if (error) {
+      throw new Error(
+        `[RuleEngine] Failed to load rules for trigger "${trigger}": ${error.message}`
+      );
+    }
+
+    return (data || []) as Rule[];
   }
 
-  private async checkRuleDailyBudget(rule: Rule): Promise<boolean> {
+  private async checkRuleDailyBudget(rule: Rule, requestedAmount: number): Promise<boolean> {
     if (!rule.budget_cap_per_day) return true;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { data } = await this.supabase
+    const { data, error } = await this.supabase
       .from('gift_financial_log')
       .select('amount_piasters')
       .gte('created_at', today.toISOString())
       .eq('bucket', rule.budget_bucket)
       .eq('transaction_type', 'grant');
 
+    if (error) {
+      console.error(`[RuleEngine] Budget check failed for rule ${rule.id}: ${error.message}`);
+      return false;
+    }
+
     const spent = (data || []).reduce(
       (sum: number, r: { amount_piasters: number }) => sum + r.amount_piasters,
       0
     );
-    return spent < rule.budget_cap_per_day;
+    return spent + requestedAmount <= rule.budget_cap_per_day;
+  }
+
+  private async resolveGiftId(giftType: string): Promise<string | null> {
+    const { data } = await this.supabase
+      .from('gifts')
+      .select('id')
+      .eq('type', giftType)
+      .eq('is_active', true)
+      .limit(1)
+      .single();
+
+    return data?.id || null;
   }
 
   async evaluateTrigger(trigger: string, facts: Facts, userId: string): Promise<GiftBoxEntry[]> {
@@ -149,30 +172,30 @@ export class RuleEngine {
       const matches = evaluateConditions(rule.conditions as ConditionGroup, facts);
       if (!matches) continue;
 
-      const withinBudget = await this.checkRuleDailyBudget(rule);
+      const costPiasters = rule.action.value_piasters || 500;
+
+      const withinBudget = await this.checkRuleDailyBudget(rule, costPiasters);
       if (!withinBudget) continue;
+
+      const giftId = await this.resolveGiftId(rule.action.gift_type);
 
       const giftEntry = await this.giftEngine.grantGift({
         userId,
-        giftId: '',
+        giftId: giftId || '',
         source: 'mystery_box',
         ruleId: rule.id,
         bucketName: rule.action.bucket || rule.budget_bucket,
-        costPiasters: rule.action.value_piasters || 500,
+        costPiasters,
         expiryDays: rule.action.expiry_days,
       });
 
       if (giftEntry) {
         results.push(giftEntry);
 
-        await this.supabase
-          .from('gift_rules')
-          .update({
-            applied_count: (rule.applied_count || 0) + 1,
-            total_cost_piasters:
-              (rule.total_cost_piasters || 0) + (rule.action.value_piasters || 500),
-          })
-          .eq('id', rule.id);
+        await this.supabase.rpc('increment_gift_rule_stats', {
+          p_rule_id: rule.id,
+          p_cost_piasters: costPiasters,
+        });
       }
     }
 
