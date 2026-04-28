@@ -28,28 +28,25 @@ async function handler(request: NextRequest) {
   let reminded = 0;
 
   try {
-    // 1. Expire overdue gifts
+    // 1. Expire overdue gifts via atomic RPC (status update + financial log
+    //    happen in one transaction, conditional on still-granted/opened state)
     const { data: overdueGifts } = await supabase
       .from('gift_box_entries')
-      .select('id, user_id, cost_piasters, bucket_name, funder_type, funder_provider_id')
+      .select('id')
       .in('status', ['granted', 'opened'])
       .lt('expires_at', now);
 
     for (const gift of overdueGifts || []) {
-      await supabase.from('gift_box_entries').update({ status: 'expired' }).eq('id', gift.id);
-
-      await supabase.from('gift_financial_log').insert({
-        transaction_type: 'expire',
-        amount_piasters: gift.cost_piasters,
-        bucket: gift.bucket_name,
-        funder_type: gift.funder_type,
-        funder_provider_id: gift.funder_provider_id,
-        user_id: gift.user_id,
-        gift_entry_id: gift.id,
-        notes: 'Auto-expired by cron',
+      const { data: success, error: rpcError } = await supabase.rpc('expire_gift_entry', {
+        p_id: gift.id,
       });
 
-      expired++;
+      if (rpcError) {
+        logger.error('[GiftExpiry] expire_gift_entry failed:', { id: gift.id, error: rpcError });
+        continue;
+      }
+
+      if (success) expired++;
     }
 
     // 2. Send reminders for gifts expiring in 48 hours

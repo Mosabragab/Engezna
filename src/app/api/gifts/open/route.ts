@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const engine = createGiftEngine(supabase);
-    const success = await engine.openGift(giftEntryId, user.id);
+    const success = await engine.openGift(giftEntryId);
 
     if (!success) {
       return NextResponse.json({ error: 'Gift not found or already opened' }, { status: 404 });

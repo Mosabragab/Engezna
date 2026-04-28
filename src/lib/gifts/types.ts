@@ -129,7 +129,7 @@ export interface RetentionSettings {
 
 export interface GrantGiftParams {
   userId: string;
-  giftId: string;
+  giftId: string | null;
   source: GiftSource;
   ruleId?: string;
   bucketName: string;

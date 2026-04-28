@@ -1,4 +1,3 @@
-import { Money } from '@/lib/finance/money';
 import type {
   AnySupabaseClient,
   GiftBoxEntry,
@@ -7,17 +6,9 @@ import type {
   GrantGiftParams,
   UseGiftParams,
   GiftFinancialLogEntry,
-  BucketName,
   FaultSource,
 } from './types';
-import {
-  checkBudgetAvailable,
-  calculateGiftExpiry,
-  clampGiftValue,
-  shouldClawback,
-  calculateClawbackPoints,
-  getDefaultSettings,
-} from './helpers';
+import { shouldClawback, getDefaultSettings } from './helpers';
 
 export class GiftEngine {
   private supabase: AnySupabaseClient;
@@ -55,213 +46,89 @@ export class GiftEngine {
     }
   }
 
-  private async getBucketSpent(bucket: BucketName): Promise<number> {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-
-    const { data, error } = await this.supabase
-      .from('gift_financial_log')
-      .select('amount_piasters')
-      .eq('bucket', bucket)
-      .eq('funder_type', 'engezna')
-      .gte('created_at', startOfMonth.toISOString())
-      .in('transaction_type', ['grant']);
-
-    if (error || !data) return 0;
-    return data.reduce(
-      (sum: number, row: { amount_piasters: number }) => sum + row.amount_piasters,
-      0
-    );
-  }
-
-  private async getActiveGiftCount(userId: string): Promise<{
-    count: number;
-    latestExpiry: Date | null;
-  }> {
-    const { data, error } = await this.supabase
-      .from('gift_box_entries')
-      .select('expires_at')
-      .eq('user_id', userId)
-      .in('status', ['granted', 'opened'])
-      .order('expires_at', { ascending: false })
-      .limit(1);
-
-    if (error || !data) return { count: 0, latestExpiry: null };
-
-    const { count } = await this.supabase
-      .from('gift_box_entries')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .in('status', ['granted', 'opened']);
-
-    return {
-      count: count || 0,
-      latestExpiry: data.length > 0 ? new Date(data[0].expires_at) : null,
-    };
-  }
-
+  /**
+   * Grant a gift atomically via grant_gift_atomic RPC.
+   * - Budget check, queue check, insert, and financial log all in one transaction.
+   * - Returns the created entry, or null on budget/queue failure.
+   */
   async grantGift(params: GrantGiftParams): Promise<GiftBoxEntry | null> {
-    const settings = await this.getSettings();
-
-    const bucketSpent = await this.getBucketSpent(params.bucketName as BucketName);
-    const budget = checkBudgetAvailable(
-      params.bucketName as BucketName,
-      bucketSpent,
-      params.costPiasters,
-      settings
-    );
-
-    if (budget.is_exhausted) {
-      console.warn(`[GiftEngine] Budget exhausted for bucket ${params.bucketName}`);
-      return null;
-    }
-
-    const { count, latestExpiry } = await this.getActiveGiftCount(params.userId);
-    const expiryDays = params.expiryDays || settings.gift_default_expiry_days;
-    const { canGrant, expiresAt } = calculateGiftExpiry(
-      count,
-      latestExpiry,
-      expiryDays,
-      settings.gift_max_queue_size
-    );
-
-    if (!canGrant || !expiresAt) {
-      console.warn(
-        `[GiftEngine] Gift queue full for user ${params.userId} (${count}/${settings.gift_max_queue_size})`
-      );
-      return null;
-    }
-
-    const { data: entry, error } = await this.supabase
-      .from('gift_box_entries')
-      .insert({
-        user_id: params.userId,
-        gift_id: params.giftId,
-        source: params.source,
-        rule_id: params.ruleId || null,
-        status: 'granted',
-        expires_at: expiresAt.toISOString(),
-        bucket_name: params.bucketName,
-        cost_piasters: params.costPiasters,
-        funder_type: params.funderType || 'engezna',
-        funder_provider_id: params.funderProviderId || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('[GiftEngine] Failed to grant gift:', error);
-      return null;
-    }
-
-    await this.logFinancial({
-      transaction_type: 'grant',
-      amount_piasters: params.costPiasters,
-      bucket: params.bucketName,
-      funder_type: params.funderType || 'engezna',
-      funder_provider_id: params.funderProviderId || null,
-      user_id: params.userId,
-      gift_entry_id: entry.id,
+    const { data, error } = await this.supabase.rpc('grant_gift_atomic', {
+      p_user_id: params.userId,
+      p_gift_id: params.giftId || null,
+      p_source: params.source,
+      p_rule_id: params.ruleId || null,
+      p_bucket_name: params.bucketName,
+      p_cost_piasters: params.costPiasters,
+      p_funder_type: params.funderType || 'engezna',
+      p_funder_provider_id: params.funderProviderId || null,
+      p_expiry_days: params.expiryDays || null,
     });
 
-    return entry as GiftBoxEntry;
+    if (error) {
+      console.error('[GiftEngine] grant_gift_atomic failed:', error);
+      return null;
+    }
+
+    if (!data || (data as GiftBoxEntry).id === null || (data as GiftBoxEntry).id === undefined) {
+      return null;
+    }
+
+    return data as GiftBoxEntry;
   }
 
-  async openGift(giftEntryId: string, userId: string): Promise<boolean> {
-    const { error } = await this.supabase
-      .from('gift_box_entries')
-      .update({ status: 'opened', opened_at: new Date().toISOString() })
-      .eq('id', giftEntryId)
-      .eq('user_id', userId)
-      .eq('status', 'granted');
+  /**
+   * Open a gift atomically via open_gift_atomic RPC.
+   * Conditional update enforces ownership (via auth.uid()) + status + non-expired.
+   */
+  async openGift(giftEntryId: string): Promise<boolean> {
+    const { data, error } = await this.supabase.rpc('open_gift_atomic', {
+      p_id: giftEntryId,
+    });
 
     if (error) {
-      console.error('[GiftEngine] Failed to open gift:', error);
+      console.error('[GiftEngine] open_gift_atomic failed:', error);
       return false;
     }
-    return true;
+    return Boolean(data);
   }
 
+  /**
+   * Use a gift atomically via use_gift_atomic RPC.
+   * Conditional update + financial log in one transaction; returns 0 if not eligible.
+   */
   async useGift(params: UseGiftParams): Promise<{
     success: boolean;
     discountPiasters: number;
   }> {
-    const { data: entry, error: fetchError } = await this.supabase
-      .from('gift_box_entries')
-      .select('*, gift:gifts(*)')
-      .eq('id', params.giftEntryId)
-      .eq('user_id', params.userId)
-      .in('status', ['granted', 'opened'])
-      .single();
-
-    if (fetchError || !entry) {
-      return { success: false, discountPiasters: 0 };
-    }
-
-    const now = new Date();
-    if (new Date(entry.expires_at) < now) {
-      await this.expireGift(params.giftEntryId);
-      return { success: false, discountPiasters: 0 };
-    }
-
-    const { error: updateError } = await this.supabase
-      .from('gift_box_entries')
-      .update({
-        status: 'used',
-        used_at: now.toISOString(),
-        used_order_id: params.orderId,
-      })
-      .eq('id', params.giftEntryId);
-
-    if (updateError) {
-      console.error('[GiftEngine] Failed to use gift:', updateError);
-      return { success: false, discountPiasters: 0 };
-    }
-
-    await this.logFinancial({
-      transaction_type: 'use',
-      amount_piasters: entry.cost_piasters,
-      bucket: entry.bucket_name,
-      funder_type: entry.funder_type,
-      funder_provider_id: entry.funder_provider_id,
-      user_id: params.userId,
-      gift_entry_id: params.giftEntryId,
-      order_id: params.orderId,
+    const { data, error } = await this.supabase.rpc('use_gift_atomic', {
+      p_id: params.giftEntryId,
+      p_user_id: params.userId,
+      p_order_id: params.orderId,
     });
 
-    return { success: true, discountPiasters: entry.cost_piasters };
+    if (error) {
+      console.error('[GiftEngine] use_gift_atomic failed:', error);
+      return { success: false, discountPiasters: 0 };
+    }
+
+    const discount = Number(data) || 0;
+    return { success: discount > 0, discountPiasters: discount };
   }
 
+  /**
+   * Expire a single gift atomically via expire_gift_entry RPC.
+   * Conditional update enforces status + past-expiry; logs in same transaction.
+   */
   async expireGift(giftEntryId: string): Promise<boolean> {
-    const { data: entry } = await this.supabase
-      .from('gift_box_entries')
-      .select('user_id, cost_piasters, bucket_name, funder_type, funder_provider_id')
-      .eq('id', giftEntryId)
-      .in('status', ['granted', 'opened'])
-      .single();
-
-    if (!entry) return false;
-
-    const { error } = await this.supabase
-      .from('gift_box_entries')
-      .update({ status: 'expired' })
-      .eq('id', giftEntryId);
-
-    if (error) return false;
-
-    await this.logFinancial({
-      transaction_type: 'expire',
-      amount_piasters: entry.cost_piasters,
-      bucket: entry.bucket_name,
-      funder_type: entry.funder_type,
-      funder_provider_id: entry.funder_provider_id,
-      user_id: entry.user_id,
-      gift_entry_id: giftEntryId,
-      notes: 'Auto-expired',
+    const { data, error } = await this.supabase.rpc('expire_gift_entry', {
+      p_id: giftEntryId,
     });
 
-    return true;
+    if (error) {
+      console.error('[GiftEngine] expire_gift_entry failed:', error);
+      return false;
+    }
+    return Boolean(data);
   }
 
   async revokeGift(giftEntryId: string, reason: string): Promise<boolean> {
@@ -276,7 +143,8 @@ export class GiftEngine {
     const { error } = await this.supabase
       .from('gift_box_entries')
       .update({ status: 'revoked' })
-      .eq('id', giftEntryId);
+      .eq('id', giftEntryId)
+      .neq('status', 'used');
 
     if (error) return false;
 
@@ -320,96 +188,54 @@ export class GiftEngine {
     }
   }
 
+  /**
+   * Add a stamp atomically via add_gift_stamp_atomic RPC.
+   * Idempotent — duplicate orderId is silently ignored via UNIQUE constraint.
+   */
   async addStamp(
     userId: string,
     orderId: string,
     subtotalPiasters: number
   ): Promise<GiftStamp | null> {
-    const settings = await this.getSettings();
+    const { data, error } = await this.supabase.rpc('add_gift_stamp_atomic', {
+      p_user_id: userId,
+      p_order_id: orderId,
+      p_subtotal_piasters: subtotalPiasters,
+    });
 
-    if (subtotalPiasters < settings.stamp_min_order_piasters) {
+    if (error) {
+      console.error('[GiftEngine] add_gift_stamp_atomic failed:', error);
       return null;
     }
 
-    const { data: activeCard } = await this.supabase
-      .from('gift_stamps')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('is_completed', false)
-      .single();
+    if (!data) return null;
 
-    const now = new Date();
+    const card = data as GiftStamp;
 
-    if (activeCard && new Date(activeCard.card_expires_at) < now) {
-      await this.supabase
-        .from('gift_stamps')
-        .update({ is_completed: true })
-        .eq('id', activeCard.id);
+    // If card just completed, grant the golden box
+    if (card.is_completed && !card.golden_box_id) {
+      await this.grantGoldenBox(userId, card.id);
     }
 
-    const validCard = activeCard && new Date(activeCard.card_expires_at) >= now ? activeCard : null;
-
-    if (validCard) {
-      const newCount = validCard.stamp_count + 1;
-      const orderIds = [...(validCard.order_ids || []), orderId];
-      const isCompleted = newCount >= settings.stamp_card_size;
-
-      const { data: updated, error } = await this.supabase
-        .from('gift_stamps')
-        .update({
-          stamp_count: newCount,
-          order_ids: orderIds,
-          is_completed: isCompleted,
-        })
-        .eq('id', validCard.id)
-        .select()
-        .single();
-
-      if (error) return null;
-
-      if (isCompleted) {
-        await this.grantGoldenBox(userId, updated.id, settings);
-      }
-
-      return updated as GiftStamp;
-    }
-
-    const expiresAt = new Date(now);
-    expiresAt.setDate(expiresAt.getDate() + settings.stamp_card_validity_days);
-
-    const { data: newCard, error } = await this.supabase
-      .from('gift_stamps')
-      .insert({
-        user_id: userId,
-        stamp_count: 1,
-        order_ids: [orderId],
-        card_expires_at: expiresAt.toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) return null;
-    return newCard as GiftStamp;
+    return card;
   }
 
-  private async grantGoldenBox(
-    userId: string,
-    stampCardId: string,
-    settings: RetentionSettings
-  ): Promise<void> {
+  private async grantGoldenBox(userId: string, stampCardId: string): Promise<void> {
+    const settings = await this.getSettings();
     const value = Math.min(settings.golden_box_default_piasters, settings.golden_box_max_piasters);
 
+    // Resolve a golden_box gift template if one exists; otherwise grant with NULL gift_id
     const { data: goldenGift } = await this.supabase
       .from('gifts')
       .select('id')
       .eq('type', 'golden_box')
       .eq('is_active', true)
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const goldenEntry = await this.grantGift({
       userId,
-      giftId: goldenGift?.id || '',
+      giftId: goldenGift?.id || null,
       source: 'stamp_card',
       bucketName: 'stamp',
       costPiasters: value,

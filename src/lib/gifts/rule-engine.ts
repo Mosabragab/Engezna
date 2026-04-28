@@ -181,7 +181,7 @@ export class RuleEngine {
 
       const giftEntry = await this.giftEngine.grantGift({
         userId,
-        giftId: giftId || '',
+        giftId,
         source: 'mystery_box',
         ruleId: rule.id,
         bucketName: rule.action.bucket || rule.budget_bucket,

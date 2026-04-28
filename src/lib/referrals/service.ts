@@ -126,10 +126,15 @@ export class ReferralService {
     return count || 0;
   }
 
+  /**
+   * Complete a referral atomically. Pre-validates the order qualifies, then
+   * delegates the cap check + dual gift grants + referrals UPDATE to
+   * complete_referral_atomic RPC (single transaction).
+   */
   async completeReferral(refereeId: string, orderId: string): Promise<CompleteReferralResult> {
     const { data: referral } = await this.supabase
       .from('referrals')
-      .select('*')
+      .select('id, referrer_id, status')
       .eq('referee_id', refereeId)
       .eq('status', 'pending')
       .maybeSingle();
@@ -169,43 +174,31 @@ export class ReferralService {
       return { success: false, reason: 'order_below_minimum' };
     }
 
-    const monthlyCount = await this.getMonthlyCompletedCount(referral.referrer_id);
-    if (monthlyCount >= settings.referral_monthly_limit_per_user) {
-      return { success: false, reason: 'monthly_cap_reached' };
+    const { data, error } = await this.supabase.rpc('complete_referral_atomic', {
+      p_referee_id: refereeId,
+      p_order_id: orderId,
+    });
+
+    if (error) {
+      const message = error.message || '';
+      if (message.includes('monthly_cap_reached')) {
+        return { success: false, reason: 'monthly_cap_reached' };
+      }
+      if (message.includes('no_pending_referral')) {
+        return { success: false, reason: 'no_pending_referral' };
+      }
+      console.error('[ReferralService] complete_referral_atomic failed:', error);
+      return { success: false, reason: 'order_not_qualifying' };
     }
 
-    const referrerGift = await this.giftEngine.grantGift({
-      userId: referral.referrer_id,
-      giftId: '',
-      source: 'referral',
-      bucketName: 'referral',
-      costPiasters: settings.referral_reward_piasters,
-    });
-
-    const refereeGift = await this.giftEngine.grantGift({
-      userId: refereeId,
-      giftId: '',
-      source: 'welcome',
-      bucketName: 'welcome',
-      costPiasters: settings.referral_reward_piasters,
-    });
-
-    await this.supabase
-      .from('referrals')
-      .update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        referee_first_order_id: orderId,
-        referrer_credit_applied: referrerGift !== null,
-        referee_credit_applied: refereeGift !== null,
-      })
-      .eq('id', referral.id);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return { success: false, reason: 'order_not_qualifying' };
 
     return {
       success: true,
-      referralId: referral.id,
-      referrerGiftEntryId: referrerGift?.id || null,
-      refereeGiftEntryId: refereeGift?.id || null,
+      referralId: row.referral_id,
+      referrerGiftEntryId: row.referrer_gift_entry_id || null,
+      refereeGiftEntryId: row.referee_gift_entry_id || null,
     };
   }
 
