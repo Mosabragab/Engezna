@@ -1,8 +1,9 @@
 # خطة تنفيذ نظام صندوق الهدايا + الولاء + الريفيرال — Engezna
 
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
-**الإصدار:** 2.2 (قرارات معتمدة: حد 300 ج.م + Queue + Tiered gifts + Clawback بمصدر الخطأ + Phase 0 وثائق)
-**الحالة:** مرجع تنفيذي — يُناقش قبل البدء
+**آخر تحديث:** ٢٨ أبريل ٢٠٢٦
+**الإصدار:** 2.3 (قيد التنفيذ — Phases 0A → 8.5 مكتملة)
+**الحالة:** مرجع تنفيذي حيّ — Phase 12 هي التالية
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1249,40 +1250,55 @@ ALTER TABLE orders
 
 ### Phase 0A — إعادة هيكلة الوثائق + تحديث الفريق + أرشفة القديم (١-٢ أيام)
 
-**تُنفّذ أولاً قبل أي كود — البناء على أساس قوي ومتناسق.**
+**✅ مكتمل — ٢٥ أبريل ٢٠٢٦**
 
-**المهام:**
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-1. **تحديث الهيكل القيادي** في كل الملفات:
-   - إضافة د. أمان الله صادق كـ CEO & Co-founder
-   - مصعب + أمان يقومان بدور المندوب في بني سويف (بدون توظيف مندوب)
-2. **تثبيت متوسط الطلب** على ٣٠٠ ج.م في كل الحسابات المالية
-3. **إضافة "أكل بيتي"** كقسم سادس في كل الوثائق (٦ أقسام بدل ٥)
-4. **إعادة هيكلة فولدر project-management:**
-   - نقل الملفات النشطة لـ `active/`
-   - أرشفة الملفات المنتهية في `archive/`
-   - إنشاء `TEAM_STRUCTURE.md` جديد
-5. **تحديث الملفات الجذرية:**
-   - `claude.md` → إضافة مرجع لخطة Gift Box
-   - `README.md` → تحديث الحالة الحالية
-   - `PRD.md` → إضافة قسم Retention System
-6. **مراجعة السياسات القانونية:**
-   - `docs/legal/TERMS_AND_CONDITIONS_DRAFT.md` → التأكد من عدم تعارض مع الولاء/الهدايا
-   - `docs/legal/PRIVACY_POLICY_DRAFT.md` → إضافة بند بيانات الولاء
-   - إنشاء `docs/legal/LOYALTY_PROGRAM_TERMS.md` → شروط صندوق الهدايا
-7. **خطة تعديل الواجهة الأمامية (لا تُنفّذ الآن — تُوثّق فقط):**
-   - `welcome/page.tsx` → عبارة "بدون رسوم خدمة" في ٧ مواقع
-   - `about/page.tsx` → "0% رسوم خدمة للعملاء"
-   - `layout.tsx` → meta keywords
-   - **القرار:** بما أن رسوم المعالجة مُعطّلة، نُبقي النص كما هو ونوثّق: "عند تفعيل الرسوم، عدّل هذه الملفات أولاً"
-8. **تجميع كل وثائق إدارة المشروع** في فولدر واحد منظم
+**ما تم تنفيذه:**
+
+1. ✅ تحديث الهيكل القيادي (CEO د. أمان الله + Founder مصعب) في 35+ ملف
+2. ✅ تثبيت AOV على ٣٠٠ ج.م + أسعار 2026 بعد تحرير سعر الصرف
+3. ✅ إضافة "أكل بيتي" كقسم سادس في كل الوثائق
+4. ✅ أرشفة الملفات المنتهية (Ramadan Strategy + old project-status)
+5. ✅ تحديث claude.md + README.md + PRD.md مع مراجع Gift Box
+6. ✅ تحديث الشروط والأحكام (AR+EN) — grace period 30 يوم + بنود Gift Box/Loyalty
+7. ✅ إنشاء FRONTEND_POLICY_CHANGE_PLAN.md — توثيق 7 مواقع "0% رسوم خدمة"
+8. ✅ تليين لغة "0% دائمًا" إلى "حاليًا" في welcome + about pages
+9. ✅ توحيد تاريخ الإطلاق على مايو 2026 في كل الملفات
+10. ✅ إنشاء Billion Pound Roadmap (v1.3) مع 3 سيناريوهات + Hub & Spoke + AI-First Support
+11. ✅ حل تناقض Partner Gifts deposit (§4 vs §22)
+
+**Commits:** 15 commit (بدأت على فرع `claude/cashback-loyalty-program-TeoQY` ثم انتقلت لفرع التنفيذ الحالي `claude/gift-loyalty-system-9bxPL`)
+
+</details>
 
 ### Phase 0B — مراجعة قاعدة البيانات + SQL للمستخدم (١-٢ أيام)
 
-- راجع كل الـ migrations الحالية.
-- ابنِ SQL script واحد شامل لكل الجداول الجديدة والأعمدة.
-- أعطِ المستخدم الـ SQL للتشغيل على Supabase بعد مراجعته.
-- **لا تُشغّل الـ migration على الإنتاج قبل موافقة المستخدم.**
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦ — Migration نجح على Production**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ما تم تنفيذه:**
+
+1. ✅ DB Discovery شامل (8 استعلامات) — نتائج نظيفة، لا تعارضات
+2. ✅ بناء migration واحد شامل: `20260428000001_gift_box_loyalty_referral_system.sql` (605 سطر)
+3. ✅ تشغيل الـ migration على Supabase Production — **Success**
+
+**محتويات الـ Migration:**
+
+- 8 enums جديدة + 5 قيم مُضافة لـ notification_type
+- 11 جدول جديد (gifts, gift_box_entries, gift_rules, gift_stamps, gift_forwards, gift_partner_offers, gift_financial_log, customer_segments_daily, retention_settings, provider_subscriptions, operational_expenses)
+- أعمدة جديدة على 5 جداول موجودة (providers, profiles, orders, referrals, refunds)
+- 16 index + 19 RLS policy + 2 trigger + 2 Realtime publication
+- Seed data لـ retention_settings
+
+**القاعدة الذهبية:** Settlement engine لم يُمَس ✅
+
+</details>
+
+**DB Discovery السابق (مرجع):**
 
 **⚠️ SQL استكشاف قاعدة البيانات الإلزامي (يُشغّل أولًا على Supabase SQL Editor):**
 
@@ -1376,54 +1392,204 @@ AND trigger_schema = 'public';
 - `profiles.wallet_balance` → **موجود** (NUMERIC, default 0.00)
 - `admin_users.id` → UUID مستقل (ليس = `auth.uid()`) — يحتاج lookup: `SELECT id FROM admin_users WHERE user_id = auth.uid()`
 
-### Phase 1 — كلاس Money + Helpers + Settlement Hooks (٢ أيام)
+### Phase 1+2 — Gift Engine Core + Helpers + Types (٢ أيام)
 
-- راجع `src/lib/finance/money.ts`.
-- أضف helpers لحساب تكلفة الهدية، clawback، ميزانية الدلو.
-- اختبر كل حالة حافة (0 piasters, negative, overflow).
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 2 — Gift Engine Core (٣ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-- `src/lib/gifts/engine.ts` — grantGift، useGift، expireGift، revokeGift.
-- كل عملية transactional مع gift_financial_log.
-- اختبارات unit شاملة.
+**ملفات جديدة (848 سطر) في `src/lib/gifts/`:**
+
+- `types.ts` (169 سطر): كل الأنواع — Gift, GiftBoxEntry, GiftStamp, RetentionSettings, enums, params
+- `helpers.ts` (180 سطر): 15 دالة حسابية بدون DB:
+  - getTieredGiftCap (10/15/20 ج.م)
+  - calculateMaxDiscount (min of tiered + 20%)
+  - clampGiftValue, getBucketLimit, checkBudgetAvailable
+  - isOrderEligibleForStamp/Gift (≥300 ج.م)
+  - shouldClawback (fault-based), calculateClawbackPoints
+  - calculateGiftExpiry (Queue system, 4 max)
+  - calculateLoyaltyPoints (1 per 10 EGP), pointsToDiscount (100 = 5 EGP)
+- `engine.ts` (460 سطر): GiftEngine class — 11 method:
+  - grantGift (budget → queue → insert → log)
+  - openGift (Mystery Box trigger)
+  - useGift (validate → apply → log)
+  - expireGift, revokeGift, processClawback
+  - addStamp (4 stamps → golden box)
+  - expireAllOverdue (cron-compatible)
+  - getUserGiftBox, getUserStampCard
+- `index.ts` (39 سطر): Public API
+
+**القاعدة الذهبية محفوظة:** Money class + piasters + financial logging. Settlement engine لم يُمَس.
+
+</details>
 
 ### Phase 3 — Rule Engine (٣ أيام)
 
-- `src/lib/gifts/rule-engine.ts` — parser للـ JSONB conditions.
-- دعم كل الـ facts والـ operators والـ aggregators.
-- triggers واضحة: كيف ومتى يُستدعى الـ engine.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملف جديد:** `src/lib/gifts/rule-engine.ts` (291 سطر)
+
+- `evaluateConditions`: recursive JSONB parser — `all/any/none` + `eq/neq/gt/gte/lt/lte/in/not_in/between`
+- `RuleEngine.evaluateTrigger`: load rules → evaluate → grant gifts → atomic stats update
+- `RuleEngine.buildUserFacts`: 17 fact من الـ DB
+- `RuleEngine.processOrderCompleted`: convenience مع `first_order_from_provider`
+- `resolveGiftId`: lookup من gifts table (بدل empty string)
+- `checkRuleDailyBudget`: fail-closed + `spent + requested <= cap`
+- `getActiveRules`: throws on DB error (بدل return [])
+
+**Migration:** `20260428000002_increment_gift_rule_stats.sql`
+
+- Postgres RPC function (atomic increment — concurrency-safe)
+- Input validation (NULL/negative guard)
+- REVOKE public + GRANT service_role only
+- تم تشغيلها على Production ✅
+
+**CodeRabbit fixes:** 7 ملاحظات (2 critical + 3 major + 2 minor) — كلها محلولة
+
+</details>
 
 ### Phase 4 — Customer Segmentation Cron (٢ أيام)
 
-- Cron job يومي (Supabase pg_cron).
-- يحسب الشرائح لكل العملاء ويكتبها في `customer_segments_daily`.
-- يُحدّث `profiles.last_segment` و `loyalty_tier`.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
 
-### Phase 5 — Mystery Box Logic + UI (٣ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
 
-- weighted random picker.
-- Framer Motion animation للفتح.
-- صفحة `/rewards/mystery` + widget في الصفحة الرئيسية.
+**ملف جديد:** `src/app/api/cron/segmentation/route.ts` (203 سطر)
 
-### Phase 6 — Stamp Card Logic + UI (٢ أيام)
+- Cron يومي الساعة 02:00 بتوقيت القاهرة (00:00 UTC)
+- يصنّف كل عميل لشريحة: `new_user`, `champion`, `regular`, `at_risk`, `churned`, `bargain_hunter`, `high_value`, `undefined`
+- يحدّث `customer_segments_daily` (upsert يومي)
+- يحدّث `profiles.last_segment` + `profiles.loyalty_tier`
+- Loyalty tiers: bronze (<500) → silver (500) → gold (1500) → platinum (5000)
+- Batch processing (50 عميل/batch)
+- محمي بـ CRON_SECRET
+- مُضاف لـ `vercel.json` crons
 
-- trigger عند `order_completed`.
-- صفحة `/rewards/stamp-card`.
-- widget progress bar.
+</details>
+
+### Phase 5+6 — Mystery Box + Stamp Card Logic + UI (٣ أيام)
+
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملفات جديدة (360 سطر):**
+
+Backend:
+
+- `src/lib/gifts/mystery-box.ts`: weighted random picker (6 prize tiers — 40/25/20/10/4/1)
+- `src/app/api/gifts/box/route.ts`: GET gift box + stamp card
+- `src/app/api/gifts/open/route.ts`: POST open mystery gift
+
+UI Components (bilingual AR/EN + Framer Motion):
+
+- `MysteryBoxCard.tsx`: 3-state animation (closed→opening→revealed) + confetti for rare gifts
+- `StampCard.tsx`: 4-stamp visual progress + golden box celebration
+- Stamp Card logic (`addStamp`) already in engine.ts (Phase 1+2)
+
+</details>
 
 ### Phase 7 — Welcome + Win-back Flows (٢ أيام)
 
-- قواعد افتراضية في `gift_rules` للترحيب والاستعادة.
-- اختبار end-to-end.
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦** (انظر commit `3e0853a`)
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration:** `20260428000003_seed_default_gift_rules.sql`
+
+أربع قواعد افتراضية في `gift_rules`:
+
+1. `welcome_first_order` — صندوق mystery بعد أول طلب delivered
+2. `winback_14_days` — صندوق mystery لعملاء `at_risk` بعد ١٤ يوم
+3. `delivery_on_us_alternating` — توصيل مجاني بعد طلب ≥١٥٠ ج.م
+4. `first_order_new_provider` — خصم ١٥ ج.م عند تجربة محل جديد
+
+**Cron جديد:** `/api/cron/gift-expiry`
+
+- يُشغَّل يوميًا 06:00 UTC (محدّث في `vercel.json`)
+- تذكير ٤٨ ساعة قبل انتهاء الصلاحية + auto-expire
+- بعد الترقية للـ atomic ops يستخدم `expire_overdue_gifts_batch` RPC
+
+**ملاحظة:** الـ trigger التلقائي لـ `processOrderCompleted` عند تسليم الطلب لم يُربط بعد — يُنفّذ ضمن Phase 12 كهوك موحَّد.
+
+</details>
 
 ### Phase 8 — Referral System (٣ أيام)
 
-- صفحة `/referral` للعميل.
-- تأكيد الإيميل.
-- trigger عند إتمام أول طلب ≥٣٠٠ ج.م.
-- منح الصندوق ٢٠ ج.م للمُحيل.
-- حد ١٠ شهريًا لكل مستخدم.
+**✅ مكتمل + مُحكَم بـ atomic RPCs — ٢٨ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**ملفات جديدة في `src/lib/referrals/`:**
+
+- `types.ts`: Referral, ReferralStats, ReferralHistoryEntry, ApplyReferralResult, CompleteReferralResult
+- `service.ts`: ReferralService class
+  - `getOrCreateReferralCode` — توليد كود فريد (6 chars، بدون I/O/0/1) عبر `crypto.getRandomValues` + rejection sampling لمنع modulo bias؛ يعيد المحاولة فقط على PG `23505`
+  - `applyReferralCode` — يتحقق: كود صالح + ليس self-referral + لم يُستخدم من قبل + لا توجد طلبات سابقة
+  - `completeReferral` — pre-validation للطلب ثم يفوّض لـ `complete_referral_atomic` RPC (single transaction)
+  - `getStats`, `getHistory`, `getMonthlyCompletedCount` (UTC month boundary)
+- `index.ts`: Public API
+
+**API endpoints:**
+
+- `GET /api/referrals` — stats + history للمستخدم الحالي
+- `POST /api/referrals/apply` — تطبيق كود إحالة (مع رسائل خطأ AR/EN)
+
+**Customer page:**
+
+- `/[locale]/referral/page.tsx` — Server component يحمّل stats + history
+- `ReferralPageClient.tsx` — كود + Copy + Share (WhatsApp + Native Share API) + سجل الإحالات + شريط تقدم الـ cap الشهري
+
+**ملاحظة:** الـ trigger التلقائي لـ `completeReferral` عند تسليم الطلب يُربط ضمن Phase 12 (هوك order-completion موحَّد).
+
+</details>
+
+### Phase 8.5 — Atomic Operations + RLS Hardening (تكميلي)
+
+**✅ مكتمل — ٢٨ أبريل ٢٠٢٦** — استجابة لمراجعة CodeRabbit
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260428000004_gift_atomic_operations.sql`:**
+
+- جدول جديد `gift_stamp_orders` — UNIQUE(stamp_card_id, order_id) + UNIQUE(user_id, order_id) لمنع double-credit
+- 6 RPCs (SECURITY DEFINER + GRANT TO service_role only):
+  - `expire_gift_entry(p_id)` — UPDATE conditional + log في معاملة واحدة
+  - `grant_gift_atomic(...)` — يقفل retention_settings + يفحص budget + queue + insert + log ذرّيًا
+  - `open_gift_atomic(p_id)` — للمستخدم؛ يستخدم `auth.uid()` داخليًا
+  - `use_gift_atomic(...)` — UPDATE conditional + log + auto-expire إذا كان منتهي
+  - `add_gift_stamp_atomic(...)` — Idempotent عبر `gift_stamp_orders` UNIQUE
+  - `complete_referral_atomic(...)` — يقفل referral + يفحص cap + يمنح هديتين + يحدّث referral، all-or-nothing
+- RLS مُحكَم: حُذفت policy الـ UPDATE الواسعة؛ الـ "Service can ..." مُقيَّدة بـ `TO service_role`
+
+**Migration `20260428000005_gift_atomic_operations_v2.sql`:**
+
+- `revoke_gift_atomic(p_id, p_reason)` — UPDATE conditional + log ذرّيًا
+- `clawback_order_atomic(p_order_id, p_fault_source)` — Single CTE: يدخل clawback rows لكل الهدايا المُستخدمة على الطلب
+- `expire_overdue_gifts_batch()` — Single CTE: UPDATE + log INSERT لكل الـ overdue rows
+- `complete_referral_atomic v2` — يفحص subtotal min ذاتيًا (`isReferralEligible` داخل الـ RPC)
+- `idx_gift_financial_log_budget` — partial index لتسريع monthly bucket sums
+
+**Engine code:**
+
+- `engine.ts`: revokeGift / processClawback / expireAllOverdue → RPCs ذرّية
+- `engine.ts`: `grantGoldenBox` يستخدم `.is('golden_box_id', null)` ويلغي الهدية المكررة عند الـ race
+- `engine.ts`: `getSettings` cache بـ TTL 60s + `forceRefresh` param
+- `rule-engine.ts`: `evaluateCondition` numeric coercion + `isFinite` guard + null short-circuit؛ `evaluateGroup` empty=true مع warn؛ `checkRuleDailyBudget` UTC boundary؛ `buildUserFacts` parallel
+- `cron/gift-expiry`: idempotency check (لا إشعارات مكررة عبر cron runs متتالية)
+
+**⚠️ مهم:** كلا الـ migrations (4 و 5) لازم تُشغَّل على Supabase Production قبل النشر.
+
+</details>
 
 ### Phase 9 — Partner Gifts (٣ أيام)
 
@@ -1443,11 +1609,199 @@ AND trigger_schema = 'public';
 - صفحة الاستلام `/gift/[token]`.
 - مكافحة الاحتيال الأساسية.
 
-### Phase 12 — Loyalty Points + Tiers (٢ أيام)
+### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام) ⏳ التالي
 
-- trigger لكل `order_completed`.
-- صفحة `/rewards/points`.
-- tier badges في الـ profile.
+**🎯 المرحلة الأهم:** هي اللي تفعّل كل ما بُني في المراحل ١-٨. حاليًا الـ engine جاهز لكن مفيش حد بيستدعيه عند تسليم الطلب. كذلك المستخدم لا يقدر يشوف هدياه/نقاطه/مستواه في أي مكان.
+
+تنقسم المرحلة إلى جزأين متتاليين:
+
+#### Phase 12A — Backend Hook + Loyalty (٣ أيام)
+
+**المُكوّنات:**
+
+1. **Order Completion Hook موحَّد** (`src/lib/orders/completion-hook.ts`):
+   - يُستدعى عند انتقال طلب لـ `delivered + payment_status='completed'`
+   - يُشغّل بترتيب: `ruleEngine.processOrderCompleted` → `giftEngine.addStamp` → `referralService.completeReferral` → `loyaltyService.awardOrderPoints`
+   - مُحاط بـ try/catch لكل خطوة — لا يفشل مسار الطلب لو فشلت أي خطوة
+   - Idempotent عبر جدول `order_completion_processed` (PK = order_id)
+
+2. **Cron Trigger** (`/api/cron/process-completed-orders` — Supabase pg_cron):
+   - يُشغَّل كل ١٥ دقيقة عبر **Supabase pg_cron + pg_net** (مش Vercel)
+     لأن Vercel Hobby plan يقتصر على daily cron
+   - الـ wrapper function `trigger_process_completed_orders()` في
+     migration `20260429000001` تستدعي endpoint الـ Next.js عبر `net.http_post`
+   - الـ endpoint نفسه يجلب الطلبات `delivered + completed` في آخر ٢٤ ساعة
+     وما اتعالجتش، ويستدعي الهوك لكل طلب
+   - أسرار الـ HTTP (URL + cron secret) مخزّنة في **Supabase Vault**
+     باسم `engezna_app_url` و `engezna_cron_secret` (الـ migration يقرأ
+     من `vault.decrypted_secrets`). الـ `ALTER DATABASE ... SET` غير متاح
+     على managed Supabase لأنه يحتاج superuser.
+
+3. **Loyalty Points Service** (`src/lib/loyalty/`):
+   - `awardOrderPoints(userId, orderId, subtotalPiasters)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم
+   - `redeemPoints(userId, points)` — ١٠٠ نقطة = خصم ٥ ج.م (ينشئ gift entry بـ `source='loyalty_redemption'`)
+   - تحديث `loyalty_tier` تلقائيًا داخل الـ RPC (bronze < 500 ≤ silver < 1500 ≤ gold < 5000 ≤ platinum)
+   - Clawback نسبي عند refund customer/fraud
+
+4. **Migration `20260428000006_loyalty_and_completion_hook.sql`**:
+   - جدول `order_completion_processed` (idempotency: PK = order_id)
+   - `award_loyalty_points_atomic` RPC: INSERT في `loyalty_transactions` + UPDATE في `loyalty_points` + tier recalc — all-or-nothing
+   - `redeem_loyalty_points_atomic` RPC: lock balance + deduct + create gift entry via `grant_gift_atomic` + log
+   - `clawback_loyalty_points_atomic` RPC: للـ refund flow
+   - إضافة قيمة `loyalty_redemption` لـ `gift_source` enum
+
+5. **APIs**:
+   - `GET /api/loyalty` — balance + tier + history (paginated)
+   - `POST /api/loyalty/redeem` — يستبدل نقاط لكوبون
+   - `GET /api/rewards` — combined endpoint: gifts + stamps + loyalty (single round-trip للصفحة)
+
+#### Phase 12B — Premium Customer Rewards Hub (٣ أيام)
+
+**🎨 الفلسفة:** ليس مجرد صفحة "نقاطي" — تجربة احتفالية تربط العميل عاطفيًا بالمنصة. كل تفاعل يحس بـ: قيمة، تقدّم، مفاجأة، انتماء.
+
+**Stack:**
+
+- Framer Motion (موجود) لكل الأنيميشن
+- `canvas-confetti` (~٣KB) للاحتفالات
+- Supabase Realtime للـ live updates
+- `@capacitor/haptics` للـ haptic feedback (موجود)
+
+**Page structure** (`/[locale]/rewards/page.tsx` — Server Component):
+
+```
+┌─ Hero Header ─────────────────────────┐
+│  مساء الخير، أحمد 👋                  │
+│  👑 Gold Member                        │
+│  ━━━━━━━━━━░░ 1,847 / 5,000 نقطة     │
+│  153 نقطة لـ Platinum                  │
+└────────────────────────────────────────┘
+┌─ 🎁 صناديقك (3) ─ swipeable carousel ─┐
+│  ┌─────┐ ┌─────┐ ┌─────┐              │
+│  │ ⏰ 6h │ │ 5 ج.م│ │10ج.م│             │
+│  └─────┘ └─────┘ └─────┘              │
+└────────────────────────────────────────┘
+┌─ 🎫 بطاقة الختم 3/4 ──────────────────┐
+│  ⓿ ⓿ ⓿ ○                            │
+│  ━━━━━━━━━━━━░░ 75% — 23 يوم متبقية   │
+└────────────────────────────────────────┘
+┌─ ⭐ نقاطي ─────────────────────────────┐
+│        1,847                           │
+│  [استبدل 100]  [استبدل 500]            │
+│  📜 آخر العمليات                       │
+└────────────────────────────────────────┘
+┌─ ⚡ تواصل + اكسب ──────────────────────┐
+│  [👥 ادعُ صديق]  [🎁 الإحالات]         │
+└────────────────────────────────────────┘
+```
+
+**Tier Theme System** (`src/lib/loyalty/tier-themes.ts`):
+
+```ts
+export const TIER_THEMES = {
+  bronze: { gradient: 'from-amber-100 to-orange-200', accent: '#CD7F32', glow: false },
+  silver: { gradient: 'from-slate-100 to-gray-300', accent: '#C0C0C0', glow: false },
+  gold: { gradient: 'from-yellow-100 to-amber-300', accent: '#FFD700', glow: true },
+  platinum: {
+    gradient: 'from-violet-100 to-purple-300',
+    accent: '#E5E4E2',
+    glow: true,
+    shimmer: true,
+  },
+};
+```
+
+**Animation Catalog** (Framer Motion):
+
+| العنصر                 | الـ Animation                                                     |
+| ---------------------- | ----------------------------------------------------------------- |
+| Number counter (نقاط)  | Spring physics, 1.5s                                              |
+| Tier badge             | Subtle pulse 3s loop + shimmer (gold/platinum)                    |
+| Card hover             | Scale 1.02 + shadow expand                                        |
+| Card tap               | Scale 0.98 + haptic feedback                                      |
+| Stamp filled           | Scale bounce + glow ring                                          |
+| Gift open              | 3-stage (closed → opening → revealed) — موجود في `MysteryBoxCard` |
+| Confetti               | على: rare gift, redemption, tier upgrade, stamp completion        |
+| Page enter             | Stagger children 50ms                                             |
+| Real-time gift arrival | Slide-in من الأعلى + pulse glow                                   |
+
+**Components Tree:**
+
+```
+RewardsHubClient.tsx (orchestrator)
+├── HeroHeader.tsx
+│   ├── TierBadge.tsx (reusable, with metallic gradients)
+│   └── AnimatedCounter.tsx (spring physics)
+├── ActiveGiftsCarousel.tsx (uses existing MysteryBoxCard)
+├── StampCardSection.tsx (wraps existing StampCard)
+├── LoyaltyPointsSection.tsx
+│   ├── PointsBalance.tsx (animated counter)
+│   ├── RedeemButtons.tsx
+│   └── TransactionsList.tsx
+├── QuickActionsBar.tsx
+└── shared/
+    ├── EmptyState.tsx (illustrated)
+    ├── SkeletonLoader.tsx
+    └── celebrate.ts (canvas-confetti helpers)
+```
+
+**Real-time subscriptions:**
+
+- `gift_box_entries` — صندوق جديد يظهر فورًا بأنيميشن slide-in
+- `gift_stamps` — ختم جديد يتعبّى live + bounce
+- `loyalty_points` — رصيد يحدّث counter animation
+
+**Premium touches:**
+
+- Pull-to-refresh على الموبايل
+- Haptic feedback عبر Capacitor عند: tap card, redeem, stamp added
+- Native share API للـ referral
+- Skeleton loaders (مش spinners)
+- Empty states بـ illustrations
+- `prefers-reduced-motion` يعطّل الأنيميشن الثقيلة + يحافظ على الوظائف
+- WCAG AA contrast على كل العناصر (خصوصًا tier badges المعدنية)
+- ARIA labels لكل countdown
+- Keyboard navigation كامل
+- Server-rendered shell (instant FCP)
+- Suspense per-section للـ streaming
+- Dynamic imports لـ Framer Motion + confetti
+
+**Checkout Integration** (§21.9):
+
+- إضافة قسم "الخصم" في الـ checkout يعرض ٣ خيارات:
+  1. **كود خصم** (الموجود حاليًا — `promoCodeInput`)
+  2. **هدية من الصندوق** (قائمة هدايا متاحة)
+  3. **نقاط ولاء** (استبدال 100 نقطة = 5 ج.م)
+- عند اختيار أحدها → باقي الخيارات تُعطّل مع رسالة "خصم واحد لكل طلب"
+- المتغير المشترك `discountAmount` يُملأ من أي مصدر
+- عند استخدام هدية: `orders.gift_entry_id` يُربط + `orders.discount` يُملأ بقيمة الهدية
+- استثناء: `free_delivery` يمكن جمعها مع كوبون خصم
+
+**Homepage Integration:**
+
+- شارة "🎁 صندوق جديد!" في الـ header (Header bell badge) لما يكون فيه gift غير مفتوح
+- شريط تقدم مصغر للـ stamp card (إذا فيه بطاقة نشطة)
+- Click → ينقل لـ `/rewards`
+
+**Acceptance Criteria:**
+
+- ✅ صفحة `/rewards` تعمل full RTL/LTR
+- ✅ Animations smooth على mobile (60fps)
+- ✅ كل الـ flows: open gift → confetti، redeem → confetti + counter animation، stamp added → bounce
+- ✅ Real-time updates تشتغل (test: open gift في tab، يظهر في tab آخر فورًا)
+- ✅ `prefers-reduced-motion` يعطّل الأنيميشن الثقيلة
+- ✅ Lighthouse Performance ≥80 على الصفحة
+- ✅ E2E test للـ flow كامل
+
+**خرائط Time Estimate:**
+
+| اليوم | الأكشن                                                        |
+| ----- | ------------------------------------------------------------- |
+| ١     | Phase 12A migration + LoyaltyService + APIs                   |
+| ٢     | Phase 12A: completion-hook + cron + tests                     |
+| ٣     | Phase 12B: shell + Hero + TierBadge + design tokens           |
+| ٤     | Phase 12B: gifts carousel + stamps section + real-time        |
+| ٥     | Phase 12B: loyalty section + redeem flow + transactions       |
+| ٦     | Phase 12B: checkout integration + homepage badge + a11y + E2E |
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
 
@@ -1639,27 +1993,26 @@ ALTER PUBLICATION supabase_realtime ADD TABLE gift_stamps;
 
 ---
 
-## 📋 أسئلة مفتوحة للمراجعة
+## 📋 سجل القرارات (Decisions Log)
 
-قبل بدء التنفيذ، راجع الجدول في §22 وأكّد أو عدّل الافتراضات. بالتحديد:
+كل القرارات أدناه تم حسمها واعتمادها في v2.2 وتنفيذها في الكود الفعلي.
+أي تغيير لاحق على هذه القيم يتم عبر `retention_settings` من داشبورد الأدمن — لا تعديل في الكود.
 
-1. **توزيع Mystery Box** — هل النسب ٤٠/٢٥/٢٠/١٠/٤/١ مقبولة؟ أم تفضّل نسب أخرى؟
-2. **الصندوق الذهبي** — ٥٠ ج.م افتراضي / ١٠٠ ج.م حد أقصى — مناسب؟
-3. **Gift-it Forward** — ١٠ نقاط ولاء للمرسل كافية؟
-4. **عيد الميلاد** — صندوق مفاجأة محسّن أم شيء أكبر (مثلًا خصم ٣٠ ج.م صريح)؟
-5. **Partner Gifts** — هل نسمح للتاجر بـ "auto-approved" بعد أول حملتين ناجحتين، أم موافقة الأدمن دائمًا؟
-6. **Beni Suef Pilot** — متى يُراجع ويُقرّر التوسع؟ شهر، شهرين، ٣ أشهر؟
-7. **الحد الأقصى للخصم ٢٠٪** — مناسب لكل أنواع التجار أم نسمح بتخصيص حسب التصنيف؟
-
-**⚠️ الأسئلة المفتوحة في §22 تم الإجابة عليها جميعًا في v2.2. القيم المعتمدة مُثبّتة.**
-
-بمجرد اعتماد هذا الملف، نبدأ بـ Phase 0A (إعادة هيكلة الوثائق) ثم Phase 0B (DB review + SQL).
+| #   | القرار                             | القيمة المُعتمدة                               | المرجع                      |
+| --- | ---------------------------------- | ---------------------------------------------- | --------------------------- |
+| 1   | توزيع Mystery Box                  | ٤٠/٢٥/٢٠/١٠/٤/١                                | §3.2 + `mystery-box.ts`     |
+| 2   | الصندوق الذهبي (افتراضي / حد أقصى) | ٥٠ ج.م / ١٠٠ ج.م                               | §5.2 + `retention_settings` |
+| 3   | Gift-it Forward — مكافأة المرسل    | ١٠ نقاط ولاء                                   | §7.2                        |
+| 4   | عيد الميلاد                        | صندوق مفاجأة محسّن (≤٢٠ ج.م)                   | §6.4                        |
+| 5   | Partner Gifts approval             | موافقة الأدمن دائمًا (لا auto-approve)         | §4.3                        |
+| 6   | مراجعة Pilot بني سويف              | كل شهرين                                       | §22                         |
+| 7   | الحد الأقصى للخصم                  | ٢٠٪ + قيم متدرجة (١٠/١٥/٢٠ ج.م حسب قيمة الطلب) | §11.3                       |
 
 ---
 
-**الإصدار:** 2.2 — Gift Box Edition (قرارات معتمدة)
-**آخر تحديث:** ٢٢ أبريل ٢٠٢٦
-**الحالة:** جاهز للاعتماد النهائي قبل بدء التنفيذ
+**الإصدار:** 2.3 — Gift Box Edition (قيد التنفيذ)
+**آخر تحديث:** ٢٨ أبريل ٢٠٢٦
+**الحالة:** قيد التنفيذ — Phases 0A → 8.5 مكتملة، Phase 12 (Order Completion Hook + Loyalty) هي التالية
 
 ### ملخص تعديلات v2.1 (٢١ أبريل)
 
