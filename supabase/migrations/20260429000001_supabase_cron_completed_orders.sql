@@ -9,22 +9,34 @@
 -- specific cron there. The HTTP endpoint stays in Next.js (no logic change),
 -- pg_cron just dispatches the trigger.
 --
+-- Note: managed Supabase does NOT allow ALTER DATABASE postgres SET ...
+-- (requires superuser), so we use Supabase Vault to store secrets.
+--
 -- ═══════════════════════════════════════════════════════════════════════════════
--- ⚠️  ONE-TIME SETUP REQUIRED  (run in Supabase SQL Editor as superuser)
+-- ⚠️  ONE-TIME SETUP REQUIRED  (run in Supabase SQL Editor as project owner)
 -- ═══════════════════════════════════════════════════════════════════════════════
 --
--- BEFORE running this migration, configure two database-level settings:
+-- BEFORE running this migration, store two secrets in Supabase Vault:
 --
---   ALTER DATABASE postgres SET app.settings.app_url TO 'https://YOUR-VERCEL-URL';
---   ALTER DATABASE postgres SET app.settings.cron_secret TO 'YOUR-CRON-SECRET';
+--   SELECT vault.create_secret(
+--     'https://YOUR-VERCEL-URL',     -- secret value (no trailing slash)
+--     'engezna_app_url',              -- secret name
+--     'Production base URL for cron HTTP dispatch'
+--   );
 --
--- - `app_url` should match the production URL of the Next.js app
---   (no trailing slash). Example: https://engezna.vercel.app
--- - `cron_secret` must be the SAME value as the CRON_SECRET env var on Vercel
---   so the endpoint will accept the request.
+--   SELECT vault.create_secret(
+--     'YOUR-CRON-SECRET',             -- same value as Vercel CRON_SECRET env var
+--     'engezna_cron_secret',
+--     'Bearer token validated by /api/cron/* routes'
+--   );
 --
--- After ALTER DATABASE you may need a brief connection cycle for pg_cron's
--- worker to pick up the new settings.
+-- To rotate later:
+--   UPDATE vault.secrets
+--   SET secret = 'new_value'
+--   WHERE name = 'engezna_cron_secret';
+--
+-- To list:
+--   SELECT name, description, created_at FROM vault.secrets;
 -- ═══════════════════════════════════════════════════════════════════════════════
 
 
@@ -34,16 +46,14 @@ CREATE EXTENSION IF NOT EXISTS pg_net;
 
 
 -- ╔═══════════════════════════════════════════════════════════════════════════════╗
--- ║ Wrapper function — keeps the cron schedule readable + central error handling ║
+-- ║ Wrapper function — pulls Vault secrets, dispatches the HTTP request          ║
 -- ╚═══════════════════════════════════════════════════════════════════════════════╝
--- Reads URL + secret from current_setting() (set via ALTER DATABASE above).
--- Returns the pg_net request id so cron.job_run_details captures it on failure.
 
 CREATE OR REPLACE FUNCTION public.trigger_process_completed_orders()
 RETURNS BIGINT
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, vault, extensions
 AS $$
 DECLARE
   v_url      TEXT;
@@ -51,16 +61,25 @@ DECLARE
   v_endpoint TEXT;
   v_req_id   BIGINT;
 BEGIN
-  v_url := current_setting('app.settings.app_url', true);
-  v_secret := current_setting('app.settings.cron_secret', true);
+  -- Read both secrets from Vault. vault.decrypted_secrets is a view that
+  -- decrypts on read; access is restricted by Vault's own RLS.
+  SELECT decrypted_secret INTO v_url
+  FROM vault.decrypted_secrets
+  WHERE name = 'engezna_app_url'
+  LIMIT 1;
+
+  SELECT decrypted_secret INTO v_secret
+  FROM vault.decrypted_secrets
+  WHERE name = 'engezna_cron_secret'
+  LIMIT 1;
 
   IF v_url IS NULL OR v_url = '' THEN
-    RAISE WARNING '[trigger_process_completed_orders] app.settings.app_url not configured; skipping run';
+    RAISE WARNING '[trigger_process_completed_orders] vault secret engezna_app_url not found; skipping run';
     RETURN NULL;
   END IF;
 
   IF v_secret IS NULL OR v_secret = '' THEN
-    RAISE WARNING '[trigger_process_completed_orders] app.settings.cron_secret not configured; skipping run';
+    RAISE WARNING '[trigger_process_completed_orders] vault secret engezna_cron_secret not found; skipping run';
     RETURN NULL;
   END IF;
 
@@ -120,6 +139,13 @@ $$;
 -- ║ Verification queries (uncomment in SQL Editor if you want to confirm)        ║
 -- ╚═══════════════════════════════════════════════════════════════════════════════╝
 --
+-- -- Confirm Vault secrets exist
+-- SELECT name, description, created_at FROM vault.secrets
+-- WHERE name IN ('engezna_app_url', 'engezna_cron_secret');
+--
+-- -- Sanity-test the wrapper manually (returns the pg_net request id)
+-- SELECT public.trigger_process_completed_orders();
+--
 -- -- List the scheduled job
 -- SELECT jobid, jobname, schedule, active, command
 -- FROM cron.job WHERE jobname = 'process-completed-orders';
@@ -131,7 +157,7 @@ $$;
 -- ORDER BY start_time DESC
 -- LIMIT 10;
 --
--- -- Inspect pg_net requests that were dispatched
+-- -- Inspect pg_net responses
 -- SELECT id, status, status_code, content_type
 -- FROM net._http_response
 -- ORDER BY id DESC LIMIT 10;

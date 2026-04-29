@@ -1632,9 +1632,10 @@ UI Components (bilingual AR/EN + Framer Motion):
      migration `20260429000001` تستدعي endpoint الـ Next.js عبر `net.http_post`
    - الـ endpoint نفسه يجلب الطلبات `delivered + completed` في آخر ٢٤ ساعة
      وما اتعالجتش، ويستدعي الهوك لكل طلب
-   - أسرار الـ HTTP (URL + cron secret) من `current_setting('app.settings.app_url')`
-     و `current_setting('app.settings.cron_secret')` — تُضبط عبر
-     `ALTER DATABASE postgres SET ...` (موثّق داخل الـ migration)
+   - أسرار الـ HTTP (URL + cron secret) مخزّنة في **Supabase Vault**
+     باسم `engezna_app_url` و `engezna_cron_secret` (الـ migration يقرأ
+     من `vault.decrypted_secrets`). الـ `ALTER DATABASE ... SET` غير متاح
+     على managed Supabase لأنه يحتاج superuser.
 
 3. **Loyalty Points Service** (`src/lib/loyalty/`):
    - `awardOrderPoints(userId, orderId, subtotalPiasters)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم
