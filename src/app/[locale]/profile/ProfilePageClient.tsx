@@ -23,6 +23,7 @@ import {
   Info,
   MessageSquare,
   Bell,
+  Gift,
 } from 'lucide-react';
 
 interface UserProfile {
@@ -53,6 +54,12 @@ export default function ProfilePageClient({ userProfile }: ProfilePageClientProp
       icon: ShoppingBag,
       label: t('menu.orders'),
       href: `/${locale}/orders`,
+    },
+    {
+      icon: Gift,
+      label: isRTL ? 'هداياي ونقاطي' : 'Rewards & Gifts',
+      href: `/${locale}/rewards`,
+      highlight: true,
     },
     {
       icon: HeadphonesIcon,
