@@ -1,8 +1,8 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { Trophy } from 'lucide-react';
 import { StampCard } from '@/components/customer/gifts/StampCard';
+import { EmptyStampIllustration } from './EmptyStateIllustrations';
 import type { GiftStamp } from '@/lib/gifts/types';
 
 interface StampCardSectionProps {
@@ -19,15 +19,15 @@ export function StampCardSection({ stampCard }: StampCardSectionProps) {
         <h2 id="stamps-heading" className="text-lg font-bold text-slate-900">
           {isRTL ? '🎫 بطاقة الختم' : '🎫 Stamp card'}
         </h2>
-        <div className="rounded-2xl border-2 border-dashed border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50 p-8 text-center">
-          <Trophy className="mx-auto mb-3 h-12 w-12 text-yellow-300" />
-          <p className="text-sm font-medium text-slate-700">
-            {isRTL ? 'مفيش بطاقة نشطة' : 'No active card'}
+        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-yellow-50 via-amber-50/60 to-orange-50 p-6 text-center">
+          <EmptyStampIllustration className="mx-auto mb-2 h-32 w-40" />
+          <p className="text-base font-bold text-slate-800">
+            {isRTL ? '٤ أختام = صندوق ذهبي 🏆' : '4 stamps = a golden box 🏆'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
             {isRTL
-              ? 'اطلب طلب ٣٠٠ ج.م علشان تبدأ بطاقتك الأولى — ٤ أختام = صندوق ذهبي 🏆'
-              : 'Place a 300 EGP order to start your card — 4 stamps = golden box 🏆'}
+              ? 'كل طلب ٣٠٠ ج.م = ختم. اطلب ٤ مرات وكسبت صندوق هدية ذهبي بقيمة تصل لـ ١٠٠ ج.م'
+              : 'Each 300 EGP order = 1 stamp. Collect 4 stamps to unlock a golden gift up to 100 EGP.'}
           </p>
         </div>
       </section>

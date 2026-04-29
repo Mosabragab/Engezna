@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { Copy, Check, Share2, Gift, Users, Clock, CheckCircle2 } from 'lucide-react';
-import { SettingsLayout } from '@/components/customer/layout';
+import { CustomerLayout } from '@/components/customer/layout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { ReferralStats, ReferralHistoryEntry } from '@/lib/referrals';
@@ -63,11 +63,12 @@ export function ReferralPageClient({ stats, history }: ReferralPageClientProps) 
   const rewardsEarned = (stats?.rewards_earned_piasters || 0) / 100;
 
   return (
-    <SettingsLayout>
+    <CustomerLayout
+      headerTitle={isRTL ? 'ادعُ صديقًا' : 'Invite a Friend'}
+      showBottomNav={true}
+      showBackButton
+    >
       <div className="container mx-auto max-w-2xl px-4 py-6">
-        <h1 className="mb-2 text-2xl font-bold text-slate-900">
-          {isRTL ? 'ادعُ صديقًا' : 'Invite a Friend'}
-        </h1>
         <p className="mb-6 text-sm text-slate-600">
           {isRTL
             ? 'شارك كودك مع أصحابك. لما يطلبوا أول طلب ٣٠٠ ج.م أو أكثر، تستلم صندوق هدية ٢٠ ج.م.'
@@ -186,7 +187,7 @@ export function ReferralPageClient({ stats, history }: ReferralPageClientProps) 
           </div>
         )}
       </div>
-    </SettingsLayout>
+    </CustomerLayout>
   );
 }
 

@@ -3,9 +3,9 @@
 import { useState, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift } from 'lucide-react';
 import { MysteryBoxCard } from '@/components/customer/gifts/MysteryBoxCard';
 import { celebrateLarge } from './celebrate';
+import { EmptyGiftIllustration } from './EmptyStateIllustrations';
 import type { GiftBoxEntry } from '@/lib/gifts/types';
 
 interface ActiveGiftsCarouselProps {
@@ -61,15 +61,15 @@ export function ActiveGiftsCarousel({ gifts, onChange }: ActiveGiftsCarouselProp
             {isRTL ? '🎁 صناديقك' : '🎁 Your gifts'}
           </h2>
         </div>
-        <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
-          <Gift className="mx-auto mb-3 h-12 w-12 text-slate-300" />
-          <p className="text-sm font-medium text-slate-700">
-            {isRTL ? 'مفيش صناديق دلوقتي' : 'No gift boxes yet'}
+        <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-blue-50/30 p-6 text-center">
+          <EmptyGiftIllustration className="mx-auto mb-2 h-32 w-40" />
+          <p className="text-base font-bold text-slate-800">
+            {isRTL ? 'صندوقك الأول في الطريق' : 'Your first gift is on the way'}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
             {isRTL
-              ? 'اطلب طلب ٣٠٠ ج.م أو أكثر علشان تحصل على صندوقك الأول!'
-              : 'Place an order of 300 EGP+ to earn your first gift box!'}
+              ? 'اطلب طلب ٣٠٠ ج.م أو أكثر هتلاقي صندوق هدية في انتظارك هنا 🎁'
+              : 'Place an order of 300 EGP+ and a gift box will be waiting here 🎁'}
           </p>
         </div>
       </section>
