@@ -1625,11 +1625,16 @@ UI Components (bilingual AR/EN + Framer Motion):
    - مُحاط بـ try/catch لكل خطوة — لا يفشل مسار الطلب لو فشلت أي خطوة
    - Idempotent عبر جدول `order_completion_processed` (PK = order_id)
 
-2. **Cron Trigger** (`/api/cron/process-completed-orders`):
-   - يُشغَّل كل ١٥ دقيقة
-   - يجلب الطلبات `delivered + completed` في آخر ٢٤ ساعة وما اتعالجتش
-   - يستدعي الهوك لكل طلب
-   - أبسط من الـ DB trigger، قابل للتراجع، ومراقب من الـ admin
+2. **Cron Trigger** (`/api/cron/process-completed-orders` — Supabase pg_cron):
+   - يُشغَّل كل ١٥ دقيقة عبر **Supabase pg_cron + pg_net** (مش Vercel)
+     لأن Vercel Hobby plan يقتصر على daily cron
+   - الـ wrapper function `trigger_process_completed_orders()` في
+     migration `20260429000001` تستدعي endpoint الـ Next.js عبر `net.http_post`
+   - الـ endpoint نفسه يجلب الطلبات `delivered + completed` في آخر ٢٤ ساعة
+     وما اتعالجتش، ويستدعي الهوك لكل طلب
+   - أسرار الـ HTTP (URL + cron secret) من `current_setting('app.settings.app_url')`
+     و `current_setting('app.settings.cron_secret')` — تُضبط عبر
+     `ALTER DATABASE postgres SET ...` (موثّق داخل الـ migration)
 
 3. **Loyalty Points Service** (`src/lib/loyalty/`):
    - `awardOrderPoints(userId, orderId, subtotalPiasters)` — ١ نقطة لكل ١٠ ج.م على `subtotal` بعد الخصم

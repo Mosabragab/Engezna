@@ -17,10 +17,6 @@
     {
       "path": "/api/cron/gift-expiry",
       "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/process-completed-orders",
-      "schedule": "*/15 * * * *"
     }
   ]
 }
