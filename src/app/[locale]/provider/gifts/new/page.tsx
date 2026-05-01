@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { ProviderLayout } from '@/components/provider';
@@ -8,33 +8,64 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Sparkles } from 'lucide-react';
+import { AlertCircle, Sparkles, Calculator } from 'lucide-react';
 import type { CreatePartnerOfferInput, PartnerGiftType } from '@/lib/partner-gifts';
 
 const REASON_MESSAGES: Record<string, { ar: string; en: string }> = {
-  no_provider: { ar: 'لا يوجد متجر مرتبط بحسابك', en: 'No provider associated with your account' },
-  invalid_dates: { ar: 'التواريخ غير صحيحة', en: 'Invalid date range' },
-  invalid_value: { ar: 'القيمة غير صحيحة', en: 'Invalid value' },
-  terms_required: { ar: 'يجب الموافقة على الشروط', en: 'You must accept the terms' },
-  system_error: { ar: 'حدث خطأ غير متوقع', en: 'Unexpected error' },
+  not_authenticated: {
+    ar: 'يجب تسجيل الدخول أولًا',
+    en: 'You must be logged in',
+  },
+  no_provider: {
+    ar: 'لا يوجد متجر مرتبط بحسابك',
+    en: 'No provider associated with your account',
+  },
+  invalid_dates: {
+    ar: 'التواريخ غير صحيحة',
+    en: 'Invalid date range',
+  },
+  invalid_value: {
+    ar: 'القيمة غير صحيحة',
+    en: 'Invalid value',
+  },
+  terms_required: {
+    ar: 'يجب الموافقة على الشروط',
+    en: 'You must accept the terms',
+  },
+  system_error: {
+    ar: 'حدث خطأ غير متوقع',
+    en: 'Unexpected error',
+  },
 };
+
+/**
+ * Format a Date as a local "datetime-local" input value (YYYY-MM-DDTHH:mm).
+ * Avoids the toISOString().slice(0, 16) trap which silently shifts to UTC.
+ */
+function formatLocalDatetime(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}
 
 export default function NewProviderGiftPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const router = useRouter();
 
-  const [form, setForm] = useState<CreatePartnerOfferInput>({
+  const [form, setForm] = useState<CreatePartnerOfferInput>(() => ({
     type: 'discount_code',
     value_piasters: 1000, // 10 EGP default
     title_ar: '',
     title_en: '',
     max_orders: 50,
     min_order_piasters: 30000, // 300 EGP
-    starts_at: new Date().toISOString().slice(0, 16),
-    ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+    starts_at: formatLocalDatetime(new Date()),
+    ends_at: formatLocalDatetime(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
     terms_accepted: false,
-  });
+  }));
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +120,29 @@ export default function NewProviderGiftPage() {
       ? 'مبلغ الخصم بالقروش (1000 = 10 ج.م)'
       : 'Discount amount in piasters (1000 = 10 EGP)';
   })();
+
+  /**
+   * Live settlement preview computed from the same logic as the production
+   * settlement engine: commission base = subtotal - discount.
+   */
+  const settlementExample = useMemo(() => {
+    const exampleSubtotal = 25000; // 250 EGP order
+    const commissionRate = 5; // 5% — illustrative
+    const discount =
+      form.type === 'discount_percent'
+        ? Math.min(2000, Math.round((exampleSubtotal * form.value_piasters) / 10000))
+        : Math.min(form.value_piasters, exampleSubtotal);
+    const baseAfter = Math.max(0, exampleSubtotal - discount);
+    const commission = Math.round((baseAfter * commissionRate) / 100);
+    const settlement = baseAfter - commission;
+    return {
+      subtotal: exampleSubtotal,
+      discount,
+      baseAfter,
+      commission,
+      settlement,
+    };
+  }, [form.type, form.value_piasters]);
 
   return (
     <ProviderLayout
@@ -223,6 +277,81 @@ export default function NewProviderGiftPage() {
               </div>
             </div>
 
+            {/* Settlement preview — the actual settlement engine uses
+                base = subtotal - discount, commission applies on this base.
+                Live numbers so the merchant sees the exact cost. */}
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+              <p className="font-bold mb-2 flex items-center gap-1">
+                <Calculator className="h-3 w-3" />
+                {isRTL
+                  ? 'كيف تُحسب التسوية؟ (مثال على طلب ٢٥٠ ج.م)'
+                  : 'How is settlement calculated? (example: 250 EGP order)'}
+              </p>
+              <table className="w-full text-xs">
+                <tbody>
+                  <tr>
+                    <td className={isRTL ? 'text-right py-0.5' : 'py-0.5'}>
+                      {isRTL ? 'قيمة الطلب (subtotal)' : 'Order subtotal'}
+                    </td>
+                    <td
+                      className={`tabular-nums font-medium ${isRTL ? 'text-left' : 'text-right'} py-0.5`}
+                    >
+                      {(settlementExample.subtotal / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className={isRTL ? 'text-right py-0.5' : 'py-0.5'}>
+                      {isRTL ? 'خصم الهدية' : 'Gift discount'}
+                    </td>
+                    <td
+                      className={`tabular-nums font-medium text-red-700 ${isRTL ? 'text-left' : 'text-right'} py-0.5`}
+                    >
+                      −{(settlementExample.discount / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-blue-200">
+                    <td className={isRTL ? 'text-right py-0.5 font-medium' : 'py-0.5 font-medium'}>
+                      {isRTL ? 'القيمة بعد الخصم' : 'Base after discount'}
+                    </td>
+                    <td
+                      className={`tabular-nums font-bold ${isRTL ? 'text-left' : 'text-right'} py-0.5`}
+                    >
+                      {(settlementExample.baseAfter / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className={isRTL ? 'text-right py-0.5' : 'py-0.5'}>
+                      {isRTL ? 'العمولة (5%)' : 'Commission (5%)'}
+                    </td>
+                    <td
+                      className={`tabular-nums font-medium text-red-700 ${isRTL ? 'text-left' : 'text-right'} py-0.5`}
+                    >
+                      −{(settlementExample.commission / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                    </td>
+                  </tr>
+                  <tr className="border-t border-blue-200">
+                    <td
+                      className={
+                        isRTL ? 'text-right py-1 font-bold text-base' : 'py-1 font-bold text-base'
+                      }
+                    >
+                      {isRTL ? 'تسويتك' : 'Your settlement'}
+                    </td>
+                    <td
+                      className={`tabular-nums font-bold text-base text-emerald-700 ${isRTL ? 'text-left' : 'text-right'} py-1`}
+                    >
+                      {(settlementExample.settlement / 100).toFixed(2)} {isRTL ? 'ج.م' : 'EGP'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="mt-2 text-[11px] leading-relaxed">
+                {isRTL
+                  ? 'العمولة تُحسب على القيمة بعد الخصم — يعني الخصم يقلّل العمولة كمان قليلًا. الحساب نفسه في الدفع أونلاين والكاش عند التوصيل (COD).'
+                  : 'Commission is computed on the post-discount base — the discount also slightly reduces the commission. Same calculation for online payment and cash on delivery (COD).'}
+              </p>
+            </div>
+
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
               <p className="font-bold mb-1 flex items-center gap-1">
                 <Sparkles className="h-3 w-3" />
@@ -231,8 +360,8 @@ export default function NewProviderGiftPage() {
               <ul className="list-disc ms-5 space-y-1">
                 <li>
                   {isRTL
-                    ? 'الخصم يُخصم من تسويتك القادمة، لا تدفع شيئًا مقدّمًا.'
-                    : 'The discount is deducted from your next settlement — no upfront payment.'}
+                    ? 'الخصم يقلّل قيمة الطلب الذي تُحسب عليه التسوية (لا دفع مقدم).'
+                    : 'The discount reduces the order value used for settlement (no upfront payment).'}
                 </li>
                 <li>
                   {isRTL

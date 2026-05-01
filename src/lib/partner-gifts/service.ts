@@ -117,6 +117,15 @@ export class PartnerGiftsService {
 
     if (offerErr || !offer) {
       console.error('[PartnerGiftsService] Failed to create offer:', offerErr);
+      // Compensating rollback — the gift template was created but the offer
+      // insert failed. Remove the orphaned gift row so it doesn't accumulate.
+      const { error: cleanupErr } = await this.supabase.from('gifts').delete().eq('id', gift.id);
+      if (cleanupErr) {
+        console.error('[PartnerGiftsService] Failed to cleanup orphan gift:', {
+          giftId: gift.id,
+          cleanupErr,
+        });
+      }
       return { success: false, reason: 'system_error' };
     }
 
@@ -157,13 +166,21 @@ export class PartnerGiftsService {
   }
 
   async deleteDraft(offerId: string): Promise<boolean> {
-    // RLS policy "Providers can delete own drafts" guards this.
-    const { error } = await this.supabase
+    // RLS policy "Providers can delete own drafts" guards this. We ask Supabase
+    // to return the deleted rows so we can distinguish a real delete (≥1 row)
+    // from a silent no-op (already removed, not a draft, wrong owner).
+    const { data, error } = await this.supabase
       .from('gift_partner_offers')
       .delete()
       .eq('id', offerId)
-      .eq('status', 'draft');
-    return !error;
+      .eq('status', 'draft')
+      .select('id');
+
+    if (error) {
+      console.error('[PartnerGiftsService] deleteDraft failed:', { offerId, error });
+      return false;
+    }
+    return Array.isArray(data) && data.length > 0;
   }
 
   async submit(offerId: string): Promise<StateTransitionResult> {
@@ -191,18 +208,26 @@ export class PartnerGiftsService {
 
   /**
    * Admin: list offers across providers, optionally filtered by status.
+   * Limit is clamped to a safe range (1-200) regardless of caller input.
    */
   async listForAdmin(filter?: {
     status?: string;
     limit?: number;
   }): Promise<PartnerOfferWithGift[]> {
+    const MAX_LIMIT = 200;
+    const requested = Number(filter?.limit ?? 50);
+    const effectiveLimit = Math.max(
+      1,
+      Math.min(Number.isFinite(requested) ? requested : 50, MAX_LIMIT)
+    );
+
     let query = this.supabase
       .from('gift_partner_offers')
       .select(
         'id, provider_id, gift_id, status, max_orders, used_orders, max_discount_total_piasters, total_discount_used_piasters, starts_at, ends_at, approved_by, approved_at, rejection_reason, terms_accepted, created_at, gift:gifts(id, type, title_ar, title_en, value_piasters, max_discount_piasters, min_order_piasters), provider:providers(id, name_ar, name_en)'
       )
       .order('created_at', { ascending: false })
-      .limit(filter?.limit ?? 50);
+      .limit(effectiveLimit);
 
     if (filter?.status) {
       query = query.eq('status', filter.status);

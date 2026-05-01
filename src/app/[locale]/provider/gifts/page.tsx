@@ -23,6 +23,25 @@ const STATUS_LABELS: Record<string, { ar: string; en: string; color: string }> =
   rejected: { ar: 'مرفوض', en: 'Rejected', color: 'bg-red-100 text-red-700' },
 };
 
+const ACTION_REASON_MESSAGES: Record<string, { ar: string; en: string }> = {
+  cannot_submit_offer: {
+    ar: 'لا يمكن إرسال هذه الهدية (تحقق من حالتها وقبولك للشروط)',
+    en: 'Cannot submit this offer — check its status and that terms are accepted',
+  },
+  cannot_pause_offer: {
+    ar: 'لا يمكن إيقاف هذه الهدية',
+    en: 'Cannot pause this offer',
+  },
+  cannot_resume_offer: {
+    ar: 'لا يمكن استئناف هذه الهدية',
+    en: 'Cannot resume this offer',
+  },
+  not_authorized: {
+    ar: 'غير مصرح لك بهذا الإجراء',
+    en: 'Not authorized for this action',
+  },
+};
+
 export default function ProviderGiftsPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -55,10 +74,21 @@ export default function ProviderGiftsPage() {
     setBusyId(offerId);
     try {
       const res = await fetch(path, { method });
-      if (!res.ok) throw new Error('Action failed');
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        const reason = (body?.error as string | undefined) ?? null;
+        const localized = reason ? ACTION_REASON_MESSAGES[reason] : null;
+        if (localized) {
+          setError(isRTL ? localized.ar : localized.en);
+        } else {
+          setError(isRTL ? 'فشل تنفيذ العملية' : 'Action failed');
+        }
+        console.error('[provider/gifts] action failed', { path, status: res.status, reason });
+        return;
+      }
       await load();
     } catch (e) {
-      setError(isRTL ? 'فشل تنفيذ العملية' : 'Action failed');
+      setError(isRTL ? 'فشل الاتصال بالخادم' : 'Network error');
       console.error(e);
     } finally {
       setBusyId(null);
@@ -69,8 +99,8 @@ export default function ProviderGiftsPage() {
     <ProviderLayout
       pageTitle={{ ar: 'هدايا المتجر', en: 'Store Gifts' }}
       pageSubtitle={{
-        ar: 'أنشئ هدايا تظهر في صناديق العملاء — الخصم يُخصم من تسويتك',
-        en: 'Create gifts shown in customer reward boxes — discount deducted from your settlement',
+        ar: 'الخصم يقلّل القيمة الفعلية للطلب وتسويتك تُحسب على القيمة بعد الخصم — لا دفع مقدم',
+        en: 'The discount lowers the order value and your settlement is calculated on the after-discount amount — no upfront payment',
       }}
     >
       <div className="container mx-auto max-w-5xl p-4 lg:p-6 space-y-4">

@@ -12,8 +12,11 @@ import type { PartnerOfferWithGift, PartnerOfferStatus } from '@/lib/partner-gif
 
 const STATUS_TABS: { key: PartnerOfferStatus | 'all'; ar: string; en: string }[] = [
   { key: 'pending_approval', ar: 'بانتظار الموافقة', en: 'Pending' },
+  { key: 'approved', ar: 'معتمد', en: 'Approved' },
   { key: 'active', ar: 'نشط', en: 'Active' },
+  { key: 'paused', ar: 'متوقف', en: 'Paused' },
   { key: 'rejected', ar: 'مرفوض', en: 'Rejected' },
+  { key: 'ended', ar: 'منتهٍ', en: 'Ended' },
   { key: 'all', ar: 'الكل', en: 'All' },
 ];
 
@@ -104,10 +107,23 @@ export default function AdminPartnerGiftsPage() {
     }
   }
 
+  // Render the header only after auth resolves so we never pass a null user
+  // to AdminHeader (whose prop is required).
+  if (!user) {
+    return (
+      <main
+        className="flex-1 p-4 lg:p-6 flex items-center justify-center"
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+      </main>
+    );
+  }
+
   return (
     <>
       <AdminHeader
-        user={user as User}
+        user={user}
         title={isRTL ? 'هدايا الشركاء' : 'Partner Gifts'}
         onMenuClick={toggleSidebar}
       />

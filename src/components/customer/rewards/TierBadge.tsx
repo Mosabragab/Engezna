@@ -18,23 +18,20 @@ const SIZES = {
   lg: { box: 'h-20 w-20', label: 'text-base' },
 };
 
-const ACCENT_COLORS: Record<LoyaltyTier, string> = {
-  bronze: '#A0522D',
-  silver: '#94A3B8',
-  gold: '#F59E0B',
-  platinum: '#A78BFA',
-};
-
 /**
  * Premium tier badge — custom SVG with metallic gradients, NOT emojis.
  * Bronze: copper sheen. Silver: brushed metal. Gold: warm shimmer + glow.
  * Platinum: iridescent + animated shimmer overlay + sparkles.
+ *
+ * All metadata (label, accent) sourced from TIER_THEMES so there's a single
+ * source of truth shared with HeroHeader and the loyalty progress bars.
  */
 export function TierBadge({ tier, size = 'md', showLabel = false, isRTL = false }: TierBadgeProps) {
   const dims = SIZES[size];
   const reduceMotion = useReducedMotion();
-  const accent = ACCENT_COLORS[tier];
-  const label = TIER_THEMES[tier].label;
+  const theme = TIER_THEMES[tier];
+  const label = theme.label;
+  const accent = theme.accent;
 
   const pulseAnimation = reduceMotion
     ? {}
@@ -43,12 +40,15 @@ export function TierBadge({ tier, size = 'md', showLabel = false, isRTL = false 
         transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const },
       };
 
+  // Localized aria label so screen readers in Arabic UIs read Arabic.
+  const ariaLabel = isRTL ? `مستوى ${label.ar}` : `${label.en} tier`;
+
   return (
     <div className={`flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
       <motion.div
         animate={pulseAnimation}
         className={`relative ${dims.box} flex-shrink-0`}
-        aria-label={`${label.en} tier`}
+        aria-label={ariaLabel}
       >
         <TierMedalSVG tier={tier} reduceMotion={Boolean(reduceMotion)} />
       </motion.div>
