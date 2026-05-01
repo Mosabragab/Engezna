@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { SettingsLayout } from '@/components/customer/layout';
+import { CustomerLayout } from '@/components/customer/layout';
 import { HeroHeader } from '@/components/customer/rewards/HeroHeader';
 import { ActiveGiftsCarousel } from '@/components/customer/rewards/ActiveGiftsCarousel';
 import { StampCardSection } from '@/components/customer/rewards/StampCardSection';
@@ -132,7 +132,11 @@ export function RewardsHubClient({
   }, [userId]);
 
   return (
-    <SettingsLayout>
+    <CustomerLayout
+      headerTitle={isRTL ? 'هداياي ونقاطي' : 'Rewards & Gifts'}
+      showBottomNav={true}
+      showBackButton
+    >
       <div className="container mx-auto max-w-2xl px-4 py-6 space-y-6" dir={isRTL ? 'rtl' : 'ltr'}>
         <motion.div
           initial="hidden"
@@ -168,6 +172,6 @@ export function RewardsHubClient({
           </motion.div>
         </motion.div>
       </div>
-    </SettingsLayout>
+    </CustomerLayout>
   );
 }

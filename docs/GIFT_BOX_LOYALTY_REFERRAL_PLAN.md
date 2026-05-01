@@ -1,9 +1,9 @@
 # خطة تنفيذ نظام صندوق الهدايا + الولاء + الريفيرال — Engezna
 
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
-**آخر تحديث:** ٢٨ أبريل ٢٠٢٦
-**الإصدار:** 2.3 (قيد التنفيذ — Phases 0A → 8.5 مكتملة)
-**الحالة:** مرجع تنفيذي حيّ — Phase 12 هي التالية
+**آخر تحديث:** ٢٩ أبريل ٢٠٢٦
+**الإصدار:** 2.4 (Phase 12 شغّالة على Production)
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 مكتملة وشغّالة، Phase 9 هي التالية
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1591,7 +1591,7 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 9 — Partner Gifts (٣ أيام)
+### Phase 9 — Partner Gifts (٣ أيام) ⏳ التالي
 
 - صفحة التاجر `/provider/gifts`.
 - صفحة الأدمن `/admin/gifts/partners`.
@@ -1609,7 +1609,65 @@ UI Components (bilingual AR/EN + Framer Motion):
 - صفحة الاستلام `/gift/[token]`.
 - مكافحة الاحتيال الأساسية.
 
-### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام) ⏳ التالي
+### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام)
+
+**✅ مكتمل + شغّال على Production — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migrations المُنفّذة:**
+
+- `20260428000006_loyalty_and_completion_hook.sql` ✅ على Production
+  - جدول `order_completion_processed` (PK = order_id) لـ idempotency
+  - 3 RPCs ذرّية: `award_loyalty_points_atomic`, `redeem_loyalty_points_atomic`, `clawback_loyalty_points_atomic`
+  - دالة `compute_loyalty_tier(lifetime_points)` كمصدر وحيد للحقيقة
+  - `loyalty_redemption` مُضاف لـ `gift_source` enum
+- `20260429000001_supabase_cron_completed_orders.sql` ✅ على Production
+  - دالة wrapper `trigger_process_completed_orders()` تستخدم Vault
+  - Cron job مُجدول كل 15 دقيقة (`*/15 * * * *`)
+  - تم التأكد من نجاح أول تشغيل (`status_code = 200`)
+
+**Vault secrets (مُخزّنة على Supabase):**
+
+- `engezna_app_url` = `https://www.engezna.com`
+- `engezna_cron_secret` = (مطابق لـ Vercel CRON_SECRET env var)
+
+**الكود الـ Backend (Phase 12A):**
+
+- `src/lib/loyalty/` — types + service + tier-themes
+- `src/lib/orders/completion-hook.ts` — orchestrator موحَّد
+- `src/app/api/cron/process-completed-orders/route.ts` — endpoint
+- `src/app/api/loyalty/route.ts` + `/redeem/route.ts`
+- `src/app/api/rewards/route.ts` (combined endpoint)
+
+**الكود الـ Frontend (Phase 12B — Premium):**
+
+- `src/app/[locale]/rewards/page.tsx` (server shell) + `RewardsHubClient.tsx`
+- `src/components/customer/rewards/`:
+  - `HeroHeader` (animated counter + tier progress)
+  - `TierBadge` (metallic gradients + glow + shimmer)
+  - `AnimatedCounter` (RAF easeOutCubic)
+  - `ActiveGiftsCarousel` (snap scroll + spring transitions)
+  - `StampCardSection`, `LoyaltyPointsSection`, `QuickActionsBar`
+  - `celebrate.ts` (canvas-confetti — يحترم `prefers-reduced-motion`)
+- Real-time subscriptions على `gift_box_entries` + `gift_stamps` + `loyalty_points`
+- `/profile` menu: لينك مميّز "هداياي ونقاطي"
+
+**التحقق على Production:**
+
+- ✅ `SELECT public.trigger_process_completed_orders()` رجع request id
+- ✅ `net._http_response` بـ `status_code = 200`
+- ✅ `cron.job` فيه `process-completed-orders` بـ `active = true`
+- ✅ `last_executed_at` يتحدّث تلقائيًا كل 15 دقيقة
+
+**ملاحظات تشغيلية:**
+
+- الـ cron انتقل من Vercel إلى Supabase pg_cron بسبب قيود Hobby plan على Vercel
+- الـ HTTP endpoint نفسه ما تغيّرش — Supabase pg_net فقط بيـ dispatch الـ trigger
+- جدول `order_completion_processed` بيتعبّى تلقائيًا مع كل طلب delivered+completed جديد
+
+</details>
 
 **🎯 المرحلة الأهم:** هي اللي تفعّل كل ما بُني في المراحل ١-٨. حاليًا الـ engine جاهز لكن مفيش حد بيستدعيه عند تسليم الطلب. كذلك المستخدم لا يقدر يشوف هدياه/نقاطه/مستواه في أي مكان.
 
