@@ -1,6 +1,8 @@
 'use client';
 
+import { useId } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { TIER_THEMES } from '@/lib/loyalty';
 import type { LoyaltyTier } from '@/lib/loyalty';
 
 interface TierBadgeProps {
@@ -14,13 +16,6 @@ const SIZES = {
   sm: { box: 'h-10 w-10', label: 'text-xs' },
   md: { box: 'h-14 w-14', label: 'text-sm' },
   lg: { box: 'h-20 w-20', label: 'text-base' },
-};
-
-const LABELS: Record<LoyaltyTier, { ar: string; en: string }> = {
-  bronze: { ar: 'برونزي', en: 'Bronze' },
-  silver: { ar: 'فضّي', en: 'Silver' },
-  gold: { ar: 'ذهبي', en: 'Gold' },
-  platinum: { ar: 'بلاتيني', en: 'Platinum' },
 };
 
 const ACCENT_COLORS: Record<LoyaltyTier, string> = {
@@ -39,6 +34,7 @@ export function TierBadge({ tier, size = 'md', showLabel = false, isRTL = false 
   const dims = SIZES[size];
   const reduceMotion = useReducedMotion();
   const accent = ACCENT_COLORS[tier];
+  const label = TIER_THEMES[tier].label;
 
   const pulseAnimation = reduceMotion
     ? {}
@@ -52,13 +48,13 @@ export function TierBadge({ tier, size = 'md', showLabel = false, isRTL = false 
       <motion.div
         animate={pulseAnimation}
         className={`relative ${dims.box} flex-shrink-0`}
-        aria-label={`${LABELS[tier].en} tier`}
+        aria-label={`${label.en} tier`}
       >
         <TierMedalSVG tier={tier} reduceMotion={Boolean(reduceMotion)} />
       </motion.div>
       {showLabel && (
         <span className={`font-bold ${dims.label}`} style={{ color: accent }}>
-          {isRTL ? LABELS[tier].ar : LABELS[tier].en}
+          {isRTL ? label.ar : label.en}
         </span>
       )}
     </div>
@@ -66,9 +62,13 @@ export function TierBadge({ tier, size = 'md', showLabel = false, isRTL = false 
 }
 
 function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion: boolean }) {
-  const gradId = `tier-grad-${tier}`;
-  const ribbonId = `tier-ribbon-${tier}`;
-  const shineId = `tier-shine-${tier}`;
+  // Unique per-instance ids to prevent collisions when multiple badges
+  // of the same tier render on the same page.
+  const uid = useId().replace(/:/g, '');
+  const gradId = `tier-grad-${tier}-${uid}`;
+  const ribbonId = `tier-ribbon-${tier}-${uid}`;
+  const shineId = `tier-shine-${tier}-${uid}`;
+  const filterId = `tier-glow-${tier}-${uid}`;
 
   const palettes: Record<
     LoyaltyTier,
@@ -83,33 +83,30 @@ function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion:
   const palette = palettes[tier];
   const showSparkles = tier === 'gold' || tier === 'platinum';
   const showShimmer = tier === 'platinum' && !reduceMotion;
+  const useGlow = tier === 'gold' || tier === 'platinum';
 
   return (
     <svg viewBox="0 0 100 120" className="w-full h-full overflow-visible">
       <defs>
-        {/* Medal radial gradient with metallic look */}
         <radialGradient id={gradId} cx="35%" cy="30%" r="80%">
           <stop offset="0%" stopColor={palette.light} />
           <stop offset="50%" stopColor={palette.mid} />
           <stop offset="100%" stopColor={palette.dark} />
         </radialGradient>
 
-        {/* Ribbon gradient */}
         <linearGradient id={ribbonId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={palette.ribbon} stopOpacity="0.95" />
           <stop offset="100%" stopColor={palette.ribbon} stopOpacity="0.6" />
         </linearGradient>
 
-        {/* Animated shine sweep (platinum only) */}
         <linearGradient id={shineId} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="white" stopOpacity="0" />
           <stop offset="50%" stopColor="white" stopOpacity="0.7" />
           <stop offset="100%" stopColor="white" stopOpacity="0" />
         </linearGradient>
 
-        {/* Outer glow filter (gold + platinum) */}
-        {(tier === 'gold' || tier === 'platinum') && (
-          <filter id={`glow-${tier}`} x="-50%" y="-50%" width="200%" height="200%">
+        {useGlow && (
+          <filter id={filterId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -119,16 +116,11 @@ function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion:
         )}
       </defs>
 
-      {/* Ribbon (V-shape behind the medal) */}
       <path d="M 30 18 L 50 60 L 70 18 L 60 18 L 50 35 L 40 18 Z" fill={`url(#${ribbonId})`} />
 
-      {/* Medal disc with glow on premium tiers */}
-      <g filter={tier === 'gold' || tier === 'platinum' ? `url(#glow-${tier})` : undefined}>
-        {/* Outer ring */}
+      <g filter={useGlow ? `url(#${filterId})` : undefined}>
         <circle cx="50" cy="70" r="36" fill={palette.dark} opacity="0.4" />
-        {/* Main medal */}
         <circle cx="50" cy="70" r="33" fill={`url(#${gradId})`} />
-        {/* Inner ring */}
         <circle
           cx="50"
           cy="70"
@@ -139,7 +131,6 @@ function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion:
           opacity="0.5"
         />
 
-        {/* Star/check center */}
         <g transform="translate(50, 70)">
           {tier === 'platinum' ? (
             <path
@@ -178,11 +169,9 @@ function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion:
           )}
         </g>
 
-        {/* Highlight on top-left for 3D feel */}
         <ellipse cx="38" cy="58" rx="14" ry="8" fill="white" opacity="0.25" />
       </g>
 
-      {/* Animated shimmer for platinum */}
       {showShimmer && (
         <motion.rect
           x="-40"
@@ -196,7 +185,6 @@ function TierMedalSVG({ tier, reduceMotion }: { tier: LoyaltyTier; reduceMotion:
         />
       )}
 
-      {/* Floating sparkles for gold + platinum */}
       {showSparkles && !reduceMotion && (
         <>
           <motion.circle
