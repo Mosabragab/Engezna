@@ -33,6 +33,8 @@ import {
   FlaskConical,
   FileText,
   Bell,
+  Gift,
+  Sparkles,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -182,6 +184,18 @@ export function AdminSidebar({
       icon: Tag,
       label: { ar: 'العروض', en: 'Promotions' },
       path: `/${locale}/admin/promotions`,
+      resource: 'promotions',
+    },
+    {
+      icon: Sparkles,
+      label: { ar: 'حملات الهدايا', en: 'Gift Campaigns' },
+      path: `/${locale}/admin/gifts/campaigns`,
+      resource: 'promotions',
+    },
+    {
+      icon: Gift,
+      label: { ar: 'هدايا الشركاء', en: 'Partner Gifts' },
+      path: `/${locale}/admin/gifts/partners`,
       resource: 'promotions',
     },
     {
