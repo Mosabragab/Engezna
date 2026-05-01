@@ -18,7 +18,12 @@ export async function POST(_request: NextRequest, ctx: Ctx) {
     const service = createCampaignsService(supabase);
     const result = await service.execute(id);
     if (!result.success) {
-      const status = result.reason === 'not_authorized' ? 403 : 400;
+      const status =
+        result.reason === 'not_authorized'
+          ? 403
+          : result.reason === 'campaign_not_found'
+            ? 404
+            : 400;
       return NextResponse.json({ error: result.reason }, { status });
     }
     return NextResponse.json({

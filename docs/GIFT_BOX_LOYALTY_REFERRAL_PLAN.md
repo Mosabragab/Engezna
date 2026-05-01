@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 + Phase 9 + Phase 10 مكتملة، Phase 11 هي التالية
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 10 و Phase 12 مكتملة (Phase 12 نُفّذت خارج الترتيب). Phase 11 (Gift-it Forward) لم تُنفّذ بعد وهي التالية.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1700,7 +1700,7 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 11 — Gift-it Forward (٢ أيام) ⏳ التالي
+### Phase 11 — Gift-it Forward (٢ أيام) ⏳ معلّقة — التالية في التنفيذ (Phase 12 مكتملة قبلها خارج الترتيب)
 
 - توليد الرابط، WhatsApp share.
 - صفحة الاستلام `/gift/[token]`.

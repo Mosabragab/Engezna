@@ -6,7 +6,10 @@ function verifyCronSecret(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
-    if (process.env.NODE_ENV === 'development') return true;
+    if (process.env.NODE_ENV === 'development') {
+      logger.warn('[BirthdayGifts] CRON_SECRET missing — bypassing auth in development.');
+      return true;
+    }
     return false;
   }
   if (!authHeader?.startsWith('Bearer ')) return false;
@@ -18,10 +21,16 @@ async function handler(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    logger.error(
+      '[BirthdayGifts] Missing required env vars: NEXT_PUBLIC_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY'
+    );
+    return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   try {
     const { data, error } = await supabase.rpc('process_birthday_gifts');

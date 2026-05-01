@@ -65,6 +65,11 @@ export class CampaignsService {
     if (!input.action?.bucket) {
       return { success: false, reason: 'invalid_input' };
     }
+    // Defensive runtime guard — TS narrows the type, but the service is also
+    // called from API routes that accept JSON bodies at the boundary.
+    if (input.trigger !== 'manual_campaign' && input.trigger !== 'birthday') {
+      return { success: false, reason: 'invalid_input' };
+    }
 
     const conditions: Record<string, unknown> = {};
     if (input.audience?.governorate_id) conditions.governorate_id = input.audience.governorate_id;

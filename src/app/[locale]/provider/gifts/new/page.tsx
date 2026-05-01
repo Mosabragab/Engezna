@@ -96,8 +96,11 @@ export default function NewProviderGiftPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        const reason = (data.error as string) || 'system_error';
-        const msg = REASON_MESSAGES[reason] || REASON_MESSAGES.system_error;
+        // 401 returns { error: 'Unauthorized' } which isn't a REASON_MESSAGES
+        // key — map it to the existing not_authenticated localized message.
+        const rawReason =
+          res.status === 401 ? 'not_authenticated' : (data.error as string) || 'system_error';
+        const msg = REASON_MESSAGES[rawReason] || REASON_MESSAGES.system_error;
         setError(isRTL ? msg.ar : msg.en);
         return;
       }

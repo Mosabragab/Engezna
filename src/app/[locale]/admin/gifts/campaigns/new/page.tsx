@@ -19,6 +19,10 @@ const REASON_MESSAGES: Record<string, { ar: string; en: string }> = {
     ar: 'يوجد حملة بنفس الاسم — اختر اسمًا مختلفًا',
     en: 'A campaign with this name already exists',
   },
+  not_authorized: {
+    ar: 'لا تملك صلاحية إنشاء الحملات',
+    en: 'You are not authorized to create campaigns',
+  },
   system_error: { ar: 'حدث خطأ غير متوقع', en: 'Unexpected error' },
 };
 
