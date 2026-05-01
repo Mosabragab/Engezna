@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 + Phase 9 مكتملة، Phase 10 هي التالية
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 + Phase 9 + Phase 10 مكتملة، Phase 11 هي التالية
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1651,13 +1651,56 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 10 — Micro-Moments Campaigns (٢ أيام) ⏳ التالي
+### Phase 10 — Micro-Moments Campaigns (٢ أيام)
 
-- صفحة الأدمن `/admin/gifts/campaigns`.
-- triggers يدوية + birthday cron.
-- لوحة real-time للاستهلاك.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
 
-### Phase 11 — Gift-it Forward (٢ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260429000004_campaigns_birthday.sql`:**
+
+- Index على `profiles(birthdate month/day)` لأداء الـ birthday cron
+- 2 RPCs ذرّية:
+  - `execute_manual_campaign_atomic(p_rule_id)` — admin one-shot يفحص audience من الـ conditions ثم يستدعي `grant_gift_atomic` لكل user مطابق (مع cap `max_recipients`)
+  - `process_birthday_gifts()` — daily cron entry point، idempotent للـ today (يتخطى من حصل على هدية اليوم)
+- Reuse للـ `gift_rules` table (مفيش جدول جديد):
+  - `trigger='manual_campaign'` للحملات اليدوية
+  - `trigger='birthday'` للحملة التلقائية
+  - الـ rule نفسها فيها audience filter (conditions JSONB) + gift action
+
+**Service** (`src/lib/campaigns/`):
+
+- `types.ts`: CampaignRow, CreateCampaignInput, ExecuteCampaignResult
+- `service.ts`: CampaignsService — list/get/create/setActive/delete/execute
+
+**APIs (Admin):**
+
+- `GET /api/admin/gifts/campaigns?active=1&trigger=manual_campaign`
+- `POST /api/admin/gifts/campaigns` — create
+- `GET /api/admin/gifts/campaigns/[id]`
+- `PATCH /api/admin/gifts/campaigns/[id]` (body: `{ is_active }`)
+- `DELETE /api/admin/gifts/campaigns/[id]`
+- `POST /api/admin/gifts/campaigns/[id]/execute` — run a manual campaign now
+
+**Cron:**
+
+- `/api/cron/birthday-gifts` — daily 07:00 UTC على Vercel (مُضاف لـ `vercel.json`)
+- يستدعي `process_birthday_gifts` RPC مع `CRON_SECRET`
+
+**Admin UI:**
+
+- `/[locale]/admin/gifts/campaigns` — list مع status filter (الكل/نشط) + actions (run/pause/delete)
+- `/[locale]/admin/gifts/campaigns/new` — form فيه:
+  - نوع الحملة (manual_campaign / birthday)
+  - الجمهور (لو manual): segment dropdown
+  - قيمة الهدية + الدلو الميزانياتي + cap للمستفيدين + صلاحية
+
+**ملاحظة — لوحة real-time للاستهلاك:** عرض `applied_count` و `total_cost_piasters` مدمج في الـ list page (refresh على كل action). لوحة websocket-based يمكن إضافتها في Phase 13/14.
+
+</details>
+
+### Phase 11 — Gift-it Forward (٢ أيام) ⏳ التالي
 
 - توليد الرابط، WhatsApp share.
 - صفحة الاستلام `/gift/[token]`.

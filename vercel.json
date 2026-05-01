@@ -17,6 +17,10 @@
     {
       "path": "/api/cron/gift-expiry",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/birthday-gifts",
+      "schedule": "0 7 * * *"
     }
   ]
 }
