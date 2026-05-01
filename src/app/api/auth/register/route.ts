@@ -39,6 +39,22 @@ const registerBodySchema = z.object({
   phone: z.string().optional(),
   governorateId: z.string().optional(),
   cityId: z.string().optional(),
+  // YYYY-MM-DD; bounded to a sane historical range with no future dates
+  birthdate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'birthdate must be YYYY-MM-DD')
+    .refine(
+      (v) => {
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return false;
+        const min = new Date('1925-01-01');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return d >= min && d <= today;
+      },
+      { message: 'birthdate out of valid range' }
+    )
+    .optional(),
   locale: z.string().optional(),
 });
 
@@ -85,6 +101,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     phone,
     governorateId,
     cityId,
+    birthdate,
     locale = 'ar',
   } = await validateBody(request, registerBodySchema);
 
@@ -172,6 +189,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     phone,
     governorate_id: governorateId,
     city_id: cityId,
+    birthdate: birthdate ?? null,
     role: 'customer',
     is_active: true,
   });
