@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 مكتملة وشغّالة، Phase 9 هي التالية
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 + Phase 9 مكتملة، Phase 10 هي التالية
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1591,13 +1591,61 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 9 — Partner Gifts (٣ أيام) ⏳ التالي
+### Phase 9 — Partner Gifts (٣ أيام)
 
-- صفحة التاجر `/provider/gifts`.
-- صفحة الأدمن `/admin/gifts/partners`.
-- approval workflow + settlement deduction logic.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
 
-### Phase 10 — Micro-Moments Campaigns (٢ أيام)
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260429000002_partner_gifts_workflow.sql`:**
+
+- 5 RPCs ذرّية للـ workflow:
+  - `submit_partner_offer_atomic(offer_id)` — التاجر يرسل draft للمراجعة
+  - `approve_partner_offer_atomic(offer_id)` — الأدمن يعتمد، الحالة تنتقل تلقائيًا لـ `active` لو starts_at ≤ NOW() ≤ ends_at
+  - `reject_partner_offer_atomic(offer_id, reason)` — الأدمن يرفض مع سبب
+  - `pause_partner_offer_atomic` / `resume_partner_offer_atomic` — التاجر يوقف/يستأنف
+- كل transition guards الـ status السابق داخل الـ UPDATE — race-safe
+- RLS تشدّيد: التاجر يقدر يعدّل/يحذف drafts الخاصة به فقط
+
+**Service layer** (`src/lib/partner-gifts/`):
+
+- `types.ts`: PartnerOffer, PartnerOfferStatus, PartnerGiftType, CreatePartnerOfferInput
+- `service.ts`: `PartnerGiftsService`
+  - `getOwnedProviderId()`, `createDraftOffer()` (ينشئ gift template + offer)
+  - `listProviderOffers()`, `getOffer()`, `deleteDraft()`
+  - `submit/approve/reject/pause/resume` يتفاعلوا مع الـ RPCs مباشرة
+  - `listForAdmin({ status, limit })`
+
+**API endpoints (Provider):**
+
+- `GET /api/provider/gifts` — قائمة عروض التاجر
+- `POST /api/provider/gifts` — إنشاء draft
+- `GET /api/provider/gifts/[id]` — عرض تفاصيل
+- `DELETE /api/provider/gifts/[id]` — حذف draft فقط
+- `POST /api/provider/gifts/[id]/submit` — إرسال للمراجعة
+- `POST /api/provider/gifts/[id]/pause` + `/resume`
+
+**API endpoints (Admin):**
+
+- `GET /api/admin/gifts/partners?status=...&limit=...` — قائمة العروض للمراجعة
+- `POST /api/admin/gifts/partners/[id]/approve`
+- `POST /api/admin/gifts/partners/[id]/reject` (body: `{ reason }`)
+
+**Provider UI:**
+
+- `/[locale]/provider/gifts` — list مع status badges + actions (submit/pause/resume/delete)
+- `/[locale]/provider/gifts/new` — form لإنشاء draft (3 أنواع: discount_code, discount_percent, free_delivery) + شروط مع checkbox
+
+**Admin UI:**
+
+- `/[locale]/admin/gifts/partners` — tabs (pending/active/rejected/all) + قائمة + approve/reject inline form
+
+**ملاحظة:** ربط الـ settlement deduction (خصم قيمة الهدية المُستخدمة من تسوية التاجر) سيتم لاحقًا — حاليًا الـ `gift_financial_log` يسجل كل use بـ `funder_type='partner'` و `funder_provider_id`، الـ settlement engine يحتاج تعديل بسيط لقراءة هذا الـ log.
+
+</details>
+
+### Phase 10 — Micro-Moments Campaigns (٢ أيام) ⏳ التالي
 
 - صفحة الأدمن `/admin/gifts/campaigns`.
 - triggers يدوية + birthday cron.
