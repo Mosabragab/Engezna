@@ -204,7 +204,7 @@
 
 **مثال مالي** (مطابق للـ settlement engine الفعلي — انظر `20251224220000_fix_commission_excludes_delivery.sql`):
 
-```
+```text
 Subtotal: 250 ج.م
 خصم الهدية: -20 ج.م (يتحملها التاجر)
 التوصيل: 15 ج.م

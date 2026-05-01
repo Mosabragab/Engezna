@@ -123,15 +123,23 @@ export default function NewProviderGiftPage() {
 
   /**
    * Live settlement preview computed from the same logic as the production
-   * settlement engine: commission base = subtotal - discount.
+   * settlement engine: commission base = subtotal − discount.
+   *
+   * NOTE: Partner gifts are funded by the merchant, so they are NOT subject
+   * to Engezna's tiered caps in retention_settings (those are for
+   * platform-funded gifts only). The preview reflects the merchant's actual
+   * configured value, capped only by the order subtotal (so settlement can
+   * never go negative) and by max_discount_piasters when set.
    */
   const settlementExample = useMemo(() => {
     const exampleSubtotal = 25000; // 250 EGP order
     const commissionRate = 5; // 5% — illustrative
-    const discount =
+    const rawDiscount =
       form.type === 'discount_percent'
-        ? Math.min(2000, Math.round((exampleSubtotal * form.value_piasters) / 10000))
-        : Math.min(form.value_piasters, exampleSubtotal);
+        ? Math.round((exampleSubtotal * form.value_piasters) / 10000)
+        : form.value_piasters;
+    const cap = form.max_discount_piasters ?? exampleSubtotal;
+    const discount = Math.max(0, Math.min(rawDiscount, cap, exampleSubtotal));
     const baseAfter = Math.max(0, exampleSubtotal - discount);
     const commission = Math.round((baseAfter * commissionRate) / 100);
     const settlement = baseAfter - commission;
@@ -142,7 +150,7 @@ export default function NewProviderGiftPage() {
       commission,
       settlement,
     };
-  }, [form.type, form.value_piasters]);
+  }, [form.type, form.value_piasters, form.max_discount_piasters]);
 
   return (
     <ProviderLayout
