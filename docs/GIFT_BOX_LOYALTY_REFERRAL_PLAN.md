@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 10 و Phase 12 مكتملة (Phase 12 نُفّذت خارج الترتيب). Phase 11 (Gift-it Forward) لم تُنفّذ بعد وهي التالية.
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 مكتملة (Phase 12 نُفّذت قبل 11 خارج الترتيب، ثم Phase 11 لاحقت). Phase 13 (Admin Dashboard) هي التالية.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1700,11 +1700,25 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 11 — Gift-it Forward (٢ أيام) ⏳ معلّقة — التالية في التنفيذ (Phase 12 مكتملة قبلها خارج الترتيب)
+### Phase 11 — Gift-it Forward (٢ أيام)
 
-- توليد الرابط، WhatsApp share.
-- صفحة الاستلام `/gift/[token]`.
-- مكافحة الاحتيال الأساسية.
+**✅ مكتمل + شغّال على Production — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000007_gift_forward_atomic.sql` — يضيف عمود `prior_status` على `gift_forwards` + 4 RPCs:
+  - `create_gift_forward_atomic(p_gift_entry_id)` — يولّد token من ١٦ بايت hex، يتحقق من الملكية والنوع (`discount_code` / `discount_percent` فقط)، ويطبّق rate limit ٣ هدايا/أسبوع
+  - `peek_gift_forward(p_token)` — public-safe، يرجع الاسم الأول للمرسل + بيانات الهدية للـ landing page (لا يكشف PII إضافي)
+  - `claim_gift_forward_atomic(p_token, p_device_id, p_ip)` — يستخدم `grant_gift_atomic` ليصدر entry جديد للمستلم بـ source='gift_forward'، ثم يكافئ المرسل +١٠ نقاط ولاء
+  - `expire_pending_gift_forwards()` + `_all()` — يستعيد الهدايا منتهية الصلاحية بدون استلام إلى الحالة الأصلية (`prior_status`)
+- خدمة في `src/lib/gift-forward/` (types + service + index)
+- 3 endpoints: `POST /api/gifts/forward` + `GET /api/gifts/forward/[token]` (public) + `POST /api/gifts/forward/[token]/claim`
+- زر "أرسلها لصاحبك" داخل `MysteryBoxCard` (يظهر فقط للأنواع القابلة للإرسال) + `ShareGiftDialog` يولّد رابط WhatsApp جاهز
+- صفحة `/gift/[token]` — landing client مع 4 حالات (pending / claimed / expired / not_found) + auto-claim للمستخدم المسجّل
+- استدعاء lazy لـ `expire_pending_gift_forwards` في loader صفحة `/rewards` لاسترجاع الهدايا التالفة قبل العرض
+
+</details>
 
 ### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام)
 

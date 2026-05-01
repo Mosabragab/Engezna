@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MysteryBoxCard } from '@/components/customer/gifts/MysteryBoxCard';
 import { celebrateLarge } from './celebrate';
 import { EmptyGiftIllustration } from './EmptyStateIllustrations';
+import { ShareGiftDialog } from './ShareGiftDialog';
 import type { GiftBoxEntry } from '@/lib/gifts/types';
 
 interface ActiveGiftsCarouselProps {
@@ -13,10 +14,22 @@ interface ActiveGiftsCarouselProps {
   onChange: () => void;
 }
 
+const FORWARDABLE_TYPES = new Set(['discount_code', 'discount_percent']);
+
 export function ActiveGiftsCarousel({ gifts, onChange }: ActiveGiftsCarouselProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [shareGiftId, setShareGiftId] = useState<string | null>(null);
+
+  const shareGift = useMemo(
+    () => (shareGiftId ? gifts.find((g) => g.id === shareGiftId) : null),
+    [shareGiftId, gifts]
+  );
+
+  const handleShare = useCallback((id: string) => {
+    setShareGiftId(id);
+  }, []);
 
   const handleOpen = useCallback(
     async (id: string) => {
@@ -103,11 +116,29 @@ export function ActiveGiftsCarousel({ gifts, onChange }: ActiveGiftsCarouselProp
               transition={{ type: 'spring', stiffness: 260, damping: 24 }}
               className="min-w-[260px] flex-shrink-0 snap-center"
             >
-              <MysteryBoxCard entry={gift} onOpen={handleOpen} onUse={handleUse} />
+              <MysteryBoxCard
+                entry={gift}
+                onOpen={handleOpen}
+                onUse={handleUse}
+                onShare={
+                  gift.gift && FORWARDABLE_TYPES.has(gift.gift.type) ? handleShare : undefined
+                }
+              />
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
+
+      {shareGift && shareGift.gift && (
+        <ShareGiftDialog
+          open
+          giftEntryId={shareGift.id}
+          giftTitle={isRTL ? shareGift.gift.title_ar : shareGift.gift.title_en}
+          giftValuePiasters={shareGift.cost_piasters}
+          onClose={() => setShareGiftId(null)}
+          onShared={onChange}
+        />
+      )}
     </section>
   );
 }
