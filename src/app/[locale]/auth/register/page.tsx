@@ -325,9 +325,20 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(
-          result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed')
-        );
+        // The API has two error shapes:
+        //   { error: 'localized string' }  — direct returns (auth/profile errors)
+        //   { success: false, error: { code, message, errors? } }  — withErrorHandler / zod
+        // Surface a real string in both cases so the user gets a useful message
+        // (not '[object Object]' or the generic fallback).
+        let errorText: string | null = null;
+        if (typeof result?.error === 'string') {
+          errorText = result.error;
+        } else if (result?.error?.message) {
+          errorText = result.error.message as string;
+        } else if (Array.isArray(result?.error?.errors) && result.error.errors[0]?.message) {
+          errorText = result.error.errors[0].message as string;
+        }
+        setError(errorText || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed'));
         return;
       }
 

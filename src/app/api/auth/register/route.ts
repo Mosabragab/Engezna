@@ -98,12 +98,27 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     password,
     firstName,
     lastName,
-    phone,
+    phone: rawPhone,
     governorateId,
     cityId,
     birthdate,
     locale = 'ar',
   } = await validateBody(request, registerBodySchema);
+
+  // Normalize Egyptian phone numbers so the duplicate-detection eq() actually
+  // matches existing rows. Strip leading +20 / 0020 / 20 country codes, drop
+  // whitespace and dashes, then re-prefix with the canonical leading 0 that
+  // the rest of the codebase stores. This makes the check resilient to all
+  // common formats users might type (+201063660444, 0020 1063660444, etc).
+  const phone = rawPhone
+    ? (() => {
+        const stripped = rawPhone
+          .trim()
+          .replace(/[\s-]/g, '')
+          .replace(/^(\+?20|0020)/, '');
+        return stripped.startsWith('0') ? stripped : `0${stripped}`;
+      })()
+    : undefined;
 
   const supabase = getSupabaseAdmin();
 
