@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminGiftsService } from '@/lib/admin-gifts';
-import { GiftsOverviewClient } from './GiftsOverviewClient';
+import { GiftsAnalyticsClient } from './GiftsAnalyticsClient';
 
 interface PageProps {
   params: Promise<{ locale: string }>;
@@ -9,7 +9,7 @@ interface PageProps {
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminGiftsOverviewPage({ params }: PageProps) {
+export default async function AdminGiftsAnalyticsPage({ params }: PageProps) {
   const { locale } = await params;
 
   const supabase = await createClient();
@@ -19,18 +19,18 @@ export default async function AdminGiftsOverviewPage({ params }: PageProps) {
   if (!user) redirect(`/${locale}/admin/login`);
 
   const service = createAdminGiftsService(supabase);
-  const [overview, dailyGrants, bucketDistribution] = await Promise.all([
-    service.getOverview(),
-    service.getDailyGrants(14),
+  const [dailyGrants, bucketDistribution, segmentDistribution] = await Promise.all([
+    service.getDailyGrants(30),
     service.getBucketDistribution(),
+    service.getSegmentDistribution(),
   ]);
 
   return (
-    <GiftsOverviewClient
+    <GiftsAnalyticsClient
       locale={locale}
-      overview={overview}
       dailyGrants={dailyGrants}
       bucketDistribution={bucketDistribution}
+      segmentDistribution={segmentDistribution}
     />
   );
 }

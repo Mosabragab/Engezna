@@ -187,6 +187,18 @@ export function AdminSidebar({
       resource: 'promotions',
     },
     {
+      icon: Gift,
+      label: { ar: 'لوحة الهدايا', en: 'Gifts Dashboard' },
+      path: `/${locale}/admin/gifts`,
+      resource: 'promotions',
+    },
+    {
+      icon: Activity,
+      label: { ar: 'قواعد الهدايا', en: 'Gift Rules' },
+      path: `/${locale}/admin/gifts/rules`,
+      resource: 'promotions',
+    },
+    {
       icon: Sparkles,
       label: { ar: 'حملات الهدايا', en: 'Gift Campaigns' },
       path: `/${locale}/admin/gifts/campaigns`,
@@ -196,6 +208,12 @@ export function AdminSidebar({
       icon: Gift,
       label: { ar: 'هدايا الشركاء', en: 'Partner Gifts' },
       path: `/${locale}/admin/gifts/partners`,
+      resource: 'promotions',
+    },
+    {
+      icon: Wallet,
+      label: { ar: 'ميزانية الهدايا', en: 'Gifts Budget' },
+      path: `/${locale}/admin/gifts/budget`,
       resource: 'promotions',
     },
     {

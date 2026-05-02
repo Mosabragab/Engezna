@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 مكتملة (Phase 12 نُفّذت قبل 11 خارج الترتيب، ثم Phase 11 لاحقت). Phase 13 (Admin Dashboard) هي التالية.
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 13 مكتملة. Phase 14 (ERP Page) هي التالية.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1974,9 +1974,27 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
 
-- كل صفحات `/admin/gifts/*`.
-- الأمان + RLS + audit log.
-- Charts (Recharts).
+**✅ مكتمل + شغّال على Production — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- خدمة جديدة `src/lib/admin-gifts/` بتجميعات على gift_box_entries + gift_financial_log + customer_segments_daily + retention_settings + gift_rules
+- 5 endpoints تحت `/api/admin/gifts/`:
+  - `GET overview` — KPI cards (active gifts, granted/used today, conversion 30d, monthly spend vs budget, spend by bucket, pending partner offers, active rules/campaigns)
+  - `GET analytics?days=30` — daily granted/used time-series + bucket distribution + segment distribution
+  - `GET rules` + `PATCH rules/[id]` — قائمة قواعد آلية + toggle active
+  - `GET budget` + `PATCH budget` — قراءة/تعديل retention_settings مع validation للنسب (sum ≤ 100)
+- 4 صفحات admin جديدة:
+  - `/admin/gifts` — لوحة عامة بـ KPI cards، شريط ميزانية، Line + Pie + Bar charts (recharts)
+  - `/admin/gifts/rules` — قائمة قواعد order_completed / user_registered / daily_segment_update مع toggle
+  - `/admin/gifts/budget` — تعديل الميزانية الشهرية + توزيع الدلاء + tier caps + إعدادات إضافية
+  - `/admin/gifts/analytics` — Area chart 30 يوم + bar charts للدلاء + توزيع شرائح العملاء
+- recharts (^3.8.1) مُضافة كـ dependency
+- AdminSidebar محدّث: 5 روابط تحت Marketing (Dashboard / Rules / Campaigns / Partners / Budget) كلها مُحمّاة بـ `promotions` resource
+- Audit log: `retention_settings.updated_by` + `updated_at` يتحدّثان مع كل PATCH (sufficient لـ Phase 13؛ توسيع audit عبر `permission_audit_log` يأتي في Phase 17)
+
+</details>
 
 ### Phase 14 — ERP Page (٣ أيام)
 
