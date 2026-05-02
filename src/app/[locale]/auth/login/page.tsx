@@ -146,10 +146,15 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
+      // Apple's OAuth redirect must land on the locale-prefixed page handler
+      // /[locale]/auth/callback (no /api/auth/callback route exists). The
+      // page reads the redirect query param to forward the user after sign-in.
+      const target = redirectTo || `/${locale}`;
+      const callback = `${window.location.origin}/${locale}/auth/callback?redirect=${encodeURIComponent(target)}`;
       const { error: signInError } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?redirect=${redirectTo || `/${locale}`}`,
+          redirectTo: callback,
           scopes: 'name email',
         },
       });

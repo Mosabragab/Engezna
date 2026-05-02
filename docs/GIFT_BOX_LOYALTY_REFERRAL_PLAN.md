@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 13 مكتملة. Phase 14 (ERP Page) هي التالية.
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 13 و Phase 16 مكتملة. Phase 14 (ERP) و Phase 15 (Provider Subscriptions) و Phase 17 (E2E) هي المتبقية.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -2010,9 +2010,32 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 16 — Notifications + Reminders (٢ أيام)
 
-- Push (FCM) + Email + In-app.
-- Cron reminder قبل انتهاء الهدايا.
-- AR/EN كامل.
+**✅ مكتمل (in-app فقط — FCM/Email يأتيان لاحقًا) — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000008_gift_notifications.sql`:
+  - `notification_preferences.gift_reminders BOOLEAN DEFAULT TRUE` — opt-out للإشعارات التسويقية فقط
+  - جدول `gift_reminder_log (gift_entry_id, kind, sent_at)` لمنع تكرار التذكير على نفس الهدية
+  - `send_gift_notification(category, type, titles, bodies, data)` — central insert helper يحترم الـ preferences (transactional دائمًا، marketing فقط لو `gift_reminders=true`)
+  - 3 triggers على Postgres:
+    - `gift_box_entries AFTER INSERT` → "وصلتك هدية بقيمة X ج.م"
+    - `gift_stamps AFTER UPDATE` (when is_completed transitions to true) → "بطاقة الأختام اكتملت"
+    - `profiles AFTER UPDATE OF loyalty_tier` (upgrade only via rank check) → "وصلت للمستوى الذهبي 🏆"
+  - `send_gift_expiry_reminders_all()` — RPC للـ cron يومي يبعث تنبيه "هديتك تنتهي خلال X ساعة" للهدايا المنتهية خلال 48 ساعة
+- Cron `/api/cron/gift-reminders` — يومي 08:00 UTC، CRON_SECRET-gated
+- vercel.json: cron جديد مُسجّل
+- `NotificationPreferences` UI: toggle جديد "تذكيرات الهدايا" تحت تفضيلات العميل
+- AR/EN كامل في كل المحتوى (titles + bodies)
+
+**مُؤجَّل لمراحل لاحقة:**
+
+- Push (FCM) — يحتاج إعداد Firebase
+- Email — يحتاج تصميم قوالب transactional إضافية
+- 2-hour final reminder — يحتاج cron بساعة، Vercel Hobby يدعم daily فقط
+
+</details>
 
 ### Phase 17 — E2E Tests + Observability (٢ أيام)
 
