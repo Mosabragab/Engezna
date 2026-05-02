@@ -151,6 +151,12 @@ export function AdminSidebar({
       resource: 'finance',
     },
     {
+      icon: BarChart3,
+      label: { ar: 'ERP — الإدارة الشاملة', en: 'ERP — Full Overview' },
+      path: `/${locale}/admin/erp`,
+      resource: 'finance',
+    },
+    {
       icon: Receipt,
       label: { ar: 'التسويات', en: 'Settlements' },
       path: `/${locale}/admin/settlements`,
