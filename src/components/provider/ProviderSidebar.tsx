@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Bell,
   Gift,
+  Crown,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 
@@ -181,6 +182,14 @@ export function ProviderSidebar({
           icon: TrendingUp,
           label: { ar: 'التحليلات', en: 'Analytics' },
           path: `/${locale}/provider/analytics`,
+        });
+      }
+
+      if (perms.isOwner) {
+        financialItems.push({
+          icon: Crown,
+          label: { ar: 'اشتراك التحليلات', en: 'Analytics Plan' },
+          path: `/${locale}/provider/billing/subscription`,
         });
       }
 

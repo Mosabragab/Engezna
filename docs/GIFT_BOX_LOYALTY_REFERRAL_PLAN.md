@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 13 و Phase 16 مكتملة. Phase 14 (ERP) و Phase 15 (Provider Subscriptions) و Phase 17 (E2E) هي المتبقية.
+**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 16 مكتملة. Phase 17 (E2E + Observability) هي المتبقية الوحيدة.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -1998,11 +1998,64 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 14 — ERP Page (٣ أيام)
 
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000010_erp_overview.sql` — 5 SECURITY DEFINER RPCs (service_role only): `erp_marketing_budget`, `erp_revenue`, `erp_kpis`, `erp_cash_flow`, `erp_expenses_by_category` + 3 indexes
+- خدمة `src/lib/admin-erp/` — `getOverview()` يرجع كامل الـ payload في round-trip واحد عبر Promise.all لـ 6 طلبات متوازية
+- 4 endpoints تحت `/api/admin/erp/`: overview + expenses CRUD (list/create/delete) — كلها مُحمّاة بفحص `admin_users.is_active`
+- صفحة `/admin/erp`:
+  - منتقى شهر + Excel export (xlsx) لـ 5 أوراق
+  - 4 KPI cards كبيرة (Revenue / Expenses / Gift Spend / Net مع flip للون عند الخسارة)
+  - 7 mini-KPIs (DAU/WAU/MAU/orders/AOV/new users/conversion %)
+  - Cash flow area chart (آخر 12 شهر)
+  - Marketing budget bar (allocated grey vs. spent ملوّن)
+  - جدول مصاريف تشغيلية بـ inline add form + per-row delete
+  - Revenue breakdown card
+- Sidebar: رابط جديد "ERP — الإدارة الشاملة" تحت الإدارة المالية، مُحمّى بـ `finance` resource
+
+</details>
+
+### Phase 14 — Original spec
+
 - `/admin/erp` مع كل الأقسام.
 - تصدير Excel + PDF.
 - KPIs calculation.
 
 ### Phase 15 — Provider Analytics Subscriptions (٢ أيام)
+
+**✅ مكتمل (data model + admin grant + provider read-only) — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000011_provider_subscriptions.sql`:
+  - فهرس جزئي UNIQUE على `provider_subscriptions(provider_id) WHERE tier <> 'basic'` — مشترك واحد فعّال لكل تاجر
+  - CHECK constraint: `ends_at > starts_at` لو موجود
+  - `admin_set_provider_subscription_atomic(provider_id, tier, granted_free, ends_at, actor_id)` — service_role فقط، يحذف القديم ويضع الجديد. السعر مشفّر داخل الـ RPC (basic=0, pro=29900, elite=59900 قروش)
+  - `cancel_provider_subscription_atomic(provider_id, actor_id)` — service_role
+  - `provider_current_subscription(provider_id)` — authenticated، يرجع 'basic' default لو لا توجد رو
+- خدمة `src/lib/provider-subscriptions/` — types + `TIER_PLANS` (single source of truth للأسعار + الـ features)
+- 3 endpoints:
+  - `GET /api/provider/subscription` — يحل provider_id من المستخدم المسجل
+  - `GET/POST/DELETE /api/admin/providers/[id]/subscription` — admin-only، يطبّق tier، يدعم `granted_free` للعروض الترويجية
+- صفحة `/provider/billing/subscription`:
+  - شارة المستوى الحالي مع علامة "مجانًا" لو كان granted_free + تاريخ الانتهاء
+  - 3 كروت بأيقونات (Sparkles/Zap/Crown) + قائمة الميزات بـ AR/EN
+  - Pro/Elite يفتحان WhatsApp مع رسالة جاهزة للترقية (self-service billing مؤجل لمراحل لاحقة)
+- ProviderSidebar: رابط جديد "اشتراك التحليلات" (Crown icon) تحت قسم المالية، مرئي للأونر فقط
+
+**ما لم يُنفّذ في v1 (مؤجَّل بدون أن يعطّل اللانش):**
+
+- خصم الاشتراك من التسويات تلقائيًا — يحتاج payment processor + proration logic
+- 30-day free trial flow — يحتاج cron + auto-billing
+- Feature gating على `/provider/analytics` — يقرأ tier الحالي ويُخفي/يُظهر widgets
+
+</details>
+
+### Phase 15 — Original spec
 
 - billing flow + payment via settlements.
 - upgrade/downgrade UI.
