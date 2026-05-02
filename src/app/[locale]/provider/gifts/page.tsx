@@ -7,6 +7,7 @@ import { ProviderLayout } from '@/components/provider';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Plus, Pause, Play, Trash2, Send, AlertCircle, Gift } from 'lucide-react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { PartnerOfferWithGift } from '@/lib/partner-gifts';
 
 const STATUS_LABELS: Record<string, { ar: string; en: string; color: string }> = {
@@ -73,7 +74,7 @@ export default function ProviderGiftsPage() {
   async function callAction(offerId: string, path: string, method: 'POST' | 'DELETE' = 'POST') {
     setBusyId(offerId);
     try {
-      const res = await fetch(path, { method });
+      const res = await fetch(path, { method, headers: { ...csrfHeaders() } });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         const reason = (body?.error as string | undefined) ?? null;

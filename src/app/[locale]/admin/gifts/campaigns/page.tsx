@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Button } from '@/components/ui/button';
@@ -81,7 +82,7 @@ export default function AdminCampaignsPage() {
     try {
       const res = await fetch(`/api/admin/gifts/campaigns/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ is_active: !isActive }),
       });
       if (!res.ok) throw new Error('Failed');
@@ -98,7 +99,10 @@ export default function AdminCampaignsPage() {
     setBusyId(id);
     setExecutionResult(null);
     try {
-      const res = await fetch(`/api/admin/gifts/campaigns/${id}/execute`, { method: 'POST' });
+      const res = await fetch(`/api/admin/gifts/campaigns/${id}/execute`, {
+        method: 'POST',
+        headers: { ...csrfHeaders() },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
       setExecutionResult({ id, granted: Number(data.granted) || 0 });
@@ -115,7 +119,10 @@ export default function AdminCampaignsPage() {
     if (!confirm(isRTL ? 'تأكيد حذف الحملة؟' : 'Delete this campaign?')) return;
     setBusyId(id);
     try {
-      const res = await fetch(`/api/admin/gifts/campaigns/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/gifts/campaigns/${id}`, {
+        method: 'DELETE',
+        headers: { ...csrfHeaders() },
+      });
       if (!res.ok) throw new Error('Failed');
       await load();
     } catch (e) {

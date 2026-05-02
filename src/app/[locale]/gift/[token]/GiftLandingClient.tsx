@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { Gift, Clock, AlertCircle, CheckCircle2, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { ForwardPreview } from '@/lib/gift-forward';
 
 interface GiftLandingClientProps {
@@ -106,7 +107,7 @@ export function GiftLandingClient({
     try {
       const res = await fetch(`/api/gifts/forward/${encodeURIComponent(token)}/claim`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ deviceId: getOrCreateDeviceId() }),
       });
       const data = await res.json();

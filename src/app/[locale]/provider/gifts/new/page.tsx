@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, Sparkles, Calculator } from 'lucide-react';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { CreatePartnerOfferInput, PartnerGiftType } from '@/lib/partner-gifts';
 
 const REASON_MESSAGES: Record<string, { ar: string; en: string }> = {
@@ -91,7 +92,7 @@ export default function NewProviderGiftPage() {
 
       const res = await fetch('/api/provider/gifts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

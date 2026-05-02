@@ -7,6 +7,7 @@ import { MysteryBoxCard } from '@/components/customer/gifts/MysteryBoxCard';
 import { celebrateLarge } from './celebrate';
 import { EmptyGiftIllustration } from './EmptyStateIllustrations';
 import { ShareGiftDialog } from './ShareGiftDialog';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { GiftBoxEntry } from '@/lib/gifts/types';
 
 interface ActiveGiftsCarouselProps {
@@ -38,7 +39,7 @@ export function ActiveGiftsCarousel({ gifts, onChange }: ActiveGiftsCarouselProp
       try {
         const res = await fetch('/api/gifts/open', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
           body: JSON.stringify({ giftEntryId: id }),
         });
         if (res.ok) {

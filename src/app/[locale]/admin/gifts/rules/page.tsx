@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Button } from '@/components/ui/button';
@@ -102,7 +103,7 @@ export default function AdminGiftRulesPage() {
     try {
       const res = await fetch(`/api/admin/gifts/rules/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ is_active: !isActive }),
       });
       if (!res.ok) throw new Error('Failed');
@@ -170,7 +171,7 @@ export default function AdminGiftRulesPage() {
     try {
       const res = await fetch(`/api/admin/gifts/rules/${rule.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify(patch),
       });
       if (!res.ok) throw new Error('Failed');

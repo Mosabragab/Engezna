@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Button } from '@/components/ui/button';
@@ -75,7 +76,10 @@ export default function AdminPartnerGiftsPage() {
   async function approve(offerId: string) {
     setBusyId(offerId);
     try {
-      const res = await fetch(`/api/admin/gifts/partners/${offerId}/approve`, { method: 'POST' });
+      const res = await fetch(`/api/admin/gifts/partners/${offerId}/approve`, {
+        method: 'POST',
+        headers: { ...csrfHeaders() },
+      });
       if (!res.ok) throw new Error('Failed to approve');
       await load();
     } catch (e) {
@@ -92,7 +96,7 @@ export default function AdminPartnerGiftsPage() {
     try {
       const res = await fetch(`/api/admin/gifts/partners/${rejectingId}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ reason: rejectReason.trim() }),
       });
       if (!res.ok) throw new Error('Failed to reject');

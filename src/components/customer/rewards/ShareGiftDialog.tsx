@@ -5,6 +5,7 @@ import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Gift, Loader2, X, Copy, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 
 interface ShareGiftDialogProps {
   giftEntryId: string;
@@ -67,7 +68,7 @@ export function ShareGiftDialog({
     try {
       const res = await fetch('/api/gifts/forward', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ giftEntryId }),
       });
       const data = await res.json();

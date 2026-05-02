@@ -9,6 +9,7 @@ import { REDEMPTION_RATE_PIASTERS_PER_POINT } from '@/lib/loyalty';
 import type { LoyaltyBalance, LoyaltyTransaction } from '@/lib/loyalty';
 import { AnimatedCounter } from './AnimatedCounter';
 import { celebrateSmall } from './celebrate';
+import { csrfHeaders } from '@/lib/security/csrf-client';
 
 interface LoyaltyPointsSectionProps {
   balance: LoyaltyBalance;
@@ -56,7 +57,7 @@ export function LoyaltyPointsSection({
     try {
       const res = await fetch('/api/loyalty/redeem', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ points }),
       });
       const data = await res.json();
