@@ -253,16 +253,91 @@ export class AdminGiftsService {
   }
 
   async setRuleActive(id: string, isActive: boolean): Promise<GiftRuleRow | null> {
+    // Validate the rule belongs to this surface (excludes manual_campaign + birthday
+    // which live under /admin/gifts/campaigns) before updating. Doing the check in
+    // two steps — instead of via .not(...) in the UPDATE — avoids a quirk where
+    // supabase-js negated-IN filters on UPDATE silently match zero rows.
+    const { data: existing, error: fetchErr } = await this.supabase
+      .from('gift_rules')
+      .select('id, trigger')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchErr) {
+      console.error('[AdminGiftsService] setRuleActive lookup failed:', fetchErr);
+      return null;
+    }
+    if (!existing) return null;
+    if (existing.trigger === 'manual_campaign' || existing.trigger === 'birthday') {
+      // Caller should be using /admin/gifts/campaigns instead
+      return null;
+    }
+
     const { data, error } = await this.supabase
       .from('gift_rules')
       .update({ is_active: isActive })
       .eq('id', id)
-      .not('trigger', 'in', '(manual_campaign,birthday)')
       .select('*')
       .maybeSingle();
 
     if (error) {
       console.error('[AdminGiftsService] setRuleActive failed:', error);
+      return null;
+    }
+    return (data as GiftRuleRow) || null;
+  }
+
+  async updateRule(
+    id: string,
+    patch: {
+      is_active?: boolean;
+      budget_cap_per_day?: number | null;
+      budget_cap_per_month?: number | null;
+      action_value_piasters?: number;
+      description?: string | null;
+    }
+  ): Promise<GiftRuleRow | null> {
+    const { data: existing, error: fetchErr } = await this.supabase
+      .from('gift_rules')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (fetchErr) {
+      console.error('[AdminGiftsService] updateRule lookup failed:', fetchErr);
+      return null;
+    }
+    if (!existing) return null;
+    if (existing.trigger === 'manual_campaign' || existing.trigger === 'birthday') {
+      return null;
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (patch.is_active !== undefined) updates.is_active = patch.is_active;
+    if (patch.budget_cap_per_day !== undefined)
+      updates.budget_cap_per_day = patch.budget_cap_per_day;
+    if (patch.budget_cap_per_month !== undefined) {
+      updates.budget_cap_per_month = patch.budget_cap_per_month;
+    }
+    if (patch.description !== undefined) updates.description = patch.description;
+    if (patch.action_value_piasters !== undefined) {
+      const currentAction = (existing.action as Record<string, unknown>) || {};
+      updates.action = { ...currentAction, value_piasters: patch.action_value_piasters };
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return existing as GiftRuleRow;
+    }
+
+    const { data, error } = await this.supabase
+      .from('gift_rules')
+      .update(updates)
+      .eq('id', id)
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      console.error('[AdminGiftsService] updateRule failed:', error);
       return null;
     }
     return (data as GiftRuleRow) || null;

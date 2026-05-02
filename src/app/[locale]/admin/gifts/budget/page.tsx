@@ -168,18 +168,22 @@ export default function AdminGiftsBudgetPage() {
             </h3>
             <div>
               <Label htmlFor="monthly_budget" className="text-xs">
-                {isRTL ? 'الميزانية الكلية (بالقروش)' : 'Total budget (piasters)'}
+                {isRTL ? 'الميزانية الكلية (ج.م)' : 'Total budget (EGP)'}
               </Label>
               <Input
                 id="monthly_budget"
                 type="number"
                 min={0}
-                value={draft.monthly_total_budget_piasters ?? 0}
-                onChange={(e) => update('monthly_total_budget_piasters', Number(e.target.value))}
+                step="1"
+                value={Math.round((Number(draft.monthly_total_budget_piasters) || 0) / 100)}
+                onChange={(e) =>
+                  update('monthly_total_budget_piasters', Math.round(Number(e.target.value) * 100))
+                }
               />
               <p className="mt-1 text-xs text-slate-500">
-                ≈ {((Number(draft.monthly_total_budget_piasters) || 0) / 100).toLocaleString()}{' '}
-                {isRTL ? 'ج.م' : 'EGP'}
+                {isRTL
+                  ? `= ${(Number(draft.monthly_total_budget_piasters) || 0).toLocaleString()} قرش`
+                  : `= ${(Number(draft.monthly_total_budget_piasters) || 0).toLocaleString()} piasters`}
               </p>
             </div>
             <div className="mt-3">
@@ -254,51 +258,48 @@ export default function AdminGiftsBudgetPage() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
                 <Label htmlFor="tier_300" className="text-xs">
-                  {isRTL ? 'طلب ٣٠٠–٤٩٩ ج.م' : 'Order 300–499 EGP'}
+                  {isRTL ? 'طلب ٣٠٠–٤٩٩ ج.م — حد الهدية (ج.م)' : 'Order 300–499 — gift cap (EGP)'}
                 </Label>
                 <Input
                   id="tier_300"
                   type="number"
                   min={0}
-                  value={draft.tier_300_499_max_piasters ?? 0}
-                  onChange={(e) => update('tier_300_499_max_piasters', Number(e.target.value))}
+                  step="1"
+                  value={Math.round((Number(draft.tier_300_499_max_piasters) || 0) / 100)}
+                  onChange={(e) =>
+                    update('tier_300_499_max_piasters', Math.round(Number(e.target.value) * 100))
+                  }
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  ≈ {((Number(draft.tier_300_499_max_piasters) || 0) / 100).toFixed(0)}{' '}
-                  {isRTL ? 'ج.م' : 'EGP'}
-                </p>
               </div>
               <div>
                 <Label htmlFor="tier_500" className="text-xs">
-                  {isRTL ? 'طلب ٥٠٠–٧٩٩ ج.م' : 'Order 500–799 EGP'}
+                  {isRTL ? 'طلب ٥٠٠–٧٩٩ ج.م — حد الهدية (ج.م)' : 'Order 500–799 — gift cap (EGP)'}
                 </Label>
                 <Input
                   id="tier_500"
                   type="number"
                   min={0}
-                  value={draft.tier_500_799_max_piasters ?? 0}
-                  onChange={(e) => update('tier_500_799_max_piasters', Number(e.target.value))}
+                  step="1"
+                  value={Math.round((Number(draft.tier_500_799_max_piasters) || 0) / 100)}
+                  onChange={(e) =>
+                    update('tier_500_799_max_piasters', Math.round(Number(e.target.value) * 100))
+                  }
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  ≈ {((Number(draft.tier_500_799_max_piasters) || 0) / 100).toFixed(0)}{' '}
-                  {isRTL ? 'ج.م' : 'EGP'}
-                </p>
               </div>
               <div>
                 <Label htmlFor="tier_800" className="text-xs">
-                  {isRTL ? 'طلب ٨٠٠+ ج.م' : 'Order 800+ EGP'}
+                  {isRTL ? 'طلب ٨٠٠+ ج.م — حد الهدية (ج.م)' : 'Order 800+ — gift cap (EGP)'}
                 </Label>
                 <Input
                   id="tier_800"
                   type="number"
                   min={0}
-                  value={draft.tier_800_plus_max_piasters ?? 0}
-                  onChange={(e) => update('tier_800_plus_max_piasters', Number(e.target.value))}
+                  step="1"
+                  value={Math.round((Number(draft.tier_800_plus_max_piasters) || 0) / 100)}
+                  onChange={(e) =>
+                    update('tier_800_plus_max_piasters', Math.round(Number(e.target.value) * 100))
+                  }
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  ≈ {((Number(draft.tier_800_plus_max_piasters) || 0) / 100).toFixed(0)}{' '}
-                  {isRTL ? 'ج.م' : 'EGP'}
-                </p>
               </div>
             </div>
           </Card>
@@ -349,14 +350,17 @@ export default function AdminGiftsBudgetPage() {
               </div>
               <div>
                 <Label htmlFor="referral_reward" className="text-xs">
-                  {isRTL ? 'مكافأة الإحالة (قروش)' : 'Referral reward (piasters)'}
+                  {isRTL ? 'مكافأة الإحالة (ج.م)' : 'Referral reward (EGP)'}
                 </Label>
                 <Input
                   id="referral_reward"
                   type="number"
                   min={0}
-                  value={draft.referral_reward_piasters ?? 0}
-                  onChange={(e) => update('referral_reward_piasters', Number(e.target.value))}
+                  step="1"
+                  value={Math.round((Number(draft.referral_reward_piasters) || 0) / 100)}
+                  onChange={(e) =>
+                    update('referral_reward_piasters', Math.round(Number(e.target.value) * 100))
+                  }
                 />
               </div>
             </div>

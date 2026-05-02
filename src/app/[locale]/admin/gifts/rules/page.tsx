@@ -7,7 +7,19 @@ import type { User } from '@supabase/supabase-js';
 import { AdminHeader, useAdminSidebar } from '@/components/admin';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Activity, AlertCircle, Calendar, Loader2, Pause, Play } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Activity,
+  AlertCircle,
+  Calendar,
+  Check,
+  Loader2,
+  Pause,
+  Pencil,
+  Play,
+  X,
+} from 'lucide-react';
 import type { GiftRuleRow } from '@/lib/admin-gifts';
 
 const TRIGGER_LABELS: Record<string, { ar: string; en: string }> = {
@@ -26,6 +38,25 @@ const BUCKET_LABELS: Record<string, { ar: string; en: string }> = {
   welcome: { ar: 'الترحيب', en: 'Welcome' },
 };
 
+interface DraftRule {
+  valueEgp: string;
+  budgetCapPerDayEgp: string;
+  budgetCapPerMonthEgp: string;
+  description: string;
+}
+
+function ruleToDraft(rule: GiftRuleRow): DraftRule {
+  const value = (rule.action as { value_piasters?: number })?.value_piasters ?? 0;
+  return {
+    valueEgp: (value / 100).toFixed(0),
+    budgetCapPerDayEgp:
+      rule.budget_cap_per_day !== null ? (rule.budget_cap_per_day / 100).toFixed(0) : '',
+    budgetCapPerMonthEgp:
+      rule.budget_cap_per_month !== null ? (rule.budget_cap_per_month / 100).toFixed(0) : '',
+    description: rule.description ?? '',
+  };
+}
+
 export default function AdminGiftRulesPage() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -36,6 +67,8 @@ export default function AdminGiftRulesPage() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<DraftRule | null>(null);
 
   useEffect(() => {
     createClient()
@@ -65,6 +98,7 @@ export default function AdminGiftRulesPage() {
 
   async function toggleActive(id: string, isActive: boolean) {
     setBusyId(id);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/gifts/rules/${id}`, {
         method: 'PATCH',
@@ -76,6 +110,75 @@ export default function AdminGiftRulesPage() {
     } catch (e) {
       console.error(e);
       setError(isRTL ? 'فشل التحديث' : 'Update failed');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  function startEdit(rule: GiftRuleRow) {
+    setEditingId(rule.id);
+    setDraft(ruleToDraft(rule));
+    setError(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setDraft(null);
+  }
+
+  async function saveEdit(rule: GiftRuleRow) {
+    if (!draft) return;
+    setBusyId(rule.id);
+    setError(null);
+
+    const valueEgp = Number(draft.valueEgp);
+    if (!Number.isFinite(valueEgp) || valueEgp <= 0) {
+      setError(isRTL ? 'قيمة الهدية يجب أن تكون أكبر من صفر' : 'Gift value must be > 0');
+      setBusyId(null);
+      return;
+    }
+
+    const patch: Record<string, unknown> = {
+      action_value_piasters: Math.round(valueEgp * 100),
+      description: draft.description.trim() || null,
+    };
+
+    if (draft.budgetCapPerDayEgp.trim() === '') {
+      patch.budget_cap_per_day = null;
+    } else {
+      const dayCap = Number(draft.budgetCapPerDayEgp);
+      if (!Number.isFinite(dayCap) || dayCap < 0) {
+        setError(isRTL ? 'حد اليومي غير صالح' : 'Invalid daily cap');
+        setBusyId(null);
+        return;
+      }
+      patch.budget_cap_per_day = Math.round(dayCap * 100);
+    }
+
+    if (draft.budgetCapPerMonthEgp.trim() === '') {
+      patch.budget_cap_per_month = null;
+    } else {
+      const monthCap = Number(draft.budgetCapPerMonthEgp);
+      if (!Number.isFinite(monthCap) || monthCap < 0) {
+        setError(isRTL ? 'حد الشهري غير صالح' : 'Invalid monthly cap');
+        setBusyId(null);
+        return;
+      }
+      patch.budget_cap_per_month = Math.round(monthCap * 100);
+    }
+
+    try {
+      const res = await fetch(`/api/admin/gifts/rules/${rule.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error('Failed');
+      cancelEdit();
+      await load();
+    } catch (e) {
+      console.error(e);
+      setError(isRTL ? 'فشل الحفظ' : 'Save failed');
     } finally {
       setBusyId(null);
     }
@@ -104,8 +207,8 @@ export default function AdminGiftRulesPage() {
         <div className="mx-auto max-w-5xl space-y-4">
           <p className="text-sm text-slate-600">
             {isRTL
-              ? 'تتحكم القواعد في متى تُمنح الهدايا تلقائيًا (مثل ترحيب العميل الجديد، استعادة العملاء النائمين، الأختام). الحملات اليدوية وعيد الميلاد منفصلة.'
-              : 'Rules trigger automatic gift grants (welcome, win-back, stamps). Manual campaigns and birthday gifts are managed separately.'}
+              ? 'تتحكم القواعد في متى تُمنح الهدايا تلقائيًا (مثل ترحيب العميل الجديد، استعادة العملاء النائمين، الأختام). تقدر تعدّل قيمة الهدية وحدود الميزانية اليومية/الشهرية لكل قاعدة. الحملات اليدوية وعيد الميلاد منفصلة.'
+              : "Rules trigger automatic gift grants (welcome, win-back, stamps). You can edit each rule's gift value and daily/monthly caps. Manual campaigns and birthday gifts are managed separately."}
           </p>
 
           {error && (
@@ -125,11 +228,6 @@ export default function AdminGiftRulesPage() {
               <p className="text-base font-bold text-slate-800">
                 {isRTL ? 'لا توجد قواعد' : 'No rules'}
               </p>
-              <p className="mt-1 text-sm text-slate-500">
-                {isRTL
-                  ? 'يتم seed القواعد من migration 20260428000003.'
-                  : 'Rules are seeded by migration 20260428000003.'}
-              </p>
             </Card>
           ) : (
             <div className="space-y-3">
@@ -144,6 +242,8 @@ export default function AdminGiftRulesPage() {
                 };
                 const valuePiasters =
                   (rule.action as { value_piasters?: number })?.value_piasters ?? 0;
+                const isEditing = editingId === rule.id;
+
                 return (
                   <Card key={rule.id} className="p-4">
                     <div
@@ -173,68 +273,197 @@ export default function AdminGiftRulesPage() {
                                 : 'Paused'}
                           </span>
                         </div>
-                        {rule.description && (
+                        {!isEditing && rule.description && (
                           <p className="mt-1 text-xs text-slate-500">{rule.description}</p>
                         )}
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-500 sm:grid-cols-4">
-                          <p>
-                            {isRTL ? 'المُحفّز:' : 'Trigger:'}{' '}
-                            <span className="font-medium text-slate-700">
-                              {isRTL ? triggerMeta.ar : triggerMeta.en}
-                            </span>
+                        {!isEditing && (
+                          <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-500 sm:grid-cols-4">
+                            <p>
+                              {isRTL ? 'المُحفّز:' : 'Trigger:'}{' '}
+                              <span className="font-medium text-slate-700">
+                                {isRTL ? triggerMeta.ar : triggerMeta.en}
+                              </span>
+                            </p>
+                            <p>
+                              {isRTL ? 'الدلو:' : 'Bucket:'}{' '}
+                              <span className="font-medium text-slate-700">
+                                {isRTL ? bucketMeta.ar : bucketMeta.en}
+                              </span>
+                            </p>
+                            <p>
+                              {isRTL ? 'القيمة:' : 'Value:'}{' '}
+                              <span className="font-medium text-slate-700 tabular-nums">
+                                {(valuePiasters / 100).toFixed(0)} {isRTL ? 'ج.م' : 'EGP'}
+                              </span>
+                            </p>
+                            <p>
+                              <Calendar className="mb-0.5 inline h-3 w-3" />{' '}
+                              <span className="tabular-nums">
+                                {new Date(rule.created_at).toLocaleDateString(
+                                  isRTL ? 'ar-EG' : 'en-US'
+                                )}
+                              </span>
+                            </p>
+                          </div>
+                        )}
+                        {!isEditing && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {isRTL ? 'مرات التفعيل:' : 'Applied:'}{' '}
+                            <strong>{rule.applied_count}</strong>
+                            {' • '}
+                            {isRTL ? 'إجمالي التكلفة:' : 'Total cost:'}{' '}
+                            <strong>{(rule.total_cost_piasters / 100).toFixed(0)}</strong>{' '}
+                            {isRTL ? 'ج.م' : 'EGP'}
+                            {rule.budget_cap_per_day !== null && (
+                              <>
+                                {' • '}
+                                {isRTL ? 'حد يومي:' : 'Daily cap:'}{' '}
+                                <strong>{(rule.budget_cap_per_day / 100).toFixed(0)}</strong>{' '}
+                                {isRTL ? 'ج.م' : 'EGP'}
+                              </>
+                            )}
+                            {rule.budget_cap_per_month !== null && (
+                              <>
+                                {' • '}
+                                {isRTL ? 'حد شهري:' : 'Monthly cap:'}{' '}
+                                <strong>{(rule.budget_cap_per_month / 100).toFixed(0)}</strong>{' '}
+                                {isRTL ? 'ج.م' : 'EGP'}
+                              </>
+                            )}
                           </p>
-                          <p>
-                            {isRTL ? 'الدلو:' : 'Bucket:'}{' '}
-                            <span className="font-medium text-slate-700">
-                              {isRTL ? bucketMeta.ar : bucketMeta.en}
-                            </span>
-                          </p>
-                          <p>
-                            {isRTL ? 'القيمة:' : 'Value:'}{' '}
-                            <span className="font-medium text-slate-700 tabular-nums">
-                              {(valuePiasters / 100).toFixed(0)} {isRTL ? 'ج.م' : 'EGP'}
-                            </span>
-                          </p>
-                          <p>
-                            <Calendar className="mb-0.5 inline h-3 w-3" />{' '}
-                            <span className="tabular-nums">
-                              {new Date(rule.created_at).toLocaleDateString(
-                                isRTL ? 'ar-EG' : 'en-US'
-                              )}
-                            </span>
-                          </p>
-                        </div>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {isRTL ? 'مرات التفعيل:' : 'Applied:'}{' '}
-                          <strong>{rule.applied_count}</strong>
-                          {' • '}
-                          {isRTL ? 'إجمالي التكلفة:' : 'Total cost:'}{' '}
-                          <strong>{(rule.total_cost_piasters / 100).toFixed(0)}</strong>{' '}
-                          {isRTL ? 'ج.م' : 'EGP'}
-                        </p>
+                        )}
+
+                        {isEditing && draft && (
+                          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="sm:col-span-2">
+                              <Label htmlFor={`desc-${rule.id}`} className="text-xs">
+                                {isRTL ? 'الوصف' : 'Description'}
+                              </Label>
+                              <Input
+                                id={`desc-${rule.id}`}
+                                value={draft.description}
+                                onChange={(e) =>
+                                  setDraft({ ...draft, description: e.target.value })
+                                }
+                                maxLength={500}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`value-${rule.id}`} className="text-xs">
+                                {isRTL ? 'قيمة الهدية (ج.م)' : 'Gift value (EGP)'}
+                              </Label>
+                              <Input
+                                id={`value-${rule.id}`}
+                                type="number"
+                                min={1}
+                                step={1}
+                                value={draft.valueEgp}
+                                onChange={(e) => setDraft({ ...draft, valueEgp: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`day-${rule.id}`} className="text-xs">
+                                {isRTL
+                                  ? 'حد يومي (ج.م — اتركه فارغًا للا حد)'
+                                  : 'Daily cap (EGP — empty = none)'}
+                              </Label>
+                              <Input
+                                id={`day-${rule.id}`}
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={draft.budgetCapPerDayEgp}
+                                onChange={(e) =>
+                                  setDraft({ ...draft, budgetCapPerDayEgp: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor={`month-${rule.id}`} className="text-xs">
+                                {isRTL
+                                  ? 'حد شهري (ج.م — اتركه فارغًا للا حد)'
+                                  : 'Monthly cap (EGP — empty = none)'}
+                              </Label>
+                              <Input
+                                id={`month-${rule.id}`}
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={draft.budgetCapPerMonthEgp}
+                                onChange={(e) =>
+                                  setDraft({ ...draft, budgetCapPerMonthEgp: e.target.value })
+                                }
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex flex-shrink-0 items-center gap-2">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={busyId === rule.id}
-                          onClick={() => toggleActive(rule.id, rule.is_active)}
-                          className="gap-1"
-                        >
-                          {rule.is_active ? (
-                            <Pause className="h-3 w-3" />
-                          ) : (
-                            <Play className="h-3 w-3" />
-                          )}
-                          {rule.is_active
-                            ? isRTL
-                              ? 'إيقاف'
-                              : 'Pause'
-                            : isRTL
-                              ? 'تفعيل'
-                              : 'Activate'}
-                        </Button>
+
+                      <div className="flex flex-shrink-0 flex-col items-end gap-2">
+                        {isEditing ? (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={busyId === rule.id}
+                              onClick={() => saveEdit(rule)}
+                              className="gap-1"
+                            >
+                              {busyId === rule.id ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Check className="h-3 w-3" />
+                              )}
+                              {isRTL ? 'حفظ' : 'Save'}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={cancelEdit}
+                              disabled={busyId === rule.id}
+                              className="gap-1"
+                            >
+                              <X className="h-3 w-3" />
+                              {isRTL ? 'إلغاء' : 'Cancel'}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => startEdit(rule)}
+                              disabled={busyId === rule.id}
+                              className="gap-1"
+                            >
+                              <Pencil className="h-3 w-3" />
+                              {isRTL ? 'تعديل' : 'Edit'}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={busyId === rule.id}
+                              onClick={() => toggleActive(rule.id, rule.is_active)}
+                              className="gap-1"
+                            >
+                              {rule.is_active ? (
+                                <Pause className="h-3 w-3" />
+                              ) : (
+                                <Play className="h-3 w-3" />
+                              )}
+                              {rule.is_active
+                                ? isRTL
+                                  ? 'إيقاف'
+                                  : 'Pause'
+                                : isRTL
+                                  ? 'تفعيل'
+                                  : 'Activate'}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </Card>

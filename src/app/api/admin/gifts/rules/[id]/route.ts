@@ -15,13 +15,41 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = (await request.json().catch(() => null)) as { is_active?: boolean } | null;
-    if (!body || typeof body.is_active !== 'boolean') {
+    const body = (await request.json().catch(() => null)) as {
+      is_active?: boolean;
+      budget_cap_per_day?: number | null;
+      budget_cap_per_month?: number | null;
+      action_value_piasters?: number;
+      description?: string | null;
+    } | null;
+    if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
     }
 
+    // Sanitize numeric fields — negatives and NaN aren't allowed.
+    const patch: Record<string, unknown> = {};
+    if (typeof body.is_active === 'boolean') patch.is_active = body.is_active;
+    if (body.budget_cap_per_day === null) patch.budget_cap_per_day = null;
+    else if (typeof body.budget_cap_per_day === 'number' && body.budget_cap_per_day >= 0) {
+      patch.budget_cap_per_day = body.budget_cap_per_day;
+    }
+    if (body.budget_cap_per_month === null) patch.budget_cap_per_month = null;
+    else if (typeof body.budget_cap_per_month === 'number' && body.budget_cap_per_month >= 0) {
+      patch.budget_cap_per_month = body.budget_cap_per_month;
+    }
+    if (typeof body.action_value_piasters === 'number' && body.action_value_piasters > 0) {
+      patch.action_value_piasters = body.action_value_piasters;
+    }
+    if (body.description !== undefined) {
+      patch.description = body.description === null ? null : String(body.description).slice(0, 500);
+    }
+
+    if (Object.keys(patch).length === 0) {
+      return NextResponse.json({ error: 'no_fields_to_update' }, { status: 400 });
+    }
+
     const service = createAdminGiftsService(supabase);
-    const updated = await service.setRuleActive(id, body.is_active);
+    const updated = await service.updateRule(id, patch as Parameters<typeof service.updateRule>[1]);
     if (!updated) {
       return NextResponse.json({ error: 'Rule not found or not editable' }, { status: 404 });
     }
