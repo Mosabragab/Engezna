@@ -2029,10 +2029,28 @@ RewardsHubClient.tsx (orchestrator)
 - `NotificationPreferences` UI: toggle جديد "تذكيرات الهدايا" تحت تفضيلات العميل
 - AR/EN كامل في كل المحتوى (titles + bodies)
 
-**مُؤجَّل لمراحل لاحقة:**
+**القنوات المُفعَّلة (تأكدت بعد التحقّق من البنية القائمة):**
 
-- Push (FCM) — يحتاج إعداد Firebase
-- Email — يحتاج تصميم قوالب transactional إضافية
+- ✅ **In-app** — مباشرة عبر `customer_notifications`
+- ✅ **Push (FCM)** — تلقائي عبر Path B القائم (`on_customer_notification_fcm_sync` AFTER INSERT → `call_notification_webhook` → Edge Functions `handle-notification-trigger` + `send-notification` → FCM v1). smoke test أكّد status_code=200 خلال 16ms
+- ✅ **Email** — للأحداث الاحتفالية الانتقالية فقط (stamp complete + tier upgrade + referral success) عبر Resend + قوالب DB قابلة للتحرير من `/admin/email-templates`
+
+**Migration متابعة `20260429000009_gift_email_templates.sql`** — يضيف 3 قوالب:
+
+- `gift-stamp-complete` — اكتمال بطاقة الأختام
+- `gift-loyalty-tier-up` — ترقية مستوى الولاء
+- `gift-referral-reward` — نجاح إحالة (للمُحيل، per §13.1)
+
+**ربط الـ emails في `completion-hook.ts`:**
+
+- بعد `addStamp` لو `is_completed=true` → email احتفالي
+- بعد `awardOrderPoints` لو `tierChanged=true` و `newTier !== bronze` → email ترقية
+- بعد `completeReferral` لو `success=true` → email للمُحيل (يشمل اسم الصديق ومبلغ المكافأة الفعلي)
+
+كل الـ email sends best-effort (`.catch` غير fatal) — لو فشلت، in-app + push يصلون كالمعتاد.
+
+**مُؤجَّل (لا يعطّل اللانش):**
+
 - 2-hour final reminder — يحتاج cron بساعة، Vercel Hobby يدعم daily فقط
 
 </details>

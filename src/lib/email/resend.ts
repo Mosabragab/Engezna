@@ -268,6 +268,39 @@ export interface ReviewRequestData {
   reviewUrl: string;
 }
 
+// ─── Gift system (Phase 16) ────────────────────────────────────────────────
+
+export interface GiftStampCompleteData {
+  to: string;
+  userName: string;
+  goldenBoxEgp: number;
+  expiryDays: number;
+  rewardsUrl: string;
+}
+
+export interface GiftLoyaltyTierUpData {
+  to: string;
+  userName: string;
+  /** 'silver' | 'gold' | 'platinum' — used to derive Arabic label */
+  newTier: string;
+  pointsBalance: number;
+  /** Redemption rate the customer can read in the email body */
+  pointsPerEgp: number;
+  rewardsUrl: string;
+}
+
+export interface GiftReferralRewardData {
+  to: string;
+  /** The referrer's name */
+  userName: string;
+  /** First-name of the friend who just placed their qualifying order */
+  refereeName: string;
+  rewardEgp: number;
+  expiryDays: number;
+  minOrderEgp: number;
+  rewardsUrl: string;
+}
+
 // ============================================================================
 // Admin Email Data Types
 // ============================================================================
@@ -1416,6 +1449,79 @@ export async function sendAdminInvitationEmail(
     subject,
     html: adminInvitationTemplate(data),
   });
+}
+
+// ============================================================================
+// Gift System Emails (Phase 16) — celebratory transactional channel
+// ============================================================================
+
+const TIER_LABEL_AR: Record<string, string> = {
+  bronze: 'البرونزي',
+  silver: 'الفضي',
+  gold: 'الذهبي',
+  platinum: 'البلاتيني',
+};
+
+/**
+ * Stamp card complete — golden box is ready to open.
+ */
+export async function sendGiftStampCompleteEmail(
+  data: GiftStampCompleteData
+): Promise<SendEmailResult> {
+  return sendTemplateEmail(
+    'gift-stamp-complete',
+    data.to,
+    {
+      userName: data.userName,
+      goldenBoxEgp: data.goldenBoxEgp,
+      expiryDays: data.expiryDays,
+      rewardsUrl: data.rewardsUrl,
+    },
+    '🏆 بطاقة الأختام اكتملت — صندوق ذهبي بانتظارك!'
+  );
+}
+
+/**
+ * Loyalty tier upgrade — silver / gold / platinum.
+ */
+export async function sendGiftLoyaltyTierUpEmail(
+  data: GiftLoyaltyTierUpData
+): Promise<SendEmailResult> {
+  const tierAr = TIER_LABEL_AR[data.newTier] ?? data.newTier;
+  return sendTemplateEmail(
+    'gift-loyalty-tier-up',
+    data.to,
+    {
+      userName: data.userName,
+      newTierAr: tierAr,
+      pointsBalance: data.pointsBalance,
+      pointsPerEgp: data.pointsPerEgp,
+      rewardsUrl: data.rewardsUrl,
+    },
+    `🏆 وصلت للمستوى ${tierAr} — ترقية جديدة في إنجزنا`
+  );
+}
+
+/**
+ * Referral success — sent to the referrer when their friend's first
+ * qualifying order is delivered + paid.
+ */
+export async function sendGiftReferralRewardEmail(
+  data: GiftReferralRewardData
+): Promise<SendEmailResult> {
+  return sendTemplateEmail(
+    'gift-referral-reward',
+    data.to,
+    {
+      userName: data.userName,
+      refereeName: data.refereeName,
+      rewardEgp: data.rewardEgp,
+      expiryDays: data.expiryDays,
+      minOrderEgp: data.minOrderEgp,
+      rewardsUrl: data.rewardsUrl,
+    },
+    `🎉 مكافأة إحالتك وصلت — ${data.rewardEgp} ج.م في صندوقك`
+  );
 }
 
 // ============================================================================
