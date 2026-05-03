@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 16 مكتملة. Phase 17 (E2E + Observability) هي المتبقية الوحيدة.
+**الحالة:** ✅ مرجع تنفيذي حيّ — جميع المراحل مكتملة (Phases 0A → 17). نظام صندوق الهدايا + الولاء + الريفيرال جاهز للإطلاق.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -2110,9 +2110,40 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 17 — E2E Tests + Observability (٢ أيام)
 
-- Playwright tests لكل flow حرج.
-- dashboards في Supabase logs.
-- alerts للأدمن عند شذوذ ميزانية.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000012_observability_views.sql` — 3 monitoring views (admin-readable via service_role) + 1 RPC للـ cron:
+  - `v_gift_budget_health` — استهلاك الميزانية الشهرية مقابل السقف
+  - `v_gift_pending_health` — العروض المعلّقة + الهدايا التي تنتهي خلال 24 ساعة
+  - `v_referral_fraud_signals` — IPs/devices استلمت 3+ هدايا في 7 أيام
+  - `observability_check_thresholds()` — يرجع صف لكل تجاوز (severity + code + message_ar/en + context JSONB)
+- موديول `src/lib/monitoring/gift-system-alerts.ts` — `dispatchThresholdAlerts(rows)` يحوّل صفوف الـ RPC إلى Slack alerts عبر `sendAlert` القائم (يستفيد من dedup + rate limit الموجودين)
+- Cron `/api/cron/observability-checks` — يومي 09:00 UTC (CRON_SECRET-gated)، يستدعي الـ RPC ثم يفان-آوت الـ alerts
+- vercel.json — cron جديد مُسجّل
+- E2E spec `comprehensive-gift-system.spec.ts` — 13 smoke test يغطي:
+  - Customer: rewards hub، gift landing (token وهمي)، notification preferences
+  - Provider: قائمة هدايا الشركاء، نموذج إنشاء (مع settlement preview)، صفحة الاشتراك (3 tiers)
+  - Admin: gifts overview، rules، budget (يتأكد من EGP)، campaigns + new، partners، analytics، ERP
+
+**الـ thresholds المُفعّلة (قابلة للتعديل في الـ RPC):**
+
+- `budget_critical` — pct_used >= 90% → critical
+- `budget_warning` — pct_used >= 75% → high
+- `budget_overflow` — pct_used >= 100 + tolerance → critical
+- `partner_stale` — أي عرض شريك معلّق > 48 ساعة → medium
+- `partner_pile` — 10+ عرض شريك معلّق → high
+- `referral_ip_fraud` — أي IP استلم 3+ هدايا → high
+- `referral_dev_fraud` — أي device استلم 3+ هدايا → high
+
+**ما لم يُنفّذ في v1 (لا يعطّل اللانش):**
+
+- Supabase logs dashboards — يحتاج إعداد يدوي على Supabase console
+- Lighthouse CI gating — متاح كـ scripts/lighthouse-audit.ts لكن غير مدمج في PR checks
+
+</details>
 
 **إجمالي: ~٣٧ يوم عمل.**
 
