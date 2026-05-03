@@ -33,6 +33,8 @@ import {
   FlaskConical,
   FileText,
   Bell,
+  Gift,
+  Sparkles,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { usePermissions } from '@/lib/permissions/use-permissions';
@@ -149,6 +151,12 @@ export function AdminSidebar({
       resource: 'finance',
     },
     {
+      icon: BarChart3,
+      label: { ar: 'ERP — الإدارة الشاملة', en: 'ERP — Full Overview' },
+      path: `/${locale}/admin/erp`,
+      resource: 'finance',
+    },
+    {
       icon: Receipt,
       label: { ar: 'التسويات', en: 'Settlements' },
       path: `/${locale}/admin/settlements`,
@@ -182,6 +190,36 @@ export function AdminSidebar({
       icon: Tag,
       label: { ar: 'العروض', en: 'Promotions' },
       path: `/${locale}/admin/promotions`,
+      resource: 'promotions',
+    },
+    {
+      icon: Gift,
+      label: { ar: 'لوحة الهدايا', en: 'Gifts Dashboard' },
+      path: `/${locale}/admin/gifts`,
+      resource: 'promotions',
+    },
+    {
+      icon: Activity,
+      label: { ar: 'قواعد الهدايا', en: 'Gift Rules' },
+      path: `/${locale}/admin/gifts/rules`,
+      resource: 'promotions',
+    },
+    {
+      icon: Sparkles,
+      label: { ar: 'حملات الهدايا', en: 'Gift Campaigns' },
+      path: `/${locale}/admin/gifts/campaigns`,
+      resource: 'promotions',
+    },
+    {
+      icon: Gift,
+      label: { ar: 'هدايا الشركاء', en: 'Partner Gifts' },
+      path: `/${locale}/admin/gifts/partners`,
+      resource: 'promotions',
+    },
+    {
+      icon: Wallet,
+      label: { ar: 'ميزانية الهدايا', en: 'Gifts Budget' },
+      path: `/${locale}/admin/gifts/budget`,
       resource: 'promotions',
     },
     {

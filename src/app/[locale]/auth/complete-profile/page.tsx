@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import Link from 'next/link';
-import { MapPin, Phone, Loader2, CheckCircle, User } from 'lucide-react';
+import { MapPin, Phone, Loader2, CheckCircle, User, Cake } from 'lucide-react';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
 
 // ============================================================================
@@ -53,6 +53,21 @@ const completeProfileSchema = z.object({
   phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
   governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
   cityId: z.string().min(1, 'يرجى اختيار المدينة'),
+  birthdate: z
+    .string()
+    .optional()
+    .refine(
+      (v) => {
+        if (!v) return true;
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return false;
+        const min = new Date('1925-01-01');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return d >= min && d <= today;
+      },
+      { message: 'تاريخ غير صالح' }
+    ),
 });
 
 type CompleteProfileFormData = z.infer<typeof completeProfileSchema>;
@@ -96,6 +111,7 @@ export default function CompleteProfilePage() {
       phone: '',
       governorateId: '',
       cityId: '',
+      birthdate: '',
     },
   });
 
@@ -127,7 +143,7 @@ export default function CompleteProfilePage() {
       // Get profile data
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name, phone, governorate_id, city_id')
+        .select('full_name, phone, governorate_id, city_id, birthdate')
         .eq('id', user.id)
         .single();
 
@@ -150,6 +166,10 @@ export default function CompleteProfilePage() {
 
         if (profile.phone) {
           setValue('phone', profile.phone);
+        }
+
+        if (profile.birthdate) {
+          setValue('birthdate', profile.birthdate);
         }
       }
 
@@ -210,6 +230,7 @@ export default function CompleteProfilePage() {
           phone: data.phone,
           governorate_id: data.governorateId,
           city_id: data.cityId,
+          birthdate: data.birthdate || null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
@@ -362,6 +383,37 @@ export default function CompleteProfilePage() {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Birthdate (optional) — placed right under the name (personal info group) */}
+            <div className="space-y-2">
+              <Label htmlFor="birthdate" className="flex items-center gap-2">
+                <Cake className="w-4 h-4 text-primary" />
+                {locale === 'ar' ? 'تاريخ الميلاد' : 'Birthdate'}
+                <span className="text-muted-foreground text-xs">
+                  ({locale === 'ar' ? 'اختياري' : 'optional'})
+                </span>
+              </Label>
+              <Input
+                id="birthdate"
+                type="date"
+                {...register('birthdate')}
+                disabled={isLoading}
+                className={errors.birthdate ? 'border-destructive' : ''}
+                max={new Date().toISOString().slice(0, 10)}
+                min="1925-01-01"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">
+                {locale === 'ar'
+                  ? '🎁 احصل على هدية في عيد ميلادك كل سنة'
+                  : '🎁 Get a gift on your birthday every year'}
+              </p>
+              {errors.birthdate && (
+                <p className="text-xs text-destructive">
+                  {locale === 'ar' ? 'تاريخ غير صالح' : 'Invalid date'}
+                </p>
+              )}
             </div>
 
             {/* Phone Number */}

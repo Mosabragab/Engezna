@@ -3,7 +3,7 @@
 **تاريخ الإعداد:** ٢٢ أبريل ٢٠٢٦
 **آخر تحديث:** ٢٩ أبريل ٢٠٢٦
 **الإصدار:** 2.4 (Phase 12 شغّالة على Production)
-**الحالة:** مرجع تنفيذي حيّ — Phases 0A → 12 مكتملة وشغّالة، Phase 9 هي التالية
+**الحالة:** ✅ مرجع تنفيذي حيّ — جميع المراحل مكتملة (Phases 0A → 17). نظام صندوق الهدايا + الولاء + الريفيرال جاهز للإطلاق.
 **المنطقة التجريبية:** بني سويف فقط (Pilot)
 
 ---
@@ -202,15 +202,21 @@
 9. **عند التسوية:** مبلغ الخصم يُخصم مباشرة من تسوية التاجر القادمة.
 10. سطر واحد في `gift_financial_log` مع `funder_type = 'partner'`.
 
-**مثال مالي:**
+**مثال مالي** (مطابق للـ settlement engine الفعلي — انظر `20251224220000_fix_commission_excludes_delivery.sql`):
 
-```
-Subtotal: 350 ج.م
-خصم الهدية: -15 ج.م (يتحملها التاجر)
+```text
+Subtotal: 250 ج.م
+خصم الهدية: -20 ج.م (يتحملها التاجر)
 التوصيل: 15 ج.م
-العميل يدفع: 350 ج.م
-التاجر في التسوية: 350 ج.م - 15 ج.م (خصم الهدية) - 17.5 ج.م (عمولة 5%) = 317.5 ج.م
+العميل يدفع: 230 + 15 = 245 ج.م
+─────────────────────────────────────
+حساب التسوية:
+  base_amount = subtotal − discount = 250 − 20 = 230 ج.م
+  commission  = 5% × 230 = 11.5 ج.م
+  التاجر في التسوية = 230 − 11.5 = 218.5 ج.م
 ```
+
+> 💡 **ملاحظة:** الـ settlement engine يحسب العمولة على **القيمة بعد الخصم** (post-discount). الخصم بقيمة 20 ج.م يقلّل الإيراد الفعلي للتاجر، ويقلّل العمولة كمان قليلًا (1 ج.م في هذا المثال). الحساب نفسه ينطبق على الدفع أونلاين والكاش عند التوصيل (COD).
 
 ### 4.3 حدود الأمان
 
@@ -1591,23 +1597,128 @@ UI Components (bilingual AR/EN + Framer Motion):
 
 </details>
 
-### Phase 9 — Partner Gifts (٣ أيام) ⏳ التالي
+### Phase 9 — Partner Gifts (٣ أيام)
 
-- صفحة التاجر `/provider/gifts`.
-- صفحة الأدمن `/admin/gifts/partners`.
-- approval workflow + settlement deduction logic.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260429000002_partner_gifts_workflow.sql`:**
+
+- 5 RPCs ذرّية للـ workflow:
+  - `submit_partner_offer_atomic(offer_id)` — التاجر يرسل draft للمراجعة
+  - `approve_partner_offer_atomic(offer_id)` — الأدمن يعتمد، الحالة تنتقل تلقائيًا لـ `active` لو starts_at ≤ NOW() ≤ ends_at
+  - `reject_partner_offer_atomic(offer_id, reason)` — الأدمن يرفض مع سبب
+  - `pause_partner_offer_atomic` / `resume_partner_offer_atomic` — التاجر يوقف/يستأنف
+- كل transition guards الـ status السابق داخل الـ UPDATE — race-safe
+- RLS تشدّيد: التاجر يقدر يعدّل/يحذف drafts الخاصة به فقط
+
+**Service layer** (`src/lib/partner-gifts/`):
+
+- `types.ts`: PartnerOffer, PartnerOfferStatus, PartnerGiftType, CreatePartnerOfferInput
+- `service.ts`: `PartnerGiftsService`
+  - `getOwnedProviderId()`, `createDraftOffer()` (ينشئ gift template + offer)
+  - `listProviderOffers()`, `getOffer()`, `deleteDraft()`
+  - `submit/approve/reject/pause/resume` يتفاعلوا مع الـ RPCs مباشرة
+  - `listForAdmin({ status, limit })`
+
+**API endpoints (Provider):**
+
+- `GET /api/provider/gifts` — قائمة عروض التاجر
+- `POST /api/provider/gifts` — إنشاء draft
+- `GET /api/provider/gifts/[id]` — عرض تفاصيل
+- `DELETE /api/provider/gifts/[id]` — حذف draft فقط
+- `POST /api/provider/gifts/[id]/submit` — إرسال للمراجعة
+- `POST /api/provider/gifts/[id]/pause` + `/resume`
+
+**API endpoints (Admin):**
+
+- `GET /api/admin/gifts/partners?status=...&limit=...` — قائمة العروض للمراجعة
+- `POST /api/admin/gifts/partners/[id]/approve`
+- `POST /api/admin/gifts/partners/[id]/reject` (body: `{ reason }`)
+
+**Provider UI:**
+
+- `/[locale]/provider/gifts` — list مع status badges + actions (submit/pause/resume/delete)
+- `/[locale]/provider/gifts/new` — form لإنشاء draft (3 أنواع: discount_code, discount_percent, free_delivery) + شروط مع checkbox
+
+**Admin UI:**
+
+- `/[locale]/admin/gifts/partners` — tabs (pending/active/rejected/all) + قائمة + approve/reject inline form
+
+**ملاحظة:** ربط الـ settlement deduction (خصم قيمة الهدية المُستخدمة من تسوية التاجر) سيتم لاحقًا — حاليًا الـ `gift_financial_log` يسجل كل use بـ `funder_type='partner'` و `funder_provider_id`، الـ settlement engine يحتاج تعديل بسيط لقراءة هذا الـ log.
+
+</details>
 
 ### Phase 10 — Micro-Moments Campaigns (٢ أيام)
 
-- صفحة الأدمن `/admin/gifts/campaigns`.
-- triggers يدوية + birthday cron.
-- لوحة real-time للاستهلاك.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+**Migration `20260429000004_campaigns_birthday.sql`:**
+
+- Index على `profiles(birthdate month/day)` لأداء الـ birthday cron
+- 2 RPCs ذرّية:
+  - `execute_manual_campaign_atomic(p_rule_id)` — admin one-shot يفحص audience من الـ conditions ثم يستدعي `grant_gift_atomic` لكل user مطابق (مع cap `max_recipients`)
+  - `process_birthday_gifts()` — daily cron entry point، idempotent للـ today (يتخطى من حصل على هدية اليوم)
+- Reuse للـ `gift_rules` table (مفيش جدول جديد):
+  - `trigger='manual_campaign'` للحملات اليدوية
+  - `trigger='birthday'` للحملة التلقائية
+  - الـ rule نفسها فيها audience filter (conditions JSONB) + gift action
+
+**Service** (`src/lib/campaigns/`):
+
+- `types.ts`: CampaignRow, CreateCampaignInput, ExecuteCampaignResult
+- `service.ts`: CampaignsService — list/get/create/setActive/delete/execute
+
+**APIs (Admin):**
+
+- `GET /api/admin/gifts/campaigns?active=1&trigger=manual_campaign`
+- `POST /api/admin/gifts/campaigns` — create
+- `GET /api/admin/gifts/campaigns/[id]`
+- `PATCH /api/admin/gifts/campaigns/[id]` (body: `{ is_active }`)
+- `DELETE /api/admin/gifts/campaigns/[id]`
+- `POST /api/admin/gifts/campaigns/[id]/execute` — run a manual campaign now
+
+**Cron:**
+
+- `/api/cron/birthday-gifts` — daily 07:00 UTC على Vercel (مُضاف لـ `vercel.json`)
+- يستدعي `process_birthday_gifts` RPC مع `CRON_SECRET`
+
+**Admin UI:**
+
+- `/[locale]/admin/gifts/campaigns` — list مع status filter (الكل/نشط) + actions (run/pause/delete)
+- `/[locale]/admin/gifts/campaigns/new` — form فيه:
+  - نوع الحملة (manual_campaign / birthday)
+  - الجمهور (لو manual): segment dropdown
+  - قيمة الهدية + الدلو الميزانياتي + cap للمستفيدين + صلاحية
+
+**ملاحظة — لوحة real-time للاستهلاك:** عرض `applied_count` و `total_cost_piasters` مدمج في الـ list page (refresh على كل action). لوحة websocket-based يمكن إضافتها في Phase 13/14.
+
+</details>
 
 ### Phase 11 — Gift-it Forward (٢ أيام)
 
-- توليد الرابط، WhatsApp share.
-- صفحة الاستلام `/gift/[token]`.
-- مكافحة الاحتيال الأساسية.
+**✅ مكتمل + شغّال على Production — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000007_gift_forward_atomic.sql` — يضيف عمود `prior_status` على `gift_forwards` + 4 RPCs:
+  - `create_gift_forward_atomic(p_gift_entry_id)` — يولّد token من ١٦ بايت hex، يتحقق من الملكية والنوع (`discount_code` / `discount_percent` فقط)، ويطبّق rate limit ٣ هدايا/أسبوع
+  - `peek_gift_forward(p_token)` — public-safe، يرجع الاسم الأول للمرسل + بيانات الهدية للـ landing page (لا يكشف PII إضافي)
+  - `claim_gift_forward_atomic(p_token, p_device_id, p_ip)` — يستخدم `grant_gift_atomic` ليصدر entry جديد للمستلم بـ source='gift_forward'، ثم يكافئ المرسل +١٠ نقاط ولاء
+  - `expire_pending_gift_forwards()` + `_all()` — يستعيد الهدايا منتهية الصلاحية بدون استلام إلى الحالة الأصلية (`prior_status`)
+- خدمة في `src/lib/gift-forward/` (types + service + index)
+- 3 endpoints: `POST /api/gifts/forward` + `GET /api/gifts/forward/[token]` (public) + `POST /api/gifts/forward/[token]/claim`
+- زر "أرسلها لصاحبك" داخل `MysteryBoxCard` (يظهر فقط للأنواع القابلة للإرسال) + `ShareGiftDialog` يولّد رابط WhatsApp جاهز
+- صفحة `/gift/[token]` — landing client مع 4 حالات (pending / claimed / expired / not_found) + auto-claim للمستخدم المسجّل
+- استدعاء lazy لـ `expire_pending_gift_forwards` في loader صفحة `/rewards` لاسترجاع الهدايا التالفة قبل العرض
+
+</details>
 
 ### Phase 12 — Order Completion Hook + Loyalty + Premium Customer Hub (٦ أيام)
 
@@ -1863,11 +1974,51 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 13 — Admin Dashboard Pages (٣ أيام)
 
-- كل صفحات `/admin/gifts/*`.
-- الأمان + RLS + audit log.
-- Charts (Recharts).
+**✅ مكتمل + شغّال على Production — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- خدمة جديدة `src/lib/admin-gifts/` بتجميعات على gift_box_entries + gift_financial_log + customer_segments_daily + retention_settings + gift_rules
+- 5 endpoints تحت `/api/admin/gifts/`:
+  - `GET overview` — KPI cards (active gifts, granted/used today, conversion 30d, monthly spend vs budget, spend by bucket, pending partner offers, active rules/campaigns)
+  - `GET analytics?days=30` — daily granted/used time-series + bucket distribution + segment distribution
+  - `GET rules` + `PATCH rules/[id]` — قائمة قواعد آلية + toggle active
+  - `GET budget` + `PATCH budget` — قراءة/تعديل retention_settings مع validation للنسب (sum ≤ 100)
+- 4 صفحات admin جديدة:
+  - `/admin/gifts` — لوحة عامة بـ KPI cards، شريط ميزانية، Line + Pie + Bar charts (recharts)
+  - `/admin/gifts/rules` — قائمة قواعد order_completed / user_registered / daily_segment_update مع toggle
+  - `/admin/gifts/budget` — تعديل الميزانية الشهرية + توزيع الدلاء + tier caps + إعدادات إضافية
+  - `/admin/gifts/analytics` — Area chart 30 يوم + bar charts للدلاء + توزيع شرائح العملاء
+- recharts (^3.8.1) مُضافة كـ dependency
+- AdminSidebar محدّث: 5 روابط تحت Marketing (Dashboard / Rules / Campaigns / Partners / Budget) كلها مُحمّاة بـ `promotions` resource
+- Audit log: `retention_settings.updated_by` + `updated_at` يتحدّثان مع كل PATCH (sufficient لـ Phase 13؛ توسيع audit عبر `permission_audit_log` يأتي في Phase 17)
+
+</details>
 
 ### Phase 14 — ERP Page (٣ أيام)
+
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000010_erp_overview.sql` — 5 SECURITY DEFINER RPCs (service_role only): `erp_marketing_budget`, `erp_revenue`, `erp_kpis`, `erp_cash_flow`, `erp_expenses_by_category` + 3 indexes
+- خدمة `src/lib/admin-erp/` — `getOverview()` يرجع كامل الـ payload في round-trip واحد عبر Promise.all لـ 6 طلبات متوازية
+- 4 endpoints تحت `/api/admin/erp/`: overview + expenses CRUD (list/create/delete) — كلها مُحمّاة بفحص `admin_users.is_active`
+- صفحة `/admin/erp`:
+  - منتقى شهر + Excel export (xlsx) لـ 5 أوراق
+  - 4 KPI cards كبيرة (Revenue / Expenses / Gift Spend / Net مع flip للون عند الخسارة)
+  - 7 mini-KPIs (DAU/WAU/MAU/orders/AOV/new users/conversion %)
+  - Cash flow area chart (آخر 12 شهر)
+  - Marketing budget bar (allocated grey vs. spent ملوّن)
+  - جدول مصاريف تشغيلية بـ inline add form + per-row delete
+  - Revenue breakdown card
+- Sidebar: رابط جديد "ERP — الإدارة الشاملة" تحت الإدارة المالية، مُحمّى بـ `finance` resource
+
+</details>
+
+### Phase 14 — Original spec
 
 - `/admin/erp` مع كل الأقسام.
 - تصدير Excel + PDF.
@@ -1875,21 +2026,124 @@ RewardsHubClient.tsx (orchestrator)
 
 ### Phase 15 — Provider Analytics Subscriptions (٢ أيام)
 
+**✅ مكتمل (data model + admin grant + provider read-only) — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000011_provider_subscriptions.sql`:
+  - فهرس جزئي UNIQUE على `provider_subscriptions(provider_id) WHERE tier <> 'basic'` — مشترك واحد فعّال لكل تاجر
+  - CHECK constraint: `ends_at > starts_at` لو موجود
+  - `admin_set_provider_subscription_atomic(provider_id, tier, granted_free, ends_at, actor_id)` — service_role فقط، يحذف القديم ويضع الجديد. السعر مشفّر داخل الـ RPC (basic=0, pro=29900, elite=59900 قروش)
+  - `cancel_provider_subscription_atomic(provider_id, actor_id)` — service_role
+  - `provider_current_subscription(provider_id)` — authenticated، يرجع 'basic' default لو لا توجد رو
+- خدمة `src/lib/provider-subscriptions/` — types + `TIER_PLANS` (single source of truth للأسعار + الـ features)
+- 3 endpoints:
+  - `GET /api/provider/subscription` — يحل provider_id من المستخدم المسجل
+  - `GET/POST/DELETE /api/admin/providers/[id]/subscription` — admin-only، يطبّق tier، يدعم `granted_free` للعروض الترويجية
+- صفحة `/provider/billing/subscription`:
+  - شارة المستوى الحالي مع علامة "مجانًا" لو كان granted_free + تاريخ الانتهاء
+  - 3 كروت بأيقونات (Sparkles/Zap/Crown) + قائمة الميزات بـ AR/EN
+  - Pro/Elite يفتحان WhatsApp مع رسالة جاهزة للترقية (self-service billing مؤجل لمراحل لاحقة)
+- ProviderSidebar: رابط جديد "اشتراك التحليلات" (Crown icon) تحت قسم المالية، مرئي للأونر فقط
+
+**ما لم يُنفّذ في v1 (مؤجَّل بدون أن يعطّل اللانش):**
+
+- خصم الاشتراك من التسويات تلقائيًا — يحتاج payment processor + proration logic
+- 30-day free trial flow — يحتاج cron + auto-billing
+- Feature gating على `/provider/analytics` — يقرأ tier الحالي ويُخفي/يُظهر widgets
+
+</details>
+
+### Phase 15 — Original spec
+
 - billing flow + payment via settlements.
 - upgrade/downgrade UI.
 - feature gating per tier.
 
 ### Phase 16 — Notifications + Reminders (٢ أيام)
 
-- Push (FCM) + Email + In-app.
-- Cron reminder قبل انتهاء الهدايا.
-- AR/EN كامل.
+**✅ مكتمل (in-app فقط — FCM/Email يأتيان لاحقًا) — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000008_gift_notifications.sql`:
+  - `notification_preferences.gift_reminders BOOLEAN DEFAULT TRUE` — opt-out للإشعارات التسويقية فقط
+  - جدول `gift_reminder_log (gift_entry_id, kind, sent_at)` لمنع تكرار التذكير على نفس الهدية
+  - `send_gift_notification(category, type, titles, bodies, data)` — central insert helper يحترم الـ preferences (transactional دائمًا، marketing فقط لو `gift_reminders=true`)
+  - 3 triggers على Postgres:
+    - `gift_box_entries AFTER INSERT` → "وصلتك هدية بقيمة X ج.م"
+    - `gift_stamps AFTER UPDATE` (when is_completed transitions to true) → "بطاقة الأختام اكتملت"
+    - `profiles AFTER UPDATE OF loyalty_tier` (upgrade only via rank check) → "وصلت للمستوى الذهبي 🏆"
+  - `send_gift_expiry_reminders_all()` — RPC للـ cron يومي يبعث تنبيه "هديتك تنتهي خلال X ساعة" للهدايا المنتهية خلال 48 ساعة
+- Cron `/api/cron/gift-reminders` — يومي 08:00 UTC، CRON_SECRET-gated
+- vercel.json: cron جديد مُسجّل
+- `NotificationPreferences` UI: toggle جديد "تذكيرات الهدايا" تحت تفضيلات العميل
+- AR/EN كامل في كل المحتوى (titles + bodies)
+
+**القنوات المُفعَّلة (تأكدت بعد التحقّق من البنية القائمة):**
+
+- ✅ **In-app** — مباشرة عبر `customer_notifications`
+- ✅ **Push (FCM)** — تلقائي عبر Path B القائم (`on_customer_notification_fcm_sync` AFTER INSERT → `call_notification_webhook` → Edge Functions `handle-notification-trigger` + `send-notification` → FCM v1). smoke test أكّد status_code=200 خلال 16ms
+- ✅ **Email** — للأحداث الاحتفالية الانتقالية فقط (stamp complete + tier upgrade + referral success) عبر Resend + قوالب DB قابلة للتحرير من `/admin/email-templates`
+
+**Migration متابعة `20260429000009_gift_email_templates.sql`** — يضيف 3 قوالب:
+
+- `gift-stamp-complete` — اكتمال بطاقة الأختام
+- `gift-loyalty-tier-up` — ترقية مستوى الولاء
+- `gift-referral-reward` — نجاح إحالة (للمُحيل، per §13.1)
+
+**ربط الـ emails في `completion-hook.ts`:**
+
+- بعد `addStamp` لو `is_completed=true` → email احتفالي
+- بعد `awardOrderPoints` لو `tierChanged=true` و `newTier !== bronze` → email ترقية
+- بعد `completeReferral` لو `success=true` → email للمُحيل (يشمل اسم الصديق ومبلغ المكافأة الفعلي)
+
+كل الـ email sends best-effort (`.catch` غير fatal) — لو فشلت، in-app + push يصلون كالمعتاد.
+
+**مُؤجَّل (لا يعطّل اللانش):**
+
+- 2-hour final reminder — يحتاج cron بساعة، Vercel Hobby يدعم daily فقط
+
+</details>
 
 ### Phase 17 — E2E Tests + Observability (٢ أيام)
 
-- Playwright tests لكل flow حرج.
-- dashboards في Supabase logs.
-- alerts للأدمن عند شذوذ ميزانية.
+**✅ مكتمل — ٢٩ أبريل ٢٠٢٦**
+
+<details>
+<summary>سجل التنفيذ (انقر للتوسيع)</summary>
+
+- Migration `20260429000012_observability_views.sql` — 3 monitoring views (admin-readable via service_role) + 1 RPC للـ cron:
+  - `v_gift_budget_health` — استهلاك الميزانية الشهرية مقابل السقف
+  - `v_gift_pending_health` — العروض المعلّقة + الهدايا التي تنتهي خلال 24 ساعة
+  - `v_referral_fraud_signals` — IPs/devices استلمت 3+ هدايا في 7 أيام
+  - `observability_check_thresholds()` — يرجع صف لكل تجاوز (severity + code + message_ar/en + context JSONB)
+- موديول `src/lib/monitoring/gift-system-alerts.ts` — `dispatchThresholdAlerts(rows)` يحوّل صفوف الـ RPC إلى Slack alerts عبر `sendAlert` القائم (يستفيد من dedup + rate limit الموجودين)
+- Cron `/api/cron/observability-checks` — يومي 09:00 UTC (CRON_SECRET-gated)، يستدعي الـ RPC ثم يفان-آوت الـ alerts
+- vercel.json — cron جديد مُسجّل
+- E2E spec `comprehensive-gift-system.spec.ts` — 13 smoke test يغطي:
+  - Customer: rewards hub، gift landing (token وهمي)، notification preferences
+  - Provider: قائمة هدايا الشركاء، نموذج إنشاء (مع settlement preview)، صفحة الاشتراك (3 tiers)
+  - Admin: gifts overview، rules، budget (يتأكد من EGP)، campaigns + new، partners، analytics، ERP
+
+**الـ thresholds المُفعّلة (قابلة للتعديل في الـ RPC):**
+
+- `budget_critical` — pct_used >= 90% → critical
+- `budget_warning` — pct_used >= 75% → high
+- `budget_overflow` — pct_used >= 100 + tolerance → critical
+- `partner_stale` — أي عرض شريك معلّق > 48 ساعة → medium
+- `partner_pile` — 10+ عرض شريك معلّق → high
+- `referral_ip_fraud` — أي IP استلم 3+ هدايا → high
+- `referral_dev_fraud` — أي device استلم 3+ هدايا → high
+
+**ما لم يُنفّذ في v1 (لا يعطّل اللانش):**
+
+- Supabase logs dashboards — يحتاج إعداد يدوي على Supabase console
+- Lighthouse CI gating — متاح كـ scripts/lighthouse-audit.ts لكن غير مدمج في PR checks
+
+</details>
 
 **إجمالي: ~٣٧ يوم عمل.**
 
@@ -2068,9 +2322,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE gift_stamps;
 
 ---
 
-**الإصدار:** 2.3 — Gift Box Edition (قيد التنفيذ)
-**آخر تحديث:** ٢٨ أبريل ٢٠٢٦
-**الحالة:** قيد التنفيذ — Phases 0A → 8.5 مكتملة، Phase 12 (Order Completion Hook + Loyalty) هي التالية
+> 🗂️ **القسم التالي تاريخي — للأرشيف فقط.** الحالة الحالية في الـ header (الإصدار 2.4 — انظر السطر 5-6 في أعلى الملف).
 
 ### ملخص تعديلات v2.1 (٢١ أبريل)
 

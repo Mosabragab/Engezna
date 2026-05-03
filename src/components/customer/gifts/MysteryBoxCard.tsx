@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useLocale } from 'next-intl';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gift, Sparkles, PartyPopper } from 'lucide-react';
+import { Gift, Sparkles, PartyPopper, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { GiftBoxEntry } from '@/lib/gifts/types';
 
@@ -11,9 +11,15 @@ interface MysteryBoxCardProps {
   entry: GiftBoxEntry;
   onOpen: (id: string) => Promise<void>;
   onUse: (id: string) => void;
+  /**
+   * If provided, a "Share with friend" action is exposed for forwardable
+   * gift types (discount_code / discount_percent) once the box is opened.
+   * The caller decides whether to show it based on entry.gift?.type.
+   */
+  onShare?: (id: string) => void;
 }
 
-export function MysteryBoxCard({ entry, onOpen, onUse }: MysteryBoxCardProps) {
+export function MysteryBoxCard({ entry, onOpen, onUse, onShare }: MysteryBoxCardProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const [isOpening, setIsOpening] = useState(false);
@@ -125,6 +131,16 @@ export function MysteryBoxCard({ entry, onOpen, onUse }: MysteryBoxCardProps) {
             <Button onClick={() => onUse(entry.id)} className="mt-2 w-full gap-2">
               {isRTL ? 'استخدم الآن' : 'Use Now'}
             </Button>
+            {onShare && (
+              <button
+                type="button"
+                onClick={() => onShare(entry.id)}
+                className="mt-1 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-pink-200 bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-100"
+              >
+                <Send className="h-3 w-3" />
+                {isRTL ? 'أرسلها لصاحبك' : 'Share with a friend'}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

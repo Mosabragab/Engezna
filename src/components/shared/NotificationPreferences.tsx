@@ -21,6 +21,14 @@ const CUSTOMER_PREFERENCES: PreferenceItem[] = [
     description: { ar: 'إشعارات تغيير حالة الطلب', en: 'Notifications for order status changes' },
   },
   {
+    key: 'gift_reminders',
+    label: { ar: 'تذكيرات الهدايا', en: 'Gift Reminders' },
+    description: {
+      ar: 'تنبيهك قبل انتهاء صلاحية الهدية وتذكيرات بطاقة الأختام',
+      en: 'Heads-up before a gift expires + stamp progress reminders',
+    },
+  },
+  {
     key: 'promotions',
     label: { ar: 'العروض والتخفيضات', en: 'Promotions' },
     description: { ar: 'عروض وخصومات حصرية', en: 'Exclusive deals and discounts' },

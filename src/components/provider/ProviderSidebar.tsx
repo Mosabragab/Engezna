@@ -18,6 +18,8 @@ import {
   TrendingUp,
   ClipboardList,
   Bell,
+  Gift,
+  Crown,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 
@@ -183,6 +185,14 @@ export function ProviderSidebar({
         });
       }
 
+      if (perms.isOwner) {
+        financialItems.push({
+          icon: Crown,
+          label: { ar: 'اشتراك التحليلات', en: 'Analytics Plan' },
+          path: `/${locale}/provider/billing/subscription`,
+        });
+      }
+
       if (financialItems.length > 0) {
         groups.push({
           title: { ar: 'المالية', en: 'Financials' },
@@ -206,7 +216,7 @@ export function ProviderSidebar({
       });
     }
 
-    // Promotions & Banners - requires canManageOffers
+    // Promotions & Banners & Partner Gifts - requires canManageOffers
     if (perms.canManageOffers) {
       storeItems.push({
         icon: Tag,
@@ -217,6 +227,11 @@ export function ProviderSidebar({
         icon: Megaphone,
         label: { ar: 'بانر العروض', en: 'Promo Banner' },
         path: `/${locale}/provider/banner`,
+      });
+      storeItems.push({
+        icon: Gift,
+        label: { ar: 'هدايا المتجر', en: 'Store Gifts' },
+        path: `/${locale}/provider/gifts`,
       });
     }
 

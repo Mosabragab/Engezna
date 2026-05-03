@@ -33,6 +33,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Cake,
 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
@@ -68,6 +69,21 @@ const registerSchema = z
     phone: z.string().regex(/^01[0-2,5]{1}[0-9]{8}$/, 'رقم هاتف مصري غير صالح'),
     governorateId: z.string().min(1, 'يرجى اختيار المحافظة'),
     cityId: z.string().min(1, 'يرجى اختيار المدينة'),
+    birthdate: z
+      .string()
+      .optional()
+      .refine(
+        (v) => {
+          if (!v) return true;
+          const d = new Date(v);
+          if (Number.isNaN(d.getTime())) return false;
+          const min = new Date('1925-01-01');
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          return d >= min && d <= today;
+        },
+        { message: 'تاريخ غير صالح' }
+      ),
     password: strongPasswordSchema,
     confirmPassword: z.string(),
   })
@@ -144,6 +160,7 @@ export default function RegisterPage() {
       phone: '',
       governorateId: '',
       cityId: '',
+      birthdate: '',
       password: '',
       confirmPassword: '',
     },
@@ -300,6 +317,7 @@ export default function RegisterPage() {
           phone: data.phone,
           governorateId: data.governorateId,
           cityId: data.cityId,
+          birthdate: data.birthdate || undefined,
           locale,
         }),
       });
@@ -307,9 +325,20 @@ export default function RegisterPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(
-          result.error || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed')
-        );
+        // The API has two error shapes:
+        //   { error: 'localized string' }  — direct returns (auth/profile errors)
+        //   { success: false, error: { code, message, errors? } }  — withErrorHandler / zod
+        // Surface a real string in both cases so the user gets a useful message
+        // (not '[object Object]' or the generic fallback).
+        let errorText: string | null = null;
+        if (typeof result?.error === 'string') {
+          errorText = result.error;
+        } else if (result?.error?.message) {
+          errorText = result.error.message as string;
+        } else if (Array.isArray(result?.error?.errors) && result.error.errors[0]?.message) {
+          errorText = result.error.errors[0].message as string;
+        }
+        setError(errorText || (locale === 'ar' ? 'حدث خطأ أثناء التسجيل' : 'Registration failed'));
         return;
       }
 
@@ -531,6 +560,37 @@ export default function RegisterPage() {
                 <p className="text-xs text-red-500">{locale === 'ar' ? 'مطلوب' : 'Required'}</p>
               )}
             </div>
+          </div>
+
+          {/* Birthdate (optional) — placed right under the name (personal info group) */}
+          <div className="space-y-1">
+            <Label htmlFor="birthdate" className="flex items-center gap-2 text-sm">
+              <Cake className="w-4 h-4 text-primary" />
+              {locale === 'ar' ? 'تاريخ الميلاد' : 'Birthdate'}
+              <span className="text-slate-400 text-xs">
+                ({locale === 'ar' ? 'اختياري' : 'optional'})
+              </span>
+            </Label>
+            <Input
+              id="birthdate"
+              type="date"
+              {...register('birthdate')}
+              disabled={isLoading}
+              className={`h-[44px] ${errors.birthdate ? 'border-red-300' : ''}`}
+              max={new Date().toISOString().slice(0, 10)}
+              min="1925-01-01"
+              dir="ltr"
+            />
+            <p className="text-xs text-slate-500">
+              {locale === 'ar'
+                ? '🎁 احصل على هدية في عيد ميلادك كل سنة'
+                : '🎁 Get a gift on your birthday every year'}
+            </p>
+            {errors.birthdate && (
+              <p className="text-xs text-red-500">
+                {locale === 'ar' ? 'تاريخ غير صالح' : 'Invalid date'}
+              </p>
+            )}
           </div>
 
           {/* Phone Number */}

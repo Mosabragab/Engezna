@@ -39,6 +39,22 @@ const registerBodySchema = z.object({
   phone: z.string().optional(),
   governorateId: z.string().optional(),
   cityId: z.string().optional(),
+  // YYYY-MM-DD; bounded to a sane historical range with no future dates
+  birthdate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'birthdate must be YYYY-MM-DD')
+    .refine(
+      (v) => {
+        const d = new Date(v);
+        if (Number.isNaN(d.getTime())) return false;
+        const min = new Date('1925-01-01');
+        const today = new Date();
+        today.setHours(23, 59, 59, 999);
+        return d >= min && d <= today;
+      },
+      { message: 'birthdate out of valid range' }
+    )
+    .optional(),
   locale: z.string().optional(),
 });
 
@@ -82,11 +98,27 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     password,
     firstName,
     lastName,
-    phone,
+    phone: rawPhone,
     governorateId,
     cityId,
+    birthdate,
     locale = 'ar',
   } = await validateBody(request, registerBodySchema);
+
+  // Normalize Egyptian phone numbers so the duplicate-detection eq() actually
+  // matches existing rows. Strip leading +20 / 0020 / 20 country codes, drop
+  // whitespace and dashes, then re-prefix with the canonical leading 0 that
+  // the rest of the codebase stores. This makes the check resilient to all
+  // common formats users might type (+201063660444, 0020 1063660444, etc).
+  const phone = rawPhone
+    ? (() => {
+        const stripped = rawPhone
+          .trim()
+          .replace(/[\s-]/g, '')
+          .replace(/^(\+?20|0020)/, '');
+        return stripped.startsWith('0') ? stripped : `0${stripped}`;
+      })()
+    : undefined;
 
   const supabase = getSupabaseAdmin();
 
@@ -172,6 +204,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     phone,
     governorate_id: governorateId,
     city_id: cityId,
+    birthdate: birthdate ?? null,
     role: 'customer',
     is_active: true,
   });

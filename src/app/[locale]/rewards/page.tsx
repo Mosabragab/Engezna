@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createGiftEngine } from '@/lib/gifts';
 import { createLoyaltyService } from '@/lib/loyalty';
+import { createGiftForwardService } from '@/lib/gift-forward';
 import { RewardsHubClient } from './RewardsHubClient';
 
 interface PageProps {
@@ -19,6 +20,10 @@ export default async function RewardsPage({ params }: PageProps) {
   if (!user) {
     redirect(`/${locale}/auth/login?redirect=/rewards`);
   }
+
+  // Reclaim any of this user's expired-unclaimed forwards before listing the
+  // box so the gifts they re-own are visible immediately. Idempotent.
+  await createGiftForwardService(supabase).expirePending();
 
   const giftEngine = createGiftEngine(supabase);
   const loyaltyService = createLoyaltyService(supabase);
