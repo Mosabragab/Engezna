@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
 import { ArrowLeft, ArrowRight, Loader2, Mail, Eye, EyeOff } from 'lucide-react';
@@ -126,7 +127,7 @@ export default function LoginPage() {
           return;
         }
 
-        await handlePostLogin(supabase, data.user);
+        await handlePostLogin(supabase, data.user, data.session);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unexpected error occurred');
       } finally {
@@ -218,7 +219,7 @@ export default function LoginPage() {
         return;
       }
 
-      await handlePostLogin(supabase, data.user);
+      await handlePostLogin(supabase, data.user, data.session);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
@@ -229,7 +230,8 @@ export default function LoginPage() {
   // Common post-login handler
   const handlePostLogin = async (
     supabase: ReturnType<typeof createClient>,
-    user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null
+    user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null,
+    session?: Session | null
   ) => {
     if (!user) return;
 
@@ -264,14 +266,20 @@ export default function LoginPage() {
       guestLocationStorage.clear();
     }
 
-    // Wait for session to be fully persisted before redirecting
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Verify session is active
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+    // The session returned directly from sign-in is authoritative; relying on
+    // getSession() right after signInWithPassword caused intermittent "session
+    // not found" errors on iOS Safari, where cookie writes from @supabase/ssr
+    // race with the read. Only fall back to polling getSession() when the
+    // caller did not pass us a session (e.g. some OAuth flows).
+    let activeSession: Session | null = session ?? null;
+    if (!activeSession) {
+      for (let attempt = 0; attempt < 10 && !activeSession; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const { data } = await supabase.auth.getSession();
+        activeSession = data.session;
+      }
+    }
+    if (!activeSession) {
       console.error('Session not found after login');
       setError(
         locale === 'ar'
@@ -295,6 +303,12 @@ export default function LoginPage() {
       )
       .eq('id', user.id)
       .single();
+
+    // Brief delay before navigation so @supabase/ssr cookie writes commit
+    // before the next request hits middleware. Without this, iOS Safari has
+    // been observed to navigate before the auth cookie is visible to the
+    // server, bouncing the user back to the login page.
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
     if (!fullProfile?.governorate_id || !fullProfile?.phone) {
       const completeProfileUrl = redirectTo
