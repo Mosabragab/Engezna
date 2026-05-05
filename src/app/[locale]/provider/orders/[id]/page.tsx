@@ -30,6 +30,14 @@ import {
   FileText,
 } from 'lucide-react';
 import { OrderChat } from '@/components/shared/OrderChat';
+import {
+  applyProviderAction,
+  getCustomerTrackerSteps,
+  getCustomerStepIndex,
+  getNextProviderAction,
+  getProviderActionLabel,
+  type OrderType,
+} from '@/lib/orders/transitions';
 
 // Force dynamic rendering
 
@@ -68,6 +76,7 @@ type Order = {
   settlement_notes: string | null;
   payment_method: string;
   payment_status: string;
+  order_type: OrderType;
   delivery_address: {
     // Geographic hierarchy
     governorate_id?: string;
@@ -116,21 +125,12 @@ type ProviderInfo = {
   name_en: string;
 };
 
-const ORDER_STATUSES = [
-  { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
-  { key: 'accepted', icon: CheckCircle2, label_ar: 'تم القبول', label_en: 'Accepted' },
-  { key: 'preparing', icon: ChefHat, label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  { key: 'ready', icon: Package, label_ar: 'جاهز للتوصيل', label_en: 'Ready' },
-  { key: 'out_for_delivery', icon: Truck, label_ar: 'في الطريق', label_en: 'Out for Delivery' },
-  { key: 'delivered', icon: CheckCircle2, label_ar: 'تم التوصيل', label_en: 'Delivered' },
-];
-
-const NEXT_STATUS: Record<string, string> = {
-  pending: 'accepted',
-  accepted: 'preparing',
-  preparing: 'ready',
-  ready: 'out_for_delivery',
-  out_for_delivery: 'delivered',
+const STEP_ICONS: Record<string, typeof Clock> = {
+  pending: Clock,
+  preparing: ChefHat,
+  ready: Package,
+  out_for_delivery: Truck,
+  delivered: CheckCircle2,
 };
 
 export default function ProviderOrderDetailPage() {
@@ -249,26 +249,6 @@ export default function ProviderOrderDetailPage() {
     checkAuthAndLoadOrder();
   }, [checkAuthAndLoadOrder]);
 
-  const handleAcceptOrder = async () => {
-    if (!order) return;
-    setActionLoading(true);
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'accepted',
-        accepted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', order.id);
-
-    if (!error) {
-      await checkAuthAndLoadOrder();
-    }
-    setActionLoading(false);
-  };
-
   const handleRejectOrder = async () => {
     if (!order) return;
     setActionLoading(true);
@@ -289,39 +269,14 @@ export default function ProviderOrderDetailPage() {
     setActionLoading(false);
   };
 
-  const handleUpdateStatus = async () => {
-    if (!order) return;
-    const nextStatus = NEXT_STATUS[order.status];
-    if (!nextStatus) return;
-
-    setActionLoading(true);
-    const supabase = createClient();
-
-    const updateData: Record<string, any> = {
-      status: nextStatus,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (nextStatus === 'accepted') updateData.accepted_at = new Date().toISOString();
-    if (nextStatus === 'preparing') updateData.preparing_at = new Date().toISOString();
-    if (nextStatus === 'ready') updateData.ready_at = new Date().toISOString();
-    if (nextStatus === 'out_for_delivery')
-      updateData.out_for_delivery_at = new Date().toISOString();
-    if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString();
-
-    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id);
-
-    if (!error) {
-      await checkAuthAndLoadOrder();
-    }
-    setActionLoading(false);
-  };
-
-  const handleConfirmPayment = async () => {
+  // Legacy escape hatch: orders that delivered before the merged flow shipped
+  // can still be sitting in delivered + payment_status='pending'. New cash
+  // orders never reach that state because applyProviderAction flips both
+  // atomically, but we keep this button so old orders aren't stranded.
+  const handleConfirmLegacyPayment = async () => {
     if (!order) return;
     setActionLoading(true);
     const supabase = createClient();
-
     const { error } = await supabase
       .from('orders')
       .update({
@@ -336,9 +291,24 @@ export default function ProviderOrderDetailPage() {
     setActionLoading(false);
   };
 
-  const getStatusIndex = (status: string) => {
-    if (status === 'cancelled' || status === 'rejected') return -1;
-    return ORDER_STATUSES.findIndex((s) => s.key === status);
+  const handleAdvanceOrder = async () => {
+    if (!order) return;
+    const action = getNextProviderAction(
+      order.status,
+      order.order_type,
+      order.payment_method,
+      order.payment_status
+    );
+    if (!action) return;
+
+    setActionLoading(true);
+    const supabase = createClient();
+    const { error } = await applyProviderAction(supabase, order.id, action);
+
+    if (!error) {
+      await checkAuthAndLoadOrder();
+    }
+    setActionLoading(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -361,14 +331,6 @@ export default function ProviderOrderDetailPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getNextStatusLabel = () => {
-    if (!order) return null;
-    const next = NEXT_STATUS[order.status];
-    if (!next) return null;
-    const status = ORDER_STATUSES.find((s) => s.key === next);
-    return status ? (locale === 'ar' ? status.label_ar : status.label_en) : null;
   };
 
   if (loading) {
@@ -398,10 +360,19 @@ export default function ProviderOrderDetailPage() {
     );
   }
 
-  const currentStatusIndex = getStatusIndex(order.status);
+  const trackerSteps = getCustomerTrackerSteps(order.order_type);
+  const currentStatusIndex = getCustomerStepIndex(order.status, trackerSteps);
   const isCancelled = order.status === 'cancelled' || order.status === 'rejected';
   const isDelivered = order.status === 'delivered';
   const canTakeAction = !isCancelled && !isDelivered;
+  const nextAction = canTakeAction
+    ? getNextProviderAction(
+        order.status,
+        order.order_type,
+        order.payment_method,
+        order.payment_status
+      )
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -501,26 +472,20 @@ export default function ProviderOrderDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {ORDER_STATUSES.map((status, index) => {
-                    const Icon = status.icon;
+                  {trackerSteps.map((step, index) => {
+                    const Icon = STEP_ICONS[step.key] ?? Clock;
                     const isCompleted = index <= currentStatusIndex;
                     const isCurrent = index === currentStatusIndex;
 
-                    // Get timestamp for this status
-                    let timestamp = null;
-                    if (status.key === 'pending' && order.created_at) timestamp = order.created_at;
-                    if (status.key === 'accepted' && order.accepted_at)
-                      timestamp = order.accepted_at;
-                    if (status.key === 'preparing' && order.preparing_at)
-                      timestamp = order.preparing_at;
-                    if (status.key === 'ready' && order.ready_at) timestamp = order.ready_at;
-                    if (status.key === 'out_for_delivery' && order.out_for_delivery_at)
-                      timestamp = order.out_for_delivery_at;
-                    if (status.key === 'delivered' && order.delivered_at)
-                      timestamp = order.delivered_at;
+                    const timestampField = step.timestamp_fields.find(
+                      (field) => (order as unknown as Record<string, string | null>)[field]
+                    );
+                    const timestamp = timestampField
+                      ? (order as unknown as Record<string, string | null>)[timestampField]
+                      : null;
 
                     return (
-                      <div key={status.key} className="flex items-center gap-4">
+                      <div key={step.key} className="flex items-center gap-4">
                         <div
                           className={`
                             w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
@@ -543,7 +508,7 @@ export default function ProviderOrderDetailPage() {
                           <p
                             className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}
                           >
-                            {locale === 'ar' ? status.label_ar : status.label_en}
+                            {locale === 'ar' ? step.label_ar : step.label_en}
                           </p>
                           {timestamp && (
                             <p className="text-xs text-slate-500">{formatDate(timestamp)}</p>
@@ -563,7 +528,7 @@ export default function ProviderOrderDetailPage() {
               {/* Action Buttons */}
               {canTakeAction && (
                 <div className="mt-6 pt-6 border-t border-slate-200 flex gap-3">
-                  {order.status === 'pending' && (
+                  {order.status === 'pending' && nextAction && (
                     <>
                       <Button
                         variant="outline"
@@ -576,7 +541,7 @@ export default function ProviderOrderDetailPage() {
                       </Button>
                       <Button
                         className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={handleAcceptOrder}
+                        onClick={handleAdvanceOrder}
                         disabled={actionLoading}
                       >
                         {actionLoading ? (
@@ -584,26 +549,22 @@ export default function ProviderOrderDetailPage() {
                         ) : (
                           <Check className="w-4 h-4 mr-2" />
                         )}
-                        {locale === 'ar' ? 'قبول الطلب' : 'Accept Order'}
+                        {getProviderActionLabel(nextAction, locale)}
                       </Button>
                     </>
                   )}
 
-                  {['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(
-                    order.status
-                  ) && (
+                  {order.status !== 'pending' && nextAction && (
                     <Button
                       className="w-full"
-                      onClick={handleUpdateStatus}
+                      onClick={handleAdvanceOrder}
                       disabled={actionLoading}
                       size="lg"
                     >
                       {actionLoading ? (
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
-                        <>
-                          {locale === 'ar' ? 'تحديث إلى:' : 'Update to:'} {getNextStatusLabel()}
-                        </>
+                        <>{getProviderActionLabel(nextAction, locale)}</>
                       )}
                     </Button>
                   )}
@@ -899,7 +860,7 @@ export default function ProviderOrderDetailPage() {
                 order.payment_status === 'pending' && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
                     <Button
-                      onClick={handleConfirmPayment}
+                      onClick={handleConfirmLegacyPayment}
                       disabled={actionLoading}
                       className="w-full bg-green-600 hover:bg-green-700"
                       size="lg"

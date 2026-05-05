@@ -38,6 +38,11 @@ import {
   RefundConfirmationCard,
   SupportOptionsModal,
 } from '@/components/customer/support';
+import {
+  getCustomerTrackerSteps,
+  getCustomerStepIndex,
+  type OrderType,
+} from '@/lib/orders/transitions';
 
 // Cancellation reasons
 const CANCELLATION_REASONS = [
@@ -103,6 +108,7 @@ type Order = {
   total: number;
   payment_method: string;
   payment_status: string;
+  order_type: OrderType;
   delivery_address: {
     // Geographic hierarchy
     governorate_id?: string;
@@ -184,14 +190,13 @@ type Review = {
   updated_at: string;
 };
 
-const ORDER_STATUSES = [
-  { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
-  { key: 'accepted', icon: CheckCircle2, label_ar: 'تم القبول', label_en: 'Accepted' },
-  { key: 'preparing', icon: ChefHat, label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  { key: 'ready', icon: Package, label_ar: 'جاهز للتوصيل', label_en: 'Ready' },
-  { key: 'out_for_delivery', icon: Truck, label_ar: 'في الطريق', label_en: 'Out for Delivery' },
-  { key: 'delivered', icon: CheckCircle2, label_ar: 'تم التوصيل', label_en: 'Delivered' },
-];
+const STEP_ICONS: Record<string, typeof Clock> = {
+  pending: Clock,
+  preparing: ChefHat,
+  ready: Package,
+  out_for_delivery: Truck,
+  delivered: CheckCircle2,
+};
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -592,10 +597,7 @@ export default function OrderTrackingPage() {
 
   const canReviewOrder = order?.status === 'delivered';
 
-  const getStatusIndex = (status: string) => {
-    if (status === 'cancelled' || status === 'rejected') return -1;
-    return ORDER_STATUSES.findIndex((s) => s.key === status);
-  };
+  const trackerSteps = order ? getCustomerTrackerSteps(order.order_type) : [];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -650,7 +652,7 @@ export default function OrderTrackingPage() {
     );
   }
 
-  const currentStatusIndex = getStatusIndex(order.status);
+  const currentStatusIndex = getCustomerStepIndex(order.status, trackerSteps);
   const isCancelled = order.status === 'cancelled' || order.status === 'rejected';
   const isDelivered = order.status === 'delivered';
 
@@ -712,13 +714,13 @@ export default function OrderTrackingPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {ORDER_STATUSES.map((status, index) => {
-                const Icon = status.icon;
+              {trackerSteps.map((step, index) => {
+                const Icon = STEP_ICONS[step.key] ?? Clock;
                 const isCompleted = index <= currentStatusIndex;
                 const isCurrent = index === currentStatusIndex;
 
                 return (
-                  <div key={status.key} className="flex items-center gap-3">
+                  <div key={step.key} className="flex items-center gap-3">
                     <div
                       className={`
                         w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all
@@ -741,7 +743,7 @@ export default function OrderTrackingPage() {
                       <p
                         className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}
                       >
-                        {locale === 'ar' ? status.label_ar : status.label_en}
+                        {locale === 'ar' ? step.label_ar : step.label_en}
                       </p>
                       {isCurrent && !isDelivered && (
                         <p className="text-xs text-primary">
