@@ -303,7 +303,7 @@ export default function ProviderOrderDetailPage() {
 
     setActionLoading(true);
     const supabase = createClient();
-    const { error } = await applyProviderAction(supabase, order.id, action);
+    const { error } = await applyProviderAction(supabase, order.id, order.status, action);
 
     if (!error) {
       await checkAuthAndLoadOrder();

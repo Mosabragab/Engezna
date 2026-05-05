@@ -93,6 +93,7 @@
 
 - **الـ DB trigger** `notify_order_status_change` (في `20251205000001_fix_notifications_and_reviews.sql`) يستخدم نفس نص "تم توصيل طلبك" على الحالة `delivered` بصرف النظر عن `order_type`. لطلبات الاستلام يفضّل لاحقاً تحديث الـ trigger ليفرّق بين delivered (delivery) و picked-up (pickup). يستلزم migration جديدة فلم يُنفّذ في هذه المرحلة.
 - إشعارات `out_for_delivery` لطلبات الاستلام **لن تُنطلق** بطبيعة الحال لأن الحالة لا تظهر في الـ flow الجديد للـ pickup — وهذا السلوك المطلوب.
+- **Error handling في handlers صفحة التاجر** (`handleRejectOrder`, `handleAdvanceOrder`, `handleConfirmLegacyPayment`) لا تظهر رسائل خطأ للمستخدم عند فشل عملية Supabase. ده النمط السائد في الملف قبل الـ refactor، وإصلاحه يستلزم اختيار toast pattern وتطبيقه على كل الـ handlers بشكل متّسق — تحسين عام خارج نطاق هذه المرحلة.
 
 ## ٨. سجل التنفيذ
 

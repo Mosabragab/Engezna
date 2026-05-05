@@ -99,10 +99,15 @@ export function getNextProviderAction(
  * matching timestamp, and (when relevant) flips payment_status to 'completed'
  * in the same atomic UPDATE so the order-completion hook can pick the order
  * up on its next cron run.
+ *
+ * `currentStatus` is required so we can avoid overwriting `accepted_at` when
+ * advancing a legacy order that's already in 'accepted' — its original
+ * acceptance timestamp must be preserved for historical reporting.
  */
 export async function applyProviderAction(
   supabase: SupabaseClient,
   orderId: string,
+  currentStatus: string,
   action: ProviderOrderAction
 ): Promise<{ error: Error | null }> {
   const now = new Date().toISOString();
@@ -112,7 +117,9 @@ export async function applyProviderAction(
   };
 
   if (action.kind === 'start_preparing') {
-    update.accepted_at = now;
+    if (currentStatus === 'pending') {
+      update.accepted_at = now;
+    }
     update.preparing_at = now;
   } else if (action.kind === 'mark_ready') {
     update.ready_at = now;
@@ -169,7 +176,12 @@ const READY_DELIVERY_STEP: CustomerTrackerStep = {
 
 const READY_PICKUP_STEP: CustomerTrackerStep = {
   key: 'ready',
-  matches: ['ready'],
+  // 'out_for_delivery' is included as a legacy fallback: pre-refactor pickup
+  // orders could be progressed through it because the old NEXT_STATUS map
+  // forced everyone through that status. Mapping it to "ready" keeps the
+  // tracker rendering for those orders — the customer hasn't actually
+  // picked up yet, so "Ready for Pickup" is still the truthful current step.
+  matches: ['ready', 'out_for_delivery'],
   label_ar: 'جاهز للاستلام',
   label_en: 'Ready for Pickup',
   timestamp_fields: ['ready_at'],
@@ -207,13 +219,29 @@ export function getCustomerTrackerSteps(orderType: OrderType): CustomerTrackerSt
 }
 
 /**
- * Index of the current step in the tracker. Returns -1 for cancelled/rejected
- * orders so the page can render its dedicated cancel state.
+ * Statuses that should never appear in the linear tracker — either because
+ * the order is finished off the happy path (cancelled, rejected, refunded)
+ * or because it hasn't truly entered the flow yet (pending_payment, while
+ * an online payment is still being authorized).
+ */
+const NON_TRACKABLE_STATUSES: readonly string[] = [
+  'cancelled',
+  'rejected',
+  'refunded',
+  'pending_payment',
+];
+
+/**
+ * Index of the current step in the tracker. Returns -1 for non-trackable
+ * statuses (cancelled/rejected/refunded/pending_payment) so the page can
+ * render its dedicated state, and also for any unknown status we don't
+ * recognize — callers should treat -1 as "don't highlight any step".
  */
 export function getCustomerStepIndex(
   status: string,
   steps: readonly CustomerTrackerStep[]
 ): number {
-  if (status === 'cancelled' || status === 'rejected') return -1;
-  return steps.findIndex((step) => step.matches.includes(status));
+  if (NON_TRACKABLE_STATUSES.includes(status)) return -1;
+  const idx = steps.findIndex((step) => step.matches.includes(status));
+  return idx >= 0 ? idx : -1;
 }

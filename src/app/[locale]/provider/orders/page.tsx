@@ -12,6 +12,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ProviderLayout } from '@/components/provider';
 import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import {
+  applyProviderAction,
+  getNextProviderAction,
+  getProviderActionLabel,
+  type OrderType,
+} from '@/lib/orders/transitions';
+import {
   Clock,
   ShoppingBag,
   CheckCircle2,
@@ -50,6 +56,7 @@ type Order = {
   delivery_fee: number;
   total: number;
   payment_method: string;
+  order_type: OrderType;
   delivery_address: {
     // Geographic hierarchy
     governorate_id?: string;
@@ -154,14 +161,6 @@ const STATUS_CONFIG: Record<
   },
 };
 
-// Status flow for providers
-const NEXT_STATUS: Record<string, string> = {
-  accepted: 'preparing',
-  preparing: 'ready',
-  ready: 'out_for_delivery',
-  out_for_delivery: 'delivered',
-};
-
 type FilterType =
   | 'all'
   | 'pending'
@@ -213,6 +212,7 @@ export default function ProviderOrdersPage() {
         delivery_fee,
         total,
         payment_method,
+        order_type,
         delivery_address,
         customer_notes,
         created_at,
@@ -378,18 +378,18 @@ export default function ProviderOrdersPage() {
     setRefreshing(false);
   };
 
-  const handleAcceptOrder = async (orderId: string) => {
-    setActionLoading(orderId);
-    const supabase = createClient();
+  const handleAdvanceOrder = async (order: Order) => {
+    const action = getNextProviderAction(
+      order.status,
+      order.order_type,
+      order.payment_method,
+      order.payment_status
+    );
+    if (!action) return;
 
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'accepted',
-        accepted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', orderId);
+    setActionLoading(order.id);
+    const supabase = createClient();
+    const { error } = await applyProviderAction(supabase, order.id, order.status, action);
 
     if (!error && providerId) {
       await loadOrders(providerId);
@@ -409,33 +409,6 @@ export default function ProviderOrdersPage() {
         updated_at: new Date().toISOString(),
       })
       .eq('id', orderId);
-
-    if (!error && providerId) {
-      await loadOrders(providerId);
-    }
-    setActionLoading(null);
-  };
-
-  const handleUpdateStatus = async (orderId: string, currentStatus: string) => {
-    const nextStatus = NEXT_STATUS[currentStatus];
-    if (!nextStatus) return;
-
-    setActionLoading(orderId);
-    const supabase = createClient();
-
-    const updateData: Record<string, any> = {
-      status: nextStatus,
-      updated_at: new Date().toISOString(),
-    };
-
-    // Add timestamp for the new status
-    if (nextStatus === 'preparing') updateData.preparing_at = new Date().toISOString();
-    if (nextStatus === 'ready') updateData.ready_at = new Date().toISOString();
-    if (nextStatus === 'out_for_delivery')
-      updateData.out_for_delivery_at = new Date().toISOString();
-    if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString();
-
-    const { error } = await supabase.from('orders').update(updateData).eq('id', orderId);
 
     if (!error && providerId) {
       await loadOrders(providerId);
@@ -585,11 +558,14 @@ export default function ProviderOrdersPage() {
     return STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   };
 
-  const getNextStatusLabel = (status: string) => {
-    const next = NEXT_STATUS[status];
-    if (!next) return null;
-    const config = STATUS_CONFIG[next];
-    return locale === 'ar' ? config.label_ar : config.label_en;
+  const getNextActionLabel = (order: Order) => {
+    const action = getNextProviderAction(
+      order.status,
+      order.order_type,
+      order.payment_method,
+      order.payment_status
+    );
+    return action ? getProviderActionLabel(action, locale) : null;
   };
 
   if (loading) {
@@ -1057,7 +1033,7 @@ export default function ProviderOrdersPage() {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => handleAcceptOrder(order.id)}
+                              onClick={() => handleAdvanceOrder(order)}
                               disabled={isLoading}
                               className="bg-green-600 hover:bg-green-700"
                             >
@@ -1082,13 +1058,13 @@ export default function ProviderOrdersPage() {
                             </Link>
                             <Button
                               size="sm"
-                              onClick={() => handleUpdateStatus(order.id, order.status)}
+                              onClick={() => handleAdvanceOrder(order)}
                               disabled={isLoading}
                             >
                               {isLoading ? (
                                 <RefreshCw className="w-4 h-4 animate-spin" />
                               ) : (
-                                getNextStatusLabel(order.status)
+                                getNextActionLabel(order)
                               )}
                             </Button>
                           </>
