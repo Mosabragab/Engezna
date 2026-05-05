@@ -266,6 +266,12 @@ export default function ProviderOrderDetailPage() {
 
     if (!error) {
       await checkAuthAndLoadOrder();
+    } else {
+      alert(
+        locale === 'ar'
+          ? `تعذّر رفض الطلب: ${error.message}`
+          : `Failed to reject order: ${error.message}`
+      );
     }
     setActionLoading(false);
   };
@@ -288,6 +294,12 @@ export default function ProviderOrderDetailPage() {
 
     if (!error) {
       await checkAuthAndLoadOrder();
+    } else {
+      alert(
+        locale === 'ar'
+          ? `تعذّر تأكيد الدفع: ${error.message}`
+          : `Failed to confirm payment: ${error.message}`
+      );
     }
     setActionLoading(false);
   };
@@ -311,6 +323,14 @@ export default function ProviderOrderDetailPage() {
     // order on, so showing the user the new state is the right recovery.
     if (!error || error instanceof OrderStaleStateError) {
       await checkAuthAndLoadOrder();
+    } else {
+      // Real failure (network, RLS, constraint) — surface it so the
+      // provider doesn't think their action took effect.
+      alert(
+        locale === 'ar'
+          ? `تعذّر تحديث الطلب: ${error.message}`
+          : `Failed to update order: ${error.message}`
+      );
     }
     setActionLoading(false);
   };

@@ -396,6 +396,14 @@ export default function ProviderOrdersPage() {
     // latest server state regardless of who moved the order on.
     if ((!error || error instanceof OrderStaleStateError) && providerId) {
       await loadOrders(providerId);
+    } else if (error) {
+      // Surface real failures (network, RLS, constraint) — silent ignore
+      // would leave the provider thinking their action took effect.
+      alert(
+        locale === 'ar'
+          ? `تعذّر تحديث الطلب: ${error.message}`
+          : `Failed to update order: ${error.message}`
+      );
     }
     setActionLoading(null);
   };
@@ -415,6 +423,12 @@ export default function ProviderOrdersPage() {
 
     if (!error && providerId) {
       await loadOrders(providerId);
+    } else if (error) {
+      alert(
+        locale === 'ar'
+          ? `تعذّر رفض الطلب: ${error.message}`
+          : `Failed to reject order: ${error.message}`
+      );
     }
     setActionLoading(null);
   };
