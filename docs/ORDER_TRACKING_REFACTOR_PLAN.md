@@ -29,13 +29,13 @@
 ### Phase A — Shared transitions helper ✅
 
 - ملف جديد: `src/lib/orders/transitions.ts`
-- يصدّر:
-  - `acceptAndStartPreparing(orderId)` — `pending → preparing` + `accepted_at` + `preparing_at`
-  - `markReady(orderId)` — `preparing → ready`
-  - `dispatchForDelivery(orderId)` — `ready → out_for_delivery` (delivery فقط)
-  - `completeOrder(orderId, { paymentMethod })` — `→ delivered` (+ `payment_status='completed'` للنقدي)
-  - `getNextProviderAction(currentStatus, orderType, paymentMethod)` — يرجع المعلومات اللازمة للزر التالي
-- لا تكرّر منطق الـ Supabase calls داخل الـ pages.
+- الـ API الفعلي المُصدَّر:
+  - `getNextProviderAction(currentStatus, orderType, paymentMethod, paymentStatus)` — يرجع `ProviderOrderAction | null` وصف الخطوة التالية للتاجر (kind, nextStatus, collectsCash, buttonLabelKey)
+  - `applyProviderAction(supabase, orderId, currentStatus, action)` — تنفّذ الـ atomic UPDATE: تكتب `status` + الـ timestamp المناسب + `payment_status='completed'` للنقدي عند التسليم. تحرس بـ `.eq('status', currentStatus)` ضد الـ race conditions وترجع stale error عند 0 rows.
+  - `getProviderActionLabel(action, locale)` — يرجع نص الزر بالعربية/الإنجليزية
+  - `getCustomerTrackerSteps(orderType)` — يرجع مصفوفة خطوات شريط العميل (يحذف `out_for_delivery` لـ pickup)
+  - `getCustomerStepIndex(status, steps)` — index الخطوة الحالية (يفلتر non-trackable statuses صراحة)
+- لا تكرّر منطق الـ Supabase calls داخل الـ pages — كلها تستهلك `applyProviderAction`.
 
 ### Phase B — Provider order page rewire ✅
 

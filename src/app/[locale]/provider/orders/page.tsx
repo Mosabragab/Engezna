@@ -15,6 +15,7 @@ import {
   applyProviderAction,
   getNextProviderAction,
   getProviderActionLabel,
+  OrderStaleStateError,
   type OrderType,
 } from '@/lib/orders/transitions';
 import {
@@ -391,7 +392,9 @@ export default function ProviderOrdersPage() {
     const supabase = createClient();
     const { error } = await applyProviderAction(supabase, order.id, order.status, action);
 
-    if (!error && providerId) {
+    // Reload on both success and stale-state so the list reflects the
+    // latest server state regardless of who moved the order on.
+    if ((!error || error instanceof OrderStaleStateError) && providerId) {
       await loadOrders(providerId);
     }
     setActionLoading(null);

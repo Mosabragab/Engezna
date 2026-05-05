@@ -36,6 +36,7 @@ import {
   getCustomerStepIndex,
   getNextProviderAction,
   getProviderActionLabel,
+  OrderStaleStateError,
   type OrderType,
 } from '@/lib/orders/transitions';
 
@@ -305,7 +306,10 @@ export default function ProviderOrderDetailPage() {
     const supabase = createClient();
     const { error } = await applyProviderAction(supabase, order.id, order.status, action);
 
-    if (!error) {
+    // On both success and stale-state we re-load so the UI reflects the
+    // latest server state — stale means another tab/process moved the
+    // order on, so showing the user the new state is the right recovery.
+    if (!error || error instanceof OrderStaleStateError) {
       await checkAuthAndLoadOrder();
     }
     setActionLoading(false);

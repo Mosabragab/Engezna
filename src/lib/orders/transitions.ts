@@ -23,7 +23,14 @@ export type ProviderOrderAction = {
   kind: ProviderActionKind;
   nextStatus: 'preparing' | 'ready' | 'out_for_delivery' | 'delivered';
   collectsCash: boolean;
-  buttonLabelKey: 'startPreparing' | 'markReady' | 'dispatch' | 'completeAndCollect' | 'complete';
+  buttonLabelKey:
+    | 'startPreparing'
+    | 'markReady'
+    | 'dispatch'
+    | 'completeAndCollect'
+    | 'complete'
+    | 'completePickup'
+    | 'completeAndCollectPickup';
 };
 
 const ACTION_LABELS: Record<ProviderOrderAction['buttonLabelKey'], { ar: string; en: string }> = {
@@ -32,6 +39,8 @@ const ACTION_LABELS: Record<ProviderOrderAction['buttonLabelKey'], { ar: string;
   dispatch: { ar: 'إرسال للتوصيل', en: 'Send Out for Delivery' },
   completeAndCollect: { ar: 'تم التوصيل واستلام المبلغ', en: 'Delivered & Cash Received' },
   complete: { ar: 'تم التوصيل', en: 'Mark as Delivered' },
+  completePickup: { ar: 'تم تسليم العميل', en: 'Mark as Picked Up' },
+  completeAndCollectPickup: { ar: 'تم التسليم واستلام المبلغ', en: 'Picked Up & Cash Received' },
 };
 
 export function getProviderActionLabel(action: ProviderOrderAction, locale: string): string {
@@ -73,7 +82,7 @@ export function getNextProviderAction(
           kind: 'complete',
           nextStatus: 'delivered',
           collectsCash: cashPending,
-          buttonLabelKey: cashPending ? 'completeAndCollect' : 'complete',
+          buttonLabelKey: cashPending ? 'completeAndCollectPickup' : 'completePickup',
         };
       }
       return {
@@ -83,6 +92,17 @@ export function getNextProviderAction(
         buttonLabelKey: 'dispatch',
       };
     case 'out_for_delivery':
+      // Legacy pickup orders may be stuck here from the pre-refactor flow,
+      // so honour the order_type when picking the button label even though
+      // the DB status is the delivery one.
+      if (orderType === 'pickup') {
+        return {
+          kind: 'complete',
+          nextStatus: 'delivered',
+          collectsCash: cashPending,
+          buttonLabelKey: cashPending ? 'completeAndCollectPickup' : 'completePickup',
+        };
+      }
       return {
         kind: 'complete',
         nextStatus: 'delivered',
@@ -95,6 +115,18 @@ export function getNextProviderAction(
 }
 
 /**
+ * Marker error for the optimistic-concurrency guard in applyProviderAction.
+ * Pages can identify it via `error.name === 'OrderStaleStateError'` and
+ * refresh the local order state instead of showing a generic failure.
+ */
+export class OrderStaleStateError extends Error {
+  constructor(message = 'Order state changed concurrently; please refresh.') {
+    super(message);
+    this.name = 'OrderStaleStateError';
+  }
+}
+
+/**
  * Apply the provider action to the database. Writes the next status, the
  * matching timestamp, and (when relevant) flips payment_status to 'completed'
  * in the same atomic UPDATE so the order-completion hook can pick the order
@@ -102,7 +134,12 @@ export function getNextProviderAction(
  *
  * `currentStatus` is required so we can avoid overwriting `accepted_at` when
  * advancing a legacy order that's already in 'accepted' — its original
- * acceptance timestamp must be preserved for historical reporting.
+ * acceptance timestamp must be preserved for historical reporting. It is
+ * also used as an optimistic-concurrency guard: the UPDATE matches both the
+ * id AND the current status, so a row that moved to a different status
+ * between read and write (e.g. customer cancelled, another provider tab
+ * advanced it) returns 0 rows and we surface OrderStaleStateError instead
+ * of silently overwriting the newer state.
  */
 export async function applyProviderAction(
   supabase: SupabaseClient,
@@ -132,8 +169,18 @@ export async function applyProviderAction(
     }
   }
 
-  const { error } = await supabase.from('orders').update(update).eq('id', orderId);
-  return { error };
+  const { data, error } = await supabase
+    .from('orders')
+    .update(update)
+    .eq('id', orderId)
+    .eq('status', currentStatus)
+    .select('id');
+
+  if (error) return { error };
+  if (!data || data.length === 0) {
+    return { error: new OrderStaleStateError() };
+  }
+  return { error: null };
 }
 
 /**
