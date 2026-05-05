@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Clock,
   MapPin,
+  Store,
   Phone,
   ShoppingCart,
   ArrowLeft,
@@ -255,16 +256,23 @@ export default function ProviderOrderDetailPage() {
     setActionLoading(true);
     const supabase = createClient();
 
-    const { error } = await supabase
+    // Stale-state guard: only succeed if the order is still in the status
+    // the UI is showing. If another tab moved it on, treat it as a reload
+    // signal — same pattern applyProviderAction uses.
+    const expectedStatus = order.status;
+    const { data, error } = await supabase
       .from('orders')
       .update({
         status: 'rejected',
         cancelled_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', order.id);
+      .eq('id', order.id)
+      .eq('status', expectedStatus)
+      .select('id');
 
-    if (!error) {
+    const stale = !error && (!data || data.length === 0);
+    if (!error || stale) {
       await checkAuthAndLoadOrder();
     } else {
       alert(
@@ -621,103 +629,124 @@ export default function ProviderOrderDetailPage() {
                   {locale === 'ar' ? 'اتصال' : 'Call'}
                 </a>
               </div>
-              {/* Delivery Address Section */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    {/* Geographic Tags */}
-                    {order.delivery_address &&
-                      (order.delivery_address.governorate_ar ||
-                        order.delivery_address.city_ar ||
-                        order.delivery_address.district_ar) && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {order.delivery_address.governorate_ar && (
-                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.governorate_ar
-                                : order.delivery_address.governorate_en}
-                            </span>
-                          )}
-                          {order.delivery_address.city_ar && (
-                            <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.city_ar
-                                : order.delivery_address.city_en}
-                            </span>
-                          )}
-                          {order.delivery_address.district_ar && (
-                            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.district_ar
-                                : order.delivery_address.district_en}
-                            </span>
-                          )}
-                        </div>
-                      )}
+              {/* Fulfillment section: pickup orders show a clear "Pickup
+                  from store" indicator instead of the (empty) address block. */}
+              {order.order_type === 'pickup' ? (
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Store className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-primary">
+                        {locale === 'ar' ? 'استلام من الفرع' : 'Pickup from store'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {locale === 'ar'
+                          ? 'العميل سيستلم الطلب من المتجر'
+                          : 'Customer will pick up the order from the store'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Delivery Address Section */
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      {/* Geographic Tags */}
+                      {order.delivery_address &&
+                        (order.delivery_address.governorate_ar ||
+                          order.delivery_address.city_ar ||
+                          order.delivery_address.district_ar) && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {order.delivery_address.governorate_ar && (
+                              <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.governorate_ar
+                                  : order.delivery_address.governorate_en}
+                              </span>
+                            )}
+                            {order.delivery_address.city_ar && (
+                              <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.city_ar
+                                  : order.delivery_address.city_en}
+                              </span>
+                            )}
+                            {order.delivery_address.district_ar && (
+                              <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.district_ar
+                                  : order.delivery_address.district_en}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                    {/* Street Address */}
-                    <p className="text-slate-900 font-medium">
-                      {order.delivery_address?.address || order.delivery_address?.address_line1}
-                    </p>
+                      {/* Street Address */}
+                      <p className="text-slate-900 font-medium">
+                        {order.delivery_address?.address || order.delivery_address?.address_line1}
+                      </p>
 
-                    {/* Building Details */}
-                    {order.delivery_address &&
-                      (order.delivery_address.building ||
-                        order.delivery_address.floor ||
-                        order.delivery_address.apartment) && (
-                        <p className="text-slate-600 text-sm">
-                          {order.delivery_address.building && (
-                            <span>
-                              {locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
-                            </span>
-                          )}
-                          {order.delivery_address.floor && (
-                            <span>
-                              {order.delivery_address.building ? ' - ' : ''}
-                              {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
-                            </span>
-                          )}
-                          {order.delivery_address.apartment && (
-                            <span>
-                              {order.delivery_address.building || order.delivery_address.floor
-                                ? ' - '
-                                : ''}
-                              {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
-                            </span>
-                          )}
+                      {/* Building Details */}
+                      {order.delivery_address &&
+                        (order.delivery_address.building ||
+                          order.delivery_address.floor ||
+                          order.delivery_address.apartment) && (
+                          <p className="text-slate-600 text-sm">
+                            {order.delivery_address.building && (
+                              <span>
+                                {locale === 'ar' ? 'مبنى' : 'Bldg'}{' '}
+                                {order.delivery_address.building}
+                              </span>
+                            )}
+                            {order.delivery_address.floor && (
+                              <span>
+                                {order.delivery_address.building ? ' - ' : ''}
+                                {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
+                              </span>
+                            )}
+                            {order.delivery_address.apartment && (
+                              <span>
+                                {order.delivery_address.building || order.delivery_address.floor
+                                  ? ' - '
+                                  : ''}
+                                {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
+                              </span>
+                            )}
+                          </p>
+                        )}
+
+                      {/* Landmark */}
+                      {order.delivery_address?.landmark && (
+                        <p className="text-slate-500 text-sm">
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'}
+                          </span>{' '}
+                          {order.delivery_address.landmark}
                         </p>
                       )}
 
-                    {/* Landmark */}
-                    {order.delivery_address?.landmark && (
-                      <p className="text-slate-500 text-sm">
-                        <span className="font-medium">
-                          {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'}
-                        </span>{' '}
-                        {order.delivery_address.landmark}
-                      </p>
-                    )}
+                      {/* Delivery Instructions */}
+                      {order.delivery_address?.delivery_instructions && (
+                        <div className="bg-amber-50 rounded-lg p-2 text-sm text-amber-800">
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}
+                          </span>{' '}
+                          {order.delivery_address.delivery_instructions}
+                        </div>
+                      )}
 
-                    {/* Delivery Instructions */}
-                    {order.delivery_address?.delivery_instructions && (
-                      <div className="bg-amber-50 rounded-lg p-2 text-sm text-amber-800">
-                        <span className="font-medium">
-                          {locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}
-                        </span>{' '}
-                        {order.delivery_address.delivery_instructions}
-                      </div>
-                    )}
-
-                    {/* Address Notes */}
-                    {order.delivery_address?.notes && (
-                      <p className="text-slate-500 text-sm italic">
-                        {order.delivery_address.notes}
-                      </p>
-                    )}
+                      {/* Address Notes */}
+                      {order.delivery_address?.notes && (
+                        <p className="text-slate-500 text-sm italic">
+                          {order.delivery_address.notes}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               {order.customer_notes && (
                 <div className="pt-4 border-t border-slate-200">
                   <div className="flex items-start gap-2">
