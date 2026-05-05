@@ -1149,7 +1149,13 @@ export default function AdminOrderDetailsPage() {
                 {order.delivery_notes && (
                   <div className="mt-3 p-2 bg-slate-50 rounded-lg">
                     <p className="text-xs text-slate-500 mb-1">
-                      {locale === 'ar' ? 'ملاحظات التوصيل:' : 'Delivery Notes:'}
+                      {order.order_type === 'pickup'
+                        ? locale === 'ar'
+                          ? 'ملاحظات الاستلام:'
+                          : 'Pickup Notes:'
+                        : locale === 'ar'
+                          ? 'ملاحظات التوصيل:'
+                          : 'Delivery Notes:'}
                     </p>
                     <p className="text-sm text-slate-700">{order.delivery_notes}</p>
                   </div>

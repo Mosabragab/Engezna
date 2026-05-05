@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -275,10 +276,14 @@ export default function ProviderOrderDetailPage() {
     if (!error || stale) {
       await checkAuthAndLoadOrder();
     } else {
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'reject' },
+        extra: { orderId: order.id, expectedStatus },
+      });
       alert(
         locale === 'ar'
-          ? `تعذّر رفض الطلب: ${error.message}`
-          : `Failed to reject order: ${error.message}`
+          ? 'تعذّر رفض الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not reject the order. Please try again.'
       );
     }
     setActionLoading(false);
@@ -303,10 +308,14 @@ export default function ProviderOrderDetailPage() {
     if (!error) {
       await checkAuthAndLoadOrder();
     } else {
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'legacy-payment' },
+        extra: { orderId: order.id },
+      });
       alert(
         locale === 'ar'
-          ? `تعذّر تأكيد الدفع: ${error.message}`
-          : `Failed to confirm payment: ${error.message}`
+          ? 'تعذّر تأكيد الدفع. يرجى المحاولة مرة أخرى.'
+          : 'Could not confirm payment. Please try again.'
       );
     }
     setActionLoading(false);
@@ -332,12 +341,18 @@ export default function ProviderOrderDetailPage() {
     if (!error || error instanceof OrderStaleStateError) {
       await checkAuthAndLoadOrder();
     } else {
-      // Real failure (network, RLS, constraint) — surface it so the
-      // provider doesn't think their action took effect.
+      // Real failure (network, RLS, constraint) — surface a generic
+      // message so the provider knows the action didn't take effect,
+      // but log the original error to Sentry for diagnosis instead of
+      // exposing backend details to the user.
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'advance' },
+        extra: { orderId: order.id, currentStatus: order.status },
+      });
       alert(
         locale === 'ar'
-          ? `تعذّر تحديث الطلب: ${error.message}`
-          : `Failed to update order: ${error.message}`
+          ? 'تعذّر تحديث الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not update the order. Please try again.'
       );
     }
     setActionLoading(false);

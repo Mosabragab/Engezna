@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import { subscribeWithErrorHandling } from '@/lib/supabase/realtime-manager';
 import { getAudioManager } from '@/lib/audio/audio-manager';
@@ -398,12 +399,17 @@ export default function ProviderOrdersPage() {
     if ((!error || error instanceof OrderStaleStateError) && providerId) {
       await loadOrders(providerId);
     } else if (error) {
-      // Surface real failures (network, RLS, constraint) — silent ignore
-      // would leave the provider thinking their action took effect.
+      // Surface real failures (network, RLS, constraint) without leaking
+      // backend details to the provider. The original error goes to Sentry
+      // so we can still diagnose it from the dashboard.
+      Sentry.captureException(error, {
+        tags: { source: 'provider-orders-list', action: 'advance' },
+        extra: { orderId: order.id, currentStatus: order.status },
+      });
       alert(
         locale === 'ar'
-          ? `تعذّر تحديث الطلب: ${error.message}`
-          : `Failed to update order: ${error.message}`
+          ? 'تعذّر تحديث الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not update the order. Please try again.'
       );
     }
     setActionLoading(null);
@@ -433,10 +439,14 @@ export default function ProviderOrdersPage() {
     if ((!error || stale) && providerId) {
       await loadOrders(providerId);
     } else if (error) {
+      Sentry.captureException(error, {
+        tags: { source: 'provider-orders-list', action: 'reject' },
+        extra: { orderId, expectedStatus },
+      });
       alert(
         locale === 'ar'
-          ? `تعذّر رفض الطلب: ${error.message}`
-          : `Failed to reject order: ${error.message}`
+          ? 'تعذّر رفض الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not reject the order. Please try again.'
       );
     }
     setActionLoading(null);
