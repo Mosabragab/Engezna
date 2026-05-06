@@ -4,12 +4,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Clock,
   MapPin,
+  Store,
   Phone,
   ShoppingCart,
   ArrowLeft,
@@ -30,6 +32,15 @@ import {
   FileText,
 } from 'lucide-react';
 import { OrderChat } from '@/components/shared/OrderChat';
+import {
+  applyProviderAction,
+  getCustomerTrackerSteps,
+  getCustomerStepIndex,
+  getNextProviderAction,
+  getProviderActionLabel,
+  OrderStaleStateError,
+  type OrderType,
+} from '@/lib/orders/transitions';
 
 // Force dynamic rendering
 
@@ -68,6 +79,7 @@ type Order = {
   settlement_notes: string | null;
   payment_method: string;
   payment_status: string;
+  order_type: OrderType;
   delivery_address: {
     // Geographic hierarchy
     governorate_id?: string;
@@ -116,21 +128,12 @@ type ProviderInfo = {
   name_en: string;
 };
 
-const ORDER_STATUSES = [
-  { key: 'pending', icon: Clock, label_ar: 'في الانتظار', label_en: 'Pending' },
-  { key: 'accepted', icon: CheckCircle2, label_ar: 'تم القبول', label_en: 'Accepted' },
-  { key: 'preparing', icon: ChefHat, label_ar: 'جاري التحضير', label_en: 'Preparing' },
-  { key: 'ready', icon: Package, label_ar: 'جاهز للتوصيل', label_en: 'Ready' },
-  { key: 'out_for_delivery', icon: Truck, label_ar: 'في الطريق', label_en: 'Out for Delivery' },
-  { key: 'delivered', icon: CheckCircle2, label_ar: 'تم التوصيل', label_en: 'Delivered' },
-];
-
-const NEXT_STATUS: Record<string, string> = {
-  pending: 'accepted',
-  accepted: 'preparing',
-  preparing: 'ready',
-  ready: 'out_for_delivery',
-  out_for_delivery: 'delivered',
+const STEP_ICONS: Record<string, typeof Clock> = {
+  pending: Clock,
+  preparing: ChefHat,
+  ready: Package,
+  out_for_delivery: Truck,
+  delivered: CheckCircle2,
 };
 
 export default function ProviderOrderDetailPage() {
@@ -249,79 +252,51 @@ export default function ProviderOrderDetailPage() {
     checkAuthAndLoadOrder();
   }, [checkAuthAndLoadOrder]);
 
-  const handleAcceptOrder = async () => {
-    if (!order) return;
-    setActionLoading(true);
-    const supabase = createClient();
-
-    const { error } = await supabase
-      .from('orders')
-      .update({
-        status: 'accepted',
-        accepted_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', order.id);
-
-    if (!error) {
-      await checkAuthAndLoadOrder();
-    }
-    setActionLoading(false);
-  };
-
   const handleRejectOrder = async () => {
     if (!order) return;
     setActionLoading(true);
     const supabase = createClient();
 
-    const { error } = await supabase
+    // Stale-state guard: only succeed if the order is still in the status
+    // the UI is showing. If another tab moved it on, treat it as a reload
+    // signal — same pattern applyProviderAction uses.
+    const expectedStatus = order.status;
+    const { data, error } = await supabase
       .from('orders')
       .update({
         status: 'rejected',
         cancelled_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', order.id);
+      .eq('id', order.id)
+      .eq('status', expectedStatus)
+      .select('id');
 
-    if (!error) {
+    const stale = !error && (!data || data.length === 0);
+    if (!error || stale) {
       await checkAuthAndLoadOrder();
+    } else {
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'reject' },
+        extra: { orderId: order.id, expectedStatus },
+      });
+      alert(
+        locale === 'ar'
+          ? 'تعذّر رفض الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not reject the order. Please try again.'
+      );
     }
     setActionLoading(false);
   };
 
-  const handleUpdateStatus = async () => {
-    if (!order) return;
-    const nextStatus = NEXT_STATUS[order.status];
-    if (!nextStatus) return;
-
-    setActionLoading(true);
-    const supabase = createClient();
-
-    const updateData: Record<string, any> = {
-      status: nextStatus,
-      updated_at: new Date().toISOString(),
-    };
-
-    if (nextStatus === 'accepted') updateData.accepted_at = new Date().toISOString();
-    if (nextStatus === 'preparing') updateData.preparing_at = new Date().toISOString();
-    if (nextStatus === 'ready') updateData.ready_at = new Date().toISOString();
-    if (nextStatus === 'out_for_delivery')
-      updateData.out_for_delivery_at = new Date().toISOString();
-    if (nextStatus === 'delivered') updateData.delivered_at = new Date().toISOString();
-
-    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id);
-
-    if (!error) {
-      await checkAuthAndLoadOrder();
-    }
-    setActionLoading(false);
-  };
-
-  const handleConfirmPayment = async () => {
+  // Legacy escape hatch: orders that delivered before the merged flow shipped
+  // can still be sitting in delivered + payment_status='pending'. New cash
+  // orders never reach that state because applyProviderAction flips both
+  // atomically, but we keep this button so old orders aren't stranded.
+  const handleConfirmLegacyPayment = async () => {
     if (!order) return;
     setActionLoading(true);
     const supabase = createClient();
-
     const { error } = await supabase
       .from('orders')
       .update({
@@ -332,13 +307,55 @@ export default function ProviderOrderDetailPage() {
 
     if (!error) {
       await checkAuthAndLoadOrder();
+    } else {
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'legacy-payment' },
+        extra: { orderId: order.id },
+      });
+      alert(
+        locale === 'ar'
+          ? 'تعذّر تأكيد الدفع. يرجى المحاولة مرة أخرى.'
+          : 'Could not confirm payment. Please try again.'
+      );
     }
     setActionLoading(false);
   };
 
-  const getStatusIndex = (status: string) => {
-    if (status === 'cancelled' || status === 'rejected') return -1;
-    return ORDER_STATUSES.findIndex((s) => s.key === status);
+  const handleAdvanceOrder = async () => {
+    if (!order) return;
+    const action = getNextProviderAction(
+      order.status,
+      order.order_type,
+      order.payment_method,
+      order.payment_status
+    );
+    if (!action) return;
+
+    setActionLoading(true);
+    const supabase = createClient();
+    const { error } = await applyProviderAction(supabase, order.id, order.status, action);
+
+    // On both success and stale-state we re-load so the UI reflects the
+    // latest server state — stale means another tab/process moved the
+    // order on, so showing the user the new state is the right recovery.
+    if (!error || error instanceof OrderStaleStateError) {
+      await checkAuthAndLoadOrder();
+    } else {
+      // Real failure (network, RLS, constraint) — surface a generic
+      // message so the provider knows the action didn't take effect,
+      // but log the original error to Sentry for diagnosis instead of
+      // exposing backend details to the user.
+      Sentry.captureException(error, {
+        tags: { source: 'provider-order-detail', action: 'advance' },
+        extra: { orderId: order.id, currentStatus: order.status },
+      });
+      alert(
+        locale === 'ar'
+          ? 'تعذّر تحديث الطلب. يرجى المحاولة مرة أخرى.'
+          : 'Could not update the order. Please try again.'
+      );
+    }
+    setActionLoading(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -361,14 +378,6 @@ export default function ProviderOrderDetailPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const getNextStatusLabel = () => {
-    if (!order) return null;
-    const next = NEXT_STATUS[order.status];
-    if (!next) return null;
-    const status = ORDER_STATUSES.find((s) => s.key === next);
-    return status ? (locale === 'ar' ? status.label_ar : status.label_en) : null;
   };
 
   if (loading) {
@@ -398,10 +407,19 @@ export default function ProviderOrderDetailPage() {
     );
   }
 
-  const currentStatusIndex = getStatusIndex(order.status);
+  const trackerSteps = getCustomerTrackerSteps(order.order_type);
+  const currentStatusIndex = getCustomerStepIndex(order.status, trackerSteps);
   const isCancelled = order.status === 'cancelled' || order.status === 'rejected';
   const isDelivered = order.status === 'delivered';
   const canTakeAction = !isCancelled && !isDelivered;
+  const nextAction = canTakeAction
+    ? getNextProviderAction(
+        order.status,
+        order.order_type,
+        order.payment_method,
+        order.payment_status
+      )
+    : null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -501,26 +519,20 @@ export default function ProviderOrderDetailPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {ORDER_STATUSES.map((status, index) => {
-                    const Icon = status.icon;
+                  {trackerSteps.map((step, index) => {
+                    const Icon = STEP_ICONS[step.key] ?? Clock;
                     const isCompleted = index <= currentStatusIndex;
                     const isCurrent = index === currentStatusIndex;
 
-                    // Get timestamp for this status
-                    let timestamp = null;
-                    if (status.key === 'pending' && order.created_at) timestamp = order.created_at;
-                    if (status.key === 'accepted' && order.accepted_at)
-                      timestamp = order.accepted_at;
-                    if (status.key === 'preparing' && order.preparing_at)
-                      timestamp = order.preparing_at;
-                    if (status.key === 'ready' && order.ready_at) timestamp = order.ready_at;
-                    if (status.key === 'out_for_delivery' && order.out_for_delivery_at)
-                      timestamp = order.out_for_delivery_at;
-                    if (status.key === 'delivered' && order.delivered_at)
-                      timestamp = order.delivered_at;
+                    const timestampField = step.timestamp_fields.find(
+                      (field) => (order as unknown as Record<string, string | null>)[field]
+                    );
+                    const timestamp = timestampField
+                      ? (order as unknown as Record<string, string | null>)[timestampField]
+                      : null;
 
                     return (
-                      <div key={status.key} className="flex items-center gap-4">
+                      <div key={step.key} className="flex items-center gap-4">
                         <div
                           className={`
                             w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
@@ -543,7 +555,7 @@ export default function ProviderOrderDetailPage() {
                           <p
                             className={`font-medium ${isCompleted ? 'text-slate-900' : 'text-slate-400'}`}
                           >
-                            {locale === 'ar' ? status.label_ar : status.label_en}
+                            {locale === 'ar' ? step.label_ar : step.label_en}
                           </p>
                           {timestamp && (
                             <p className="text-xs text-slate-500">{formatDate(timestamp)}</p>
@@ -563,7 +575,7 @@ export default function ProviderOrderDetailPage() {
               {/* Action Buttons */}
               {canTakeAction && (
                 <div className="mt-6 pt-6 border-t border-slate-200 flex gap-3">
-                  {order.status === 'pending' && (
+                  {order.status === 'pending' && nextAction && (
                     <>
                       <Button
                         variant="outline"
@@ -576,7 +588,7 @@ export default function ProviderOrderDetailPage() {
                       </Button>
                       <Button
                         className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={handleAcceptOrder}
+                        onClick={handleAdvanceOrder}
                         disabled={actionLoading}
                       >
                         {actionLoading ? (
@@ -584,26 +596,22 @@ export default function ProviderOrderDetailPage() {
                         ) : (
                           <Check className="w-4 h-4 mr-2" />
                         )}
-                        {locale === 'ar' ? 'قبول الطلب' : 'Accept Order'}
+                        {getProviderActionLabel(nextAction, locale)}
                       </Button>
                     </>
                   )}
 
-                  {['accepted', 'preparing', 'ready', 'out_for_delivery'].includes(
-                    order.status
-                  ) && (
+                  {order.status !== 'pending' && nextAction && (
                     <Button
                       className="w-full"
-                      onClick={handleUpdateStatus}
+                      onClick={handleAdvanceOrder}
                       disabled={actionLoading}
                       size="lg"
                     >
                       {actionLoading ? (
                         <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                       ) : (
-                        <>
-                          {locale === 'ar' ? 'تحديث إلى:' : 'Update to:'} {getNextStatusLabel()}
-                        </>
+                        <>{getProviderActionLabel(nextAction, locale)}</>
                       )}
                     </Button>
                   )}
@@ -636,103 +644,124 @@ export default function ProviderOrderDetailPage() {
                   {locale === 'ar' ? 'اتصال' : 'Call'}
                 </a>
               </div>
-              {/* Delivery Address Section */}
-              <div className="pt-4 border-t border-slate-200">
-                <div className="flex items-start gap-2">
-                  <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
-                  <div className="flex-1 space-y-2">
-                    {/* Geographic Tags */}
-                    {order.delivery_address &&
-                      (order.delivery_address.governorate_ar ||
-                        order.delivery_address.city_ar ||
-                        order.delivery_address.district_ar) && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {order.delivery_address.governorate_ar && (
-                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.governorate_ar
-                                : order.delivery_address.governorate_en}
-                            </span>
-                          )}
-                          {order.delivery_address.city_ar && (
-                            <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.city_ar
-                                : order.delivery_address.city_en}
-                            </span>
-                          )}
-                          {order.delivery_address.district_ar && (
-                            <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
-                              {locale === 'ar'
-                                ? order.delivery_address.district_ar
-                                : order.delivery_address.district_en}
-                            </span>
-                          )}
-                        </div>
-                      )}
+              {/* Fulfillment section: pickup orders show a clear "Pickup
+                  from store" indicator instead of the (empty) address block. */}
+              {order.order_type === 'pickup' ? (
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-2">
+                    <Store className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-primary">
+                        {locale === 'ar' ? 'استلام من الفرع' : 'Pickup from store'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {locale === 'ar'
+                          ? 'العميل سيستلم الطلب من المتجر'
+                          : 'Customer will pick up the order from the store'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Delivery Address Section */
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-slate-400 mt-1 flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      {/* Geographic Tags */}
+                      {order.delivery_address &&
+                        (order.delivery_address.governorate_ar ||
+                          order.delivery_address.city_ar ||
+                          order.delivery_address.district_ar) && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {order.delivery_address.governorate_ar && (
+                              <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.governorate_ar
+                                  : order.delivery_address.governorate_en}
+                              </span>
+                            )}
+                            {order.delivery_address.city_ar && (
+                              <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.city_ar
+                                  : order.delivery_address.city_en}
+                              </span>
+                            )}
+                            {order.delivery_address.district_ar && (
+                              <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                                {locale === 'ar'
+                                  ? order.delivery_address.district_ar
+                                  : order.delivery_address.district_en}
+                              </span>
+                            )}
+                          </div>
+                        )}
 
-                    {/* Street Address */}
-                    <p className="text-slate-900 font-medium">
-                      {order.delivery_address?.address || order.delivery_address?.address_line1}
-                    </p>
+                      {/* Street Address */}
+                      <p className="text-slate-900 font-medium">
+                        {order.delivery_address?.address || order.delivery_address?.address_line1}
+                      </p>
 
-                    {/* Building Details */}
-                    {order.delivery_address &&
-                      (order.delivery_address.building ||
-                        order.delivery_address.floor ||
-                        order.delivery_address.apartment) && (
-                        <p className="text-slate-600 text-sm">
-                          {order.delivery_address.building && (
-                            <span>
-                              {locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
-                            </span>
-                          )}
-                          {order.delivery_address.floor && (
-                            <span>
-                              {order.delivery_address.building ? ' - ' : ''}
-                              {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
-                            </span>
-                          )}
-                          {order.delivery_address.apartment && (
-                            <span>
-                              {order.delivery_address.building || order.delivery_address.floor
-                                ? ' - '
-                                : ''}
-                              {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
-                            </span>
-                          )}
+                      {/* Building Details */}
+                      {order.delivery_address &&
+                        (order.delivery_address.building ||
+                          order.delivery_address.floor ||
+                          order.delivery_address.apartment) && (
+                          <p className="text-slate-600 text-sm">
+                            {order.delivery_address.building && (
+                              <span>
+                                {locale === 'ar' ? 'مبنى' : 'Bldg'}{' '}
+                                {order.delivery_address.building}
+                              </span>
+                            )}
+                            {order.delivery_address.floor && (
+                              <span>
+                                {order.delivery_address.building ? ' - ' : ''}
+                                {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
+                              </span>
+                            )}
+                            {order.delivery_address.apartment && (
+                              <span>
+                                {order.delivery_address.building || order.delivery_address.floor
+                                  ? ' - '
+                                  : ''}
+                                {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
+                              </span>
+                            )}
+                          </p>
+                        )}
+
+                      {/* Landmark */}
+                      {order.delivery_address?.landmark && (
+                        <p className="text-slate-500 text-sm">
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'}
+                          </span>{' '}
+                          {order.delivery_address.landmark}
                         </p>
                       )}
 
-                    {/* Landmark */}
-                    {order.delivery_address?.landmark && (
-                      <p className="text-slate-500 text-sm">
-                        <span className="font-medium">
-                          {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'}
-                        </span>{' '}
-                        {order.delivery_address.landmark}
-                      </p>
-                    )}
+                      {/* Delivery Instructions */}
+                      {order.delivery_address?.delivery_instructions && (
+                        <div className="bg-amber-50 rounded-lg p-2 text-sm text-amber-800">
+                          <span className="font-medium">
+                            {locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}
+                          </span>{' '}
+                          {order.delivery_address.delivery_instructions}
+                        </div>
+                      )}
 
-                    {/* Delivery Instructions */}
-                    {order.delivery_address?.delivery_instructions && (
-                      <div className="bg-amber-50 rounded-lg p-2 text-sm text-amber-800">
-                        <span className="font-medium">
-                          {locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}
-                        </span>{' '}
-                        {order.delivery_address.delivery_instructions}
-                      </div>
-                    )}
-
-                    {/* Address Notes */}
-                    {order.delivery_address?.notes && (
-                      <p className="text-slate-500 text-sm italic">
-                        {order.delivery_address.notes}
-                      </p>
-                    )}
+                      {/* Address Notes */}
+                      {order.delivery_address?.notes && (
+                        <p className="text-slate-500 text-sm italic">
+                          {order.delivery_address.notes}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
               {order.customer_notes && (
                 <div className="pt-4 border-t border-slate-200">
                   <div className="flex items-start gap-2">
@@ -899,7 +928,7 @@ export default function ProviderOrderDetailPage() {
                 order.payment_status === 'pending' && (
                   <div className="mt-4 pt-4 border-t border-slate-200">
                     <Button
-                      onClick={handleConfirmPayment}
+                      onClick={handleConfirmLegacyPayment}
                       disabled={actionLoading}
                       className="w-full bg-green-600 hover:bg-green-700"
                       size="lg"

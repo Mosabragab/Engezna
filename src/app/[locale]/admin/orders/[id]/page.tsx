@@ -92,6 +92,7 @@ interface OrderDetails {
   settlement_notes: string | null;
   payment_method: string;
   payment_status: string;
+  order_type: 'delivery' | 'pickup';
   created_at: string;
   updated_at: string;
   accepted_at: string | null;
@@ -992,16 +993,34 @@ export default function AdminOrderDetailsPage() {
               </div>
             </div>
 
-            {/* Delivery Info */}
+            {/* Fulfillment info: pickup orders get a Store-icon header
+                and a "Pickup from store" body — the address fields are
+                empty for them, so the default "Delivery Address" card
+                would render as a misleading blank panel. */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="p-4 border-b border-slate-100">
                 <h2 className="font-semibold text-slate-900 flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-slate-600" />
-                  {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
+                  {order.order_type === 'pickup' ? (
+                    <>
+                      <Store className="w-5 h-5 text-primary" />
+                      {locale === 'ar' ? 'استلام من الفرع' : 'Pickup from Store'}
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="w-5 h-5 text-slate-600" />
+                      {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
+                    </>
+                  )}
                 </h2>
               </div>
               <div className="p-4">
-                {order.delivery_address ? (
+                {order.order_type === 'pickup' ? (
+                  <p className="text-slate-600 text-sm">
+                    {locale === 'ar'
+                      ? 'العميل سيستلم الطلب من الفرع — لا يوجد عنوان توصيل.'
+                      : 'Customer will pick up the order from the store — no delivery address.'}
+                  </p>
+                ) : order.delivery_address ? (
                   <div className="text-slate-600 text-sm space-y-2">
                     {typeof order.delivery_address === 'string' ? (
                       <p>{order.delivery_address}</p>
@@ -1130,7 +1149,13 @@ export default function AdminOrderDetailsPage() {
                 {order.delivery_notes && (
                   <div className="mt-3 p-2 bg-slate-50 rounded-lg">
                     <p className="text-xs text-slate-500 mb-1">
-                      {locale === 'ar' ? 'ملاحظات التوصيل:' : 'Delivery Notes:'}
+                      {order.order_type === 'pickup'
+                        ? locale === 'ar'
+                          ? 'ملاحظات الاستلام:'
+                          : 'Pickup Notes:'
+                        : locale === 'ar'
+                          ? 'ملاحظات التوصيل:'
+                          : 'Delivery Notes:'}
                     </p>
                     <p className="text-sm text-slate-700">{order.delivery_notes}</p>
                   </div>
