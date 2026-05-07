@@ -16,11 +16,8 @@ import {
 import { motion } from 'framer-motion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { CustomOrderItem } from '@/types/custom-order';
-import {
-  useCustomOrderFinancials,
-  formatCurrency,
-  COMMISSION_TIERS,
-} from '@/hooks/useCustomOrderFinancials';
+import { useCustomOrderFinancials, formatCurrency } from '@/hooks/useCustomOrderFinancials';
+import type { ProviderCommissionSettings } from '@/lib/commission/policy';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -33,6 +30,8 @@ interface PricingSummaryProps {
   className?: string;
   variant?: 'compact' | 'detailed' | 'full';
   showMerchantPayout?: boolean;
+  /** Provider commission settings — required for accurate display. */
+  providerCommission?: ProviderCommissionSettings;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -46,6 +45,7 @@ export function PricingSummary({
   className,
   variant = 'detailed',
   showMerchantPayout = true,
+  providerCommission,
 }: PricingSummaryProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -54,6 +54,7 @@ export function PricingSummary({
   const financials = useCustomOrderFinancials({
     items,
     deliveryFee,
+    providerCommission,
   });
 
   // Format currency with locale
@@ -64,12 +65,16 @@ export function PricingSummary({
     }).format(amount);
   };
 
-  // Get commission tier description
-  const getCommissionTierDesc = () => {
-    const rate = financials.commissionRate * 100;
-    if (rate >= 7) return isRTL ? 'نسبة أساسية' : 'Base rate';
-    if (rate >= 6) return isRTL ? 'نسبة متوسطة' : 'Mid tier';
-    return isRTL ? 'نسبة مميزة' : 'Premium tier';
+  // Describe the commission situation for the merchant — replaces the old
+  // tier description, which was misleading because there are no tiers.
+  const getCommissionDesc = () => {
+    if (financials.commissionSituation === 'grace') {
+      return isRTL ? 'فترة سماح' : 'Grace period';
+    }
+    if (financials.commissionSituation === 'exempt') {
+      return isRTL ? 'إعفاء كامل' : 'Exempt';
+    }
+    return isRTL ? 'نسبة العمولة المتفق عليها' : 'Agreed commission';
   };
 
   // Compact variant
@@ -236,17 +241,25 @@ export function PricingSummary({
                       </TooltipTrigger>
                       <TooltipContent side="top" className="max-w-xs">
                         <div className="space-y-1">
-                          <p className="font-medium">
-                            {isRTL ? 'نظام العمولات المتدرجة' : 'Tiered Commission'}
+                          <p className="font-medium">{getCommissionDesc()}</p>
+                          <p className="text-xs">
+                            {isRTL
+                              ? `النسبة الاسمية: ${financials.theoreticalRatePercent}%`
+                              : `Nominal rate: ${financials.theoreticalRatePercent}%`}
                           </p>
-                          {COMMISSION_TIERS.map((tier, i) => (
-                            <p key={i} className="text-xs">
-                              {tier.maxAmount === Infinity
-                                ? `>${tier.minAmount}`
-                                : `${tier.minAmount}-${tier.maxAmount}`}{' '}
-                              {isRTL ? 'ج.م' : 'EGP'}: {(tier.rate * 100).toFixed(0)}%
+                          {financials.commissionSituation === 'grace' &&
+                            financials.graceEndDate && (
+                              <p className="text-xs text-emerald-600">
+                                {isRTL
+                                  ? `معفاة مؤقتاً حتى ${financials.graceEndDate.toLocaleDateString('ar-EG')}`
+                                  : `Temporarily waived until ${financials.graceEndDate.toLocaleDateString('en-GB')}`}
+                              </p>
+                            )}
+                          {financials.commissionSituation === 'exempt' && (
+                            <p className="text-xs text-emerald-600">
+                              {isRTL ? 'هذا التاجر معفى من العمولة' : 'This merchant is exempt'}
                             </p>
-                          ))}
+                          )}
                         </div>
                       </TooltipContent>
                     </Tooltip>
@@ -281,7 +294,7 @@ export function PricingSummary({
               {/* Tier Badge */}
               <div className="mt-3 text-center">
                 <span className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-2 py-1 rounded-full">
-                  {getCommissionTierDesc()} ({(financials.commissionRate * 100).toFixed(0)}%)
+                  {getCommissionDesc()} ({financials.effectiveRatePercent}%)
                 </span>
               </div>
             </div>

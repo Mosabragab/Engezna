@@ -4,11 +4,14 @@
  * Provides real-time financial calculations for custom orders:
  * - Product subtotal calculation
  * - Delivery fee handling
- * - Commission calculation (5-7% tiered)
+ * - Commission calculation (provider-specific, mirrors the DB trigger
+ *   `calculate_order_commission` — see src/lib/commission/policy.ts)
  * - Merchant payout calculation
  *
- * @version 1.0
- * @date January 2026
+ * @version 2.0
+ * @date May 2026 — replaced subtotal-based tiers with the per-provider
+ *   commission policy stored on `providers.commission_rate` /
+ *   `custom_commission_rate` / `commission_status`.
  */
 
 'use client';
@@ -20,6 +23,12 @@ import type {
   ItemAvailabilityStatus,
 } from '@/types/custom-order';
 import { calculateCustomOrderFinancials } from '@/types/custom-order';
+import {
+  COMMISSION_DEFAULT_PERCENT,
+  computeCommission,
+  type ProviderCommissionSettings,
+  type CommissionSituation,
+} from '@/lib/commission/policy';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -28,7 +37,13 @@ import { calculateCustomOrderFinancials } from '@/types/custom-order';
 export interface UseCustomOrderFinancialsOptions {
   items: CustomOrderItem[];
   deliveryFee: number;
-  commissionRate?: number; // Default: calculated based on subtotal
+  /**
+   * Provider commission settings as stored on `providers`. When omitted the
+   * hook falls back to the platform default rate (7%). Pass real settings
+   * for any merchant-facing calculation so grace-period and exempt
+   * statuses are reflected.
+   */
+  providerCommission?: ProviderCommissionSettings;
 }
 
 export interface ExtendedFinancials extends CustomOrderFinancials {
@@ -41,38 +56,19 @@ export interface ExtendedFinancials extends CustomOrderFinancials {
   formattedTotal: string;
   formattedCommission: string;
   formattedPayout: string;
+  /** Nominal rate in percent (e.g. 5, 6, 7) — what the merchant agreed to. */
+  theoreticalRatePercent: number;
+  /** Effective rate in percent — 0 during grace/exempt. */
+  effectiveRatePercent: number;
+  /** Drives the explainer banner in the UI. */
+  commissionSituation: CommissionSituation;
+  /** Grace-period end date when applicable. */
+  graceEndDate: Date | null;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Constants
-// ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Commission tiers (based on product subtotal)
- * نسب العمولة المتدرجة
- */
-const COMMISSION_TIERS = [
-  { minAmount: 0, maxAmount: 500, rate: 0.07 }, // 7% for orders up to 500 EGP
-  { minAmount: 500, maxAmount: 1000, rate: 0.06 }, // 6% for orders 500-1000 EGP
-  { minAmount: 1000, maxAmount: Infinity, rate: 0.05 }, // 5% for orders above 1000 EGP
-];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Helper Functions
 // ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Calculate commission rate based on subtotal
- * حساب نسبة العمولة بناءً على المجموع الفرعي
- */
-function getCommissionRate(subtotal: number): number {
-  for (const tier of COMMISSION_TIERS) {
-    if (subtotal >= tier.minAmount && subtotal < tier.maxAmount) {
-      return tier.rate;
-    }
-  }
-  return COMMISSION_TIERS[COMMISSION_TIERS.length - 1].rate;
-}
 
 /**
  * Format currency in Egyptian Pounds
@@ -103,6 +99,14 @@ function calculateItemPrice(item: CustomOrderItem): number {
   return item.total_price;
 }
 
+const FALLBACK_PROVIDER_SETTINGS: ProviderCommissionSettings = {
+  commission_rate: COMMISSION_DEFAULT_PERCENT,
+  custom_commission_rate: null,
+  commission_status: 'normal',
+  grace_period_start: null,
+  grace_period_end: null,
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Hook Implementation
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -110,7 +114,7 @@ function calculateItemPrice(item: CustomOrderItem): number {
 export function useCustomOrderFinancials(
   options: UseCustomOrderFinancialsOptions
 ): ExtendedFinancials {
-  const { items, deliveryFee, commissionRate: providedCommissionRate } = options;
+  const { items, deliveryFee, providerCommission } = options;
 
   return useMemo(() => {
     // Calculate counts by status
@@ -126,13 +130,15 @@ export function useCustomOrderFinancials(
     // Calculate product subtotal
     const productSubtotal = items.reduce((sum, item) => sum + calculateItemPrice(item), 0);
 
-    // Determine commission rate
-    const commissionRate = providedCommissionRate ?? getCommissionRate(productSubtotal);
+    // Resolve commission via the per-provider policy (mirrors the DB trigger).
+    const settings = providerCommission ?? FALLBACK_PROVIDER_SETTINGS;
+    const commission = computeCommission(settings, productSubtotal);
 
-    // Use the shared calculation function
-    const financials = calculateCustomOrderFinancials(items, deliveryFee, commissionRate);
+    // Use the shared calculation function with the effective rate as a decimal.
+    const effectiveRateDecimal = commission.effectiveRate / 100;
+    const financials = calculateCustomOrderFinancials(items, deliveryFee, effectiveRateDecimal);
 
-    // Add formatted values and counts
+    // Add formatted values, counts, and the policy details the UI needs.
     return {
       ...financials,
       itemsCount,
@@ -144,8 +150,12 @@ export function useCustomOrderFinancials(
       formattedTotal: formatCurrency(financials.customerTotal),
       formattedCommission: formatCurrency(financials.platformCommission),
       formattedPayout: formatCurrency(financials.merchantPayout),
+      theoreticalRatePercent: commission.theoreticalRate,
+      effectiveRatePercent: commission.effectiveRate,
+      commissionSituation: commission.situation,
+      graceEndDate: commission.graceEndDate,
     };
-  }, [items, deliveryFee, providedCommissionRate]);
+  }, [items, deliveryFee, providerCommission]);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -164,7 +174,8 @@ export interface PricingItem {
 
 export interface UsePricingCalculatorOptions {
   defaultDeliveryFee?: number;
-  commissionRate?: number;
+  /** Provider commission settings — required for accurate previews. */
+  providerCommission?: ProviderCommissionSettings;
 }
 
 export interface PricingCalculatorResult {
@@ -215,8 +226,10 @@ export function usePricingCalculator(
       return sum + item.quantity * item.unit_price;
     }, 0);
 
-    const commissionRate = options?.commissionRate ?? getCommissionRate(subtotal);
-    const commission = subtotal * commissionRate;
+    const settings = options?.providerCommission ?? FALLBACK_PROVIDER_SETTINGS;
+    const policy = computeCommission(settings, subtotal);
+    const commissionRate = policy.effectiveRate / 100;
+    const commission = policy.effectiveAmount;
     const total = subtotal + deliveryFee;
     const merchantPayout = subtotal - commission + deliveryFee;
 
@@ -227,7 +240,7 @@ export function usePricingCalculator(
       merchantPayout,
       commissionRate,
     };
-  }, [items, deliveryFee, options?.commissionRate]);
+  }, [items, deliveryFee, options?.providerCommission]);
 
   // Item management
   const addItem = useCallbackReact((item: PricingItem) => {
@@ -365,4 +378,11 @@ export function usePriceComparison(options: UsePriceComparisonOptions): PriceCom
 // Utility Exports
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export { getCommissionRate, formatCurrency, calculateItemPrice, COMMISSION_TIERS };
+export { formatCurrency, calculateItemPrice };
+// Re-export the policy helpers so existing import sites keep working.
+export {
+  computeCommission,
+  COMMISSION_CAP_PERCENT,
+  COMMISSION_DEFAULT_PERCENT,
+} from '@/lib/commission/policy';
+export type { ProviderCommissionSettings } from '@/lib/commission/policy';
