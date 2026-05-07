@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { ProviderLayout } from '@/components/provider';
 import { PricingNotepad } from '@/components/merchant/pricing';
+import type { ProviderCommissionSettings } from '@/lib/commission/policy';
 import { Button } from '@/components/ui/button';
 import { ACTIVE_PROVIDER_STATUSES } from '@/types/database';
 import { ArrowRight, ArrowLeft, Loader2, AlertTriangle, Clock } from 'lucide-react';
@@ -30,6 +31,9 @@ export default function CustomOrderPricingPage() {
   const [providerId, setProviderId] = useState<string | null>(null);
   const [providerDeliveryFee, setProviderDeliveryFee] = useState<number>(0);
   const [defaultProviderFee, setDefaultProviderFee] = useState<number>(0);
+  const [providerCommission, setProviderCommission] = useState<ProviderCommissionSettings | null>(
+    null
+  );
 
   // Load custom order request
   const loadRequest = useCallback(
@@ -140,10 +144,15 @@ export default function CustomOrderPricingPage() {
         return;
       }
 
-      // Get provider ID
+      // Get provider ID + commission settings (needed for accurate
+      // commission preview — mirrors the DB trigger
+      // calculate_order_commission so the merchant sees what they'll
+      // actually be charged, including grace period / exempt status).
       const { data: providerData } = await supabase
         .from('providers')
-        .select('id, status, delivery_fee')
+        .select(
+          'id, status, delivery_fee, commission_rate, custom_commission_rate, commission_status, grace_period_start, grace_period_end'
+        )
         .eq('owner_id', user.id)
         .limit(1);
 
@@ -152,6 +161,14 @@ export default function CustomOrderPricingPage() {
         router.push(`/${locale}/provider`);
         return;
       }
+
+      setProviderCommission({
+        commission_rate: provider.commission_rate,
+        custom_commission_rate: provider.custom_commission_rate,
+        commission_status: provider.commission_status,
+        grace_period_start: provider.grace_period_start,
+        grace_period_end: provider.grace_period_end,
+      });
 
       setProviderId(provider.id);
       setDefaultProviderFee(provider.delivery_fee || 0);
@@ -554,6 +571,7 @@ export default function CustomOrderPricingPage() {
           onCancel={handleCancel}
           loading={submitting}
           fixedDeliveryFee={providerDeliveryFee}
+          providerCommission={providerCommission ?? undefined}
         />
       </div>
     </ProviderLayout>

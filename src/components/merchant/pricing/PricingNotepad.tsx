@@ -42,6 +42,7 @@ import type {
   PriceHistoryItem,
   ItemAvailabilityStatus,
 } from '@/types/custom-order';
+import { computeCommission, type ProviderCommissionSettings } from '@/lib/commission/policy';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Types
@@ -58,6 +59,12 @@ interface PricingNotepadProps {
   loading?: boolean;
   className?: string;
   fixedDeliveryFee?: number; // رسوم التوصيل الثابتة من بيانات التاجر
+  /**
+   * Provider commission settings for this merchant. Drives the commission
+   * preview shown in "صافي ربحك بعد العمولة". When omitted the preview
+   * falls back to the platform default (7%).
+   */
+  providerCommission?: ProviderCommissionSettings;
 }
 
 type ItemFormData = Partial<CustomOrderItem> & {
@@ -359,6 +366,7 @@ export function PricingNotepad({
   loading = false,
   className,
   fixedDeliveryFee,
+  providerCommission,
 }: PricingNotepadProps) {
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -410,7 +418,24 @@ export function PricingNotepad({
   }, []);
 
   const removeItem = useCallback((index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
+    setItems((prev) => {
+      // When an item is removed from the pricing area, also un-strike its
+      // line in the right-hand customer-request list. The strike-through
+      // is driven by `copiedTexts`, so we drop the matching entry here —
+      // otherwise the merchant sees the original text stay struck-through
+      // even though it's no longer being priced.
+      const removed = prev[index];
+      const removedText = removed?.original_customer_text;
+      if (removedText) {
+        setCopiedTexts((s) => {
+          if (!s.has(removedText)) return s;
+          const next = new Set(s);
+          next.delete(removedText);
+          return next;
+        });
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   }, []);
 
   // Copy customer text to first empty item (only once per text)
@@ -458,14 +483,21 @@ export function PricingNotepad({
   }, 0);
   const total = subtotal + deliveryFee;
 
-  // Calculate commission and net profit (للشفافية مع التاجر)
-  const getCommissionRate = (amount: number): number => {
-    if (amount <= 100) return 0.07;
-    if (amount <= 300) return 0.06;
-    return 0.05;
-  };
-  const commissionRate = getCommissionRate(subtotal);
-  const commission = subtotal * commissionRate;
+  // Commission preview — uses the per-provider policy (mirrors the DB
+  // trigger). Subtotal-based tiers are NOT used; each merchant has a fixed
+  // admin-set commission_rate that may be temporarily waived during a
+  // grace period or fully waived when exempt.
+  const commissionPolicy = computeCommission(
+    providerCommission ?? {
+      commission_rate: 7,
+      custom_commission_rate: null,
+      commission_status: 'normal',
+      grace_period_start: null,
+      grace_period_end: null,
+    },
+    subtotal
+  );
+  const commission = commissionPolicy.effectiveAmount;
   const netProfit = total - commission;
 
   // Check if deadline has expired
@@ -727,7 +759,17 @@ export function PricingNotepad({
                   {isRTL ? 'صافي ربحك بعد العمولة' : 'Your net profit after commission'}
                 </p>
                 <p className="text-xs text-emerald-500">
-                  ({Math.round(commissionRate * 100)}% {isRTL ? 'عمولة' : 'commission'})
+                  {commissionPolicy.situation === 'grace' && commissionPolicy.graceEndDate
+                    ? isRTL
+                      ? `العمولة الاسمية ${commissionPolicy.theoreticalRate}% — معفاة مؤقتاً حتى ${commissionPolicy.graceEndDate.toLocaleDateString('ar-EG')}`
+                      : `Nominal ${commissionPolicy.theoreticalRate}% — waived until ${commissionPolicy.graceEndDate.toLocaleDateString('en-GB')}`
+                    : commissionPolicy.situation === 'exempt'
+                      ? isRTL
+                        ? 'إعفاء كامل من العمولة'
+                        : 'Fully exempt from commission'
+                      : isRTL
+                        ? `(${commissionPolicy.effectiveRate}% عمولة)`
+                        : `(${commissionPolicy.effectiveRate}% commission)`}
                 </p>
               </div>
             </div>

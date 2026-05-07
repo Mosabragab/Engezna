@@ -95,7 +95,17 @@
 - إشعارات `out_for_delivery` لطلبات الاستلام **لن تُنطلق** بطبيعة الحال لأن الحالة لا تظهر في الـ flow الجديد للـ pickup — وهذا السلوك المطلوب.
 - **Error handling في handlers صفحة التاجر** (`handleRejectOrder`, `handleAdvanceOrder`, `handleConfirmLegacyPayment`) لا تظهر رسائل خطأ للمستخدم عند فشل عملية Supabase. ده النمط السائد في الملف قبل الـ refactor، وإصلاحه يستلزم اختيار toast pattern وتطبيقه على كل الـ handlers بشكل متّسق — تحسين عام خارج نطاق هذه المرحلة.
 
-## ٨. سجل التنفيذ
+## ٨. درس مستفاد — DB trigger كان مخفي عن التحليل الأولي
+
+التحليل الأولي قال "الـ DB enum يبقى كما هو، التغيير على مستوى الـ UI فقط" — لكن أهملت **`trg_guard_order_status_transition`** المُعرَّف في `20260226000001_create_order_atomic.sql`. هذا الـ trigger يفرض **تسلسل** الانتقالات بين قيم الـ enum، وكان لا يسمح بـ `pending → preparing` (المسموح من `pending` كان فقط `accepted` / `cancelled` / `rejected`).
+
+النتيجة: زر "قبول الطلب" أدّى لخطأ HTTP 400 من الـ trigger مع رسالة `Invalid status transition: pending → preparing` — ظهرت للتاجر كـ "تعذّر تحديث الطلب" (الرسالة العامة من معالجة الأخطاء الأخيرة).
+
+**الإصلاح:** `migration` جديدة `20260506000001_allow_pending_to_preparing.sql` تُحدّث الـ guard function لتسمح بالانتقال المباشر، مع الحفاظ على باقي الانتقالات. **يجب تشغيل الـ migration على Supabase Production قبل أن يعمل الـ refactor.**
+
+**درس مرجعي:** عند أي refactor يلمس قيم enum، التحقق ليس من قائمة القيم فقط بل من triggers/constraints التي تفرض trajectories بينها.
+
+## ٩. سجل التنفيذ
 
 | التاريخ    | المرحلة                 | الحالة | الـ commit |
 | ---------- | ----------------------- | ------ | ---------- |

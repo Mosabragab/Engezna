@@ -154,6 +154,12 @@ type OrderItem = {
   quantity: number;
   unit_price: number;
   total_price: number;
+  /** Original item name for substituted custom-order items, so we can
+   *  show "Y (instead of X)" rather than silently swapping the label. */
+  original_name_ar?: string | null;
+  original_name_en?: string | null;
+  /** True when this row's display values came from substitute_* fields. */
+  is_substituted?: boolean;
 };
 
 type OrderRefund = {
@@ -350,19 +356,52 @@ export default function OrderTrackingPage() {
         .eq('order_id', orderId);
 
       if (!customItemsError && customItemsData) {
-        // Map custom_order_items to OrderItem shape for display compatibility
+        // Map custom_order_items to OrderItem shape for display. When the
+        // merchant flagged the item as substituted, swap in the substitute
+        // fields so the customer sees the actual item that's being
+        // delivered (and at the actual price they're paying), with the
+        // original kept around as `original_name_*` for context.
         setOrderItems(
-          customItemsData.map((item: Record<string, unknown>) => ({
-            id: item.id as string,
-            order_id: item.order_id as string,
-            menu_item_id: '',
-            item_name_ar: item.item_name_ar as string,
-            item_name_en: (item.item_name_en as string) || (item.item_name_ar as string),
-            item_price: item.unit_price as number,
-            quantity: item.quantity as number,
-            unit_price: item.unit_price as number,
-            total_price: item.total_price as number,
-          }))
+          customItemsData.map((item: Record<string, unknown>) => {
+            const isSubstituted =
+              item.availability_status === 'substituted' &&
+              item.substitute_name_ar &&
+              item.substitute_total_price != null;
+            const isUnavailable = item.availability_status === 'unavailable';
+
+            const displayNameAr = isSubstituted
+              ? (item.substitute_name_ar as string)
+              : (item.item_name_ar as string);
+            const displayNameEn = isSubstituted
+              ? (item.substitute_name_en as string) || (item.substitute_name_ar as string)
+              : (item.item_name_en as string) || (item.item_name_ar as string);
+            const displayQuantity = isSubstituted
+              ? ((item.substitute_quantity as number) ?? (item.quantity as number))
+              : (item.quantity as number);
+            const displayUnitPrice = isSubstituted
+              ? ((item.substitute_unit_price as number) ?? (item.unit_price as number))
+              : (item.unit_price as number);
+            const displayTotal = isUnavailable
+              ? 0
+              : isSubstituted
+                ? (item.substitute_total_price as number)
+                : (item.total_price as number);
+
+            return {
+              id: item.id as string,
+              order_id: item.order_id as string,
+              menu_item_id: '',
+              item_name_ar: displayNameAr,
+              item_name_en: displayNameEn,
+              item_price: displayUnitPrice,
+              quantity: displayQuantity,
+              unit_price: displayUnitPrice,
+              total_price: displayTotal,
+              original_name_ar: isSubstituted ? (item.item_name_ar as string) : null,
+              original_name_en: isSubstituted ? (item.item_name_en as string) : null,
+              is_substituted: isSubstituted as boolean,
+            };
+          })
         );
       }
     } else {
@@ -857,99 +896,120 @@ export default function OrderTrackingPage() {
           </button>
         )}
 
-        {/* Delivery Address */}
-        <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
-          <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
-            <MapPin className="w-5 h-5 text-primary" />
-            {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
-          </h3>
-
-          {/* Geographic Tags */}
-          {order.delivery_address &&
-            (order.delivery_address.governorate_ar ||
-              order.delivery_address.city_ar ||
-              order.delivery_address.district_ar) && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {order.delivery_address.governorate_ar && (
-                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
-                    {locale === 'ar'
-                      ? order.delivery_address.governorate_ar
-                      : order.delivery_address.governorate_en}
-                  </span>
-                )}
-                {order.delivery_address.city_ar && (
-                  <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
-                    {locale === 'ar'
-                      ? order.delivery_address.city_ar
-                      : order.delivery_address.city_en}
-                  </span>
-                )}
-                {order.delivery_address.district_ar && (
-                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
-                    {locale === 'ar'
-                      ? order.delivery_address.district_ar
-                      : order.delivery_address.district_en}
-                  </span>
-                )}
-              </div>
+        {/* Fulfillment area: pickup orders show a clear "Pickup from store"
+            card instead of the (empty) delivery address fields. */}
+        {order.order_type === 'pickup' ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-2">
+              <Store className="w-5 h-5 text-primary" />
+              {locale === 'ar' ? 'استلام من الفرع' : 'Pickup from store'}
+            </h3>
+            <p className="text-sm text-slate-600">
+              {locale === 'ar'
+                ? 'هتستلم طلبك من الفرع. ستصلك إشعارات لما يكون الطلب جاهز للاستلام.'
+                : "You'll pick up your order from the store. We'll notify you when it's ready."}
+            </p>
+            {order.delivery_address?.phone && (
+              <p className="text-sm text-slate-500 mt-2" dir="ltr">
+                <Phone className="w-3 h-3 inline mr-1" />
+                {order.delivery_address.phone}
+              </p>
             )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2 mb-3">
+              <MapPin className="w-5 h-5 text-primary" />
+              {locale === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}
+            </h3>
 
-          <p className="font-medium text-slate-900">{order.delivery_address?.full_name}</p>
-          <p className="text-slate-600">
-            {order.delivery_address?.address || order.delivery_address?.address_line1}
-          </p>
+            {/* Geographic Tags */}
+            {order.delivery_address &&
+              (order.delivery_address.governorate_ar ||
+                order.delivery_address.city_ar ||
+                order.delivery_address.district_ar) && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {order.delivery_address.governorate_ar && (
+                    <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">
+                      {locale === 'ar'
+                        ? order.delivery_address.governorate_ar
+                        : order.delivery_address.governorate_en}
+                    </span>
+                  )}
+                  {order.delivery_address.city_ar && (
+                    <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded text-xs">
+                      {locale === 'ar'
+                        ? order.delivery_address.city_ar
+                        : order.delivery_address.city_en}
+                    </span>
+                  )}
+                  {order.delivery_address.district_ar && (
+                    <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded text-xs">
+                      {locale === 'ar'
+                        ? order.delivery_address.district_ar
+                        : order.delivery_address.district_en}
+                    </span>
+                  )}
+                </div>
+              )}
 
-          {/* Building Details */}
-          {order.delivery_address &&
-            (order.delivery_address.building ||
-              order.delivery_address.floor ||
-              order.delivery_address.apartment) && (
-              <p className="text-sm text-slate-500 mt-1">
-                {order.delivery_address.building && (
-                  <span>
-                    {locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
-                  </span>
-                )}
-                {order.delivery_address.floor && (
-                  <span>
-                    {order.delivery_address.building ? ' - ' : ''}
-                    {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
-                  </span>
-                )}
-                {order.delivery_address.apartment && (
-                  <span>
-                    {order.delivery_address.building || order.delivery_address.floor ? ' - ' : ''}
-                    {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
-                  </span>
-                )}
+            <p className="font-medium text-slate-900">{order.delivery_address?.full_name}</p>
+            <p className="text-slate-600">
+              {order.delivery_address?.address || order.delivery_address?.address_line1}
+            </p>
+
+            {/* Building Details */}
+            {order.delivery_address &&
+              (order.delivery_address.building ||
+                order.delivery_address.floor ||
+                order.delivery_address.apartment) && (
+                <p className="text-sm text-slate-500 mt-1">
+                  {order.delivery_address.building && (
+                    <span>
+                      {locale === 'ar' ? 'مبنى' : 'Bldg'} {order.delivery_address.building}
+                    </span>
+                  )}
+                  {order.delivery_address.floor && (
+                    <span>
+                      {order.delivery_address.building ? ' - ' : ''}
+                      {locale === 'ar' ? 'طابق' : 'Floor'} {order.delivery_address.floor}
+                    </span>
+                  )}
+                  {order.delivery_address.apartment && (
+                    <span>
+                      {order.delivery_address.building || order.delivery_address.floor ? ' - ' : ''}
+                      {locale === 'ar' ? 'شقة' : 'Apt'} {order.delivery_address.apartment}
+                    </span>
+                  )}
+                </p>
+              )}
+
+            {/* Landmark */}
+            {order.delivery_address?.landmark && (
+              <p className="text-sm text-slate-400 mt-1">
+                {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'} {order.delivery_address.landmark}
               </p>
             )}
 
-          {/* Landmark */}
-          {order.delivery_address?.landmark && (
-            <p className="text-sm text-slate-400 mt-1">
-              {locale === 'ar' ? 'علامة مميزة:' : 'Landmark:'} {order.delivery_address.landmark}
+            <p className="text-sm text-slate-500 mt-2" dir="ltr">
+              <Phone className="w-3 h-3 inline mr-1" />
+              {order.delivery_address?.phone}
             </p>
-          )}
 
-          <p className="text-sm text-slate-500 mt-2" dir="ltr">
-            <Phone className="w-3 h-3 inline mr-1" />
-            {order.delivery_address?.phone}
-          </p>
+            {order.delivery_address?.delivery_instructions && (
+              <div className="mt-2 p-2 bg-card-bg-warning rounded text-xs text-warning">
+                <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong>{' '}
+                {order.delivery_address.delivery_instructions}
+              </div>
+            )}
 
-          {order.delivery_address?.delivery_instructions && (
-            <div className="mt-2 p-2 bg-card-bg-warning rounded text-xs text-warning">
-              <strong>{locale === 'ar' ? 'تعليمات التوصيل:' : 'Delivery Instructions:'}</strong>{' '}
-              {order.delivery_address.delivery_instructions}
-            </div>
-          )}
-
-          {order.delivery_address?.notes && (
-            <p className="text-sm text-slate-400 mt-2 italic">
-              {locale === 'ar' ? 'ملاحظات:' : 'Notes:'} {order.delivery_address.notes}
-            </p>
-          )}
-        </div>
+            {order.delivery_address?.notes && (
+              <p className="text-sm text-slate-400 mt-2 italic">
+                {locale === 'ar' ? 'ملاحظات:' : 'Notes:'} {order.delivery_address.notes}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Order Items */}
         <div className="bg-white rounded-2xl border border-slate-100 p-4 mb-4">
@@ -964,6 +1024,13 @@ export default function OrderTrackingPage() {
                   <p className="font-medium text-slate-900">
                     {item.quantity}x {locale === 'ar' ? item.item_name_ar : item.item_name_en}
                   </p>
+                  {item.is_substituted && (item.original_name_ar || item.original_name_en) && (
+                    <p className="text-xs text-amber-700 bg-amber-50 inline-block px-2 py-0.5 rounded mt-1">
+                      {locale === 'ar'
+                        ? `بديل عن: ${item.original_name_ar || item.original_name_en}`
+                        : `Substitute for: ${item.original_name_en || item.original_name_ar}`}
+                    </p>
+                  )}
                   <p className="text-sm text-slate-500">
                     {item.unit_price.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                   </p>
