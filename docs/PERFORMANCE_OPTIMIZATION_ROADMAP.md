@@ -334,7 +334,19 @@
 - **كيف يحسب CI الـ pass/fail:** `lighthouserc.js` لا يحدد `aggregationMethod`، فـ lhci يستخدم الافتراضي `optimistic` لكل assertion بـ `minScore` — أي يأخذ **أفضل** run من الـ 3 ويقارنه بالعتبة. النتيجة: URL يمر حتى لو 2 من 3 runs تحت العتبة. عمود "Performance (median)" في الجدول أعلاه أصدق مؤشر للحال الفعلي من قيمة الـ assertion.
 - التباين بين الـ 3 runs لـ `/ar/providers` (0.57 → 0.71) كبير، يعكس CI cold-start variance. الـ representative run = 0.71.
 - `/ar/provider/login` يحتاج فحص: نفس البنية الـ Auth لكن score أقل بـ 12 نقطة من `/ar/auth/login`. مرشّح لـ Phase 4.
-- TBT/LCP/TTI الرقمية الفعلية ليست في `manifest.json` (يحوي scores فقط) — مطلوب تنزيل أحد ملفات `lhr-*.json` (أو ملف `assertion-results.json`) لاستخراجها. **مرشَّح للجولة التالية.**
+- TBT/LCP/TTI الرقمية الفعلية ليست في `manifest.json` (يحوي scores فقط)، ولا في `assertion-results.json` لأن lhci يحفظ فيه الـ assertions الفاشلة فقط ولا يدرج الناجحة. لاستخراج TBT/LCP/TTI لـ `/ar/providers` نحتاج محتوى `ar_providers-2026_05_09_10_14_17-report.json` (الـ representative LHR) — مرشَّح للجولة التالية.
+
+**Assertion-level evidence من `assertion-results.json` (PR #373 artifact):**
+
+| Audit                       | URL             | Level | Median     | Runs               | Threshold | Status                         |
+| --------------------------- | --------------- | ----- | ---------- | ------------------ | --------- | ------------------------------ |
+| `mainthread-work-breakdown` | `/ar/providers` | warn  | **4503ms** | 5535 / 4503 / 4609 | ≤ 4000ms  | ⚠️ FAIL (warn فقط، لا يكسر CI) |
+
+كل الـ `error`-level assertions نجحت ضمنياً (لم تظهر في `assertion-results.json`)، أي:
+
+- TBT ≤ 700ms على كل URLs (شمل `/ar/providers` بعد Phase 1).
+- LCP ≤ 7000ms، TTI ≤ 9000ms، CLS ≤ 0.1، Performance ≥ 0.6 على كل URLs.
+- التحويل إلى جهاز متوسط: 4503ms ÷ 4 throttle ≈ **~1125ms** main-thread work على `/ar/providers` — مرتفع لكن دون مستوى الكارثة. ضمن أهداف Phase 4 لمعالجته بـ code-splitting إضافي و `useSDUI` deferral.
 
 **الخلاصة:** Phase 1 quick wins نجحت — `/ar/providers` كان عند 783ms TBT قبلها (دون 0.5 perf score متوقع)، الآن median 0.71. الانتقال إلى Phase 2 (Vercel preview measurement) صار مبرَّراً لأن الأرقام الحالية pessimistic بـ 20-40% مقابل الإنتاج الحقيقي.
 
