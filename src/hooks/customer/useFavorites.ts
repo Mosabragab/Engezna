@@ -50,6 +50,15 @@ export function useFavorites() {
     favoriteProvidersRef.current = favoriteProviders;
   }, [favoriteProviders]);
 
+  // In-flight guard for toggleFavorite. Without it, a user double-tapping
+  // the heart faster than React can commit the optimistic state update
+  // (which is what refreshes favoriteIdsRef via the effect above) would
+  // hit toggleFavorite twice with the same ref snapshot, causing the
+  // second call to issue a duplicate add/remove against the DB. This Set
+  // tracks providerIds whose toggle is still in-flight; subsequent calls
+  // for the same id are dropped until the first one settles.
+  const pendingToggleIdsRef = useRef<Set<string>>(new Set());
+
   // Check auth and load favorites
   useEffect(() => {
     const supabase = createClient();
@@ -249,10 +258,24 @@ export function useFavorites() {
       // Read current favorites via ref so this callback's identity is
       // stable — passing it to memoized children (like the 100-card
       // ProviderCard grid) doesn't trigger re-renders on every toggle.
-      if (favoriteIdsRef.current.has(providerId)) {
-        return await removeFromFavorites(providerId);
-      } else {
+
+      // Drop rapid re-entries for the same providerId. The optimistic
+      // state update in addToFavorites/removeFromFavorites won't be
+      // visible on favoriteIdsRef until the React commit fires the
+      // mirror effect, so without this guard a fast double-tap reads
+      // the same stale snapshot twice and both branches run.
+      if (pendingToggleIdsRef.current.has(providerId)) {
+        return false;
+      }
+      pendingToggleIdsRef.current.add(providerId);
+
+      try {
+        if (favoriteIdsRef.current.has(providerId)) {
+          return await removeFromFavorites(providerId);
+        }
         return await addToFavorites(providerId);
+      } finally {
+        pendingToggleIdsRef.current.delete(providerId);
       }
     },
     [addToFavorites, removeFromFavorites]
