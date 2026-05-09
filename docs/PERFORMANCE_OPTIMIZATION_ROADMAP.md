@@ -8,8 +8,8 @@
 > 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 
-> فرع التنفيذ الحالي للأداء: `claude/review-performance-roadmap-OSY6a` (Phase 1.5 follow-up — upload-artifact hidden-files fix)
-> آخر تحديث: 2026-05-09 — Phase 1.5 (PR #372) merged، لكن Codex رصد فجوة ثالثة: `actions/upload-artifact@v4` يتجاهل الـ dot-paths افتراضياً، فالـ artifact لا يزال فارغاً حتى بعد تحويل الـ upload target إلى filesystem.
+> فرع التنفيذ الحالي للأداء: `claude/perf-phase-2-vercel-preview` (Phase 2 — measure Vercel preview بدل localhost)
+> آخر تحديث: 2026-05-09 — Phase 1 + 1.5 + Codex follow-ups مدموجة (PRs #371, #372, #373, #374). بدء Phase 2: تحويل lighthouse.yml من `pull_request` + localhost إلى `deployment_status` + Vercel preview URL.
 
 ---
 
@@ -203,16 +203,16 @@
 
 **الهدف:** Lighthouse يقيس Vercel preview (CDN + Edge + Brotli + image optimization) بدل localhost على Linux runner، لأن الأخير pessimistic بنسبة 20-40% مقارنة بتجربة المستخدم الحقيقي. ثم تغطية صفحات التاجر والأدمن.
 
-| #   | المهمة                                                                                                                           | تأثير متوقع                               | حالة |
-| --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---- |
-| 2.1 | تغيير trigger في `lighthouse.yml` من `pull_request` إلى `deployment_status` بانتظار Vercel preview ينشر، ثم يقيس الـ preview URL | أرقام تعكس production environment فعلاً   | ⬜   |
-| 2.2 | `lighthouserc.js` يقرأ الـ base URL من env (مثل `LHCI_TARGET_URL`) بدل hardcoding `localhost:3000`                               | تكامل مع #2.1                             | ⬜   |
-| 2.3 | إضافة URLs لقياس صفحات التاجر العامة (login pages الفعلية تُقاس بالفعل) — تحقق التغطية بعد التغيير                               | تغطية أوسع                                | ⬜   |
-| 2.4 | Authenticated Lighthouse runs — Puppeteer script يسجّل دخول قبل التشغيل لقياس dashboards                                         | يفتح الـ provider/admin dashboards للقياس | ⬜   |
-| 2.5 | إضافة URLs: `/provider/orders`, `/provider/orders/[sample-id]`, `/provider/finance`, `/admin/orders`                             | كشف regressions داخلية                    | ⬜   |
-| 2.6 | إضافة URLs: `/provider/orders/custom/[sample-id]` (صفحة التسعير)                                                                 | كشف ثقل PricingNotepad                    | ⬜   |
-| 2.7 | Performance budgets per route — كل صفحة لها sub-config tighter                                                                   | منع zone creep                            | ⬜   |
-| 2.8 | تحديث هذه الوثيقة بالـ baseline الجديد (production-like) + عتبات أحدث                                                            | (process)                                 | ⬜   |
+| #   | المهمة                                                                                                                           | تأثير متوقع                               | حالة            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------- |
+| 2.1 | تغيير trigger في `lighthouse.yml` من `pull_request` إلى `deployment_status` بانتظار Vercel preview ينشر، ثم يقيس الـ preview URL | أرقام تعكس production environment فعلاً   | 🔄 PR (current) |
+| 2.2 | `lighthouserc.js` يقرأ الـ base URL من env (مثل `LHCI_TARGET_URL`) بدل hardcoding `localhost:3000`                               | تكامل مع #2.1                             | 🔄 PR (current) |
+| 2.3 | إضافة URLs لقياس صفحات التاجر العامة (login pages الفعلية تُقاس بالفعل) — تحقق التغطية بعد التغيير                               | تغطية أوسع                                | ⬜              |
+| 2.4 | Authenticated Lighthouse runs — Puppeteer script يسجّل دخول قبل التشغيل لقياس dashboards                                         | يفتح الـ provider/admin dashboards للقياس | ⬜              |
+| 2.5 | إضافة URLs: `/provider/orders`, `/provider/orders/[sample-id]`, `/provider/finance`, `/admin/orders`                             | كشف regressions داخلية                    | ⬜              |
+| 2.6 | إضافة URLs: `/provider/orders/custom/[sample-id]` (صفحة التسعير)                                                                 | كشف ثقل PricingNotepad                    | ⬜              |
+| 2.7 | Performance budgets per route — كل صفحة لها sub-config tighter                                                                   | منع zone creep                            | ⬜              |
+| 2.8 | تحديث هذه الوثيقة بالـ baseline الجديد (production-like) + عتبات أحدث                                                            | (process)                                 | ⬜              |
 
 **معيار قبول:** كل صفحة في الـ workflows الثلاثة (عميل، تاجر، أدمن) لها قياس مستمر في CI من production-like environment، وقيمة Performance score معروفة وموثقة.
 
@@ -341,6 +341,7 @@
 | Audit                       | URL             | Level | Median     | Runs               | Threshold | Status                         |
 | --------------------------- | --------------- | ----- | ---------- | ------------------ | --------- | ------------------------------ |
 | `mainthread-work-breakdown` | `/ar/providers` | warn  | **4503ms** | 5535 / 4503 / 4609 | ≤ 4000ms  | ⚠️ FAIL (warn فقط، لا يكسر CI) |
+| `render-blocking-resources` | `/ar/cart`      | warn  | **589ms**  | 620 / 590 / 589    | ≤ 500ms   | ⚠️ FAIL (warn فقط، تجاوز ~18%) |
 
 كل الـ `error`-level assertions نجحت ضمنياً (لم تظهر في `assertion-results.json`)، أي:
 
