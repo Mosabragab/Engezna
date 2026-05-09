@@ -71,7 +71,12 @@ module.exports = {
 
         // Core Web Vitals - CI-friendly thresholds (CPU throttled 4x)
         // TTI 9000ms + TBT 700ms: observed ~50-150ms CI variance on
-        // /welcome and /custom-order; real-device traces well under targets.
+        // /welcome and /custom-order; real-device traces well under
+        // targets. /ar/providers was momentarily breaching this with
+        // ~780ms — it has since been fixed (memoized ProviderCard,
+        // progressive 12-card initial render, early-exit search,
+        // short-circuit filter useMemo) so the threshold is back at
+        // 700ms. See docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §6 Phase 1.
         'first-contentful-paint': ['error', { maxNumericValue: 4000 }],
         'largest-contentful-paint': ['error', { maxNumericValue: 7000 }],
         interactive: ['error', { maxNumericValue: 9000 }],

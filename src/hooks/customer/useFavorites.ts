@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -35,6 +35,29 @@ export function useFavorites() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+
+  // Refs that mirror state. Used inside callbacks that need to read the
+  // *current* favorites snapshot without depending on it — depending on
+  // it would re-create toggleFavorite/removeFromFavorites on every
+  // favorite toggle, breaking React.memo for any consumer that passes
+  // these as props (e.g. the 100-card grid in /ar/providers).
+  const favoriteIdsRef = useRef(favoriteIds);
+  const favoriteProvidersRef = useRef(favoriteProviders);
+  useEffect(() => {
+    favoriteIdsRef.current = favoriteIds;
+  }, [favoriteIds]);
+  useEffect(() => {
+    favoriteProvidersRef.current = favoriteProviders;
+  }, [favoriteProviders]);
+
+  // In-flight guard for toggleFavorite. Without it, a user double-tapping
+  // the heart faster than React can commit the optimistic state update
+  // (which is what refreshes favoriteIdsRef via the effect above) would
+  // hit toggleFavorite twice with the same ref snapshot, causing the
+  // second call to issue a duplicate add/remove against the DB. This Set
+  // tracks providerIds whose toggle is still in-flight; subsequent calls
+  // for the same id are dropped until the first one settles.
+  const pendingToggleIdsRef = useRef<Set<string>>(new Set());
 
   // Check auth and load favorites
   useEffect(() => {
@@ -189,9 +212,13 @@ export function useFavorites() {
 
       const supabase = createClient();
 
-      // Store current state for rollback
-      const previousProviders = favoriteProviders;
-      const previousIds = new Set(favoriteIds);
+      // Capture only this provider's row from the current list so we can
+      // re-insert it on failure. We DON'T snapshot the whole favoriteIds
+      // / favoriteProviders state — concurrent toggles on other providers
+      // (e.g. user adds B while remove(A) is in flight) would otherwise be
+      // wiped by a snapshot-restore on rollback. Same delta-only pattern
+      // that addToFavorites already uses.
+      const removedProvider = favoriteProvidersRef.current.find((p) => p.id === providerId);
 
       // Optimistic update - immediately update UI
       setFavoriteIds((prev) => {
@@ -201,6 +228,21 @@ export function useFavorites() {
       });
       setFavoriteProviders((prev) => prev.filter((p) => p.id !== providerId));
 
+      const rollback = () => {
+        // Re-add only this providerId; leave other concurrent toggles alone.
+        setFavoriteIds((prev) => {
+          if (prev.has(providerId)) return prev;
+          const newSet = new Set(prev);
+          newSet.add(providerId);
+          return newSet;
+        });
+        if (removedProvider) {
+          setFavoriteProviders((prev) =>
+            prev.some((p) => p.id === providerId) ? prev : [removedProvider, ...prev]
+          );
+        }
+      };
+
       try {
         const { error } = await supabase
           .from('favorites')
@@ -209,34 +251,47 @@ export function useFavorites() {
           .eq('provider_id', providerId);
 
         if (error) {
-          // Rollback on error
-          setFavoriteIds(previousIds);
-          setFavoriteProviders(previousProviders);
+          rollback();
           console.error('Error removing favorite:', error);
           return false;
         }
 
         return true;
       } catch (error) {
-        // Rollback on error
-        setFavoriteIds(previousIds);
-        setFavoriteProviders(previousProviders);
+        rollback();
         console.error('Error removing favorite:', error);
         return false;
       }
     },
-    [user, favoriteProviders, favoriteIds]
+    [user]
   );
 
   const toggleFavorite = useCallback(
     async (providerId: string) => {
-      if (favoriteIds.has(providerId)) {
-        return await removeFromFavorites(providerId);
-      } else {
+      // Read current favorites via ref so this callback's identity is
+      // stable — passing it to memoized children (like the 100-card
+      // ProviderCard grid) doesn't trigger re-renders on every toggle.
+
+      // Drop rapid re-entries for the same providerId. The optimistic
+      // state update in addToFavorites/removeFromFavorites won't be
+      // visible on favoriteIdsRef until the React commit fires the
+      // mirror effect, so without this guard a fast double-tap reads
+      // the same stale snapshot twice and both branches run.
+      if (pendingToggleIdsRef.current.has(providerId)) {
+        return false;
+      }
+      pendingToggleIdsRef.current.add(providerId);
+
+      try {
+        if (favoriteIdsRef.current.has(providerId)) {
+          return await removeFromFavorites(providerId);
+        }
         return await addToFavorites(providerId);
+      } finally {
+        pendingToggleIdsRef.current.delete(providerId);
       }
     },
-    [favoriteIds, addToFavorites, removeFromFavorites]
+    [addToFavorites, removeFromFavorites]
   );
 
   const isFavorite = useCallback(

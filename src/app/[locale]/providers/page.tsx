@@ -12,7 +12,8 @@ function ProvidersLoading() {
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {/* 12 placeholders to match PROGRESSIVE_RENDER_INITIAL in ProvidersClient. */}
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
             <div key={i} className="bg-white rounded-xl border border-slate-100 animate-pulse">
               <div className="h-40 bg-slate-100 rounded-t-xl" />
               <div className="p-4 space-y-3">
