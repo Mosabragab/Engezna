@@ -103,8 +103,18 @@ module.exports = {
     },
 
     upload: {
-      // Upload to temporary public storage
-      target: 'temporary-public-storage',
+      // Persist results to disk so they can be picked up by the
+      // `actions/upload-artifact@v4` step in
+      // .github/workflows/lighthouse.yml. The previous
+      // 'temporary-public-storage' target uploaded reports to Google's
+      // hosted infra and left the local .lighthouseci/ folder empty,
+      // which made the GitHub Actions artifact upload silently warn
+      // "No files were found" — so the metrics PRs depended on were
+      // not actually downloadable. With filesystem we get reliable
+      // JSON + HTML in .lighthouseci/, ready to be archived per run.
+      target: 'filesystem',
+      outputDir: './.lighthouseci',
+      reportFilenamePattern: '%%PATHNAME%%-%%DATETIME%%-report.%%EXTENSION%%',
     },
 
     // Server configuration
