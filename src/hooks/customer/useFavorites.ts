@@ -212,11 +212,13 @@ export function useFavorites() {
 
       const supabase = createClient();
 
-      // Snapshot via refs so the callback identity stays stable across
-      // favorite-toggle re-renders (refs are read at call-time, so they
-      // still capture the current state for rollback).
-      const previousProviders = favoriteProvidersRef.current;
-      const previousIds = new Set(favoriteIdsRef.current);
+      // Capture only this provider's row from the current list so we can
+      // re-insert it on failure. We DON'T snapshot the whole favoriteIds
+      // / favoriteProviders state — concurrent toggles on other providers
+      // (e.g. user adds B while remove(A) is in flight) would otherwise be
+      // wiped by a snapshot-restore on rollback. Same delta-only pattern
+      // that addToFavorites already uses.
+      const removedProvider = favoriteProvidersRef.current.find((p) => p.id === providerId);
 
       // Optimistic update - immediately update UI
       setFavoriteIds((prev) => {
@@ -226,6 +228,21 @@ export function useFavorites() {
       });
       setFavoriteProviders((prev) => prev.filter((p) => p.id !== providerId));
 
+      const rollback = () => {
+        // Re-add only this providerId; leave other concurrent toggles alone.
+        setFavoriteIds((prev) => {
+          if (prev.has(providerId)) return prev;
+          const newSet = new Set(prev);
+          newSet.add(providerId);
+          return newSet;
+        });
+        if (removedProvider) {
+          setFavoriteProviders((prev) =>
+            prev.some((p) => p.id === providerId) ? prev : [removedProvider, ...prev]
+          );
+        }
+      };
+
       try {
         const { error } = await supabase
           .from('favorites')
@@ -234,18 +251,14 @@ export function useFavorites() {
           .eq('provider_id', providerId);
 
         if (error) {
-          // Rollback on error
-          setFavoriteIds(previousIds);
-          setFavoriteProviders(previousProviders);
+          rollback();
           console.error('Error removing favorite:', error);
           return false;
         }
 
         return true;
       } catch (error) {
-        // Rollback on error
-        setFavoriteIds(previousIds);
-        setFavoriteProviders(previousProviders);
+        rollback();
         console.error('Error removing favorite:', error);
         return false;
       }
