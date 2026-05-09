@@ -575,9 +575,7 @@ export default function SearchPage() {
                         provider={provider}
                         variant="default"
                         isFavorite={isFavorite(provider.id)}
-                        onFavoriteToggle={
-                          isAuthenticated ? () => toggleFavorite(provider.id) : undefined
-                        }
+                        onFavoriteToggle={isAuthenticated ? toggleFavorite : undefined}
                       />
                     ))}
                   </div>

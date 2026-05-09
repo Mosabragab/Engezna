@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Clock, Truck, MapPin, Heart, BadgeCheck, Crown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { isWithinBusinessHours, BusinessHours } from '@/lib/utils/business-hours';
 
 interface Provider {
@@ -34,11 +34,18 @@ interface ProviderCardProps {
   showDistance?: boolean;
   distance?: number;
   isFavorite?: boolean;
-  onFavoriteToggle?: () => void;
+  /**
+   * Receives the provider's id when toggled. Signature kept generic so the
+   * parent can pass a stable callback (e.g. `useFavorites().toggleFavorite`)
+   * — passing `() => toggleFavorite(provider.id)` per-card breaks the
+   * `memo` shallow equality and makes 100 cards re-render on every state
+   * change in the parent.
+   */
+  onFavoriteToggle?: (providerId: string) => void;
   showPopularItem?: string;
 }
 
-export function ProviderCard({
+function ProviderCardImpl({
   provider,
   variant = 'default',
   showDistance = false,
@@ -71,7 +78,7 @@ export function ProviderCard({
     e.preventDefault();
     e.stopPropagation();
     setFavorite(!favorite);
-    onFavoriteToggle?.();
+    onFavoriteToggle?.(provider.id);
   };
 
   // Calculate discount if exists (placeholder for now)
@@ -286,3 +293,10 @@ export function ProviderCard({
     </Link>
   );
 }
+
+// Wrapped with React.memo so the 100-card grid in /ar/providers doesn't
+// re-render every card when only one piece of state above changes
+// (favorites resolving, location loading, etc.). Default shallow equality
+// is fine here because callers either pass stable refs (provider object
+// from the parent state) or simple primitives (variant, isFavorite).
+export const ProviderCard = memo(ProviderCardImpl);

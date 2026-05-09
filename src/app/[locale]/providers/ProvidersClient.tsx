@@ -67,6 +67,15 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   const [sortBy, setSortBy] = useState<SortOption | null>(null);
   const [showOpenOnly, setShowOpenOnly] = useState(false);
   const [showOffersOnly, setShowOffersOnly] = useState(false);
+
+  // Progressive rendering: only the first PROGRESSIVE_RENDER_INITIAL cards
+  // are painted on first commit (above-the-fold). The rest stream in
+  // during browser idle time so the initial Total Blocking Time stays
+  // small instead of paying the cost of 100 cards in one long task.
+  // See docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §6 — Phase 1.
+  const PROGRESSIVE_RENDER_INITIAL = 12;
+  const PROGRESSIVE_RENDER_BATCH = 12;
+  const [renderLimit, setRenderLimit] = useState<number>(PROGRESSIVE_RENDER_INITIAL);
   const [productMatchedProviderIds, setProductMatchedProviderIds] = useState<Set<string>>(
     new Set()
   );
@@ -78,6 +87,33 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
       setSelectedCategory(categoryFromUrl);
     }
   }, [categoryFromUrl]);
+
+  // Progressive render: after the first paint, expand the visible window
+  // batch-by-batch during idle time until everything is rendered. Falls
+  // back to setTimeout on browsers without requestIdleCallback (Safari).
+  useEffect(() => {
+    if (renderLimit >= providers.length) return;
+    const win = typeof window !== 'undefined' ? window : null;
+    if (!win) return;
+
+    const expand = () =>
+      setRenderLimit((current) => Math.min(current + PROGRESSIVE_RENDER_BATCH, providers.length));
+
+    const ric = (win as Window & { requestIdleCallback?: (cb: () => void) => number })
+      .requestIdleCallback;
+    const cancelRic = (win as Window & { cancelIdleCallback?: (id: number) => void })
+      .cancelIdleCallback;
+
+    if (ric) {
+      const id = ric(expand);
+      return () => cancelRic?.(id);
+    }
+    const id = setTimeout(expand, 50);
+    return () => clearTimeout(id);
+  }, [renderLimit, providers.length]);
+
+  // (filtered-list reset is wired further below, after filteredProviders
+  // is computed — see the useEffect that watches filteredProviders.length.)
 
   // Get location from context
   const {
@@ -184,8 +220,15 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     [userCityId, userGovernorateId, normalizeArabicText]
   );
 
-  // Search products when search query changes
+  // Search products when search query changes. Early-exit when the
+  // query is empty so we never schedule the heavy menu_items fetch
+  // (and the resulting client-side normalization pass) for the
+  // initial-page case where the user hasn't typed anything yet.
   useEffect(() => {
+    if (!searchQuery.trim()) {
+      setProductMatchedProviderIds((prev) => (prev.size === 0 ? prev : new Set()));
+      return;
+    }
     const debounceTimer = setTimeout(() => {
       searchProducts(searchQuery);
     }, 300);
@@ -193,8 +236,22 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, searchProducts]);
 
-  // Filter and sort providers client-side
+  // Filter and sort providers client-side. Fast-path: when nothing is
+  // filtered (initial load, no search, no chips, no location override),
+  // return the original array reference so referential equality is
+  // preserved downstream (memoized children don't re-render).
   const filteredProviders = useMemo(() => {
+    const noLocationFilter = !userCityId && !userGovernorateId;
+    const noUserFilter =
+      selectedCategory === 'all' &&
+      !searchQuery &&
+      !showOpenOnly &&
+      !showOffersOnly &&
+      sortBy === null;
+    if (noLocationFilter && noUserFilter) {
+      return providers;
+    }
+
     let result = [...providers];
 
     // Location filter (applied to initial data)
@@ -275,6 +332,25 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     productMatchedProviderIds,
     normalizeArabicText,
   ]);
+
+  // Reset the progressive render window whenever the filtered list
+  // changes (search/filter/sort/location) so the user always sees the
+  // top of the new list and doesn't end up scrolled past the rendered
+  // window.
+  useEffect(() => {
+    setRenderLimit(PROGRESSIVE_RENDER_INITIAL);
+  }, [filteredProviders.length]);
+
+  // Visible slice — the actual list rendered to the DOM. Falls back to
+  // the full array if the limit already covers it (avoids an unnecessary
+  // .slice allocation in steady state).
+  const visibleProviders = useMemo(
+    () =>
+      renderLimit >= filteredProviders.length
+        ? filteredProviders
+        : filteredProviders.slice(0, renderLimit),
+    [filteredProviders, renderLimit]
+  );
 
   async function fetchProviders() {
     setLoading(true);
@@ -567,15 +643,13 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
             {/* Providers Grid */}
             {!loading && filteredProviders.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {filteredProviders.map((provider) => (
+                {visibleProviders.map((provider) => (
                   <ProviderCard
                     key={provider.id}
                     provider={provider}
                     variant="default"
                     isFavorite={isFavorite(provider.id)}
-                    onFavoriteToggle={
-                      isAuthenticated ? () => toggleFavorite(provider.id) : undefined
-                    }
+                    onFavoriteToggle={isAuthenticated ? toggleFavorite : undefined}
                   />
                 ))}
               </div>

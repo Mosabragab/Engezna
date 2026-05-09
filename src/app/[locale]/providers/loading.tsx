@@ -28,7 +28,10 @@ export default function ProvidersLoading() {
 
         {/* Providers Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {/* Match the initial progressive-render window in ProvidersClient
+              (PROGRESSIVE_RENDER_INITIAL = 12) so the skeleton-to-content
+              swap doesn't shift layout. */}
+          {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
               className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100"

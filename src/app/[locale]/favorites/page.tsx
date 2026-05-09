@@ -115,7 +115,7 @@ export default function FavoritesPage() {
               key={provider.id}
               provider={provider as any}
               isFavorite={true}
-              onFavoriteToggle={() => toggleFavorite(provider.id)}
+              onFavoriteToggle={toggleFavorite}
             />
           ))}
         </div>

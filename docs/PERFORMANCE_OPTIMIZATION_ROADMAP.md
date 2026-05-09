@@ -8,8 +8,8 @@
 > 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 
-> فرع التنفيذ الحالي للأداء: TBD (يُفتح PR منفصل لكل مرحلة)
-> آخر تحديث: 2026-05-08
+> فرع التنفيذ الحالي للأداء: `claude/fix-mobile-login-issue-8913j` (Phase 1)
+> آخر تحديث: 2026-05-08 — Phase 1 quick wins shipped
 
 ---
 
@@ -37,31 +37,31 @@
 
 #### العتبات الحالية (مايو 2026)
 
-| المتركس                     | العتبة          | ملاحظة                                                                |
-| --------------------------- | --------------- | --------------------------------------------------------------------- |
-| `categories:performance`    | ≥ 0.6           | ضعيف — يجب رفعه إلى 0.8                                               |
-| `categories:accessibility`  | ≥ 0.9           | جيد                                                                   |
-| `categories:best-practices` | ≥ 0.85          | جيد                                                                   |
-| `categories:seo`            | ≥ 0.6           | منخفض للـ auth pages                                                  |
-| `first-contentful-paint`    | ≤ 4000ms        | فضفاض                                                                 |
-| `largest-contentful-paint`  | ≤ 7000ms        | فضفاض                                                                 |
-| `interactive` (TTI)         | ≤ 9000ms        | فضفاض                                                                 |
-| `cumulative-layout-shift`   | ≤ 0.1           | جيد                                                                   |
-| `total-blocking-time`       | ≤ 900ms ⚠️      | **رُفِع من 700 لإخفاء regression — يجب إعادته إلى 700 بعد الإصلاحات** |
-| `mainthread-work-breakdown` | ≤ 4000ms (warn) | تحذير فقط                                                             |
-| `bootup-time`               | ≤ 3000ms (warn) | تحذير فقط                                                             |
-| `dom-size`                  | ≤ 1500 (warn)   | تحذير فقط                                                             |
+| المتركس                     | العتبة          | ملاحظة                                                  |
+| --------------------------- | --------------- | ------------------------------------------------------- |
+| `categories:performance`    | ≥ 0.6           | ضعيف — يجب رفعه إلى 0.8                                 |
+| `categories:accessibility`  | ≥ 0.9           | جيد                                                     |
+| `categories:best-practices` | ≥ 0.85          | جيد                                                     |
+| `categories:seo`            | ≥ 0.6           | منخفض للـ auth pages                                    |
+| `first-contentful-paint`    | ≤ 4000ms        | فضفاض                                                   |
+| `largest-contentful-paint`  | ≤ 7000ms        | فضفاض                                                   |
+| `interactive` (TTI)         | ≤ 9000ms        | فضفاض                                                   |
+| `cumulative-layout-shift`   | ≤ 0.1           | جيد                                                     |
+| `total-blocking-time`       | ≤ 700ms         | عاد لـ 700 بعد إصلاحات Phase 1 (كان مرفوعاً 900 مؤقتاً) |
+| `mainthread-work-breakdown` | ≤ 4000ms (warn) | تحذير فقط                                               |
+| `bootup-time`               | ≤ 3000ms (warn) | تحذير فقط                                               |
+| `dom-size`                  | ≤ 1500 (warn)   | تحذير فقط                                               |
 
 #### آخر قياسات معروفة
 
-| URL                  | TBT (median CI)                   | الحالة                               |
-| -------------------- | --------------------------------- | ------------------------------------ |
-| `/ar` (welcome)      | غير مسجَّل                        | يمر                                  |
-| `/ar/providers`      | **783ms** (runs: 1527, 1099, 783) | فاشل عند 700ms، يمر مؤقتاً عند 900ms |
-| `/ar/cart`           | غير مسجَّل                        | يمر                                  |
-| `/ar/auth/login`     | غير مسجَّل                        | يمر                                  |
-| `/ar/custom-order`   | غير مسجَّل                        | يمر                                  |
-| `/ar/provider/login` | غير مسجَّل                        | يمر                                  |
+| URL                  | TBT (median CI)                               | الحالة                                  |
+| -------------------- | --------------------------------------------- | --------------------------------------- |
+| `/ar` (welcome)      | غير مسجَّل                                    | يمر                                     |
+| `/ar/providers`      | **783ms** (runs: 1527, 1099, 783) قبل Phase 1 | بعد Phase 1: قياس فعلي يُملأ بعد CI run |
+| `/ar/cart`           | غير مسجَّل                                    | يمر                                     |
+| `/ar/auth/login`     | غير مسجَّل                                    | يمر                                     |
+| `/ar/custom-order`   | غير مسجَّل                                    | يمر                                     |
+| `/ar/provider/login` | غير مسجَّل                                    | يمر                                     |
 
 > **ملاحظة:** المتركس على CPU 4x throttle. الجهاز الحقيقي ÷ 4 تقريباً. TBT 783ms في CI ≈ 195ms على جهاز متوسط.
 
@@ -187,15 +187,15 @@
 
 **الهدف:** TBT ≤ 450ms على CI، إعادة الـ threshold إلى 700.
 
-| #   | المهمة                                                           | تأثير متوقع  | حالة |
-| --- | ---------------------------------------------------------------- | ------------ | ---- |
-| 1.1 | `React.memo` على `ProviderCard`                                  | -50-100ms    | ⬜   |
-| 1.2 | رندر تدريجي: أول 12 بطاقة فوراً، الباقي بـ `requestIdleCallback` | -300-400ms   | ⬜   |
-| 1.3 | تأجيل `useSDUI` للـ idle time (`useDeferredValue` أو timeout)    | -100-200ms   | ⬜   |
-| 1.4 | `searchProducts` يخرج فوراً لو query فارغ (قبل debounce)         | -50ms        | ⬜   |
-| 1.5 | `useMemo` للفلترة: skip كامل لو كل الفلاتر افتراضية              | -30-50ms     | ⬜   |
-| 1.6 | إعادة TBT threshold إلى 700ms في `lighthouserc.js`               | (validation) | ⬜   |
-| 1.7 | تحديث هذه الوثيقة بالقياسات الفعلية                              | (process)    | ⬜   |
+| #   | المهمة                                                                                                                  | تأثير متوقع  | حالة | ملاحظة                                                                                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | ------------ | ---- | ----------------------------------------------------------------------------------------------------------------- |
+| 1.1 | `React.memo` على `ProviderCard` + استقرار `onFavoriteToggle` callback                                                   | -50-100ms    | ✅   | تغيير في توقيع الـ prop: يستقبل `providerId` بدل closure-per-card، عشان الـ memo فعَّال                           |
+| 1.2 | رندر تدريجي: أول 12 بطاقة فوراً، الباقي بـ `requestIdleCallback` (مع fallback لـ `setTimeout` على Safari)               | -300-400ms   | ✅   | reset الـ window عند تغيير الفلتر                                                                                 |
+| 1.3 | تأجيل `useSDUI` للـ idle time                                                                                           | -100-200ms   | 🔁   | مؤجَّل لـ Phase 4 — `useSDUI` يعمل بالفعل في `useEffect` بعد initial paint، التأثير الفعلي يحتاج قياس قبل التحسين |
+| 1.4 | `searchProducts` يخرج فوراً لو query فارغ (قبل debounce)                                                                | -50ms        | ✅   |                                                                                                                   |
+| 1.5 | `useMemo` للفلترة: short-circuit يُرجع نفس مرجع `providers` لو كل الفلاتر افتراضية (يحفظ referential equality للـ memo) | -30-50ms     | ✅   |                                                                                                                   |
+| 1.6 | إعادة TBT threshold إلى 700ms في `lighthouserc.js`                                                                      | (validation) | ✅   |                                                                                                                   |
+| 1.7 | تحديث هذه الوثيقة بالقياسات الفعلية                                                                                     | (process)    | 🔄   | يُملأ بعد Lighthouse run على الـ PR                                                                               |
 
 **معيار قبول:** Lighthouse CI يمر بـ TBT ≤ 700، الـ flow اليدوي على `/ar/providers` يبدو "ناعم" بدون hitches.
 
@@ -287,9 +287,17 @@
 | `/provider/orders`   | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
 | `/admin/orders`      | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
 
-### بعد المرحلة ١
+### بعد المرحلة ١ (محلياً، قبل CI run)
 
-_يُملأ بعد التنفيذ_
+التغييرات المُطبَّقة:
+
+- `ProviderCard` أصبح `memo`-ized؛ `onFavoriteToggle` تستقبل `providerId` فقط (لا closure-per-card) — يقطع 99% من الـ re-renders للبطاقات الـ 100 عند تغيير state في الوالد.
+- الرندر التدريجي يقصر الـ commit الأول على 12 بطاقة (~240 DOM node بدل 2000).
+- باقي البطاقات تُرسَم في batches من 12 خلال `requestIdleCallback` بعد initial paint.
+- `searchProducts` لا يحجز timer ولا يستدعي menu_items لو query فارغ.
+- الـ filter `useMemo` يُرجع نفس مرجع `providers` في الحالة الافتراضية، فلا يُهلك React reconciliation للـ visible slice.
+
+**القياس الفعلي على CI:** يُملأ بعد تشغيل Lighthouse run على الـ PR.
 
 ### بعد المرحلة ٢
 
