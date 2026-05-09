@@ -47,6 +47,13 @@ interface ProvidersClientProps {
   initialProviders: Provider[];
 }
 
+// Progressive rendering knobs — module-scope so they're not recreated on
+// every render. INITIAL is the number of cards painted on the first
+// commit (above-the-fold target); BATCH is how many extra cards are
+// added per idle tick after that.
+const PROGRESSIVE_RENDER_INITIAL = 12;
+const PROGRESSIVE_RENDER_BATCH = 12;
+
 export default function ProvidersClient({ initialProviders }: ProvidersClientProps) {
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -73,8 +80,6 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   // during browser idle time so the initial Total Blocking Time stays
   // small instead of paying the cost of 100 cards in one long task.
   // See docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §6 — Phase 1.
-  const PROGRESSIVE_RENDER_INITIAL = 12;
-  const PROGRESSIVE_RENDER_BATCH = 12;
   const [renderLimit, setRenderLimit] = useState<number>(PROGRESSIVE_RENDER_INITIAL);
   const [productMatchedProviderIds, setProductMatchedProviderIds] = useState<Set<string>>(
     new Set()
@@ -88,32 +93,8 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
     }
   }, [categoryFromUrl]);
 
-  // Progressive render: after the first paint, expand the visible window
-  // batch-by-batch during idle time until everything is rendered. Falls
-  // back to setTimeout on browsers without requestIdleCallback (Safari).
-  useEffect(() => {
-    if (renderLimit >= providers.length) return;
-    const win = typeof window !== 'undefined' ? window : null;
-    if (!win) return;
-
-    const expand = () =>
-      setRenderLimit((current) => Math.min(current + PROGRESSIVE_RENDER_BATCH, providers.length));
-
-    const ric = (win as Window & { requestIdleCallback?: (cb: () => void) => number })
-      .requestIdleCallback;
-    const cancelRic = (win as Window & { cancelIdleCallback?: (id: number) => void })
-      .cancelIdleCallback;
-
-    if (ric) {
-      const id = ric(expand);
-      return () => cancelRic?.(id);
-    }
-    const id = setTimeout(expand, 50);
-    return () => clearTimeout(id);
-  }, [renderLimit, providers.length]);
-
-  // (filtered-list reset is wired further below, after filteredProviders
-  // is computed — see the useEffect that watches filteredProviders.length.)
+  // Progressive render expand + reset effects live further down, after
+  // filteredProviders is computed — they need its identity and length.
 
   // Get location from context
   const {
@@ -336,10 +317,40 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
   // Reset the progressive render window whenever the filtered list
   // changes (search/filter/sort/location) so the user always sees the
   // top of the new list and doesn't end up scrolled past the rendered
-  // window.
+  // window. We depend on the filteredProviders *identity* (not just
+  // length) — otherwise a transition like "search='foo'" → "search='bar'"
+  // that happens to return the same number of matches would skip the
+  // reset and the previously-expanded window (e.g. 100) would render
+  // the new list synchronously, defeating the optimization.
   useEffect(() => {
     setRenderLimit(PROGRESSIVE_RENDER_INITIAL);
-  }, [filteredProviders.length]);
+  }, [filteredProviders]);
+
+  // Progressive render: after the first paint, expand the visible window
+  // batch-by-batch during idle time until the *filtered* list is fully
+  // rendered. Falls back to setTimeout on browsers without
+  // requestIdleCallback (Safari).
+  useEffect(() => {
+    const target = filteredProviders.length;
+    if (renderLimit >= target) return;
+    const win = typeof window !== 'undefined' ? window : null;
+    if (!win) return;
+
+    const expand = () =>
+      setRenderLimit((current) => Math.min(current + PROGRESSIVE_RENDER_BATCH, target));
+
+    const ric = (win as Window & { requestIdleCallback?: (cb: () => void) => number })
+      .requestIdleCallback;
+    const cancelRic = (win as Window & { cancelIdleCallback?: (id: number) => void })
+      .cancelIdleCallback;
+
+    if (ric) {
+      const id = ric(expand);
+      return () => cancelRic?.(id);
+    }
+    const id = setTimeout(expand, 50);
+    return () => clearTimeout(id);
+  }, [renderLimit, filteredProviders.length]);
 
   // Visible slice — the actual list rendered to the DOM. Falls back to
   // the full array if the limit already covers it (avoids an unnecessary

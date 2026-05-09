@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, Clock, Truck, MapPin, Heart, BadgeCheck, Crown } from 'lucide-react';
-import { useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { isWithinBusinessHours, BusinessHours } from '@/lib/utils/business-hours';
 
 interface Provider {
@@ -56,7 +56,15 @@ function ProviderCardImpl({
 }: ProviderCardProps) {
   const locale = useLocale();
   const t = useTranslations('providers');
+  // Local mirror so the heart toggles instantly on click (optimistic UI),
+  // before the parent's `useFavorites` resolves. Synced from the prop on
+  // every change so resolves from the network (e.g. favorites loading
+  // for the first time, or another tab toggling) propagate correctly
+  // instead of leaving stale state behind.
   const [favorite, setFavorite] = useState(isFavorite);
+  useEffect(() => {
+    setFavorite(isFavorite);
+  }, [isFavorite]);
 
   const name = locale === 'ar' ? provider.name_ar : provider.name_en;
 

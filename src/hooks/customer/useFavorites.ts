@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -35,6 +35,20 @@ export function useFavorites() {
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+
+  // Refs that mirror state. Used inside callbacks that need to read the
+  // *current* favorites snapshot without depending on it — depending on
+  // it would re-create toggleFavorite/removeFromFavorites on every
+  // favorite toggle, breaking React.memo for any consumer that passes
+  // these as props (e.g. the 100-card grid in /ar/providers).
+  const favoriteIdsRef = useRef(favoriteIds);
+  const favoriteProvidersRef = useRef(favoriteProviders);
+  useEffect(() => {
+    favoriteIdsRef.current = favoriteIds;
+  }, [favoriteIds]);
+  useEffect(() => {
+    favoriteProvidersRef.current = favoriteProviders;
+  }, [favoriteProviders]);
 
   // Check auth and load favorites
   useEffect(() => {
@@ -189,9 +203,11 @@ export function useFavorites() {
 
       const supabase = createClient();
 
-      // Store current state for rollback
-      const previousProviders = favoriteProviders;
-      const previousIds = new Set(favoriteIds);
+      // Snapshot via refs so the callback identity stays stable across
+      // favorite-toggle re-renders (refs are read at call-time, so they
+      // still capture the current state for rollback).
+      const previousProviders = favoriteProvidersRef.current;
+      const previousIds = new Set(favoriteIdsRef.current);
 
       // Optimistic update - immediately update UI
       setFavoriteIds((prev) => {
@@ -225,18 +241,21 @@ export function useFavorites() {
         return false;
       }
     },
-    [user, favoriteProviders, favoriteIds]
+    [user]
   );
 
   const toggleFavorite = useCallback(
     async (providerId: string) => {
-      if (favoriteIds.has(providerId)) {
+      // Read current favorites via ref so this callback's identity is
+      // stable — passing it to memoized children (like the 100-card
+      // ProviderCard grid) doesn't trigger re-renders on every toggle.
+      if (favoriteIdsRef.current.has(providerId)) {
         return await removeFromFavorites(providerId);
       } else {
         return await addToFavorites(providerId);
       }
     },
-    [favoriteIds, addToFavorites, removeFromFavorites]
+    [addToFavorites, removeFromFavorites]
   );
 
   const isFavorite = useCallback(
