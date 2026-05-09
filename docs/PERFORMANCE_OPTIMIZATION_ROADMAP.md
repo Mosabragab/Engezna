@@ -1,0 +1,360 @@
+# خارطة طريق تحسين أداء إنجزنا
+
+> **هذه خطة حية — يجب تحديثها بعد كل مرحلة**
+>
+> أي تنفيذ لمهمة هنا يجب أن يقترن بتحديث:
+>
+> 1. حالة الـ task في الجدول الموافق (✅ / 🔄 / ⬜).
+> 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
+> 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
+
+> فرع التنفيذ الحالي للأداء: TBD (يُفتح PR منفصل لكل مرحلة)
+> آخر تحديث: 2026-05-08
+
+---
+
+## ١. الفلسفة والأهداف
+
+### الهدف الأعلى
+
+تجربة سريعة على الموبايل المتوسط في مصر (Android رخيص + 4G/3G)، **ليست رفاهية للأجهزة الراقية**. إنجزنا تطبيق يومي للناس العاديين، فالأداء جزء من المنتج، لا عرض جانبي.
+
+### مبادئ التشغيل
+
+1. **القياس قبل التحسين.** لا نُحسِّن بناءً على إحساس، نُحسِّن بناءً على متركس.
+2. **العميل أولاً.** رحلة العميل (home → providers → store → cart → checkout) هي الأكثر ربحية وهي الأكثر هشاشة. تستحق أعلى ميزانية أداء.
+3. **التاجر والأدمن غير مقاسين حالياً — نُغلق هذه الفجوة كأولوية.**
+4. **Threshold الـ CI يُحسَّن، لا يُرفع.** رفع الـ threshold دَين تقني، ليس حلاً.
+5. **التحسين تدريجي، لا re-architecture كبيرة.** كل مرحلة لها هدف واضح وقابل للقياس.
+
+---
+
+## ٢. الوضع الحالي (Baseline — مايو 2026)
+
+### قياسات Lighthouse CI
+
+نسخة `lighthouserc.js` تختبر ٦ URLs بـ `formFactor: mobile`، `cpuSlowdownMultiplier: 4`، `numberOfRuns: 3`.
+
+#### العتبات الحالية (مايو 2026)
+
+| المتركس                     | العتبة          | ملاحظة                                                                |
+| --------------------------- | --------------- | --------------------------------------------------------------------- |
+| `categories:performance`    | ≥ 0.6           | ضعيف — يجب رفعه إلى 0.8                                               |
+| `categories:accessibility`  | ≥ 0.9           | جيد                                                                   |
+| `categories:best-practices` | ≥ 0.85          | جيد                                                                   |
+| `categories:seo`            | ≥ 0.6           | منخفض للـ auth pages                                                  |
+| `first-contentful-paint`    | ≤ 4000ms        | فضفاض                                                                 |
+| `largest-contentful-paint`  | ≤ 7000ms        | فضفاض                                                                 |
+| `interactive` (TTI)         | ≤ 9000ms        | فضفاض                                                                 |
+| `cumulative-layout-shift`   | ≤ 0.1           | جيد                                                                   |
+| `total-blocking-time`       | ≤ 900ms ⚠️      | **رُفِع من 700 لإخفاء regression — يجب إعادته إلى 700 بعد الإصلاحات** |
+| `mainthread-work-breakdown` | ≤ 4000ms (warn) | تحذير فقط                                                             |
+| `bootup-time`               | ≤ 3000ms (warn) | تحذير فقط                                                             |
+| `dom-size`                  | ≤ 1500 (warn)   | تحذير فقط                                                             |
+
+#### آخر قياسات معروفة
+
+| URL                  | TBT (median CI)                   | الحالة                               |
+| -------------------- | --------------------------------- | ------------------------------------ |
+| `/ar` (welcome)      | غير مسجَّل                        | يمر                                  |
+| `/ar/providers`      | **783ms** (runs: 1527, 1099, 783) | فاشل عند 700ms، يمر مؤقتاً عند 900ms |
+| `/ar/cart`           | غير مسجَّل                        | يمر                                  |
+| `/ar/auth/login`     | غير مسجَّل                        | يمر                                  |
+| `/ar/custom-order`   | غير مسجَّل                        | يمر                                  |
+| `/ar/provider/login` | غير مسجَّل                        | يمر                                  |
+
+> **ملاحظة:** المتركس على CPU 4x throttle. الجهاز الحقيقي ÷ 4 تقريباً. TBT 783ms في CI ≈ 195ms على جهاز متوسط.
+
+---
+
+## ٣. المعايير المستهدفة (Targets)
+
+### معايير Google Core Web Vitals (الجهاز الحقيقي)
+
+| المتركس   | جيد     | يحتاج تحسين | ضعيف    |
+| --------- | ------- | ----------- | ------- |
+| LCP       | ≤ 2.5s  | 2.5-4s      | > 4s    |
+| INP       | ≤ 200ms | 200-500ms   | > 500ms |
+| CLS       | ≤ 0.1   | 0.1-0.25    | > 0.25  |
+| TBT (lab) | ≤ 200ms | 200-600ms   | > 600ms |
+
+### أهداف إنجزنا (ثلاث طبقات)
+
+#### 🥇 المستوى المستهدف ("جودة عالية")
+
+كل صفحات العميل تحقق "جيد" بمعايير Google على CI (مع 4x throttle):
+
+- TBT ≤ 600ms (يُترجَم لـ ~150ms على الجهاز)
+- LCP ≤ 4000ms
+- TTI ≤ 6000ms
+- Performance score ≥ 0.8
+
+#### 🥈 المستوى الحالي المستهدف ("مقبول")
+
+- TBT ≤ 700ms
+- Performance score ≥ 0.6
+- باقي المتركس داخل العتبات الحالية
+
+#### 🥉 الحد الأدنى (ما لا نسمح بالنزول تحته)
+
+- TBT ≤ 900ms (الحالي بعد الـ bump المؤقت)
+- لا regression > 15% بين أي PR والـ baseline
+
+---
+
+## ٤. الفجوات المعروفة
+
+### فجوة ١ — قياس صفر للتاجر والأدمن
+
+| المسار                                    | حالة القياس |
+| ----------------------------------------- | ----------- |
+| `/ar/provider` (dashboard)                | ❌ غير مقاس |
+| `/ar/provider/orders` (قائمة)             | ❌ غير مقاس |
+| `/ar/provider/orders/[id]` (تفاصيل)       | ❌ غير مقاس |
+| `/ar/provider/orders/custom/[id]` (تسعير) | ❌ غير مقاس |
+| `/ar/provider/finance`                    | ❌ غير مقاس |
+| `/ar/admin/*` (كل الأدمن)                 | ❌ غير مقاس |
+
+نطير على عمياء على هذه الصفحات. أي regression يصل للإنتاج بدون مقاومة CI.
+
+### فجوة ٢ — حدود حقيقة + measurement
+
+- **Real User Monitoring (RUM)** غير مفعَّل بشكل واضح في الـ codebase. Sentry موجود للـ errors لكن لا performance metrics من الإنتاج.
+- لا lookup table للـ performance budgets per route.
+- عدم وجود alerting عند تجاوز الـ budgets.
+
+### فجوة ٣ — أنماط الكود المُعطِّلة
+
+- **`/ar/providers`:** رندر 100 بطاقة بدون virtualization/pagination.
+- `useSDUI` يجلب على mount بدون priority.
+- `ProviderCard` غير مُغلَّف بـ `React.memo`.
+- `useEffect` لـ `searchProducts` يفعّل setTimeout حتى مع query فارغ.
+- صفحات تاجر طويلة (1000+ سطر) بدون code-splitting واضح.
+
+---
+
+## ٥. التشخيصات التفصيلية
+
+### 5.1 `/ar/providers` (FCP/TBT issues)
+
+**الكود:**
+
+- `src/app/[locale]/providers/page.tsx` — server component، ISR 5min ✓
+- `src/app/[locale]/providers/ProvidersClient.tsx` — 588 سطر، client
+- `src/components/customer/shared/ProviderCard.tsx` — 288 سطر، client
+
+**رحلة الصفحة:**
+
+1. Server fetch 100 providers (cached) — 0ms للمستخدم.
+2. Client hydration — تحميل JS bundle.
+3. `useSDUI` hook — RPC `get_page_sections` على mount.
+4. `useUserLocation` context — قراءة localStorage + احتمال profile fetch.
+5. `useFavorites` hook — auth check + favorites query.
+6. **رندر ١٠٠ ProviderCard** — كل بطاقة Link + Image + 4-6 icons + badges = ~20 DOM nodes × 100 = **2000 DOM nodes في render واحد**.
+7. Re-renders عند resolve favourites/location → `useMemo` يعيد فلترة + sort 100 عنصر.
+
+**التقدير الزمني (CI 4x throttle):**
+
+- Bundle parse + hydrate: ~150-250ms
+- useSDUI fetch + setState: ~200-400ms
+- 100-card initial render: ~300-500ms ← الأكبر
+- Re-renders: ~50-100ms × عدد الـ updates
+
+**مجموع متوقع:** 750-1100ms — يطابق القيم الملاحَظة.
+
+### 5.2 `/ar` (welcome) — يمر، لكن غير محسوب tightly
+
+لم يُقَس بدقة. **مهمة في المرحلة الأولى:** قياس واستخراج الـ baseline.
+
+### 5.3 `/ar/cart` — يمر، لكن قد يكبر مع وجود variants/promo logic
+
+نفس الملاحظة — يحتاج baseline.
+
+### 5.4 صفحات التاجر/الأدمن — مجهولة تماماً
+
+**الأخطر:** كل التحسينات اللي نحتاجها ممكن تكون مخفية. أبسط فحص يدوي:
+
+- `/provider/orders/page.tsx` — refactor حديث + queries مُضمَّنة + realtime subscriptions.
+- `/admin/orders/[id]/page.tsx` — table متعدد الجداول + refunds.
+
+**هذا أولوية ١ في المرحلة الثانية.**
+
+---
+
+## ٦. خطة التنفيذ المرحلية
+
+### المرحلة ١ — Quick Wins على `/ar/providers` (PR منفصل)
+
+**الهدف:** TBT ≤ 450ms على CI، إعادة الـ threshold إلى 700.
+
+| #   | المهمة                                                           | تأثير متوقع  | حالة |
+| --- | ---------------------------------------------------------------- | ------------ | ---- |
+| 1.1 | `React.memo` على `ProviderCard`                                  | -50-100ms    | ⬜   |
+| 1.2 | رندر تدريجي: أول 12 بطاقة فوراً، الباقي بـ `requestIdleCallback` | -300-400ms   | ⬜   |
+| 1.3 | تأجيل `useSDUI` للـ idle time (`useDeferredValue` أو timeout)    | -100-200ms   | ⬜   |
+| 1.4 | `searchProducts` يخرج فوراً لو query فارغ (قبل debounce)         | -50ms        | ⬜   |
+| 1.5 | `useMemo` للفلترة: skip كامل لو كل الفلاتر افتراضية              | -30-50ms     | ⬜   |
+| 1.6 | إعادة TBT threshold إلى 700ms في `lighthouserc.js`               | (validation) | ⬜   |
+| 1.7 | تحديث هذه الوثيقة بالقياسات الفعلية                              | (process)    | ⬜   |
+
+**معيار قبول:** Lighthouse CI يمر بـ TBT ≤ 700، الـ flow اليدوي على `/ar/providers` يبدو "ناعم" بدون hitches.
+
+### المرحلة ٢ — إغلاق فجوة القياس (PR منفصل)
+
+**الهدف:** قياس صفحات التاجر والأدمن.
+
+| #   | المهمة                                                                                               | تأثير متوقع                               | حالة |
+| --- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---- |
+| 2.1 | Lighthouse config: إضافة `/provider/login`، `/admin/login` (الفعلية، مع redirect testing)            | تغطية أوسع                                | ⬜   |
+| 2.2 | Authenticated Lighthouse runs — Puppeteer script يسجّل دخول قبل التشغيل                              | يفتح الـ provider/admin dashboards للقياس | ⬜   |
+| 2.3 | إضافة URLs: `/provider/orders`, `/provider/orders/[sample-id]`, `/provider/finance`, `/admin/orders` | كشف regressions داخلية                    | ⬜   |
+| 2.4 | إضافة URLs: `/provider/orders/custom/[sample-id]` (صفحة التسعير)                                     | كشف ثقل PricingNotepad                    | ⬜   |
+| 2.5 | Performance budgets per route — كل صفحة لها sub-config tighter                                       | منع zone creep                            | ⬜   |
+| 2.6 | تحديث هذه الوثيقة بالـ baseline الجديد                                                               | (process)                                 | ⬜   |
+
+**معيار قبول:** كل صفحة في الـ workflows الثلاثة (عميل، تاجر، أدمن) لها قياس مستمر في CI، وقيمة Performance score معروفة.
+
+### المرحلة ٣ — معالجة `/ar` و `/ar/cart` (PR منفصل)
+
+**الهدف:** نفس مستوى `/ar/providers` بعد المرحلة ١.
+
+| #   | المهمة                                             | حالة |
+| --- | -------------------------------------------------- | ---- |
+| 3.1 | Baseline قياس مفصَّل لـ `/ar` و `/ar/cart`         | ⬜   |
+| 3.2 | تحديد الـ contributors الكبار للـ TBT في كل منهما  | ⬜   |
+| 3.3 | تطبيق نفس quick wins (memo, deferred render, etc.) | ⬜   |
+| 3.4 | تحديث الوثيقة                                      | ⬜   |
+
+### المرحلة ٤ — صفحات التاجر (PR منفصل)
+
+**الهدف:** الصفحات اللي عملت refactor عليها مؤخراً (orders, custom orders) لا تحتوي regressions.
+
+| #   | المهمة                                            | حالة |
+| --- | ------------------------------------------------- | ---- |
+| 4.1 | قياس `/provider/orders` (قائمة + realtime)        | ⬜   |
+| 4.2 | تأجيل `useSDUI` و heavy hooks في dashboard التاجر | ⬜   |
+| 4.3 | تخفيف `PricingNotepad` (588 سطر) — code-splitting | ⬜   |
+| 4.4 | virtualization لقائمة الطلبات لو > 50 طلب         | ⬜   |
+| 4.5 | تحديث الوثيقة                                     | ⬜   |
+
+### المرحلة ٥ — صفحات الأدمن (PR منفصل)
+
+**الهدف:** أداء مقبول حتى مع كميات بيانات كبيرة.
+
+| #   | المهمة                                                     | حالة |
+| --- | ---------------------------------------------------------- | ---- |
+| 5.1 | قياس `/admin/orders`, `/admin/finance`, `/admin/customers` | ⬜   |
+| 5.2 | Server-side pagination + filtering (إذا غير موجود)         | ⬜   |
+| 5.3 | تخفيف الجداول الكبيرة (TanStack Virtual أو ما يشبه)        | ⬜   |
+| 5.4 | تحديث الوثيقة                                              | ⬜   |
+
+### المرحلة ٦ — Real User Monitoring (PR منفصل)
+
+**الهدف:** نعرف ما يحدث على أجهزة المستخدمين الفعلية.
+
+| #   | المهمة                                                   | حالة |
+| --- | -------------------------------------------------------- | ---- |
+| 6.1 | تفعيل Sentry Performance أو Vercel Speed Insights        | ⬜   |
+| 6.2 | Web Vitals reporting من `app/layout.tsx` (LCP, INP, CLS) | ⬜   |
+| 6.3 | Dashboard للـ p75 / p95 على الـ routes الرئيسية          | ⬜   |
+| 6.4 | Alerting عند regression > 15% أسبوع لأسبوع               | ⬜   |
+| 6.5 | تحديث الوثيقة                                            | ⬜   |
+
+### المرحلة ٧ — رفع المعايير (Tighten thresholds)
+
+**الهدف:** نحقق "جودة عالية" — Performance score ≥ 0.8، TBT ≤ 600.
+
+| #   | المهمة                                             | حالة |
+| --- | -------------------------------------------------- | ---- |
+| 7.1 | بعد المراحل 1-6، رفع `total-blocking-time` إلى 600 | ⬜   |
+| 7.2 | رفع `categories:performance` minScore إلى 0.8      | ⬜   |
+| 7.3 | تحديث الوثيقة                                      | ⬜   |
+
+---
+
+## ٧. سجل القياسات (يُحدَّث بعد كل مرحلة)
+
+### Baseline — قبل أي عمل (مايو 2026)
+
+| URL                  | Performance | LCP      | TBT       | TTI      | Notes           |
+| -------------------- | ----------- | -------- | --------- | -------- | --------------- |
+| `/ar`                | TBD         | TBD      | TBD       | TBD      | لم يُقَس        |
+| `/ar/providers`      | TBD         | TBD      | **783ms** | TBD      | متجاوز عتبة 700 |
+| `/ar/cart`           | TBD         | TBD      | TBD       | TBD      | لم يُقَس        |
+| `/ar/auth/login`     | TBD         | TBD      | TBD       | TBD      | لم يُقَس        |
+| `/ar/custom-order`   | TBD         | TBD      | TBD       | TBD      | لم يُقَس        |
+| `/ar/provider/login` | TBD         | TBD      | TBD       | TBD      | لم يُقَس        |
+| `/provider/orders`   | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
+| `/admin/orders`      | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
+
+### بعد المرحلة ١
+
+_يُملأ بعد التنفيذ_
+
+### بعد المرحلة ٢
+
+_يُملأ بعد التنفيذ_
+
+### بعد المرحلة ٣
+
+_يُملأ بعد التنفيذ_
+
+_(وهكذا)_
+
+---
+
+## ٨. متابعات (Follow-ups) ومخاطر
+
+- **خطر:** تحسين `/ar/providers` يكشف نفس النمط في صفحات أخرى. كل tradeoff يُسجَّل هنا.
+- **خطر:** Sentry Performance قد يكون له تكلفة شهرية. تحقق قبل التفعيل.
+- **متابعة:** الـ `loading.tsx` لـ providers يستخدم 6 skeleton بطاقات — يجب أن يطابق العدد الفعلي للأول-أعلى-الفولد بعد المرحلة ١.
+- **متابعة:** الـ image optimizations (placeholder=blur, formats=[avif, webp]) — تحقق هل كلها مفعَّلة في `next.config.ts`.
+
+---
+
+## ٩. بروتوكول التحديث (إجباري)
+
+> هذه ليست وثيقة "يقرأها مرة"، هي وثيقة عمل.
+
+عند تنفيذ أي مهمة من القسم ٦:
+
+1. **قبل البدء:** علِّم المهمة 🔄 في الجدول.
+2. **أثناء العمل:** سجِّل كل اكتشاف غير متوقع في القسم ٨.
+3. **بعد الانتهاء:**
+   - علِّم المهمة ✅.
+   - شغِّل Lighthouse على الصفحات المتأثرة.
+   - أدخِل القياسات الفعلية في القسم ٧ (سجل القياسات).
+   - حدِّث "آخر تحديث" في أعلى الوثيقة.
+   - اكتب اسم الـ PR/commit في تعليق بجانب المهمة.
+4. **لو الـ task أُلغي أو تأجَّل:** احذفه من الجدول واكتب السبب في القسم ٨.
+
+**لو سار العمل بدون تحديث الوثيقة، الجزء ده من الـ debt التقني، مش "خلصنا".**
+
+---
+
+## ١٠. مرجع سريع — كيف تشغّل قياس محلياً
+
+```bash
+# Build production
+npm run build
+
+# Run Lighthouse CI on local server
+npx lhci collect --config=./lighthouserc.js
+npx lhci assert
+
+# View detailed report
+npx lhci open
+
+# Or run a single URL directly
+npx lighthouse http://localhost:3000/ar/providers \
+  --view \
+  --emulated-form-factor=mobile \
+  --throttling.cpuSlowdownMultiplier=4
+```
+
+**أهم متركس تتابعها:**
+
+- **Total Blocking Time** — هل يتوقف الـ main thread طويلاً.
+- **Largest Contentful Paint** — متى المحتوى الأهم يظهر.
+- **Time to Interactive** — متى الصفحة تستجيب فعلاً.
+- **Main Thread Work Breakdown** — أين تُهدر الـ CPU (script eval, layout, paint).
