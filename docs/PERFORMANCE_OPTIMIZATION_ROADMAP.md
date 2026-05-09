@@ -334,7 +334,7 @@
 - **كيف يحسب CI الـ pass/fail:** `lighthouserc.js` لا يحدد `aggregationMethod`، فـ lhci يستخدم الافتراضي `optimistic` لكل assertion بـ `minScore` — أي يأخذ **أفضل** run من الـ 3 ويقارنه بالعتبة. النتيجة: URL يمر حتى لو 2 من 3 runs تحت العتبة. عمود "Performance (median)" في الجدول أعلاه أصدق مؤشر للحال الفعلي من قيمة الـ assertion.
 - التباين بين الـ 3 runs لـ `/ar/providers` (0.57 → 0.71) كبير، يعكس CI cold-start variance. الـ representative run = 0.71.
 - `/ar/provider/login` يحتاج فحص: نفس البنية الـ Auth لكن score أقل بـ 12 نقطة من `/ar/auth/login`. مرشّح لـ Phase 4.
-- TBT/LCP/TTI الرقمية الفعلية ليست في `manifest.json` (يحوي scores فقط)، ولا في `assertion-results.json` لأن lhci يحفظ فيه الـ assertions الفاشلة فقط ولا يدرج الناجحة. لاستخراج TBT/LCP/TTI لـ `/ar/providers` نحتاج محتوى `ar_providers-2026_05_09_10_14_17-report.json` (الـ representative LHR) — مرشَّح للجولة التالية.
+- **مصادر الأرقام في الـ artifact:** `manifest.json` يحوي **Performance category scores فقط** (مجمَّع لكل URL × run، بدون audits التفصيلية). `assertion-results.json` يحوي **الـ assertions الفاشلة فقط** (entries بـ `passed: false`، شامل تفاصيل numericValue/values/threshold)؛ الـ assertions الناجحة لا تُكتَب في الملف. للحصول على TBT/LCP/TTI الـ numericValue حين تكون **ناجحة** (الحالة الحالية لـ `/ar/providers` بعد Phase 1) لا بد من الـ LHR الكامل: `ar_providers-2026_05_09_10_14_17-report.json` (representative run) — مرشَّح للجولة التالية.
 
 **Assertion-level evidence من `assertion-results.json` (PR #373 artifact):**
 
@@ -371,7 +371,7 @@ _(وهكذا)_
 - **اكتشاف 2026-05-09:** `lighthouserc.js` كان يستخدم `temporary-public-storage` فلا artifacts، و `vercel.json` لم يحدد region (default=iad1، 150ms RTT لمصر). **عُولج في Phase 1.5 / PR #372.**
 - **اكتشاف 2026-05-09 (Codex review):** حتى بعد PR #372، الـ artifact لا يزال يصل فارغ. السبب: `actions/upload-artifact@v4` يتجاهل الـ dot-prefixed paths افتراضياً، فالمحتوى الذي ينتجه `target: 'filesystem'` تحت `.lighthouseci/` لا يتم رفعه. **عُولج في هذا الـ PR بإضافة `include-hidden-files: true`.**
 - **اكتشاف 2026-05-09:** Lighthouse CI الحالي يقيس localhost في GitHub runner، لا Vercel Edge production. الأرقام pessimistic (no CDN, no Brotli, no image optimization). الإصلاح في Phase 2 — switch trigger إلى `deployment_status` ليقيس Vercel preview URL.
-- **متابعة:** الـ `manifest.json` يحوي Performance scores فقط، لا TBT/LCP/TTI numericValues. لاستخراج الأرقام التفصيلية لـ `/ar/providers`، نحتاج محتوى أحد الملفين: `assertion-results.json` (أفضل — يحوي كل الـ assertions بقيمها) أو `ar_providers-2026_05_09_10_14_17-report.json` (الـ representative run).
+- **متابعة:** `manifest.json` يحوي Performance category scores فقط؛ `assertion-results.json` يحوي الـ assertions الفاشلة فقط (مع numericValues). لذلك TBT/LCP/TTI الناجحة لـ `/ar/providers` غير متاحة من أي منهما. **المصدر الوحيد** هو الـ representative LHR: `ar_providers-2026_05_09_10_14_17-report.json` — يحوي `audits["total-blocking-time"].numericValue` و `audits["largest-contentful-paint"].numericValue` و `audits.interactive.numericValue` بالأرقام الكاملة.
 - **متابعة عملية (Prettier + Husky):** الـ pre-commit hook (`.husky/pre-commit` → `npx lint-staged`) يُشغّل `prettier --write` على ملفات `.md` تلقائياً، لكن الـ Claude Code agent sessions أحياناً تتجاوز الـ husky hooks. **القاعدة:** قبل أي commit يدوي على markdown، شغّل `npm run format:check` محلياً. CI يُشغّل `npm run format:check` في `.github/workflows/ci.yml` (Lint & Type Check job)، فشل عنده يبقى صريح.
 
 ---
