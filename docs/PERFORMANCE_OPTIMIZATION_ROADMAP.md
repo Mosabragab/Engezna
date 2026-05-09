@@ -8,8 +8,8 @@
 > 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 
-> فرع التنفيذ الحالي للأداء: `claude/fix-mobile-login-issue-8913j` (Phase 1)
-> آخر تحديث: 2026-05-08 — Phase 1 quick wins shipped
+> فرع التنفيذ الحالي للأداء: `claude/perf-fix-ci-artifact-and-vercel-region` (Phase 1.5 — fix measurement gap)
+> آخر تحديث: 2026-05-09 — Phase 1 merged via PR #371, two CI gaps surfaced and being fixed
 
 ---
 
@@ -199,20 +199,22 @@
 
 **معيار قبول:** Lighthouse CI يمر بـ TBT ≤ 700، الـ flow اليدوي على `/ar/providers` يبدو "ناعم" بدون hitches.
 
-### المرحلة ٢ — إغلاق فجوة القياس (PR منفصل)
+### المرحلة ٢ — Production-like measurement + إغلاق فجوة التاجر/الأدمن (PR منفصل)
 
-**الهدف:** قياس صفحات التاجر والأدمن.
+**الهدف:** Lighthouse يقيس Vercel preview (CDN + Edge + Brotli + image optimization) بدل localhost على Linux runner، لأن الأخير pessimistic بنسبة 20-40% مقارنة بتجربة المستخدم الحقيقي. ثم تغطية صفحات التاجر والأدمن.
 
-| #   | المهمة                                                                                               | تأثير متوقع                               | حالة |
-| --- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---- |
-| 2.1 | Lighthouse config: إضافة `/provider/login`، `/admin/login` (الفعلية، مع redirect testing)            | تغطية أوسع                                | ⬜   |
-| 2.2 | Authenticated Lighthouse runs — Puppeteer script يسجّل دخول قبل التشغيل                              | يفتح الـ provider/admin dashboards للقياس | ⬜   |
-| 2.3 | إضافة URLs: `/provider/orders`, `/provider/orders/[sample-id]`, `/provider/finance`, `/admin/orders` | كشف regressions داخلية                    | ⬜   |
-| 2.4 | إضافة URLs: `/provider/orders/custom/[sample-id]` (صفحة التسعير)                                     | كشف ثقل PricingNotepad                    | ⬜   |
-| 2.5 | Performance budgets per route — كل صفحة لها sub-config tighter                                       | منع zone creep                            | ⬜   |
-| 2.6 | تحديث هذه الوثيقة بالـ baseline الجديد                                                               | (process)                                 | ⬜   |
+| #   | المهمة                                                                                                                           | تأثير متوقع                               | حالة |
+| --- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ---- |
+| 2.1 | تغيير trigger في `lighthouse.yml` من `pull_request` إلى `deployment_status` بانتظار Vercel preview ينشر، ثم يقيس الـ preview URL | أرقام تعكس production environment فعلاً   | ⬜   |
+| 2.2 | `lighthouserc.js` يقرأ الـ base URL من env (مثل `LHCI_TARGET_URL`) بدل hardcoding `localhost:3000`                               | تكامل مع #2.1                             | ⬜   |
+| 2.3 | إضافة URLs لقياس صفحات التاجر العامة (login pages الفعلية تُقاس بالفعل) — تحقق التغطية بعد التغيير                               | تغطية أوسع                                | ⬜   |
+| 2.4 | Authenticated Lighthouse runs — Puppeteer script يسجّل دخول قبل التشغيل لقياس dashboards                                         | يفتح الـ provider/admin dashboards للقياس | ⬜   |
+| 2.5 | إضافة URLs: `/provider/orders`, `/provider/orders/[sample-id]`, `/provider/finance`, `/admin/orders`                             | كشف regressions داخلية                    | ⬜   |
+| 2.6 | إضافة URLs: `/provider/orders/custom/[sample-id]` (صفحة التسعير)                                                                 | كشف ثقل PricingNotepad                    | ⬜   |
+| 2.7 | Performance budgets per route — كل صفحة لها sub-config tighter                                                                   | منع zone creep                            | ⬜   |
+| 2.8 | تحديث هذه الوثيقة بالـ baseline الجديد (production-like) + عتبات أحدث                                                            | (process)                                 | ⬜   |
 
-**معيار قبول:** كل صفحة في الـ workflows الثلاثة (عميل، تاجر، أدمن) لها قياس مستمر في CI، وقيمة Performance score معروفة.
+**معيار قبول:** كل صفحة في الـ workflows الثلاثة (عميل، تاجر، أدمن) لها قياس مستمر في CI من production-like environment، وقيمة Performance score معروفة وموثقة.
 
 ### المرحلة ٣ — معالجة `/ar` و `/ar/cart` (PR منفصل)
 
@@ -287,7 +289,7 @@
 | `/provider/orders`   | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
 | `/admin/orders`      | غير مقاس    | غير مقاس | غير مقاس  | غير مقاس | فجوة            |
 
-### بعد المرحلة ١ (محلياً، قبل CI run)
+### بعد المرحلة ١ — مُدمَجة في production (PR #371)
 
 التغييرات المُطبَّقة:
 
@@ -297,7 +299,21 @@
 - `searchProducts` لا يحجز timer ولا يستدعي menu_items لو query فارغ.
 - الـ filter `useMemo` يُرجع نفس مرجع `providers` في الحالة الافتراضية، فلا يُهلك React reconciliation للـ visible slice.
 
-**القياس الفعلي على CI:** يُملأ بعد تشغيل Lighthouse run على الـ PR.
+**حالة الـ CI:** Lighthouse Audit مرّ بنجاح على آخر commit للـ PR (`aeb227b`)، أي أن كل العتبات بما فيها `total-blocking-time ≤ 700ms` على `/ar/providers` محقَّقة. هذا يثبت أن الـ regression الذي كان عند 783ms قد عاد إلى ما دون 700ms.
+
+**القياس الرقمي التفصيلي:** غير متاح بعد — الـ `actions/upload-artifact` كان يجد `.lighthouseci/` فارغاً لأن الـ upload target كان `'temporary-public-storage'`. **هذه فجوة معماري في الـ CI، يتم إصلاحها في Phase 1.5 (انظر أدناه).** بعد الإصلاح، أول CI run جديد سيحفظ JSON كامل بكل الـ metrics لكل URL، وعندها يتم ملء الجدول الرقمي هنا.
+
+### Phase 1.5 — إصلاح فجوة القياس + Vercel region (PR منفصل)
+
+اكتشفنا أثناء محاولة استخراج أرقام Phase 1 الفعلية ثلاث فجوات يجب إغلاقها قبل أي قياس أعمق:
+
+| #   | الفجوة                                                                                                                                                          | الإصلاح                                                                    | الفائدة                                                                                    |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1   | `lighthouserc.js` يستخدم `target: 'temporary-public-storage'` فلا تُحفظ artifacts محلياً، والخطوة `actions/upload-artifact` تطبع warning "No files found" بصمت. | تغيير إلى `target: 'filesystem'` + `outputDir: './.lighthouseci'`.         | كل CI run يصبح فيه artifact قابل للتنزيل (JSON + HTML تقارير).                             |
+| 2   | `vercel.json` لا يحدد `regions`، فالـ default = `iad1` (Washington DC). كل dynamic request من بني سويف يلف على واشنطن (~150ms RTT).                             | إضافة `"regions": ["fra1"]` (Frankfurt).                                   | ~80ms أقل لكل dynamic request للمستخدم المصري. أكبر perf win بأقل تعديل.                   |
+| 3   | الـ Lighthouse CI يقيس localhost:3000 على الـ Linux runner، لا الـ Vercel Edge production. الأرقام pessimistic vs الواقع.                                       | (Phase 2) Lighthouse على Vercel preview URL عبر `deployment_status` event. | باقي CI runs تعكس production environment فعلاً (CDN + Edge + Brotli + image optimization). |
+
+**الفجوة #3 خارج نطاق Phase 1.5** — تستحق PR منفصل بعد ما الـ #1 و #2 يثبتا.
 
 ### بعد المرحلة ٢
 
@@ -315,8 +331,11 @@ _(وهكذا)_
 
 - **خطر:** تحسين `/ar/providers` يكشف نفس النمط في صفحات أخرى. كل tradeoff يُسجَّل هنا.
 - **خطر:** Sentry Performance قد يكون له تكلفة شهرية. تحقق قبل التفعيل.
-- **متابعة:** الـ `loading.tsx` لـ providers يستخدم 6 skeleton بطاقات — يجب أن يطابق العدد الفعلي للأول-أعلى-الفولد بعد المرحلة ١.
+- **متابعة:** الـ `loading.tsx` لـ providers يستخدم 6 skeleton بطاقات — يجب أن يطابق العدد الفعلي للأول-أعلى-الفولد بعد المرحلة ١. **(تم في Phase 1 — رُفِع إلى 12.)**
 - **متابعة:** الـ image optimizations (placeholder=blur, formats=[avif, webp]) — تحقق هل كلها مفعَّلة في `next.config.ts`.
+- **اكتشاف 2026-05-09:** `lighthouserc.js` كان يستخدم `temporary-public-storage` فلا artifacts، و `vercel.json` لم يحدد region (default=iad1، 150ms RTT لمصر). **يُعالج في Phase 1.5.**
+- **اكتشاف 2026-05-09:** Lighthouse CI الحالي يقيس localhost في GitHub runner، لا Vercel Edge production. الأرقام pessimistic (no CDN, no Brotli, no image optimization). الإصلاح في Phase 2 — switch trigger إلى `deployment_status` ليقيس Vercel preview URL.
+- **متابعة:** بعد Phase 1.5، شغّل CI run، نزّل artifact، املأ الجدول الرقمي في §٧ تحت "بعد Phase 1.5".
 
 ---
 
