@@ -7,7 +7,14 @@
  * - Accessibility: 90+
  * - Best Practices: 85+
  * - SEO: 85+ (except auth pages with noindex)
+ *
+ * Phase 2: when LHCI_TARGET_URL is set (deployment_status workflow),
+ * audit the deployed Vercel preview directly. Otherwise build + serve
+ * locally as before — keeps `npm run lighthouse` working unchanged.
  */
+const BASE_URL = process.env.LHCI_TARGET_URL || 'http://localhost:3000';
+const RUN_LOCAL_SERVER = !process.env.LHCI_TARGET_URL;
+
 module.exports = {
   ci: {
     collect: {
@@ -16,18 +23,22 @@ module.exports = {
 
       // URL patterns to test
       url: [
-        'http://localhost:3000/ar',
-        'http://localhost:3000/ar/providers',
-        'http://localhost:3000/ar/cart',
-        'http://localhost:3000/ar/auth/login',
-        'http://localhost:3000/ar/custom-order',
-        'http://localhost:3000/ar/provider/login',
+        `${BASE_URL}/ar`,
+        `${BASE_URL}/ar/providers`,
+        `${BASE_URL}/ar/cart`,
+        `${BASE_URL}/ar/auth/login`,
+        `${BASE_URL}/ar/custom-order`,
+        `${BASE_URL}/ar/provider/login`,
       ],
 
-      // Start the server (build is done separately in CI)
-      startServerCommand: 'npm run start',
-      startServerReadyPattern: 'Ready',
-      startServerReadyTimeout: 30000,
+      // Only spawn `next start` when measuring localhost; for a remote
+      // target_url the URL is already serving and starting a local server
+      // would just waste runner time and risk port conflicts.
+      ...(RUN_LOCAL_SERVER && {
+        startServerCommand: 'npm run start',
+        startServerReadyPattern: 'Ready',
+        startServerReadyTimeout: 30000,
+      }),
 
       // Chrome settings for mobile simulation
       settings: {
