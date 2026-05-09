@@ -8,8 +8,8 @@
 > 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-fix-ci-artifact-and-vercel-region` (Phase 1.5 — fix measurement gap)
-> آخر تحديث: 2026-05-09 — Phase 1 merged via PR #371, two CI gaps surfaced and being fixed
+> فرع التنفيذ الحالي للأداء: `claude/review-performance-roadmap-OSY6a` (Phase 1.5 follow-up — upload-artifact hidden-files fix)
+> آخر تحديث: 2026-05-09 — Phase 1.5 (PR #372) merged، لكن Codex رصد فجوة ثالثة: `actions/upload-artifact@v4` يتجاهل الـ dot-paths افتراضياً، فالـ artifact لا يزال فارغاً حتى بعد تحويل الـ upload target إلى filesystem.
 
 ---
 
@@ -309,11 +309,22 @@
 
 | #   | الفجوة                                                                                                                                                          | الإصلاح                                                                    | الفائدة                                                                                    |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1   | `lighthouserc.js` يستخدم `target: 'temporary-public-storage'` فلا تُحفظ artifacts محلياً، والخطوة `actions/upload-artifact` تطبع warning "No files found" بصمت. | تغيير إلى `target: 'filesystem'` + `outputDir: './.lighthouseci'`.         | كل CI run يصبح فيه artifact قابل للتنزيل (JSON + HTML تقارير).                             |
-| 2   | `vercel.json` لا يحدد `regions`، فالـ default = `iad1` (Washington DC). كل dynamic request من بني سويف يلف على واشنطن (~150ms RTT).                             | إضافة `"regions": ["fra1"]` (Frankfurt).                                   | ~80ms أقل لكل dynamic request للمستخدم المصري. أكبر perf win بأقل تعديل.                   |
-| 3   | الـ Lighthouse CI يقيس localhost:3000 على الـ Linux runner، لا الـ Vercel Edge production. الأرقام pessimistic vs الواقع.                                       | (Phase 2) Lighthouse على Vercel preview URL عبر `deployment_status` event. | باقي CI runs تعكس production environment فعلاً (CDN + Edge + Brotli + image optimization). |
+| #   | الفجوة                                                                                                                                                          | الإصلاح                                                                    | الفائدة                                                                                    | حالة |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---- |
+| 1   | `lighthouserc.js` يستخدم `target: 'temporary-public-storage'` فلا تُحفظ artifacts محلياً، والخطوة `actions/upload-artifact` تطبع warning "No files found" بصمت. | تغيير إلى `target: 'filesystem'` + `outputDir: './.lighthouseci'`.         | كل CI run يصبح فيه artifact قابل للتنزيل (JSON + HTML تقارير).                             | ✅ PR #372 |
+| 2   | `vercel.json` لا يحدد `regions`، فالـ default = `iad1` (Washington DC). كل dynamic request من بني سويف يلف على واشنطن (~150ms RTT).                             | إضافة `"regions": ["fra1"]` (Frankfurt).                                   | ~80ms أقل لكل dynamic request للمستخدم المصري. أكبر perf win بأقل تعديل.                   | ✅ PR #372 |
+| 1b  | **Codex 2026-05-09:** بعد إصلاح #1، الـ artifact لا يزال يُرفع فارغ. السبب: `actions/upload-artifact@v4` يتجاهل الـ dot-prefixed paths افتراضياً، و `.lighthouseci/` مجلد مخفي. الـ workflow log يطبع `Warning: No files were found with the provided path: .lighthouseci/`. | إضافة `include-hidden-files: true` في خطوة `actions/upload-artifact@v4` داخل `.github/workflows/lighthouse.yml`. | الـ artifact يحوي JSON + HTML فعلاً، فيمكن استخراج TBT/LCP/TTI الرقمية لـ Phase 1. | ✅ هذا الـ PR |
+| 3   | الـ Lighthouse CI يقيس localhost:3000 على الـ Linux runner، لا الـ Vercel Edge production. الأرقام pessimistic vs الواقع.                                       | (Phase 2) Lighthouse على Vercel preview URL عبر `deployment_status` event. | باقي CI runs تعكس production environment فعلاً (CDN + Edge + Brotli + image optimization). | ⬜ Phase 2 |
 
-**الفجوة #3 خارج نطاق Phase 1.5** — تستحق PR منفصل بعد ما الـ #1 و #2 يثبتا.
+**الفجوة #3 خارج نطاق Phase 1.5** — تستحق PR منفصل بعد ما #1 و #1b و #2 يثبتا.
+
+**خطوات استكمال Phase 1 بعد دمج هذا الـ PR:**
+
+1. شغّل أي PR (أو re-run الـ Lighthouse Audit على آخر merge إلى main) ليُنتج workflow run جديد بالإصلاح.
+2. من صفحة الـ Actions run، نزّل artifact `lighthouse-results` — يجب أن يحوي ملفات `lhr-*.json` و `lhr-*.html` لكل URL × 3 runs.
+3. من الـ JSON: استخرج `audits["total-blocking-time"].numericValue` و `audits.interactive.numericValue` و `audits["largest-contentful-paint"].numericValue` و `categories.performance.score` لـ `/ar/providers` (median من الـ 3 runs).
+4. املأ الجدول في §٧ تحت "بعد Phase 1.5" بالأرقام الفعلية.
+5. لو TBT median لـ `/ar/providers` < 600ms على CI، الـ Phase 1 quick wins فعلاً نجحت كما متوقع، ويمكن البدء في Phase 2 (Vercel preview measurement).
 
 ### بعد المرحلة ٢
 
@@ -333,9 +344,10 @@ _(وهكذا)_
 - **خطر:** Sentry Performance قد يكون له تكلفة شهرية. تحقق قبل التفعيل.
 - **متابعة:** الـ `loading.tsx` لـ providers يستخدم 6 skeleton بطاقات — يجب أن يطابق العدد الفعلي للأول-أعلى-الفولد بعد المرحلة ١. **(تم في Phase 1 — رُفِع إلى 12.)**
 - **متابعة:** الـ image optimizations (placeholder=blur, formats=[avif, webp]) — تحقق هل كلها مفعَّلة في `next.config.ts`.
-- **اكتشاف 2026-05-09:** `lighthouserc.js` كان يستخدم `temporary-public-storage` فلا artifacts، و `vercel.json` لم يحدد region (default=iad1، 150ms RTT لمصر). **يُعالج في Phase 1.5.**
+- **اكتشاف 2026-05-09:** `lighthouserc.js` كان يستخدم `temporary-public-storage` فلا artifacts، و `vercel.json` لم يحدد region (default=iad1، 150ms RTT لمصر). **عُولج في Phase 1.5 / PR #372.**
+- **اكتشاف 2026-05-09 (Codex review):** حتى بعد PR #372، الـ artifact لا يزال يصل فارغ. السبب: `actions/upload-artifact@v4` يتجاهل الـ dot-prefixed paths افتراضياً، فالمحتوى الذي ينتجه `target: 'filesystem'` تحت `.lighthouseci/` لا يتم رفعه. **يُعالج في هذا الـ PR بإضافة `include-hidden-files: true`.**
 - **اكتشاف 2026-05-09:** Lighthouse CI الحالي يقيس localhost في GitHub runner، لا Vercel Edge production. الأرقام pessimistic (no CDN, no Brotli, no image optimization). الإصلاح في Phase 2 — switch trigger إلى `deployment_status` ليقيس Vercel preview URL.
-- **متابعة:** بعد Phase 1.5، شغّل CI run، نزّل artifact، املأ الجدول الرقمي في §٧ تحت "بعد Phase 1.5".
+- **متابعة فورية:** بعد دمج هذا الـ PR، شغّل CI run، نزّل artifact، املأ الجدول الرقمي في §٧ تحت "بعد Phase 1.5". **هذه آخر خطوة قبل أن نتمكن من اعتبار Phase 1 مكتملاً بأرقام، لا فقط بـ "passed CI".**
 
 ---
 
