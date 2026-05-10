@@ -34,7 +34,13 @@ jobs:
        github.event.deployment_status.environment != 'Production' &&
        startsWith(github.event.deployment_status.target_url, 'https://'))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Phase 2 measures a remote Vercel preview, so each audit adds a
+    # network roundtrip vs the old localhost flow. 6 URLs × 3 runs lands
+    # around 14 minutes in good conditions; 15 left zero margin and
+    # killed the job mid-/ar/custom-order on PR #376. Doubling to 30
+    # gives headroom for Vercel cold starts and edge cache warmups
+    # without masking real regressions.
+    timeout-minutes: 30
     env:
       LHCI_TARGET_URL: ${{ github.event.deployment_status.target_url || inputs.target_url }}
     steps:
@@ -43,8 +49,9 @@ jobs:
         with:
           # For deployment_status, check out the exact commit Vercel deployed
           # so lighthouserc.js (and any future per-route budgets) match the
-          # code being measured.
-          ref: ${{ github.event.deployment_status.deployment.sha || github.sha }}
+          # code being measured. The webhook payload puts the SHA on the
+          # sibling `deployment` object, not nested under `deployment_status`.
+          ref: ${{ github.event.deployment.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
