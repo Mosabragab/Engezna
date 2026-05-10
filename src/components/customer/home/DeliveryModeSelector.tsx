@@ -108,12 +108,32 @@ export function DeliveryModeSelector({ className }: DeliveryModeSelectorProps) {
   };
 
   if (isLoading) {
+    // Skeleton mirrors the loaded structure for the default state
+    // (orderType='delivery' → toggle + address row visible) so the
+    // height stays stable when real content swaps in. Previously the
+    // skeleton was ~84px and the loaded state ~160px, which was the
+    // dominant CLS source on the home page (production CLS measured
+    // 0.48 in DevTools, ~5x the 0.1 budget).
     return (
       <div className={cn('px-4', className)}>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-3 animate-pulse">
-          <div className="flex gap-2">
-            <div className="flex-1 h-12 bg-slate-100 rounded-xl" />
-            <div className="flex-1 h-12 bg-slate-100 rounded-xl" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm">
+          {/* Toggle row — matches loaded p-2 + inner rounded-xl p-1 + h-12 buttons */}
+          <div className="p-2">
+            <div className="flex gap-1 bg-slate-100 rounded-xl p-1 animate-pulse">
+              <div className="flex-1 h-12 bg-white rounded-lg" />
+              <div className="flex-1 h-12 bg-slate-200/50 rounded-lg" />
+            </div>
+          </div>
+          {/* Address row — reserves the height of the default delivery
+              selector row (~88px) so content below doesn't jump. */}
+          <div className="border-t border-slate-100 p-3">
+            <div className="flex items-center gap-3 animate-pulse">
+              <div className="w-10 h-10 bg-slate-100 rounded-full flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-16 bg-slate-100 rounded" />
+                <div className="h-4 w-32 bg-slate-100 rounded" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
