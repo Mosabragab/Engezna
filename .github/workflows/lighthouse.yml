@@ -34,7 +34,13 @@ jobs:
        github.event.deployment_status.environment != 'Production' &&
        startsWith(github.event.deployment_status.target_url, 'https://'))
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Phase 2 measures a remote Vercel preview, so each audit adds a
+    # network roundtrip vs the old localhost flow. 6 URLs × 3 runs lands
+    # around 14 minutes in good conditions; 15 left zero margin and
+    # killed the job mid-/ar/custom-order on PR #376. Doubling to 30
+    # gives headroom for Vercel cold starts and edge cache warmups
+    # without masking real regressions.
+    timeout-minutes: 30
     env:
       LHCI_TARGET_URL: ${{ github.event.deployment_status.target_url || inputs.target_url }}
     steps:
