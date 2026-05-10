@@ -43,8 +43,9 @@ jobs:
         with:
           # For deployment_status, check out the exact commit Vercel deployed
           # so lighthouserc.js (and any future per-route budgets) match the
-          # code being measured.
-          ref: ${{ github.event.deployment_status.deployment.sha || github.sha }}
+          # code being measured. The webhook payload puts the SHA on the
+          # sibling `deployment` object, not nested under `deployment_status`.
+          ref: ${{ github.event.deployment.sha || github.sha }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
