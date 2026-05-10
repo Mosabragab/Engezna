@@ -40,6 +40,9 @@ jobs:
       - name: Run TypeScript check
         run: npm run typecheck
 
+      - name: Check noindex guardrail
+        run: bash scripts/check-noindex.sh
+
   # Job 2: Build
   build:
     name: Build

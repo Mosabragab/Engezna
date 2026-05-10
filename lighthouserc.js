@@ -64,6 +64,23 @@ module.exports = {
 
         // Locale
         locale: 'ar',
+
+        // Vercel preview deployments serve `x-robots-tag: noindex` from
+        // Vercel's edge so previews don't get indexed by Google. That's
+        // platform behavior, not our code — but Lighthouse's
+        // `is-crawlable` audit deducts ~12 points from the SEO category
+        // for it (deterministically: 1.0 → 0.58). Skipping the audit
+        // only when measuring a preview keeps the SEO threshold
+        // meaningful for everything we control (title, description,
+        // lang, viewport, link text, image alt) without baking the
+        // platform deduction into our minScore. Local `npm run
+        // lighthouse` (no LHCI_TARGET_URL) keeps the audit on, so a
+        // stray `<meta name="robots" content="noindex">` in source
+        // would still be caught there + by the grep guardrail in
+        // `.github/workflows/ci.yml`. Production reinstatement of this
+        // audit is tracked as a follow-up in
+        // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §8.
+        ...(RUN_LOCAL_SERVER ? {} : { skipAudits: ['is-crawlable'] }),
       },
 
       // Chrome flags
@@ -77,7 +94,10 @@ module.exports = {
         'categories:performance': ['error', { minScore: 0.6 }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:best-practices': ['error', { minScore: 0.85 }],
-        // SEO: lower threshold for auth pages (noindex is intentional) and client-rendered pages
+        // SEO: 0.6 covers the audits we control (title, description,
+        // lang, viewport, link text, image alt). On Vercel preview the
+        // `is-crawlable` audit is skipped via collect.settings above —
+        // see the comment there for rationale.
         'categories:seo': ['error', { minScore: 0.6 }],
 
         // Core Web Vitals - CI-friendly thresholds (CPU throttled 4x)
