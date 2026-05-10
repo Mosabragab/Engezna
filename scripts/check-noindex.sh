@@ -83,11 +83,14 @@ collect_hits "string-form" STRING_HITS \
 # multi-line: -P enables PCRE, -z treats input as a single buffer so
 # `.` (with /s via inline flag) crosses newlines. Restrict the lazy
 # `.*?` between `robots:` and `index:` to avoid false matches across
-# unrelated objects.
+# unrelated objects. Both keys allow optional single/double quotes
+# so quoted variants like `"index": false` aren't missed if Prettier
+# is bypassed (husky --no-verify is documented in CLAUDE.md as a
+# real path that does happen).
 collect_hits "object-form" OBJECT_HITS \
   grep -rlPz \
   --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
-  '(?si)robots\s*:\s*\{[^{}]{0,500}index\s*:\s*false' src/
+  "(?si)[\"']?robots[\"']?\s*:\s*\{[^{}]{0,500}[\"']?index[\"']?\s*:\s*false" src/
 
 UNEXPECTED=()
 declare -A SEEN
