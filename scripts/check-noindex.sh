@@ -47,14 +47,21 @@ is_allowed() {
 # the whole guardrail, which is exactly how earlier CI bugs slipped
 # through (e.g. the Lighthouse artifact silent "no files found"
 # warning from PR #373).
+#
+# NUL handling: GNU grep with `-lz` terminates filenames with NUL
+# (per the manpage), but bash command substitution silently strips
+# NUL bytes — concatenating filenames into one corrupted blob.
+# ugrep (used in some local envs) terminates with newline regardless.
+# Pipe through `tr '\0' '\n'` to normalize before capture, and use
+# PIPESTATUS[0] so grep's exit code (not tr's) drives error detection.
 collect_hits() {
   local label="$1"
   local -n out_array="$2"
   shift 2
   local out rc=0
   set +e
-  out=$("$@")
-  rc=$?
+  out=$("$@" | tr '\0' '\n')
+  rc=${PIPESTATUS[0]}
   set -e
   if [[ $rc -gt 1 ]]; then
     echo "ERROR: $label grep failed with exit code $rc: $*" >&2
