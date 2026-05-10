@@ -41,33 +41,56 @@ is_allowed() {
   return 1
 }
 
+# Run grep and return matching lines via nameref array. Exit code 1
+# from grep (no matches) is success; anything >=2 (regex compile
+# error, IO error) is fatal — silently masking those would defeat
+# the whole guardrail, which is exactly how earlier CI bugs slipped
+# through (e.g. the Lighthouse artifact silent "no files found"
+# warning from PR #373).
+collect_hits() {
+  local label="$1"
+  local -n out_array="$2"
+  shift 2
+  local out rc=0
+  set +e
+  out=$("$@")
+  rc=$?
+  set -e
+  if [[ $rc -gt 1 ]]; then
+    echo "ERROR: $label grep failed with exit code $rc: $*" >&2
+    exit "$rc"
+  fi
+  if [[ -n "$out" ]]; then
+    mapfile -t out_array <<<"$out"
+  else
+    out_array=()
+  fi
+}
+
 # Pattern 1: literal `noindex` (case-insensitive), string form.
-mapfile -t STRING_HITS < <(grep -rlni 'noindex' src/ \
-  --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
-  || true)
+collect_hits "string-form" STRING_HITS \
+  grep -rlni 'noindex' src/ \
+  --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx'
 
 # Pattern 2: `robots: { ... index: false ... }` (object form). PCRE
 # multi-line: -P enables PCRE, -z treats input as a single buffer so
 # `.` (with /s via inline flag) crosses newlines. Restrict the lazy
 # `.*?` between `robots:` and `index:` to avoid false matches across
 # unrelated objects.
-mapfile -t OBJECT_HITS < <(grep -rlPz \
+collect_hits "object-form" OBJECT_HITS \
+  grep -rlPz \
   --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
-  '(?si)robots\s*:\s*\{[^{}]{0,500}index\s*:\s*false' src/ \
-  || true)
+  '(?si)robots\s*:\s*\{[^{}]{0,500}index\s*:\s*false' src/
 
 UNEXPECTED=()
+declare -A SEEN
 for hit in "${STRING_HITS[@]}" "${OBJECT_HITS[@]}"; do
-  [[ -z "$hit" ]] && continue
+  [[ -z "$hit" || -n "${SEEN[$hit]:-}" ]] && continue
+  SEEN["$hit"]=1
   if ! is_allowed "$hit"; then
     UNEXPECTED+=("$hit")
   fi
 done
-
-# Dedupe (a file may match both patterns).
-if [[ ${#UNEXPECTED[@]} -gt 0 ]]; then
-  mapfile -t UNEXPECTED < <(printf '%s\n' "${UNEXPECTED[@]}" | sort -u)
-fi
 
 if [[ ${#UNEXPECTED[@]} -gt 0 ]]; then
   echo "ERROR: noindex directive found outside the allowlist:" >&2
@@ -82,5 +105,5 @@ if [[ ${#UNEXPECTED[@]} -gt 0 ]]; then
   exit 1
 fi
 
-TOTAL=$(( ${#STRING_HITS[@]} + ${#OBJECT_HITS[@]} ))
-echo "noindex guardrail: OK (${TOTAL} expected occurrence(s) inside allowlist; ${#STRING_HITS[@]} string-form, ${#OBJECT_HITS[@]} object-form)"
+TOTAL=${#SEEN[@]}
+echo "noindex guardrail: OK (${TOTAL} unique allowlisted file(s); ${#STRING_HITS[@]} string-form match(es), ${#OBJECT_HITS[@]} object-form match(es))"
