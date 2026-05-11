@@ -9,8 +9,8 @@
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-add-routes-ci` (Task B + Task C — provider detail URL + cookie injection + cross-cutting font preload reduction).
-> آخر تحديث: 2026-05-11 — task A (PR #381 = CLS + LCP banner fixes) merged. tasks B + C جاهزة في هذا الـ PR. task B-bis (puppeteer-based home seeding) مؤجَّل لأنه يحتاج `puppeteer` كـ devDep — قرار user مستقل.
+> فرع التنفيذ الحالي للأداء: `claude/perf-validate-roadmap-update` (تحديث roadmap بعد دمج tasks A + B + C والتحقق من النتائج).
+> آخر تحديث: 2026-05-11 — task A (PR #381)، task B (PR #382) merged. task C font-preload removal **مُحقَّق بالقياس**: LCP −1.0s على 4 routes في الـ artifact الجديد. التالي: task C-bis (a11y tokens).
 
 ---
 
@@ -20,15 +20,16 @@
 
 ### ٠.١ ما تم حسمه نهائياً (أزل من قائمة القلق)
 
-| الموضوع                                                | الحالة                                                                                         | الدليل                                                 |
-| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| **CLS على كل routes**                                  | ✅ تحت 0.012 على الست routes في الـ CI artifact                                                | `manifest.json` + per-route LHR (مايو 11)              |
-| **TTFB**                                               | ✅ 24ms ثابت عبر كل routes (Vercel fra1 + edge cache يعملان)                                   | LHR `server-response-time.numericValue ≈ 24` في كل ملف |
-| **الـ CLS على home (`/ar`)**                           | ✅ DeliveryModeSelector skeleton matched (PR #378) — DevTools live CLS = 0.01 بعد الإصلاح      | screenshots مايو 10                                    |
-| **الـ CLS على provider detail (`/ar/providers/{id}`)** | ✅ Banner `height: 0 → auto` removed — DevTools live CLS = 0 (مطعم الصفا، كان 0.84)            | الـ PR الحالي                                          |
-| **الـ LCP المتأخّر بالـ banner opacity animation**     | ✅ Banner opacity animation removed — كان يُضيف 1.4s render delay على LCP element              | الـ PR الحالي commit `6e04b64`                         |
-| **CI Lighthouse على Vercel preview**                   | ✅ Phase 2 يعمل — artifacts كاملة تتولّد على كل deployment_status                              | PR #377 + الـ artifact الحالي                          |
-| **SEO false-fail من preview noindex**                  | ✅ `skipAudits: ['is-crawlable']` على preview + guardrail script في `scripts/check-noindex.sh` | PR #377                                                |
+| الموضوع                                                | الحالة                                                                                                                                                | الدليل                                                 |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **CLS على كل routes**                                  | ✅ تحت 0.012 على الست routes في الـ CI artifact                                                                                                       | `manifest.json` + per-route LHR (مايو 11)              |
+| **TTFB**                                               | ✅ 24ms ثابت عبر كل routes (Vercel fra1 + edge cache يعملان)                                                                                          | LHR `server-response-time.numericValue ≈ 24` في كل ملف |
+| **الـ CLS على home (`/ar`)**                           | ✅ DeliveryModeSelector skeleton matched (PR #378) — DevTools live CLS = 0.01 بعد الإصلاح                                                             | screenshots مايو 10                                    |
+| **الـ CLS على provider detail (`/ar/providers/{id}`)** | ✅ Banner `height: 0 → auto` removed — DevTools live CLS = 0 (مطعم الصفا، كان 0.84)                                                                   | الـ PR الحالي                                          |
+| **الـ LCP المتأخّر بالـ banner opacity animation**     | ✅ Banner opacity animation removed — كان يُضيف 1.4s render delay على LCP element                                                                     | الـ PR الحالي commit `6e04b64`                         |
+| **CI Lighthouse على Vercel preview**                   | ✅ Phase 2 يعمل — artifacts كاملة تتولّد على كل deployment_status                                                                                     | PR #377 + الـ artifact الحالي                          |
+| **SEO false-fail من preview noindex**                  | ✅ `skipAudits: ['is-crawlable']` على preview + guardrail script في `scripts/check-noindex.sh`                                                        | PR #377                                                |
+| **LCP universal bottleneck (font preload bandwidth)**  | ✅ Task C font preload removal validated by post-merge artifact — LCP −1.0s على 4 routes (cart / auth / custom-order / provider-login)، perf +3..5pts | artifact 2026-05-11 (post PR #382) في §٧               |
 
 **الخلاصة:** الـ CLS و TTFB لم يعودا أهدافاً. كل التحسين الجاي يستهدف **LCP و TBT و JS bundle size**.
 
@@ -36,14 +37,14 @@
 
 الـ Impact = `(100 - real_user_RES) × samples` من Vercel Speed Insights (real-user data، آخر ٧ أيام). الترتيب يُعاد حسابه لما البيانات تتغيّر.
 
-| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)   | حالة                 | ملاحظة                                                                                                                                 |
-| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس        | ⬜ blocked على B-bis | الـ home gated بـ middleware cookie + client localStorage. يحتاج puppeteer devDep لـ seeding — مؤجَّل (انظر §٠.٥ + task B-bis في §٠.٦) |
-| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | يُقاس بعد merge | 🔄 task B الحالية    | سيُضاف للـ `lighthouserc.js` في task B (الـ PR الحالي). الـ artifact التالي بعد merge سيقيسه                                           |
-| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab        | ⬜                   | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                         |
-| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**    | ✅ مقبول             | لا يستحق work الآن — مراقبة فقط                                                                                                        |
-| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس        | ⬜                   | Admin route — أولوية أقل                                                                                                               |
-| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس        | ⬜                   | Admin — لاحقاً                                                                                                                         |
+| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)         | حالة                 | ملاحظة                                                                                                                                         |
+| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس              | ⬜ blocked على B-bis | الـ home gated بـ middleware cookie + client localStorage. يحتاج puppeteer devDep لـ seeding — مؤجَّل (انظر §٠.٥ + task B-bis في §٠.٦)         |
+| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | **0.65 lab (median)** | ⚠ a11y tokens debt   | URL مُضاف ومُقاس في الـ artifact مايو 11. LCP 5.58s median = أعلى من باقي routes. الـ assertMatrix override فعّال؛ task C-bis يلتقط tokens fix |
+| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab              | ⬜                   | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                                 |
+| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**          | ✅ مقبول             | لا يستحق work الآن — مراقبة فقط                                                                                                                |
+| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس              | ⬜                   | Admin route — أولوية أقل                                                                                                                       |
+| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس              | ⬜                   | Admin — لاحقاً                                                                                                                                 |
 
 **Cross-cutting:** الـ LCP بين 3.8s-5.2s على **كل** الـ routes في الـ CI. ده universal cause مش route-specific. **PR منفصل (P-X)** لـ root-cause investigation (font loading, render-blocking CSS, image priority، إلخ). لو نجح، يحسّن الست routes دفعة واحدة → impact تراكمي ضخم.
 
@@ -90,14 +91,14 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                                                                                                  | PR Branch                             | Owner Action         | Blocker                                  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------- | ---------------------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                                                | `claude/perf-provider-detail-page`    | ✅ merged PR #381    | جاهز                                     |
-| **B**     | Step 0a: إضافة `/ar/providers/ad52ece8-69c0-4f46-918e-1fbba73655cd` (مطعم الصفا، operation_mode=`custom`) للـ `lighthouserc.js` + cookie injection (يفيد routes جاية، تحضير لـ B-bis) | `claude/perf-add-routes-ci`           | 🔄 الـ PR الحالي     | A merged ✓                               |
-| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs                                                                 | `claude/perf-puppeteer-home-setup`    | PR منفصل (قرار user) | B merged + قرار يـ approve ~300MB devDep |
-| **C**     | Cross-cutting: drop font preload على 8 weights (تخفيف ~310KB من critical bandwidth، tests universal LCP hypothesis)                                                                   | `claude/perf-add-routes-ci` (stacked) | 🔄 الـ PR الحالي     | data-supported from existing artifact    |
-| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                                                                                     | `claude/perf-home-<metric>`           | PR                   | B-bis + C merged                         |
-| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                                                                                  | `claude/perf-auth-login-<metric>`     | PR                   | D merged                                 |
+| Order     | Task                                                                                                                  | PR Branch                          | Owner Action                          | Blocker                                  |
+| --------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------- | ---------------------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                | `claude/perf-provider-detail-page` | ✅ merged PR #381                     | جاهز                                     |
+| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override                                      | `claude/perf-add-routes-ci`        | ✅ merged PR #382                     | —                                        |
+| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs | `claude/perf-puppeteer-home-setup` | PR منفصل (قرار user)                  | B merged + قرار يـ approve ~300MB devDep |
+| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                      | `claude/perf-add-routes-ci`        | ✅ merged PR #382 — LCP −1.0s مُحقَّق | —                                        |
+| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                     | `claude/perf-home-<metric>`        | PR                                    | B-bis + C merged                         |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                  | `claude/perf-auth-login-<metric>`  | PR                                    | D merged                                 |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -462,9 +463,31 @@
 - **TBT 414ms على `/ar/providers`** و 358ms على `/ar/provider/login` — JS-heavy، يستحقان شغل خاص بعد cross-cutting.
 - **`/ar` يساوي welcome في الـ CI** — redirect يحجب قياس الـ home الفعلي. مذكور في §٠.٥.
 
+### بعد دمج tasks A + B + C (2026-05-11 v2 — post PR #382)
+
+artifact: `lighthouseresults_7.zip` (run post-merge على Vercel preview). كل URLs × 3 runs = 18 reports. المتوسط (median) لكل route مع الـ delta vs baseline أعلاه:
+
+| URL                                     | Perf (median) | LCP (median) | Δ LCP        | TBT (median) | FCP (median) | الحالة                             |
+| --------------------------------------- | ------------: | -----------: | ------------ | -----------: | -----------: | ---------------------------------- |
+| `/ar/providers` (list)                  |          0.72 |        4.66s | −210ms       |        333ms |        1.65s | ✓ تحسّن طفيف                       |
+| `/ar/providers/ad52ece8-...` **(جديد)** |          0.65 |        5.58s | baseline P1  |        305ms |        1.71s | ⚠ أعلى LCP — مرشح لـ Task D التالي |
+| `/ar/cart`                              |          0.76 |        3.83s | **−1.06s ✓** |        358ms |        1.33s | ✓ task C win                       |
+| `/ar/auth/login`                        |          0.83 |        3.66s | **−1.04s ✓** |        210ms |        1.41s | ✓ task C win — أعلى perf           |
+| `/ar/custom-order`                      |          0.84 |        3.27s | **−1.03s ✓** |        233ms |        1.02s | ✓ task C win — أكبر تحسين          |
+| `/ar/provider/login`                    |          0.66 |        4.24s | **−985ms ✓** |        558ms |        1.39s | ✓ LCP ينزل لكن TBT variance عالية  |
+
+**التحليل:**
+
+- **Task C font preload removal اشتغلت** ✓ — LCP −1.0s على 4/5 routes كانت في الأصل تـ download 310KB من font preloads. الـ hypothesis (bandwidth contention في الـ critical path) كانت صحيحة.
+- **`/ar/providers/{id}` LCP 5.58s هو الأعلى دلوقتي** — كان يُتوقع لأن الـ page بتحمّل cover image كبيرة + provider data. مرشح أساسي لـ Task D (بعد B-bis لو user approves) أو task جديد لو D blocked.
+- **`/ar/provider/login` TBT 558ms** — أعلى TBT بين كل routes. مرشح لـ task مستقل لاحقاً.
+- **`/ar/custom-order` perf 0.84 + FCP 1.02s + LCP 3.27s** — أصبح أفضل route. ممكن يكون reference للـ "ما يجب أن يكون عليه" home بعد B-bis.
+
+**CI status post-merge:** نجح بدون error-level failures. warnings فقط: `color-contrast` على provider-detail (متوقع، task C-bis يعالجه) و `mainthread-work-breakdown` على provider-detail (4.5s med، above 4s warn threshold).
+
 ### بعد المرحلة ٢
 
-_legacy section — تم استبداله بالـ table أعلاه_
+_legacy section — تم استبداله بالـ tables أعلاه_
 
 ### بعد المرحلة ٣
 
