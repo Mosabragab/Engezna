@@ -9,8 +9,8 @@
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-validate-roadmap-update` (تحديث roadmap بعد دمج tasks A + B + C والتحقق من النتائج).
-> آخر تحديث: 2026-05-11 — task A (PR #381)، task B (PR #382) merged. task C font-preload removal **مُحقَّق بالقياس**: LCP −1.0s على 4 routes في الـ artifact الجديد. التالي: task C-bis (a11y tokens).
+> فرع التنفيذ الحالي للأداء: `claude/perf-validate-roadmap-update` (roadmap update + task C-bis — provider-detail a11y tokens fix).
+> آخر تحديث: 2026-05-11 — task A (PR #381)، B+C (PR #382) merged. Task C-bis (a11y tokens) جاهز في نفس الـ PR. التالي بعد merge: انتظار CI artifact لتأكيد categories:accessibility ≥ 0.9 على provider-detail.
 
 ---
 
@@ -37,14 +37,14 @@
 
 الـ Impact = `(100 - real_user_RES) × samples` من Vercel Speed Insights (real-user data، آخر ٧ أيام). الترتيب يُعاد حسابه لما البيانات تتغيّر.
 
-| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)         | حالة                 | ملاحظة                                                                                                                                         |
-| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس              | ⬜ blocked على B-bis | الـ home gated بـ middleware cookie + client localStorage. يحتاج puppeteer devDep لـ seeding — مؤجَّل (انظر §٠.٥ + task B-bis في §٠.٦)         |
-| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | **0.65 lab (median)** | ⚠ a11y tokens debt   | URL مُضاف ومُقاس في الـ artifact مايو 11. LCP 5.58s median = أعلى من باقي routes. الـ assertMatrix override فعّال؛ task C-bis يلتقط tokens fix |
-| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab              | ⬜                   | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                                 |
-| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**          | ✅ مقبول             | لا يستحق work الآن — مراقبة فقط                                                                                                                |
-| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس              | ⬜                   | Admin route — أولوية أقل                                                                                                                       |
-| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس              | ⬜                   | Admin — لاحقاً                                                                                                                                 |
+| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)         | حالة                                          | ملاحظة                                                                                                                                 |
+| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس              | ⬜ blocked على B-bis                          | الـ home gated بـ middleware cookie + client localStorage. يحتاج puppeteer devDep لـ seeding — مؤجَّل (انظر §٠.٥ + task B-bis في §٠.٦) |
+| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | **0.65 lab (median)** | 🔄 a11y fixed in current PR، LCP 5.58s queued | tokens fixed → strict assertions تُطبَّق. LCP 5.58s median لسه أعلى من باقي routes — مرشح لـ task جديد بعد B-bis                       |
+| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab              | ⬜                                            | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                         |
+| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**          | ✅ مقبول                                      | لا يستحق work الآن — مراقبة فقط                                                                                                        |
+| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس              | ⬜                                            | Admin route — أولوية أقل                                                                                                               |
+| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس              | ⬜                                            | Admin — لاحقاً                                                                                                                         |
 
 **Cross-cutting:** الـ LCP بين 3.8s-5.2s على **كل** الـ routes في الـ CI. ده universal cause مش route-specific. **PR منفصل (P-X)** لـ root-cause investigation (font loading, render-blocking CSS, image priority، إلخ). لو نجح، يحسّن الست routes دفعة واحدة → impact تراكمي ضخم.
 
@@ -523,6 +523,11 @@ _(وهكذا)_
 
 - **اكتشاف 2026-05-11 (provider-detail accessibility revealed):** بإضافة `/ar/providers/{id}` للـ CI URL list (task B)، lighthouse فعلياً قاس accessibility لأول مرة على هذه الصفحة وكشف فشل: `color-contrast = 0` بسبب `text-slate-400` على white (~3.2:1 vs WCAG AA 4.5:1) + `text-primary font-bold` على الأسعار، و `categories:accessibility = 0.83 < 0.9`. **الـ issue موجود قبل هذا الـ PR** — مجرد أنه ما كان يُقاس. هذه الـ tokens shared عبر شاشات كثيرة فالإصلاح يحتاج designer pass. **عُولج مؤقتاً في الـ PR الحالي:** assertMatrix يـ override الـ assertions للـ provider-detail URL (color-contrast: warn، categories:accessibility: 0.8) مع TODO صريح. الـ task C-bis في §٠.٦ يلتقط الإصلاح الصحيح وحذف الـ override.
 - **اكتشاف 2026-05-11 (assertMatrix override didn't apply):** بعد إضافة assertMatrix override للـ provider-detail URL لتخفيف accessibility threshold، الـ CI لسه يفشل بـ `expected: 0.9` (الـ catch-all). السبب من `node_modules/@lhci/utils/src/assertions.js:473-475`: lhci يـ iterate **كل entries** في الـ matrix لكل URL، فالـ catch-all `.*` كان يتنفّذ على provider-detail URL بالإضافة إلى الـ override، و الـ strict assertion كانت تفشل. **عُولج:** الـ catch-all دلوقتي بيستخدم negative lookahead يستثني UUID pattern: `'^(?!.*/ar/providers/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*$'`. النتيجة: provider-detail يقابل الـ override فقط، باقي URLs تقابل الـ catch-all (الـ strict) فقط.
+
+- **اكتشاف 2026-05-11 (C-bis applied):** بعد إضافة `/ar/providers/{id}` في task B، lighthouse كشف 11 contrast failures على نفس الـ patterns: `text-sm text-slate-400` (review/category counts) و `<p class="text-sm font-bold text-primary">` (menu item prices). تم حسابهم:
+  - `#94a3b8` (slate-400) على white = 3.18:1 → فاشل WCAG AA (4.5:1 needed)
+  - `#009DE0` (primary، Engezna Blue) على white = 3.28:1 → فاشل WCAG AA
+  - **عُولج في الـ PR الحالي:** 10 className changes في `src/app/[locale]/providers/[id]/ProviderDetailClient.tsx` فقط — `text-slate-400` → `text-slate-500` (#64748b، 4.61:1) و `text-primary` → `text-primary-dark` (#0079AD، 5.27:1) على text elements. الـ icons تركت كما هي لأن color-contrast audit يستثني SVG icons. كذلك حُذف `assertMatrix` من `lighthouserc.js` ورجع لـ flat `assertions:` object — الـ strict 0.9 a11y threshold يـ apply على كل URLs دلوقتي.
 
 ---
 

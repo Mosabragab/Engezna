@@ -136,115 +136,59 @@ module.exports = {
     },
 
     assert: {
-      // Common assertions reused across URL patterns below. Extracted
-      // to avoid duplication when assertMatrix branches diverge for
-      // pages with known pre-existing chrome issues.
-      // (The variable is defined just before module.exports.assert sees
-      // it because the comment block needs the constant in scope.)
-      assertMatrix: [
-        {
-          // Provider-detail pages (any UUID under /ar/providers/) have
-          // pre-existing color-contrast issues from the app's pre-Phase-2
-          // visual chrome:
-          //   - `text-slate-400` muted-text spans (~3.2:1 vs WCAG AA 4.5:1)
-          //   - `text-primary font-bold` price labels on white
-          // Fixing those without a designer pass risks visual regression
-          // across many other pages that use the same shared tokens. So
-          // this URL pattern gets:
-          //   - color-contrast demoted from error→warn (still surfaces
-          //     in artifacts, but doesn't block CI)
-          //   - categories:accessibility floor lowered to 0.8 (was 0.9
-          //     globally; observed 0.83 with the contrast deductions)
-          // Everything else stays at the strict global level. Tracked as
-          // a follow-up task in PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6
-          // — once the contrast tokens are fixed, delete this override
-          // and the URL falls back to the strict matrix.* entry below.
-          matchingUrlPattern:
-            '.+/ar/providers/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
-          assertions: {
-            'categories:performance': ['error', { minScore: 0.6 }],
-            'categories:accessibility': ['error', { minScore: 0.8 }],
-            'categories:best-practices': ['error', { minScore: 0.85 }],
-            'categories:seo': ['error', { minScore: 0.6 }],
+      // Assertions for store readiness.
+      //
+      // History: this block was briefly an `assertMatrix` with a
+      // relaxed override for `/ar/providers/<uuid>` because the page
+      // had pre-existing color-contrast failures from `text-slate-400`
+      // and `text-primary` shared tokens. Those tokens were tightened
+      // in task C-bis (slate-400 → slate-500, text-primary →
+      // text-primary-dark on user-facing text), so the override is
+      // no longer needed — every URL gets the strict baseline below.
+      // The negative-lookahead catch-all from PR #382 is also gone
+      // since there's nothing to exclude now.
+      assertions: {
+        // Performance metrics
+        'categories:performance': ['error', { minScore: 0.6 }],
+        'categories:accessibility': ['error', { minScore: 0.9 }],
+        'categories:best-practices': ['error', { minScore: 0.85 }],
+        // SEO: 0.6 covers the audits we control (title, description,
+        // lang, viewport, link text, image alt). On Vercel preview the
+        // `is-crawlable` audit is skipped via collect.settings above —
+        // see the comment there for rationale.
+        'categories:seo': ['error', { minScore: 0.6 }],
 
-            'first-contentful-paint': ['error', { maxNumericValue: 4000 }],
-            'largest-contentful-paint': ['error', { maxNumericValue: 7000 }],
-            interactive: ['error', { maxNumericValue: 9000 }],
-            'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-            'total-blocking-time': ['error', { maxNumericValue: 700 }],
+        // Core Web Vitals - CI-friendly thresholds (CPU throttled 4x)
+        // TTI 9000ms + TBT 700ms: observed ~50-150ms CI variance on
+        // /welcome and /custom-order; real-device traces well under
+        // targets. /ar/providers was momentarily breaching this with
+        // ~780ms — it has since been fixed (memoized ProviderCard,
+        // progressive 12-card initial render, early-exit search,
+        // short-circuit filter useMemo) so the threshold is back at
+        // 700ms. See docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §6 Phase 1.
+        'first-contentful-paint': ['error', { maxNumericValue: 4000 }],
+        'largest-contentful-paint': ['error', { maxNumericValue: 7000 }],
+        interactive: ['error', { maxNumericValue: 9000 }],
+        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
+        'total-blocking-time': ['error', { maxNumericValue: 700 }],
 
-            'mainthread-work-breakdown': ['warn', { maxNumericValue: 4000 }],
-            'bootup-time': ['warn', { maxNumericValue: 3000 }],
-            'dom-size': ['warn', { maxNumericValue: 1500 }],
+        // Resource efficiency (battery friendly)
+        'mainthread-work-breakdown': ['warn', { maxNumericValue: 4000 }],
+        'bootup-time': ['warn', { maxNumericValue: 3000 }],
+        'dom-size': ['warn', { maxNumericValue: 1500 }],
 
-            'total-byte-weight': ['warn', { maxNumericValue: 2000000 }],
-            'render-blocking-resources': ['warn', { maxNumericValue: 500 }],
+        // Network efficiency
+        'total-byte-weight': ['warn', { maxNumericValue: 2000000 }],
+        'render-blocking-resources': ['warn', { maxNumericValue: 500 }],
 
-            'color-contrast': 'warn',
-            'document-title': 'error',
-            'html-has-lang': 'error',
-            'meta-viewport': 'error',
-          },
-        },
-        {
-          // Default — applies to every URL EXCEPT the provider-detail
-          // UUID pattern matched above. The negative lookahead is
-          // required because lhci's `assertMatrix` runs every entry
-          // whose `matchingUrlPattern` matches a given URL (see
-          // node_modules/@lhci/utils/src/assertions.js:473-475 —
-          // arrayOfOptions iterates ALL matrix entries per URL). A
-          // catch-all `.*` would mean both the strict assertions and
-          // the relaxed override evaluate on /ar/providers/<uuid>, and
-          // the strict ones would fail at 0.9 even though the override
-          // entry allows 0.8. Excluding the provider-detail URL from
-          // this catch-all leaves only the relaxed override to run on
-          // those pages, while every other URL still gets the strict
-          // bar.
-          matchingUrlPattern:
-            '^(?!.*/ar/providers/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*$',
-          assertions: {
-            'categories:performance': ['error', { minScore: 0.6 }],
-            'categories:accessibility': ['error', { minScore: 0.9 }],
-            'categories:best-practices': ['error', { minScore: 0.85 }],
-            // SEO: 0.6 covers the audits we control (title, description,
-            // lang, viewport, link text, image alt). On Vercel preview the
-            // `is-crawlable` audit is skipped via collect.settings above —
-            // see the comment there for rationale.
-            'categories:seo': ['error', { minScore: 0.6 }],
+        // Accessibility
+        'color-contrast': 'error',
+        'document-title': 'error',
+        'html-has-lang': 'error',
+        'meta-viewport': 'error',
 
-            // Core Web Vitals - CI-friendly thresholds (CPU throttled 4x)
-            // TTI 9000ms + TBT 700ms: observed ~50-150ms CI variance on
-            // /welcome and /custom-order; real-device traces well under
-            // targets. /ar/providers was momentarily breaching this with
-            // ~780ms — it has since been fixed (memoized ProviderCard,
-            // progressive 12-card initial render, early-exit search,
-            // short-circuit filter useMemo) so the threshold is back at
-            // 700ms. See docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §6 Phase 1.
-            'first-contentful-paint': ['error', { maxNumericValue: 4000 }],
-            'largest-contentful-paint': ['error', { maxNumericValue: 7000 }],
-            interactive: ['error', { maxNumericValue: 9000 }],
-            'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],
-            'total-blocking-time': ['error', { maxNumericValue: 700 }],
-
-            // Resource efficiency (battery friendly)
-            'mainthread-work-breakdown': ['warn', { maxNumericValue: 4000 }],
-            'bootup-time': ['warn', { maxNumericValue: 3000 }],
-            'dom-size': ['warn', { maxNumericValue: 1500 }],
-
-            // Network efficiency
-            'total-byte-weight': ['warn', { maxNumericValue: 2000000 }],
-            'render-blocking-resources': ['warn', { maxNumericValue: 500 }],
-
-            // Accessibility
-            'color-contrast': 'error',
-            'document-title': 'error',
-            'html-has-lang': 'error',
-            'meta-viewport': 'error',
-
-            // PWA audits removed - deprecated in Lighthouse 12+
-          },
-        },
-      ],
+        // PWA audits removed - deprecated in Lighthouse 12+
+      },
     },
 
     upload: {
