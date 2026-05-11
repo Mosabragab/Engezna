@@ -168,11 +168,11 @@ export const ProductCard = memo(function ProductCard({
           <div className="flex-1 min-w-0">
             <h4 className="font-medium text-slate-900 text-sm truncate">{name}</h4>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-primary font-bold text-sm">
+              <span className="text-primary-dark font-bold text-sm">
                 {product.price} {currency}
               </span>
               {hasDiscount && (
-                <span className="text-slate-400 line-through text-xs">
+                <span className="text-slate-500 line-through text-xs">
                   {product.original_price} {currency}
                 </span>
               )}
@@ -269,7 +269,7 @@ export const ProductCard = memo(function ProductCard({
             {hasVariants && (
               <div className="flex items-center gap-1 mt-1">
                 <ChevronDown className="w-3 h-3 text-primary" />
-                <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+                <span className="text-xs text-primary-dark font-medium">{getVariantLabel()}</span>
               </div>
             )}
 
@@ -277,16 +277,16 @@ export const ProductCard = memo(function ProductCard({
             <div className="flex items-center justify-between mt-auto pt-2">
               <div className="flex items-center gap-2">
                 {priceDisplay.hasRange ? (
-                  <span className="text-primary font-bold">
+                  <span className="text-primary-dark font-bold">
                     {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
                   </span>
                 ) : (
                   <>
-                    <span className="text-primary font-bold">
+                    <span className="text-primary-dark font-bold">
                       {priceDisplay.price || product.price} {currency}
                     </span>
                     {hasDiscount && (
-                      <span className="text-slate-400 line-through text-sm">
+                      <span className="text-slate-500 line-through text-sm">
                         {product.original_price} {currency}
                       </span>
                     )}
@@ -410,23 +410,23 @@ export const ProductCard = memo(function ProductCard({
         {hasVariants && (
           <div className="flex items-center gap-1 mt-2">
             <ChevronDown className="w-3 h-3 text-primary" />
-            <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+            <span className="text-xs text-primary-dark font-medium">{getVariantLabel()}</span>
           </div>
         )}
 
         {/* Price */}
         <div className="flex items-center gap-2 mt-3">
           {priceDisplay.hasRange ? (
-            <span className="text-primary font-bold text-lg">
+            <span className="text-primary-dark font-bold text-lg">
               {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
             </span>
           ) : (
             <>
-              <span className="text-primary font-bold text-lg">
+              <span className="text-primary-dark font-bold text-lg">
                 {priceDisplay.price || product.price} {currency}
               </span>
               {hasDiscount && (
-                <span className="text-slate-400 line-through text-sm">
+                <span className="text-slate-500 line-through text-sm">
                   {product.original_price} {currency}
                 </span>
               )}
