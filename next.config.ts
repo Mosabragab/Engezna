@@ -45,23 +45,32 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
     // Inline critical CSS into the initial HTML and defer the rest.
-    // Targets the ~22 KB render-blocking CSS chunk that Lighthouse
-    // flagged with a 300-340ms warn across /ar/cart, /ar/auth/login,
-    // and /ar/providers/{id} in the May 11 artifact — the file is
-    // ~91% unused per page, so inlining the critical portion and
-    // async-loading the rest should drop the wasted ms substantially.
+    // Targets the ~22 KB render-blocking CSS chunk Lighthouse flagged
+    // with 300-340ms warns across /ar/cart, /ar/auth/login, and
+    // /ar/providers/{id} in the May 11 artifact — the file is ~91%
+    // unused per page, so inlining the critical portion and async-
+    // loading the rest should drop the wasted ms substantially.
     //
-    // Backed by `critters` (Next.js 16 still requires this specific
-    // package, see node_modules/next/dist/server/post-process.js's
-    // `require('critters')`). If a future Next major switches to
-    // `beasties`, swap the devDep accordingly.
+    // IMPORTANT: this project uses the App Router (src/app/) — the
+    // correct flag is `inlineCss`, NOT `optimizeCss`. Codex caught
+    // an earlier commit that set `optimizeCss: true` and added
+    // `critters` as a devDep; that's the Pages Router code path
+    // (consumed in node_modules/next/dist/server/render.js:1089 +
+    // node_modules/next/dist/pages/_document.js) and we have no
+    // pages/ directory. The App Router renderer reads
+    // `experimental.inlineCss` instead (see
+    // node_modules/next/dist/server/base-server.js:390 and
+    // node_modules/next/dist/server/app-render/types.d.ts:80), and
+    // the implementation is built into Next.js itself — no external
+    // dependency required. critters has been removed from package.json
+    // for the same reason.
     //
     // Tracked as task C-ter in
     // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6. If a post-merge
-    // CI artifact shows a regression (e.g. FOUC-driven CLS spike on
-    // client-rendered sections), revert by removing this flag — the
-    // `critters` devDep can stay or be removed in a follow-up.
-    optimizeCss: true,
+    // CI artifact shows a regression (FOUC-driven CLS spike on
+    // client-rendered sections, or an LCP regression because the
+    // inlined CSS is too large), revert by removing this flag.
+    inlineCss: true,
   },
 
   // Image optimization configuration
