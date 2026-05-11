@@ -21,10 +21,20 @@ module.exports = {
       // Number of runs for averaging
       numberOfRuns: 3,
 
-      // URL patterns to test
+      // URL patterns to test.
+      //
+      // PROVIDER_DETAIL_ID is a stable sample provider whose page we use
+      // for measuring `/ar/providers/{id}`. Picked deliberately:
+      //   - has cover image (exercises Image priority/preload path)
+      //   - has `operation_mode='custom'` so the CustomOrderWelcomeBanner
+      //     renders, validating the CLS/LCP fixes from PR #381 on every CI
+      //     run. If the regressions ever come back, this URL catches them.
+      // If this provider is ever deactivated/deleted, swap to another
+      // stable provider id; nothing in the app depends on this constant.
       url: [
         `${BASE_URL}/ar`,
         `${BASE_URL}/ar/providers`,
+        `${BASE_URL}/ar/providers/ad52ece8-69c0-4f46-918e-1fbba73655cd`,
         `${BASE_URL}/ar/cart`,
         `${BASE_URL}/ar/auth/login`,
         `${BASE_URL}/ar/custom-order`,
@@ -64,6 +74,17 @@ module.exports = {
 
         // Locale
         locale: 'ar',
+
+        // The middleware in src/middleware.ts redirects `/ar` → `/ar/welcome`
+        // unless the `engezna_has_location` cookie is set (the app uses
+        // this to gate the home page on a chosen governorate). Without
+        // injecting it here, every CI run on `/ar` measures the welcome
+        // page, not the actual home page that real users see most.
+        // Speed Insights (field data) confirmed this gap: home was P0
+        // with RES 47 while CI reported 0.80 for the same path because
+        // CI was measuring welcome. Cookie value is arbitrary — middleware
+        // only checks for presence.
+        extraHeaders: { Cookie: 'engezna_has_location=1' },
 
         // Vercel preview deployments serve `x-robots-tag: noindex` from
         // Vercel's edge so previews don't get indexed by Google. That's

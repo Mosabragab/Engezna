@@ -9,8 +9,8 @@
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-provider-detail-page` (CLS + LCP fixes على banner + 4 a11y commits — جاهز للـ merge).
-> آخر تحديث: 2026-05-11 — Phase 1 + 1.5 + 2 + CLS home + CLS+LCP provider detail مدموجة أو جاهزة. أول CI artifact على branch مع full data (مايو 11) دمج في §٧.
+> فرع التنفيذ الحالي للأداء: `claude/perf-add-routes-ci` (Step 0 = task B في §٠.٦ — إضافة الـ home الفعلي و provider detail للـ CI URLs مع cookie injection).
+> آخر تحديث: 2026-05-11 — task A (PR #381 = CLS + LCP banner fixes) merged. task B جاري. الـ §٠.٢ priority queue ساري بدون تغيير.
 
 ---
 
@@ -84,13 +84,13 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order | Task                                                                                                            | PR Branch                          | Owner Action | Blocker                   |
-| ----- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------ | ------------------------- |
-| **A** | merge الـ PR الحالي (CLS + LCP banner)                                                                          | `claude/perf-provider-detail-page` | merge فقط    | جاهز                      |
-| **B** | Step 0: إضافة `/ar` (home بـ location cookie) و `/ar/providers/{id}` و `/provider/orders` للـ `lighthouserc.js` | `claude/perf-add-routes-ci`        | PR + reviews | A merged                  |
-| **C** | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority)                 | `claude/perf-lcp-cross-cutting`    | PR           | B merged + 1 fresh CI run |
-| **D** | P0 home: PR صغير على home page بناءً على الـ data                                                               | `claude/perf-home-<metric>`        | PR           | C merged + new artifact   |
-| **E** | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                            | `claude/perf-auth-login-<metric>`  | PR           | D merged                  |
+| Order | Task                                                                                            | PR Branch                          | Owner Action      | Blocker                   |
+| ----- | ----------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------- | ------------------------- |
+| **A** | merge الـ PR الحالي (CLS + LCP banner)                                                          | `claude/perf-provider-detail-page` | ✅ merged PR #381 | جاهز                      |
+| **B** | Step 0: إضافة `/ar` (home بـ location cookie) و `/ar/providers/{id}` للـ `lighthouserc.js`      | `claude/perf-add-routes-ci`        | 🔄 الـ PR الحالي  | A merged ✓                |
+| **C** | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority) | `claude/perf-lcp-cross-cutting`    | PR                | B merged + 1 fresh CI run |
+| **D** | P0 home: PR صغير على home page بناءً على الـ data                                               | `claude/perf-home-<metric>`        | PR                | C merged + new artifact   |
+| **E** | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration            | `claude/perf-auth-login-<metric>`  | PR                | D merged                  |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -484,7 +484,8 @@ _(وهكذا)_
 - **اكتشاف 2026-05-10 (DevTools live على /ar/providers/{id}):** CLS = 0.84 على providers مع `operation_mode='custom'/'hybrid'` فقط (CLS = 0 على providers بدونه). السبب الجذري: `CustomOrderWelcomeBanner` كان يـ animate `height: 0 → auto` عبر Framer Motion على mount → relayout كامل. **عُولج في الـ PR الحالي** (commits `e546cf6` + `94ce74d`).
 - **اكتشاف 2026-05-10 (Lighthouse على نفس الصفحة):** بعد إصلاح CLS، LCP = 5.3s مع element render delay = 1.44s، والـ LCP element كان `<p>` نص الـ banner. السبب: الـ `motion.div` لسه عنده `opacity: 0 → 1` "for polish" — Lighthouse ما يعتبرش العنصر painted لما opacity = 0. الـ chain (HTML → JS → hydrate → Framer mount → animation) أضاف 1.4s. **عُولج في الـ PR الحالي** (commit `6e04b64`): replace outer `motion.div` بـ plain `div`. Inner expandable region لسه motion (user-triggered animations لا تحسب في CLS).
 - **اكتشاف 2026-05-11 (artifact analysis):** TTFB ثابت عند 24ms عبر كل routes — Vercel fra1 + edge cache يعملان. **TTFB ليس مشكلة.** كل اشتباه سابق فيه مغلوط. وLCP بين 3.8-5.2s على كل routes = universal cause. مرشّح للـ cross-cutting PR (PR-C في §٠.٦) قبل أي route-specific work.
-- **متابعة 2026-05-11 (measurement gap):** CI URL `/ar` يـ redirect لـ `/ar/welcome` بسبب الكوكي → الـ home الفعلي مش مقاس. Speed Insights field RES = 47 على home (P0) لكن الـ CI lab بيقول 0.80 لأنه يقيس welcome. **خطوة B في §٠.٦:** إضافة `/ar` كـ measured route مع cookie injection أو URL مع `?location=...` صراحة قبل أي شغل على P0.
+- **متابعة 2026-05-11 (measurement gap):** CI URL `/ar` يـ redirect لـ `/ar/welcome` بسبب الكوكي → الـ home الفعلي مش مقاس. Speed Insights field RES = 47 على home (P0) لكن الـ CI lab بيقول 0.80 لأنه يقيس welcome. **عُولج في الـ PR الحالي:** `extraHeaders: { Cookie: 'engezna_has_location=1' }` في `lighthouserc.js` يحقن الكوكي قبل كل run، فيـ measure `/ar` يقرأ home الفعلي. `/ar/providers/{id}` كمان مُضاف لقياس provider detail page (P1) مع نفس الـ artifact.
+- **متابعة 2026-05-11 (authenticated routes deferred):** task B الأصلية شملت `/provider/orders` لكن الـ dashboard requires Supabase auth session — يحتاج Puppeteer script يسجّل دخول قبل lighthouse. مؤجَّل لـ Phase 2.4 (موجود في §٦ original). الـ public routes كافية لـ tasks C-E.
 
 ---
 
