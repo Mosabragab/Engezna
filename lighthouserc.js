@@ -23,6 +23,18 @@ module.exports = {
 
       // URL patterns to test.
       //
+      // NOTE: `/ar` (the real home page) is intentionally NOT in this list.
+      // It cannot be measured cleanly without seeding localStorage in
+      // addition to the cookie — HomePageClient.tsx:163-178 reads
+      // `engezna_guest_location` from localStorage and redirects to
+      // `/welcome` after hydration if no governorateId is set. The cookie
+      // injection below only gets past the middleware; the client-side
+      // gate still fires. Adding `/ar` here without a Puppeteer setup
+      // script would cause the CI to silently measure welcome a second
+      // time, which is worse than the current gap (at least the gap is
+      // documented). Tracked as task B-bis in
+      // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6.
+      //
       // PROVIDER_DETAIL_ID is a stable sample provider whose page we use
       // for measuring `/ar/providers/{id}`. Picked deliberately:
       //   - has cover image (exercises Image priority/preload path)
@@ -32,7 +44,6 @@ module.exports = {
       // If this provider is ever deactivated/deleted, swap to another
       // stable provider id; nothing in the app depends on this constant.
       url: [
-        `${BASE_URL}/ar`,
         `${BASE_URL}/ar/providers`,
         `${BASE_URL}/ar/providers/ad52ece8-69c0-4f46-918e-1fbba73655cd`,
         `${BASE_URL}/ar/cart`,
@@ -75,15 +86,18 @@ module.exports = {
         // Locale
         locale: 'ar',
 
-        // The middleware in src/middleware.ts redirects `/ar` → `/ar/welcome`
-        // unless the `engezna_has_location` cookie is set (the app uses
-        // this to gate the home page on a chosen governorate). Without
-        // injecting it here, every CI run on `/ar` measures the welcome
-        // page, not the actual home page that real users see most.
-        // Speed Insights (field data) confirmed this gap: home was P0
-        // with RES 47 while CI reported 0.80 for the same path because
-        // CI was measuring welcome. Cookie value is arbitrary — middleware
-        // only checks for presence.
+        // Cookie injection: passes the middleware-level location check
+        // (src/middleware.ts:70). On its own this is necessary-but-not-
+        // sufficient to measure `/ar` — the client-side
+        // HomePageClient.tsx:163-178 still reads `engezna_guest_location`
+        // from localStorage and redirects to `/welcome` after hydration
+        // if no governorateId is present. The full fix needs a Puppeteer
+        // script (`collect.puppeteerScript`) to seed BOTH cookie + local-
+        // storage; tracked as task B-bis in §0.6 of the roadmap. Leaving
+        // the cookie here so the eventual Puppeteer setup only has to
+        // add the localStorage seeding step. Cookie value is arbitrary
+        // — middleware only checks for presence — and is harmless on
+        // every other route (none of them gate on this cookie).
         extraHeaders: { Cookie: 'engezna_has_location=1' },
 
         // Vercel preview deployments serve `x-robots-tag: noindex` from

@@ -36,14 +36,14 @@
 
 الـ Impact = `(100 - real_user_RES) × samples` من Vercel Speed Insights (real-user data، آخر ٧ أيام). الترتيب يُعاد حسابه لما البيانات تتغيّر.
 
-| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI) | حالة                | ملاحظة                                                            |
-| ------ | -------------------------------------- | ----------- | ------- | -------- | ------------- | ------------------- | ----------------------------------------------------------------- |
-| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس      | ⬜ Step 0 ثم Step 1 | الـ CI بيـ redirect لـ welcome → ما بنقيسش home. لازم نضيفه أولاً |
-| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | غير مقاس      | 🔄 الـ PR الحالي    | غير موجود في الـ CI URLs — نضيفه مع P0                            |
-| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab      | ⬜                  | lab أفضل من field — مرشح لـ JS-heavy hydration                    |
-| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**  | ✅ مقبول            | لا يستحق work الآن — مراقبة فقط                                   |
-| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس      | ⬜                  | Admin route — أولوية أقل                                          |
-| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس      | ⬜                  | Admin — لاحقاً                                                    |
+| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI) | حالة                 | ملاحظة                                                                                                              |
+| ------ | -------------------------------------- | ----------- | ------- | -------- | ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس      | ⬜ blocked على B-bis | الـ CI ينتهي عند welcome (cookie + localStorage gates). محتاج Puppeteer setup أولاً (task B-bis) قبل الـ fix الفعلي |
+| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | يُقاس في B    | 🔄 task B الحالية    | مُضاف للـ `lighthouserc.js` في task B. الـ artifact التالي يكون عنده                                                |
+| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab      | ⬜                   | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                      |
+| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**  | ✅ مقبول             | لا يستحق work الآن — مراقبة فقط                                                                                     |
+| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس      | ⬜                   | Admin route — أولوية أقل                                                                                            |
+| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس      | ⬜                   | Admin — لاحقاً                                                                                                      |
 
 **Cross-cutting:** الـ LCP بين 3.8s-5.2s على **كل** الـ routes في الـ CI. ده universal cause مش route-specific. **PR منفصل (P-X)** لـ root-cause investigation (font loading, render-blocking CSS, image priority، إلخ). لو نجح، يحسّن الست routes دفعة واحدة → impact تراكمي ضخم.
 
@@ -79,18 +79,20 @@
 
 ### ٠.٥ Measurement gaps معروفة (يُسد قبل القياس)
 
-- **`/ar` redirect**: `app/[locale]/page.tsx` يـ redirect لـ `/welcome` لو مفيش location cookie. الـ CI runs بدون cookie → كل measurement لـ welcome، ليس home الفعلي. **حل مقترح:** إضافة cookie injection في `lighthouserc.js` collect.settings.extraHeaders، أو قياس `/ar?location=<sample-id>` صراحة. مهم قبل أي شغل على P0.
-- **Provider detail و dashboards غير في الـ CI URLs**: نضيفهم في PR Step 0 مع home.
+- **`/ar` redirect (لا يزال مفتوحاً)**: عند الـ task B الأولى حاولنا cookie injection فقط، لكن المراجعة كشفت إن الـ middleware (`src/middleware.ts:70`) جزء واحد فقط من الـ redirect chain. الـ client يـ check localStorage `engezna_guest_location` في `HomePageClient.tsx:163-178` ويعمل `router.replace('/welcome')` post-hydration. الكوكي وحدها بترفع gate الـ middleware لكن الـ client gate لسه يطلق. **الحل الصحيح:** Puppeteer script يـ seed الـ localStorage مع الكوكي (يُنفَّذ في task B-bis في §٠.٦). حالياً `/ar` URL مش في `lighthouserc.js` URL list — أي إضافة قبل الـ Puppeteer setup هتقيس welcome مرتين بصمت.
+- **Provider detail مُغطَّى ✅** بـ `/ar/providers/{stable-id}` (task B الحالية).
+- **Dashboards (admin، provider)**: مؤجَّلة لـ task يتطلب Puppeteer login session — Phase 2.4 في الـ legacy plan.
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order | Task                                                                                            | PR Branch                          | Owner Action      | Blocker                   |
-| ----- | ----------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------- | ------------------------- |
-| **A** | merge الـ PR الحالي (CLS + LCP banner)                                                          | `claude/perf-provider-detail-page` | ✅ merged PR #381 | جاهز                      |
-| **B** | Step 0: إضافة `/ar` (home بـ location cookie) و `/ar/providers/{id}` للـ `lighthouserc.js`      | `claude/perf-add-routes-ci`        | 🔄 الـ PR الحالي  | A merged ✓                |
-| **C** | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority) | `claude/perf-lcp-cross-cutting`    | PR                | B merged + 1 fresh CI run |
-| **D** | P0 home: PR صغير على home page بناءً على الـ data                                               | `claude/perf-home-<metric>`        | PR                | C merged + new artifact   |
-| **E** | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration            | `claude/perf-auth-login-<metric>`  | PR                | D merged                  |
+| Order     | Task                                                                                                           | PR Branch                          | Owner Action      | Blocker                   |
+| --------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ----------------- | ------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                         | `claude/perf-provider-detail-page` | ✅ merged PR #381 | جاهز                      |
+| **B**     | Step 0a: إضافة `/ar/providers/{id}` للـ `lighthouserc.js` + cookie injection (تحضير لـ B-bis)                  | `claude/perf-add-routes-ci`        | 🔄 الـ PR الحالي  | A merged ✓                |
+| **B-bis** | Step 0b: Puppeteer script يـ seed `engezna_guest_location` في localStorage قبل قياس `/ar`، يضيف `/ar` للـ URLs | `claude/perf-puppeteer-home-setup` | PR                | B merged                  |
+| **C**     | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority)                | `claude/perf-lcp-cross-cutting`    | PR                | B merged + 1 fresh CI run |
+| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                              | `claude/perf-home-<metric>`        | PR                | B-bis + C merged          |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                           | `claude/perf-auth-login-<metric>`  | PR                | D merged                  |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -484,7 +486,8 @@ _(وهكذا)_
 - **اكتشاف 2026-05-10 (DevTools live على /ar/providers/{id}):** CLS = 0.84 على providers مع `operation_mode='custom'/'hybrid'` فقط (CLS = 0 على providers بدونه). السبب الجذري: `CustomOrderWelcomeBanner` كان يـ animate `height: 0 → auto` عبر Framer Motion على mount → relayout كامل. **عُولج في الـ PR الحالي** (commits `e546cf6` + `94ce74d`).
 - **اكتشاف 2026-05-10 (Lighthouse على نفس الصفحة):** بعد إصلاح CLS، LCP = 5.3s مع element render delay = 1.44s، والـ LCP element كان `<p>` نص الـ banner. السبب: الـ `motion.div` لسه عنده `opacity: 0 → 1` "for polish" — Lighthouse ما يعتبرش العنصر painted لما opacity = 0. الـ chain (HTML → JS → hydrate → Framer mount → animation) أضاف 1.4s. **عُولج في الـ PR الحالي** (commit `6e04b64`): replace outer `motion.div` بـ plain `div`. Inner expandable region لسه motion (user-triggered animations لا تحسب في CLS).
 - **اكتشاف 2026-05-11 (artifact analysis):** TTFB ثابت عند 24ms عبر كل routes — Vercel fra1 + edge cache يعملان. **TTFB ليس مشكلة.** كل اشتباه سابق فيه مغلوط. وLCP بين 3.8-5.2s على كل routes = universal cause. مرشّح للـ cross-cutting PR (PR-C في §٠.٦) قبل أي route-specific work.
-- **متابعة 2026-05-11 (measurement gap):** CI URL `/ar` يـ redirect لـ `/ar/welcome` بسبب الكوكي → الـ home الفعلي مش مقاس. Speed Insights field RES = 47 على home (P0) لكن الـ CI lab بيقول 0.80 لأنه يقيس welcome. **عُولج في الـ PR الحالي:** `extraHeaders: { Cookie: 'engezna_has_location=1' }` في `lighthouserc.js` يحقن الكوكي قبل كل run، فيـ measure `/ar` يقرأ home الفعلي. `/ar/providers/{id}` كمان مُضاف لقياس provider detail page (P1) مع نفس الـ artifact.
+- **متابعة 2026-05-11 (measurement gap — مفتوحة جزئياً):** CI URL `/ar` يـ redirect لـ `/ar/welcome` بسبب كوكي + localStorage. المراجعة الأولى لـ task B اقترحت cookie injection فقط لكن المراجع كشف أن `HomePageClient.tsx:163-178` يـ check localStorage و يـ redirect post-hydration بغض النظر عن الكوكي. **task B الحالي:** أضيف cookie injection (يفيد routes المستقبلية) لكن `/ar` URL نفسه مش في الـ list. **task B-bis (مدوَّن في §٠.٦):** Puppeteer script يـ seed localStorage `engezna_guest_location` + cookie معاً، ويضيف `/ar` للـ URLs.
+- **`/ar/providers/{id}` ✅ مغطّى في task B:** إضافة URL ثابتة لـ `ad52ece8-69c0-4f46-918e-1fbba73655cd` (مطعم الصفا، `operation_mode='custom'`) يقيس P1 + يحرس CLS/LCP regression من PR #381.
 - **متابعة 2026-05-11 (authenticated routes deferred):** task B الأصلية شملت `/provider/orders` لكن الـ dashboard requires Supabase auth session — يحتاج Puppeteer script يسجّل دخول قبل lighthouse. مؤجَّل لـ Phase 2.4 (موجود في §٦ original). الـ public routes كافية لـ tasks C-E.
 
 ---
