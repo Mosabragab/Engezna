@@ -23,17 +23,12 @@ module.exports = {
 
       // URL patterns to test.
       //
-      // NOTE: `/ar` (the real home page) is intentionally NOT in this list.
-      // It cannot be measured cleanly without seeding localStorage in
-      // addition to the cookie — HomePageClient.tsx:163-178 reads
-      // `engezna_guest_location` from localStorage and redirects to
-      // `/welcome` after hydration if no governorateId is set. The cookie
-      // injection below only gets past the middleware; the client-side
-      // gate still fires. Adding `/ar` here without a Puppeteer setup
-      // script would cause the CI to silently measure welcome a second
-      // time, which is worse than the current gap (at least the gap is
-      // documented). Tracked as task B-bis in
-      // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6.
+      // `/ar` measures the real home page. It requires BOTH the cookie
+      // injection in `extraHeaders` below AND the puppeteerScript at the
+      // top of this file to seed `engezna_guest_location` in localStorage
+      // (the client-side redirect gate in HomePageClient.tsx:163-178).
+      // If you remove the puppeteer script, also remove `/ar` from this
+      // list — otherwise CI will silently measure welcome instead of home.
       //
       // PROVIDER_DETAIL_ID is a stable sample provider whose page we use
       // for measuring `/ar/providers/{id}`. Picked deliberately:
@@ -44,6 +39,7 @@ module.exports = {
       // If this provider is ever deactivated/deleted, swap to another
       // stable provider id; nothing in the app depends on this constant.
       url: [
+        `${BASE_URL}/ar`,
         `${BASE_URL}/ar/providers`,
         `${BASE_URL}/ar/providers/ad52ece8-69c0-4f46-918e-1fbba73655cd`,
         `${BASE_URL}/ar/cart`,
@@ -51,6 +47,13 @@ module.exports = {
         `${BASE_URL}/ar/custom-order`,
         `${BASE_URL}/ar/provider/login`,
       ],
+
+      // Puppeteer setup runs once per URL audit. It seeds the
+      // `engezna_guest_location` localStorage entry so HomePageClient's
+      // post-hydration redirect to /welcome doesn't fire on /ar. See the
+      // script for the full rationale. Harmless on routes that don't
+      // read this key.
+      puppeteerScript: './scripts/lhci-home-setup.js',
 
       // Only spawn `next start` when measuring localhost; for a remote
       // target_url the URL is already serving and starting a local server
@@ -87,17 +90,13 @@ module.exports = {
         locale: 'ar',
 
         // Cookie injection: passes the middleware-level location check
-        // (src/middleware.ts:70). On its own this is necessary-but-not-
-        // sufficient to measure `/ar` — the client-side
-        // HomePageClient.tsx:163-178 still reads `engezna_guest_location`
-        // from localStorage and redirects to `/welcome` after hydration
-        // if no governorateId is present. The full fix needs a Puppeteer
-        // script (`collect.puppeteerScript`) to seed BOTH cookie + local-
-        // storage; tracked as task B-bis in §0.6 of the roadmap. Leaving
-        // the cookie here so the eventual Puppeteer setup only has to
-        // add the localStorage seeding step. Cookie value is arbitrary
-        // — middleware only checks for presence — and is harmless on
-        // every other route (none of them gate on this cookie).
+        // (src/middleware.ts:70). Pairs with `puppeteerScript` above
+        // which seeds the matching localStorage entry that the client-
+        // side gate (HomePageClient.tsx:163-178) reads. Both pieces are
+        // required to measure `/ar` (the home page) instead of welcome;
+        // missing either one causes a redirect. Cookie value is
+        // arbitrary — middleware only checks for presence — and is
+        // harmless on every other route.
         extraHeaders: { Cookie: 'engezna_has_location=1' },
 
         // Vercel preview deployments serve `x-robots-tag: noindex` from
