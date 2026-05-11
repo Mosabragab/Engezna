@@ -87,25 +87,20 @@ export function CustomOrderWelcomeBanner({
   ].filter((m) => m.enabled);
 
   return (
-    // The previous wrapper used `initial={{ height: 0 }} animate={{ height: 'auto' }}`,
-    // which forced the entire page below this banner to slide down on mount and was
-    // the dominant CLS source on `/ar/providers/{id}` for providers with custom or
-    // hybrid operation_mode (DevTools live metrics: CLS 0.84 with this banner present
-    // vs 0 without). Height-animating from 0 to auto is the textbook Framer Motion
-    // CLS pitfall: every frame triggers layout for everything that follows.
-    //
-    // The exit animation was also dead code — the parent component returns null on
-    // dismiss before AnimatePresence can observe the unmount, so the AnimatePresence
-    // wrapper was non-functional.
-    //
-    // Keep an opacity fade for visual polish (transforms/opacity don't trigger
-    // layout) and drop the height/translate animation entirely.
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, ease: 'easeOut' }}
-      className={`relative ${className}`}
-    >
+    // History of this wrapper:
+    //  1. Originally `motion.div` with `initial={{ height: 0 }} animate={{ height: 'auto' }}`
+    //     — caused the dominant CLS on /ar/providers/{id} (0.84). Removed in a
+    //     prior commit on this PR.
+    //  2. Then kept as `motion.div` with `opacity: 0 → 1` "for polish". Lighthouse
+    //     on the same page measured LCP = 5.3s with element render delay = 1,440ms,
+    //     and the LCP element was THIS banner's <p> text. The opacity animation
+    //     means the banner starts at opacity:0 and only paints after JS bundle
+    //     loads + React hydrates + Framer mounts + animation begins. The whole
+    //     chain blocks LCP for the largest above-the-fold text element on
+    //     custom-mode provider pages.
+    //  3. Now: a plain <div>. SSR'd HTML paints the banner immediately, no JS
+    //     dependency for LCP. The visual polish wasn't worth a 1.4s LCP delay.
+    <div className={`relative ${className}`}>
       {/* Brand Blue Gradient Background */}
       <div
         className="relative rounded-2xl shadow-xl overflow-hidden"
@@ -289,7 +284,7 @@ export function CustomOrderWelcomeBanner({
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
