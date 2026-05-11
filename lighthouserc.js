@@ -36,16 +36,9 @@ module.exports = {
 
       // URL patterns to test.
       //
-      // CURRENT SCOPE: provider-detail measurement only. `/ar` (the real
-      // customer home page) is INTENTIONALLY EXCLUDED from this list —
-      // Task B in PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6 covers
-      // provider-detail + cookie prep ONLY. Home page measurement is
-      // explicitly deferred to Task B-bis, which is a separate, opt-in PR
-      // because it requires installing `puppeteer` as a dev dep (~300 MB
-      // local install + Chromium download in CI).
-      //
-      // Why /ar can't be added without the Puppeteer dep: rendering
-      // requires defeating both gates of a two-stage redirect chain.
+      // `/ar` (the real home page) measures the customer home that
+      // real users hit most. Two gates have to be defeated to reach
+      // it:
       //   1. Server-side: src/middleware.ts:70 checks the
       //      `engezna_has_location` cookie and redirects to
       //      /ar/welcome if missing. Handled by `extraHeaders` below.
@@ -53,15 +46,13 @@ module.exports = {
       //      reads `engezna_guest_location` from localStorage in a
       //      useState lazy initializer, then calls
       //      router.replace('/welcome') post-hydration if there's no
-      //      governorateId. The ONLY known way to seed localStorage
-      //      from lhci is via a Puppeteer setup script
-      //      (scripts/lhci-home-setup.js, already in this repo and
-      //      ready to be wired up by Task B-bis).
-      // Adding `/ar` here without the Puppeteer side would let Lighthouse
-      // start measuring the home page, then immediately switch to welcome
-      // after hydration — producing blended/misleading numbers worse than
-      // the current "welcome only" gap.
+      //      governorateId. Handled by `puppeteerScript` below, which
+      //      seeds a synthetic GuestLocation before each audit
+      //      navigation.
+      // Remove either piece and `/ar` will silently redirect to
+      // welcome.
       url: [
+        `${BASE_URL}/ar`,
         `${BASE_URL}/ar/providers`,
         `${BASE_URL}/ar/providers/${HARDCODED_PROVIDER_ID}`,
         `${BASE_URL}/ar/cart`,
@@ -69,6 +60,21 @@ module.exports = {
         `${BASE_URL}/ar/custom-order`,
         `${BASE_URL}/ar/provider/login`,
       ],
+
+      // Puppeteer setup runs once per URL audit. For `/ar` it seeds
+      // the `engezna_guest_location` localStorage entry so
+      // HomePageClient.tsx:163-178's post-hydration redirect to
+      // /welcome doesn't fire. The script is a no-op-equivalent for
+      // every other URL (it visits /ar/welcome once and writes a
+      // localStorage key that those routes never read).
+      //
+      // Requires `puppeteer` as a devDep — lhci's healthcheck calls
+      // `puppeteer.executablePath()` and the file at that path needs
+      // to exist. The earlier puppeteer-core that came in
+      // transitively via lighthouse was not enough; full `puppeteer`
+      // (which manages its own Chromium download via postinstall) is
+      // what makes this work on both local dev and CI.
+      puppeteerScript: './scripts/lhci-home-setup.js',
 
       // Only spawn `next start` when measuring localhost; for a remote
       // target_url the URL is already serving and starting a local server
@@ -105,12 +111,12 @@ module.exports = {
         locale: 'ar',
 
         // Cookie injection passes the middleware-level location check
-        // (src/middleware.ts:70). On its own it does NOT prevent the
-        // client-side redirect from HomePageClient.tsx:163-178, which
-        // reads `engezna_guest_location` from localStorage. So this
-        // cookie is harmless setup on every route in the URL list above
-        // (none of them gate on it) and will pair with the Puppeteer
-        // script once task B-bis adds the localStorage seeding piece.
+        // (src/middleware.ts:70). Pairs with the puppeteerScript above
+        // which handles the client-side gate
+        // (HomePageClient.tsx:163-178 reads `engezna_guest_location`
+        // from localStorage). Both halves are required to measure
+        // `/ar` without redirecting; the cookie is harmless on every
+        // other URL.
         extraHeaders: { Cookie: 'engezna_has_location=1' },
 
         // Vercel preview deployments serve `x-robots-tag: noindex` from

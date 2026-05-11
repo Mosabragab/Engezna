@@ -9,8 +9,8 @@
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-validate-roadmap-update` (roadmap update + task C-bis — provider-detail a11y tokens fix).
-> آخر تحديث: 2026-05-11 — task A (PR #381)، B+C (PR #382) merged. Task C-bis (a11y tokens) جاهز في نفس الـ PR. التالي بعد merge: انتظار CI artifact لتأكيد categories:accessibility ≥ 0.9 على provider-detail.
+> فرع التنفيذ الحالي للأداء: `claude/perf-puppeteer-home-setup` (Task B-bis — تثبيت puppeteer devDep + تفعيل home measurement). يُكدَّس فوق PR #383 (C-bis).
+> آخر تحديث: 2026-05-11 — Tasks A/B/C ✅ merged، C-bis في PR #383 جاهز للـ merge، B-bis الآن في الـ PR الحالي. التالي بعد merge: انتظار CI artifact لقياس home الحقيقي ثم Task D.
 
 ---
 
@@ -37,14 +37,14 @@
 
 الـ Impact = `(100 - real_user_RES) × samples` من Vercel Speed Insights (real-user data، آخر ٧ أيام). الترتيب يُعاد حسابه لما البيانات تتغيّر.
 
-| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)         | حالة                                          | ملاحظة                                                                                                                                 |
-| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس              | ⬜ blocked على B-bis                          | الـ home gated بـ middleware cookie + client localStorage. يحتاج puppeteer devDep لـ seeding — مؤجَّل (انظر §٠.٥ + task B-bis في §٠.٦) |
-| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | **0.65 lab (median)** | 🔄 a11y fixed in current PR، LCP 5.58s queued | tokens fixed → strict assertions تُطبَّق. LCP 5.58s median لسه أعلى من باقي routes — مرشح لـ task جديد بعد B-bis                       |
-| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab              | ⬜                                            | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                         |
-| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**          | ✅ مقبول                                      | لا يستحق work الآن — مراقبة فقط                                                                                                        |
-| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس              | ⬜                                            | Admin route — أولوية أقل                                                                                                               |
-| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس              | ⬜                                            | Admin — لاحقاً                                                                                                                         |
+| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI)         | حالة                                          | ملاحظة                                                                                                                                     |
+| ------ | -------------------------------------- | ----------- | ------- | -------- | --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | يُقاس بعد merge       | 🔄 task B-bis في الـ PR الحالي                | puppeteer devDep installed، script يـ seed engezna_guest_location، `/ar` رجع للـ URLs. الـ artifact التالي = أول قياس فعلي لـ home الحقيقي |
+| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | **0.65 lab (median)** | 🔄 a11y fixed in current PR، LCP 5.58s queued | tokens fixed → strict assertions تُطبَّق. LCP 5.58s median لسه أعلى من باقي routes — مرشح لـ task جديد بعد B-bis                           |
+| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab              | ⬜                                            | lab أفضل من field — مرشح لـ JS-heavy hydration                                                                                             |
+| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**          | ✅ مقبول                                      | لا يستحق work الآن — مراقبة فقط                                                                                                            |
+| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس              | ⬜                                            | Admin route — أولوية أقل                                                                                                                   |
+| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس              | ⬜                                            | Admin — لاحقاً                                                                                                                             |
 
 **Cross-cutting:** الـ LCP بين 3.8s-5.2s على **كل** الـ routes في الـ CI. ده universal cause مش route-specific. **PR منفصل (P-X)** لـ root-cause investigation (font loading, render-blocking CSS, image priority، إلخ). لو نجح، يحسّن الست routes دفعة واحدة → impact تراكمي ضخم.
 
@@ -80,25 +80,25 @@
 
 ### ٠.٥ Measurement gaps معروفة (يُسد قبل القياس)
 
-- **`/ar` redirect — لا يزال مفتوحاً، مؤجَّل في task B-bis:** الـ home يحتاج تجاوز guard مزدوج:
-  - **Server-side gate:** `src/middleware.ts:70` يفحص الكوكي `engezna_has_location` ويـ redirect لـ `/ar/welcome` لو غايبة.
-  - **Client-side gate:** `src/app/[locale]/HomePageClient.tsx:163-178` يقرأ `engezna_guest_location` من localStorage في useState lazy init ويعمل `router.replace('/welcome')` post-hydration لو `governorateId` غير موجود.
-  - **Cookie-only injection لا يكفي** — يمر الـ server gate لكن الـ client gate يطلق بعد hydration فالـ CI ينتهي على welcome، أسوأ من قياسها صراحة.
-  - **الـ fix الكامل:** Puppeteer script يـ seed الـ localStorage مع الكوكي (`scripts/lhci-home-setup.js` معمول لكن يحتاج `puppeteer` كـ devDep ~300MB). task B-bis في §٠.٦.
-  - **النتيجة الحالية:** `/ar` ليس في `lighthouserc.js` URL list — تجنباً للقياس المضلِّل.
+- **`/ar` redirect — ✅ مغلق في task B-bis (الـ PR الحالي):** الـ home gated بـ guard مزدوج (middleware cookie + client localStorage)، عُولج كاملاً بـ:
+  - `extraHeaders: { Cookie: 'engezna_has_location=1' }` يمرر الـ server gate.
+  - `puppeteerScript: './scripts/lhci-home-setup.js'` يـ seed `engezna_guest_location` في localStorage قبل كل audit — يمرر الـ client gate.
+  - `puppeteer` v24 مُثبَّت كـ devDep في `package.json`؛ الـ postinstall يـ download Chromium (~276MB) إلى `~/.cache/puppeteer/`.
+  - `/ar` رجع للـ `lighthouserc.js` URL list.
+  - **النتيجة:** أول CI run بعد merge يجب أن يقيس home الحقيقي، فينفتح task D (P0 home perf fix).
 - **Provider detail مُغطَّى ✅** بـ `/ar/providers/{stable-id}` (task B الحالية).
 - **Dashboards (admin، provider)**: مؤجَّلة لـ task يتطلب Puppeteer login session — Phase 2.4 في الـ legacy plan.
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                                  | PR Branch                          | Owner Action                          | Blocker                                  |
-| --------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------- | ---------------------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                | `claude/perf-provider-detail-page` | ✅ merged PR #381                     | جاهز                                     |
-| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                  | `claude/perf-add-routes-ci`        | ✅ merged PR #382                     | —                                        |
-| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs | `claude/perf-puppeteer-home-setup` | PR منفصل (قرار user)                  | B merged + قرار يـ approve ~300MB devDep |
-| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                      | `claude/perf-add-routes-ci`        | ✅ merged PR #382 — LCP −1.0s مُحقَّق | —                                        |
-| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                     | `claude/perf-home-<metric>`        | PR                                    | B-bis + C merged                         |
-| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                  | `claude/perf-auth-login-<metric>`  | PR                                    | D merged                                 |
+| Order     | Task                                                                                                                  | PR Branch                          | Owner Action                          | Blocker                       |
+| --------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------- | ----------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                | `claude/perf-provider-detail-page` | ✅ merged PR #381                     | جاهز                          |
+| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                  | `claude/perf-add-routes-ci`        | ✅ merged PR #382                     | —                             |
+| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs | `claude/perf-puppeteer-home-setup` | 🔄 الـ PR الحالي                      | B merged + user أجاز devDep ✓ |
+| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                      | `claude/perf-add-routes-ci`        | ✅ merged PR #382 — LCP −1.0s مُحقَّق | —                             |
+| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                     | `claude/perf-home-<metric>`        | PR                                    | B-bis + C merged              |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                  | `claude/perf-auth-login-<metric>`  | PR                                    | D merged                      |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -529,6 +529,7 @@ _(وهكذا)_
   - `#009DE0` (primary، Engezna Blue) على white = 3.28:1 → فاشل WCAG AA
   - **عُولج في الـ PR الحالي:** 10 className changes في `src/app/[locale]/providers/[id]/ProviderDetailClient.tsx` فقط — `text-slate-400` → `text-slate-500` (#64748b، 4.61:1) و `text-primary` → `text-primary-dark` (#0079AD، 5.27:1) على text elements. الـ icons تركت كما هي لأن color-contrast audit يستثني SVG icons. كذلك حُذف `assertMatrix` من `lighthouserc.js` ورجع لـ flat `assertions:` object — الـ strict 0.9 a11y threshold يـ apply على كل URLs دلوقتي.
 - **اكتشاف 2026-05-11 (C-bis مكتمل — Codex catch):** أول CI run بعد C-bis لسه فشل بـ 9 color-contrast failures على provider-detail. الفحص كشف إن الـ provider-detail page يـ render قائمة الـ menu items عبر **`ProductCard.tsx`** (shared component، imported من `ProviderDetailClient.tsx:1016-1025` كـ dynamic import)، و `ProductCard` نفسه كان لسه يستخدم `text-primary` للأسعار + variants و `text-slate-400` للـ strikethrough original prices. الـ component shared بين provider list و provider detail و لاحقاً المفضلة و carts. **عُولج بـ commit متابع في نفس الـ PR:** 10 className changes في `src/components/customer/shared/ProductCard.tsx` — 7 `text-primary` → `text-primary-dark` على text (prices، variant labels) + 3 `text-slate-400` → `text-slate-500` على strikethrough. الـ icons + hover states + decorative borders تركت. **درس عام:** عند fix tokens على page، تتبَّع كل shared component يـ render من الـ page tree — Lighthouse audit يفحص الـ DOM النهائي، مش source files.
+- **اكتشاف 2026-05-11 (B-bis applied):** بعد user approve devDep، تم install `puppeteer@^24.43.1`. الـ postinstall تلقائياً يـ download Chromium إلى `~/.cache/puppeteer/chrome/linux-148.0.7778.97/chrome-linux64/chrome` (276MB)، رغم محاولة `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true` — الـ env var ده deprecated في v22+ (الجديد `PUPPETEER_SKIP_DOWNLOAD`). تركنا الـ download يحدث لأنه يضمن `puppeteer.executablePath()` يرجع مسار صالح، اللي lhci's healthcheck يعتمد عليه. تم enable `puppeteerScript: './scripts/lhci-home-setup.js'` في `lighthouserc.js`، و `/ar` رجع للـ URL list. الـ script (موجود من PR #382 وتُرك للـ B-bis) يـ seed `engezna_guest_location` localStorage بـ stable test GuestLocation قبل كل audit، فيمر الـ client-side gate. الـ next CI artifact = أول قياس فعلي للـ home الحقيقي (P0).
 
 ---
 
