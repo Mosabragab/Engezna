@@ -131,6 +131,7 @@ export function CustomOrderWelcomeBanner({
         <div className="relative p-4 md:p-6">
           {/* Dismiss Button */}
           <button
+            type="button"
             onClick={handleDismiss}
             className="absolute top-3 end-3 p-1.5 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm"
             aria-label={isRTL ? 'إغلاق' : 'Dismiss'}
@@ -184,6 +185,7 @@ export function CustomOrderWelcomeBanner({
             <div className="w-full md:w-auto mt-2 md:mt-0">
               {onStartCustomOrder ? (
                 <Button
+                  type="button"
                   onClick={onStartCustomOrder}
                   className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
                 >
@@ -196,7 +198,10 @@ export function CustomOrderWelcomeBanner({
                 </Button>
               ) : (
                 <Link href={`/${locale}/custom-order?provider=${providerId}`}>
-                  <Button className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6">
+                  <Button
+                    type="button"
+                    className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
+                  >
                     {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                     {isRTL ? (
                       <ArrowLeft className="w-5 h-5 ms-2" />
@@ -211,9 +216,11 @@ export function CustomOrderWelcomeBanner({
 
           {/* Expandable How It Works Section */}
           <motion.div
+            id="custom-order-how-it-works"
             initial={false}
             animate={{ height: isExpanded ? 'auto' : 0, opacity: isExpanded ? 1 : 0 }}
             className="overflow-hidden"
+            aria-hidden={!isExpanded}
           >
             <div className="mt-4 pt-4 border-t border-white/30">
               <h4 className="text-white font-bold mb-3 drop-shadow-sm">
@@ -250,7 +257,10 @@ export function CustomOrderWelcomeBanner({
 
           {/* Toggle How It Works */}
           <button
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
+            aria-expanded={isExpanded}
+            aria-controls="custom-order-how-it-works"
             className="flex items-center gap-1 mt-3 text-white hover:text-white/90 text-sm font-medium transition-colors"
           >
             <ChevronRight
@@ -283,6 +293,7 @@ export function CustomOrderBadge({
 
   return (
     <motion.button
+      type="button"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
