@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useId, useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { X, Camera, FileText, Sparkles, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
@@ -32,6 +32,10 @@ export function CustomOrderWelcomeBanner({
   const isRTL = locale === 'ar';
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  // Component-scoped unique id so multiple banners on the same page
+  // (future list views, etc.) don't collide on the aria-controls /
+  // collapsible-region pairing.
+  const howItWorksId = `custom-order-how-it-works-${useId()}`;
 
   // Check if banner was previously dismissed (per provider, per session)
   useEffect(() => {
@@ -131,6 +135,7 @@ export function CustomOrderWelcomeBanner({
         <div className="relative p-4 md:p-6">
           {/* Dismiss Button */}
           <button
+            type="button"
             onClick={handleDismiss}
             className="absolute top-3 end-3 p-1.5 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm"
             aria-label={isRTL ? 'إغلاق' : 'Dismiss'}
@@ -184,6 +189,7 @@ export function CustomOrderWelcomeBanner({
             <div className="w-full md:w-auto mt-2 md:mt-0">
               {onStartCustomOrder ? (
                 <Button
+                  type="button"
                   onClick={onStartCustomOrder}
                   className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
                 >
@@ -195,25 +201,39 @@ export function CustomOrderWelcomeBanner({
                   )}
                 </Button>
               ) : (
-                <Link href={`/${locale}/custom-order?provider=${providerId}`}>
-                  <Button className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6">
+                // `asChild` makes Button render as a Slot, applying its
+                // class/styles to the child Link's underlying anchor.
+                // The previous shape (<Link><Button>) produced nested
+                // interactive elements (<a><button>), which is invalid
+                // HTML5 and confuses screen readers + keyboard nav.
+                // `type` is intentionally omitted here because asChild
+                // means the rendered element is an <a>, where the
+                // `type` attribute would be parsed as a MIME type
+                // hint, not a button behavior.
+                <Button
+                  asChild
+                  className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
+                >
+                  <Link href={`/${locale}/custom-order?provider=${providerId}`}>
                     {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                     {isRTL ? (
                       <ArrowLeft className="w-5 h-5 ms-2" />
                     ) : (
                       <ArrowRight className="w-5 h-5 ms-2" />
                     )}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
             </div>
           </div>
 
           {/* Expandable How It Works Section */}
           <motion.div
+            id={howItWorksId}
             initial={false}
             animate={{ height: isExpanded ? 'auto' : 0, opacity: isExpanded ? 1 : 0 }}
             className="overflow-hidden"
+            aria-hidden={!isExpanded}
           >
             <div className="mt-4 pt-4 border-t border-white/30">
               <h4 className="text-white font-bold mb-3 drop-shadow-sm">
@@ -250,7 +270,10 @@ export function CustomOrderWelcomeBanner({
 
           {/* Toggle How It Works */}
           <button
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
+            aria-expanded={isExpanded}
+            aria-controls={howItWorksId}
             className="flex items-center gap-1 mt-3 text-white hover:text-white/90 text-sm font-medium transition-colors"
           >
             <ChevronRight
@@ -283,6 +306,7 @@ export function CustomOrderBadge({
 
   return (
     <motion.button
+      type="button"
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
