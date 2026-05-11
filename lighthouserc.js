@@ -15,6 +15,19 @@
 const BASE_URL = process.env.LHCI_TARGET_URL || 'http://localhost:3000';
 const RUN_LOCAL_SERVER = !process.env.LHCI_TARGET_URL;
 
+// Stable sample provider used for measuring `/ar/providers/{id}` (P1 in
+// docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.2). Picked deliberately:
+//   - مطعم الصفا — active, well-populated provider, low churn risk
+//   - has cover image so the audit exercises Image priority/preload paths
+//   - has `operation_mode='custom'` so CustomOrderWelcomeBanner renders,
+//     making this URL a permanent regression guard for the CLS + LCP fixes
+//     landed in PR #381
+// The companion CI workflow (.github/workflows/lighthouse.yml) does a HEAD
+// preflight against this URL before invoking lhci, so if the provider is
+// ever deactivated the job fails fast with a clear message instead of
+// quietly auditing a 404 page. If you swap this id, swap it there too.
+const HARDCODED_PROVIDER_ID = 'ad52ece8-69c0-4f46-918e-1fbba73655cd';
+
 module.exports = {
   ci: {
     collect: {
@@ -23,37 +36,24 @@ module.exports = {
 
       // URL patterns to test.
       //
-      // `/ar` measures the real home page. It requires BOTH the cookie
-      // injection in `extraHeaders` below AND the puppeteerScript at the
-      // top of this file to seed `engezna_guest_location` in localStorage
-      // (the client-side redirect gate in HomePageClient.tsx:163-178).
-      // If you remove the puppeteer script, also remove `/ar` from this
-      // list — otherwise CI will silently measure welcome instead of home.
-      //
-      // PROVIDER_DETAIL_ID is a stable sample provider whose page we use
-      // for measuring `/ar/providers/{id}`. Picked deliberately:
-      //   - has cover image (exercises Image priority/preload path)
-      //   - has `operation_mode='custom'` so the CustomOrderWelcomeBanner
-      //     renders, validating the CLS/LCP fixes from PR #381 on every CI
-      //     run. If the regressions ever come back, this URL catches them.
-      // If this provider is ever deactivated/deleted, swap to another
-      // stable provider id; nothing in the app depends on this constant.
+      // `/ar` (the real home page) is NOT in this list. Seeding the
+      // home-required state requires both:
+      //   1. cookie injection in `extraHeaders` below (handles middleware)
+      //   2. a Puppeteer setup script (handles the client-side localStorage
+      //      gate in HomePageClient.tsx:163-178)
+      // The Puppeteer route needs `puppeteer` installed as a dev dep, which
+      // pulls ~300 MB of Chromium into CI install time. That's a separate
+      // decision (task B-bis in roadmap §0.6). Until then, adding `/ar` here
+      // would silently re-measure `/welcome` because the client redirect
+      // still fires post-hydration — so keep it OUT.
       url: [
-        `${BASE_URL}/ar`,
         `${BASE_URL}/ar/providers`,
-        `${BASE_URL}/ar/providers/ad52ece8-69c0-4f46-918e-1fbba73655cd`,
+        `${BASE_URL}/ar/providers/${HARDCODED_PROVIDER_ID}`,
         `${BASE_URL}/ar/cart`,
         `${BASE_URL}/ar/auth/login`,
         `${BASE_URL}/ar/custom-order`,
         `${BASE_URL}/ar/provider/login`,
       ],
-
-      // Puppeteer setup runs once per URL audit. It seeds the
-      // `engezna_guest_location` localStorage entry so HomePageClient's
-      // post-hydration redirect to /welcome doesn't fire on /ar. See the
-      // script for the full rationale. Harmless on routes that don't
-      // read this key.
-      puppeteerScript: './scripts/lhci-home-setup.js',
 
       // Only spawn `next start` when measuring localhost; for a remote
       // target_url the URL is already serving and starting a local server
@@ -89,14 +89,13 @@ module.exports = {
         // Locale
         locale: 'ar',
 
-        // Cookie injection: passes the middleware-level location check
-        // (src/middleware.ts:70). Pairs with `puppeteerScript` above
-        // which seeds the matching localStorage entry that the client-
-        // side gate (HomePageClient.tsx:163-178) reads. Both pieces are
-        // required to measure `/ar` (the home page) instead of welcome;
-        // missing either one causes a redirect. Cookie value is
-        // arbitrary — middleware only checks for presence — and is
-        // harmless on every other route.
+        // Cookie injection passes the middleware-level location check
+        // (src/middleware.ts:70). On its own it does NOT prevent the
+        // client-side redirect from HomePageClient.tsx:163-178, which
+        // reads `engezna_guest_location` from localStorage. So this
+        // cookie is harmless setup on every route in the URL list above
+        // (none of them gate on it) and will pair with the Puppeteer
+        // script once task B-bis adds the localStorage seeding piece.
         extraHeaders: { Cookie: 'engezna_has_location=1' },
 
         // Vercel preview deployments serve `x-robots-tag: noindex` from
@@ -192,3 +191,7 @@ module.exports = {
     },
   },
 };
+
+// Exported for use by the CI preflight script — see
+// .github/workflows/lighthouse.yml. Not part of lhci's own config schema.
+module.exports.HARDCODED_PROVIDER_ID = HARDCODED_PROVIDER_ID;
