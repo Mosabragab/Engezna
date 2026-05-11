@@ -187,10 +187,21 @@ module.exports = {
           },
         },
         {
-          // Default — applies to every URL that doesn't match a more
-          // specific pattern above. Identical to the historical
-          // `assertions:` block, kept strict.
-          matchingUrlPattern: '.*',
+          // Default — applies to every URL EXCEPT the provider-detail
+          // UUID pattern matched above. The negative lookahead is
+          // required because lhci's `assertMatrix` runs every entry
+          // whose `matchingUrlPattern` matches a given URL (see
+          // node_modules/@lhci/utils/src/assertions.js:473-475 —
+          // arrayOfOptions iterates ALL matrix entries per URL). A
+          // catch-all `.*` would mean both the strict assertions and
+          // the relaxed override evaluate on /ar/providers/<uuid>, and
+          // the strict ones would fail at 0.9 even though the override
+          // entry allows 0.8. Excluding the provider-detail URL from
+          // this catch-all leaves only the relaxed override to run on
+          // those pages, while every other URL still gets the strict
+          // bar.
+          matchingUrlPattern:
+            '^(?!.*/ar/providers/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}).*$',
           assertions: {
             'categories:performance': ['error', { minScore: 0.6 }],
             'categories:accessibility': ['error', { minScore: 0.9 }],
