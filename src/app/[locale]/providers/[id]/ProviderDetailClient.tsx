@@ -580,7 +580,18 @@ export default function ProviderDetailClient({
           {/* Provider Actions */}
           <div className="absolute top-3 start-3 flex items-center gap-2">
             <button
+              type="button"
               onClick={handleFavoriteClick}
+              aria-label={
+                locale === 'ar'
+                  ? isProviderFavorite
+                    ? 'إزالة من المفضلة'
+                    : 'إضافة إلى المفضلة'
+                  : isProviderFavorite
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
+              }
+              aria-pressed={isProviderFavorite}
               className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
                 isProviderFavorite
                   ? 'bg-white/90 text-red-500'
@@ -590,7 +601,9 @@ export default function ProviderDetailClient({
               <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
             </button>
             <button
+              type="button"
               onClick={handleShare}
+              aria-label={locale === 'ar' ? 'مشاركة' : 'Share'}
               className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
             >
               <Share2 className="w-5 h-5" />
@@ -651,7 +664,7 @@ export default function ProviderDetailClient({
                 {provider.rating.toFixed(1)}
               </span>
             </div>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-slate-500">
               ({provider.total_reviews} {locale === 'ar' ? 'تقييم' : 'reviews'})
             </span>
           </div>
@@ -713,12 +726,12 @@ export default function ProviderDetailClient({
                 <h2 className="text-lg font-bold text-slate-900">
                   {locale === 'ar' ? 'التقييمات' : 'Reviews'}
                 </h2>
-                <span className="text-sm text-slate-400">({provider.total_reviews})</span>
+                <span className="text-sm text-slate-500">({provider.total_reviews})</span>
               </div>
               {reviews.length > 3 && (
                 <button
                   onClick={() => setShowAllReviews(!showAllReviews)}
-                  className="text-primary text-sm font-medium flex items-center gap-1"
+                  className="text-primary-dark text-sm font-medium flex items-center gap-1"
                 >
                   {showAllReviews
                     ? locale === 'ar'
@@ -754,7 +767,7 @@ export default function ProviderDetailClient({
                             : review.profiles?.full_name) ||
                             (locale === 'ar' ? 'مستخدم' : 'Customer')}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-slate-500">
                           {new Date(review.created_at).toLocaleDateString(
                             locale === 'ar' ? 'ar-EG' : 'en-US',
                             { year: 'numeric', month: 'short', day: 'numeric' }
@@ -784,7 +797,7 @@ export default function ProviderDetailClient({
                     <div className="mt-3 p-3 bg-primary/5 rounded-lg border-s-4 border-primary">
                       <div className="flex items-center gap-1 mb-1">
                         <MessageSquare className="w-3 h-3 text-primary" />
-                        <p className="text-xs font-medium text-primary">
+                        <p className="text-xs font-medium text-primary-dark">
                           {locale === 'ar' ? 'رد المتجر' : 'Store Response'}
                         </p>
                       </div>
@@ -839,7 +852,7 @@ export default function ProviderDetailClient({
                         <h3 className="text-sm font-medium text-slate-800 truncate">
                           {locale === 'ar' ? item.name_ar : item.name_en}
                         </h3>
-                        <p className="text-sm font-bold text-primary mt-1">
+                        <p className="text-sm font-bold text-primary-dark mt-1">
                           {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </p>
                       </div>
@@ -897,7 +910,7 @@ export default function ProviderDetailClient({
                         <h3 className="text-sm font-medium text-slate-800 truncate">
                           {locale === 'ar' ? item.name_ar : item.name_en}
                         </h3>
-                        <p className="text-sm font-bold text-primary mt-1">
+                        <p className="text-sm font-bold text-primary-dark mt-1">
                           {item.price} {locale === 'ar' ? 'ج.م' : 'EGP'}
                         </p>
                       </div>
@@ -976,7 +989,7 @@ export default function ProviderDetailClient({
             <h2 className="text-lg font-bold text-slate-900">
               {locale === 'ar' ? 'القائمة' : 'Menu'}
               {selectedCategory && categories.length > 0 && (
-                <span className="text-slate-400 font-normal text-base">
+                <span className="text-slate-500 font-normal text-base">
                   {' - '}
                   {locale === 'ar'
                     ? categories.find((c) => c.id === selectedCategory)?.name_ar
@@ -984,7 +997,7 @@ export default function ProviderDetailClient({
                 </span>
               )}
             </h2>
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-slate-500">
               {filteredMenuItems.length} {locale === 'ar' ? 'صنف' : 'items'}
             </span>
           </div>
@@ -1030,7 +1043,7 @@ export default function ProviderDetailClient({
               {/* Unavailable Items */}
               {unavailableItems.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-medium text-slate-400 mb-3">
+                  <h3 className="text-sm font-medium text-slate-500 mb-3">
                     {locale === 'ar' ? 'غير متاح حالياً' : 'Currently Unavailable'}
                   </h3>
                   <div className="space-y-3 opacity-50">

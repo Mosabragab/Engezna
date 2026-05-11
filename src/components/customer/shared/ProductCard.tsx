@@ -166,13 +166,13 @@ export const ProductCard = memo(function ProductCard({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-slate-900 text-sm truncate">{name}</h4>
+            <h3 className="font-medium text-slate-900 text-sm truncate">{name}</h3>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-primary font-bold text-sm">
+              <span className="text-primary-dark font-bold text-sm">
                 {product.price} {currency}
               </span>
               {hasDiscount && (
-                <span className="text-slate-400 line-through text-xs">
+                <span className="text-slate-500 line-through text-xs">
                   {product.original_price} {currency}
                 </span>
               )}
@@ -182,7 +182,9 @@ export const ProductCard = memo(function ProductCard({
           {/* Add Button */}
           {showAddButton && product.is_available && (
             <button
+              type="button"
               onClick={handleIncrease}
+              aria-label={locale === 'ar' ? `إضافة ${name} إلى السلة` : `Add ${name} to cart`}
               className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
@@ -244,7 +246,7 @@ export const ProductCard = memo(function ProductCard({
 
           {/* Content */}
           <div className="flex-1 min-w-0 flex flex-col">
-            <h4 className="font-semibold text-slate-900">{name}</h4>
+            <h3 className="font-semibold text-slate-900">{name}</h3>
             {description && (
               <p className="text-sm text-slate-500 line-clamp-2 mt-1">{description}</p>
             )}
@@ -269,7 +271,7 @@ export const ProductCard = memo(function ProductCard({
             {hasVariants && (
               <div className="flex items-center gap-1 mt-1">
                 <ChevronDown className="w-3 h-3 text-primary" />
-                <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+                <span className="text-xs text-primary-dark font-medium">{getVariantLabel()}</span>
               </div>
             )}
 
@@ -277,16 +279,16 @@ export const ProductCard = memo(function ProductCard({
             <div className="flex items-center justify-between mt-auto pt-2">
               <div className="flex items-center gap-2">
                 {priceDisplay.hasRange ? (
-                  <span className="text-primary font-bold">
+                  <span className="text-primary-dark font-bold">
                     {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
                   </span>
                 ) : (
                   <>
-                    <span className="text-primary font-bold">
+                    <span className="text-primary-dark font-bold">
                       {priceDisplay.price || product.price} {currency}
                     </span>
                     {hasDiscount && (
-                      <span className="text-slate-400 line-through text-sm">
+                      <span className="text-slate-500 line-through text-sm">
                         {product.original_price} {currency}
                       </span>
                     )}
@@ -299,7 +301,11 @@ export const ProductCard = memo(function ProductCard({
                   {quantity > 0 ? (
                     <>
                       <button
+                        type="button"
                         onClick={handleDecrease}
+                        aria-label={
+                          locale === 'ar' ? `إنقاص كمية ${name}` : `Decrease ${name} quantity`
+                        }
                         className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 hover:border-primary hover:text-primary transition-colors"
                       >
                         <Minus className="w-4 h-4" />
@@ -308,7 +314,9 @@ export const ProductCard = memo(function ProductCard({
                     </>
                   ) : null}
                   <button
+                    type="button"
                     onClick={handleIncrease}
+                    aria-label={locale === 'ar' ? `إضافة ${name} إلى السلة` : `Add ${name} to cart`}
                     className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -387,7 +395,7 @@ export const ProductCard = memo(function ProductCard({
 
       {/* Content */}
       <div className="p-4">
-        <h4 className="font-semibold text-slate-900 line-clamp-1">{name}</h4>
+        <h3 className="font-semibold text-slate-900 line-clamp-1">{name}</h3>
         {description && <p className="text-sm text-slate-500 line-clamp-2 mt-1">{description}</p>}
 
         {/* Tags */}
@@ -410,23 +418,23 @@ export const ProductCard = memo(function ProductCard({
         {hasVariants && (
           <div className="flex items-center gap-1 mt-2">
             <ChevronDown className="w-3 h-3 text-primary" />
-            <span className="text-xs text-primary font-medium">{getVariantLabel()}</span>
+            <span className="text-xs text-primary-dark font-medium">{getVariantLabel()}</span>
           </div>
         )}
 
         {/* Price */}
         <div className="flex items-center gap-2 mt-3">
           {priceDisplay.hasRange ? (
-            <span className="text-primary font-bold text-lg">
+            <span className="text-primary-dark font-bold text-lg">
               {priceDisplay.minPrice} - {priceDisplay.maxPrice} {currency}
             </span>
           ) : (
             <>
-              <span className="text-primary font-bold text-lg">
+              <span className="text-primary-dark font-bold text-lg">
                 {priceDisplay.price || product.price} {currency}
               </span>
               {hasDiscount && (
-                <span className="text-slate-400 line-through text-sm">
+                <span className="text-slate-500 line-through text-sm">
                   {product.original_price} {currency}
                 </span>
               )}
@@ -440,14 +448,18 @@ export const ProductCard = memo(function ProductCard({
             {quantity > 0 ? (
               <>
                 <button
+                  type="button"
                   onClick={handleDecrease}
+                  aria-label={locale === 'ar' ? `إنقاص كمية ${name}` : `Decrease ${name} quantity`}
                   className="w-10 h-10 rounded-full border-2 border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
                 >
                   <Minus className="w-5 h-5" />
                 </button>
                 <span className="w-8 text-center font-bold text-lg">{quantity}</span>
                 <button
+                  type="button"
                   onClick={handleIncrease}
+                  aria-label={locale === 'ar' ? `إضافة ${name} إلى السلة` : `Add ${name} to cart`}
                   className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary/90 transition-colors"
                 >
                   <Plus className="w-5 h-5" />

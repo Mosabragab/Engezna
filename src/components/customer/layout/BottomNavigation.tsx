@@ -104,6 +104,7 @@ export const BottomNavigation = memo(function BottomNavigation() {
                 <Link
                   key={item.id}
                   href={item.href}
+                  aria-label={t(item.labelKey)}
                   className="relative flex items-center justify-center flex-1 h-full active:scale-95 transition-transform duration-200"
                 >
                   <div className="absolute -top-5 flex items-center justify-center w-14 h-14 rounded-full bg-primary shadow-lg shadow-primary/30">
