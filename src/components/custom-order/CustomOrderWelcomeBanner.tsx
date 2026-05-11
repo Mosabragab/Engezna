@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useId, useState, useEffect } from 'react';
 import { useLocale } from 'next-intl';
 import { motion } from 'framer-motion';
 import { X, Camera, FileText, Sparkles, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
@@ -32,6 +32,10 @@ export function CustomOrderWelcomeBanner({
   const isRTL = locale === 'ar';
   const [isDismissed, setIsDismissed] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  // Component-scoped unique id so multiple banners on the same page
+  // (future list views, etc.) don't collide on the aria-controls /
+  // collapsible-region pairing.
+  const howItWorksId = `custom-order-how-it-works-${useId()}`;
 
   // Check if banner was previously dismissed (per provider, per session)
   useEffect(() => {
@@ -225,7 +229,7 @@ export function CustomOrderWelcomeBanner({
 
           {/* Expandable How It Works Section */}
           <motion.div
-            id="custom-order-how-it-works"
+            id={howItWorksId}
             initial={false}
             animate={{ height: isExpanded ? 'auto' : 0, opacity: isExpanded ? 1 : 0 }}
             className="overflow-hidden"
@@ -269,7 +273,7 @@ export function CustomOrderWelcomeBanner({
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             aria-expanded={isExpanded}
-            aria-controls="custom-order-how-it-works"
+            aria-controls={howItWorksId}
             className="flex items-center gap-1 mt-3 text-white hover:text-white/90 text-sm font-medium transition-colors"
           >
             <ChevronRight
