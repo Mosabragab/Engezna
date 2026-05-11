@@ -197,19 +197,28 @@ export function CustomOrderWelcomeBanner({
                   )}
                 </Button>
               ) : (
-                <Link href={`/${locale}/custom-order?provider=${providerId}`}>
-                  <Button
-                    type="button"
-                    className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
-                  >
+                // `asChild` makes Button render as a Slot, applying its
+                // class/styles to the child Link's underlying anchor.
+                // The previous shape (<Link><Button>) produced nested
+                // interactive elements (<a><button>), which is invalid
+                // HTML5 and confuses screen readers + keyboard nav.
+                // `type` is intentionally omitted here because asChild
+                // means the rendered element is an <a>, where the
+                // `type` attribute would be parsed as a MIME type
+                // hint, not a button behavior.
+                <Button
+                  asChild
+                  className="w-full md:w-auto bg-white text-primary hover:bg-sky-50 font-bold shadow-lg hover:shadow-xl transition-all duration-200 text-base py-6"
+                >
+                  <Link href={`/${locale}/custom-order?provider=${providerId}`}>
                     {isRTL ? 'ابدأ طلبك الآن' : 'Start Your Order'}
                     {isRTL ? (
                       <ArrowLeft className="w-5 h-5 ms-2" />
                     ) : (
                       <ArrowRight className="w-5 h-5 ms-2" />
                     )}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               )}
             </div>
           </div>
