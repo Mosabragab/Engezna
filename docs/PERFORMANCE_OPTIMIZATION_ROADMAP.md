@@ -9,8 +9,8 @@
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-validate-roadmap-update` (roadmap update + task C-bis — provider-detail a11y tokens fix).
-> آخر تحديث: 2026-05-11 — task A (PR #381)، B+C (PR #382) merged. Task C-bis (a11y tokens) جاهز في نفس الـ PR. التالي بعد merge: انتظار CI artifact لتأكيد categories:accessibility ≥ 0.9 على provider-detail.
+> فرع التنفيذ الحالي للأداء: `claude/perf-css-render-blocking` (Task C-ter — enable optimizeCss + install critters لتخفيف render-blocking warns).
+> آخر تحديث: 2026-05-11 — Tasks A/B/C/C-bis ✅ merged (PR #381، #382، #383). B-bis في separate PR، C-ter في الـ PR الحالي. C-bis مُحقَّق بالقياس: accessibility = 1.0 على 5 routes، 0.96 على /ar/provider/login (≥ 0.9 ✓).
 
 ---
 
@@ -91,14 +91,16 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                                  | PR Branch                          | Owner Action                          | Blocker                                  |
-| --------- | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------- | ---------------------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                | `claude/perf-provider-detail-page` | ✅ merged PR #381                     | جاهز                                     |
-| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                  | `claude/perf-add-routes-ci`        | ✅ merged PR #382                     | —                                        |
-| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs | `claude/perf-puppeteer-home-setup` | PR منفصل (قرار user)                  | B merged + قرار يـ approve ~300MB devDep |
-| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                      | `claude/perf-add-routes-ci`        | ✅ merged PR #382 — LCP −1.0s مُحقَّق | —                                        |
-| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                     | `claude/perf-home-<metric>`        | PR                                    | B-bis + C merged                         |
-| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                  | `claude/perf-auth-login-<metric>`  | PR                                    | D merged                                 |
+| Order     | Task                                                                                                                                                         | PR Branch                             | Owner Action                                | Blocker                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- | ------------------------------------------- | ---------------------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                       | `claude/perf-provider-detail-page`    | ✅ merged PR #381                           | جاهز                                     |
+| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                                                         | `claude/perf-add-routes-ci`           | ✅ merged PR #382                           | —                                        |
+| **B-bis** | Step 0b: تثبيت `puppeteer` كـ devDep + تفعيل `scripts/lhci-home-setup.js` كـ `puppeteerScript` + إعادة `/ar` للـ URLs                                        | `claude/perf-puppeteer-home-setup`    | PR منفصل (قرار user)                        | B merged + قرار يـ approve ~300MB devDep |
+| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                                                             | `claude/perf-add-routes-ci`           | ✅ merged PR #382 — LCP −1.0s مُحقَّق       | —                                        |
+| **C-bis** | Fix provider-detail a11y tokens (slate-400→slate-500، primary→primary-dark) + ProductCard + heading-order + button/link names + remove assertMatrix override | `claude/perf-validate-roadmap-update` | ✅ merged PR #383 — a11y = 1.0 على 5 routes | C merged ✓                               |
+| **C-ter** | enable `experimental.optimizeCss: true` + install `critters` devDep — inline critical CSS، defer rest. يخفّض render-blocking warn (300-340ms على 3 routes)   | `claude/perf-css-render-blocking`     | 🔄 الـ PR الحالي                            | C-bis merged ✓                           |
+| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                                                            | `claude/perf-home-<metric>`           | PR                                          | B-bis + C merged                         |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                                                         | `claude/perf-auth-login-<metric>`     | PR                                          | D merged                                 |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -529,6 +531,8 @@ _(وهكذا)_
   - `#009DE0` (primary، Engezna Blue) على white = 3.28:1 → فاشل WCAG AA
   - **عُولج في الـ PR الحالي:** 10 className changes في `src/app/[locale]/providers/[id]/ProviderDetailClient.tsx` فقط — `text-slate-400` → `text-slate-500` (#64748b، 4.61:1) و `text-primary` → `text-primary-dark` (#0079AD، 5.27:1) على text elements. الـ icons تركت كما هي لأن color-contrast audit يستثني SVG icons. كذلك حُذف `assertMatrix` من `lighthouserc.js` ورجع لـ flat `assertions:` object — الـ strict 0.9 a11y threshold يـ apply على كل URLs دلوقتي.
 - **اكتشاف 2026-05-11 (C-bis مكتمل — Codex catch):** أول CI run بعد C-bis لسه فشل بـ 9 color-contrast failures على provider-detail. الفحص كشف إن الـ provider-detail page يـ render قائمة الـ menu items عبر **`ProductCard.tsx`** (shared component، imported من `ProviderDetailClient.tsx:1016-1025` كـ dynamic import)، و `ProductCard` نفسه كان لسه يستخدم `text-primary` للأسعار + variants و `text-slate-400` للـ strikethrough original prices. الـ component shared بين provider list و provider detail و لاحقاً المفضلة و carts. **عُولج بـ commit متابع في نفس الـ PR:** 10 className changes في `src/components/customer/shared/ProductCard.tsx` — 7 `text-primary` → `text-primary-dark` على text (prices، variant labels) + 3 `text-slate-400` → `text-slate-500` على strikethrough. الـ icons + hover states + decorative borders تركت. **درس عام:** عند fix tokens على page، تتبَّع كل shared component يـ render من الـ page tree — Lighthouse audit يفحص الـ DOM النهائي، مش source files.
+
+- **اكتشاف 2026-05-11 (C-ter applied):** بعد C-bis a11y الـ CI artifact (الـ ٧th run) كشف أن وحيد الـ warns المتبقية على routes 5 من 6 هي `render-blocking-resources` (cart 300ms، auth/login 339ms، provider-detail 300ms). كلها بسبب ملف CSS واحد (`cc2c948acf257440.css`, ~23KB، 91% منه unused per page). الـ Engezna يستخدم Next.js 16.1.6 + Tailwind v3 + standalone output. **عُولج في الـ PR الحالي:** `experimental.optimizeCss: true` في `next.config.ts`. الـ flag يستخدم `critters` package (Next 16 لسه يـ require هذا الاسم تحديداً في `node_modules/next/dist/server/post-process.js`) لـ inline critical CSS في initial HTML و defer the rest async. installed critters^0.0.23 كـ devDep. **مخاطر:** critters غير maintained (آخر release 2023)، قد يسبب FOUC على client-rendered sections. **متابعة:** لو الـ next CI artifact أظهر CLS regression أو visual issues، revert الـ flag (الـ critters devDep يبقى لو في PRs أخرى تحتاجه أو يُحذف في follow-up).
 
 ---
 

@@ -44,6 +44,24 @@ const nextConfig: NextConfig = {
   // date-fns: 6 files import date utilities — prevents bundling all 200+ locale/fn modules.
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
+    // Inline critical CSS into the initial HTML and defer the rest.
+    // Targets the ~22 KB render-blocking CSS chunk that Lighthouse
+    // flagged with a 300-340ms warn across /ar/cart, /ar/auth/login,
+    // and /ar/providers/{id} in the May 11 artifact — the file is
+    // ~91% unused per page, so inlining the critical portion and
+    // async-loading the rest should drop the wasted ms substantially.
+    //
+    // Backed by `critters` (Next.js 16 still requires this specific
+    // package, see node_modules/next/dist/server/post-process.js's
+    // `require('critters')`). If a future Next major switches to
+    // `beasties`, swap the devDep accordingly.
+    //
+    // Tracked as task C-ter in
+    // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6. If a post-merge
+    // CI artifact shows a regression (e.g. FOUC-driven CLS spike on
+    // client-rendered sections), revert by removing this flag — the
+    // `critters` devDep can stay or be removed in a follow-up.
+    optimizeCss: true,
   },
 
   // Image optimization configuration
