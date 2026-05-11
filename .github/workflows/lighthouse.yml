@@ -69,6 +69,35 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
+      # Preflight: the provider-detail URL in lighthouserc.js is pinned to a
+      # specific provider id. If that provider gets deactivated, the Lighthouse
+      # run would silently audit a 404 page or unrelated redirect target and
+      # the assertion results would be garbage. Fail fast here with a clear
+      # message and the actual status code so the failure mode is obvious.
+      # Only runs on remote target_url — local builds without a target are
+      # used for ad-hoc dev runs that may not have a populated db.
+      #
+      # Note: redirects are treated as failure. -L is intentionally omitted
+      # so a 3xx response surfaces as STATUS rather than being followed to
+      # whatever fallback page Vercel/Next decided on (e.g. a deactivated
+      # provider redirecting to /providers list would otherwise yield a 200
+      # and silently pass the check). Active providers respond 200 directly.
+      - name: Preflight — verify pinned provider URL is reachable
+        if: env.LHCI_TARGET_URL != ''
+        run: |
+          set -euo pipefail
+          PROVIDER_ID=$(node -e "console.log(require('./lighthouserc.js').HARDCODED_PROVIDER_ID)")
+          URL="${LHCI_TARGET_URL%/}/ar/providers/${PROVIDER_ID}"
+          echo "Checking $URL"
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$URL")
+          echo "HTTP $STATUS"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            echo "::error::Pinned provider URL returned HTTP $STATUS — provider may be deactivated, deleted, or the route may have changed."
+            echo "::error::A 3xx redirect counts as failure here because an active provider serves 200 directly. If this is a legitimate routing change, update the lighthouse workflow preflight too."
+            echo "::error::To fix: pick another active provider id and update HARDCODED_PROVIDER_ID in lighthouserc.js."
+            exit 1
+          fi
+
       - name: Run Lighthouse CI
         run: npx @lhci/cli@0.15.x autorun
         env:
