@@ -1,15 +1,98 @@
 # خارطة طريق تحسين أداء إنجزنا
 
-> **هذه خطة حية — يجب تحديثها بعد كل مرحلة**
+> **هذه خطة حية تقود الـ AI agent والـ humans معاً.** كل قرار "أيهم نعمل بعدين؟" أو "أيهم الأولوية؟" إجابته في هذا الملف. لو ما لقيتش الإجابة هنا، الإجابة تُضاف هنا قبل التنفيذ.
 >
 > أي تنفيذ لمهمة هنا يجب أن يقترن بتحديث:
 >
 > 1. حالة الـ task في الجدول الموافق (✅ / 🔄 / ⬜).
 > 2. القياسات الفعلية بعد التنفيذ في القسم ٧ (سجل القياسات).
 > 3. أي اكتشاف جديد يُضاف كـ "متابعة" في القسم ٨.
+> 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
-> فرع التنفيذ الحالي للأداء: `claude/perf-phase-2-vercel-preview` (Phase 2 — measure Vercel preview بدل localhost)
-> آخر تحديث: 2026-05-10 — Phase 2 جاري: تحويل lighthouse.yml من `pull_request` + localhost إلى `deployment_status` + Vercel preview URL (PR #376). أول preview run كشف SEO noise من Vercel `x-robots-tag: noindex` — مُعالَج بـ `skipAudits: ['is-crawlable']` على preview + guardrail script يحرس accidental noindex في source. التفاصيل في §8.
+> فرع التنفيذ الحالي للأداء: `claude/perf-provider-detail-page` (CLS + LCP fixes على banner + 4 a11y commits — جاهز للـ merge).
+> آخر تحديث: 2026-05-11 — Phase 1 + 1.5 + 2 + CLS home + CLS+LCP provider detail مدموجة أو جاهزة. أول CI artifact على branch مع full data (مايو 11) دمج في §٧.
+
+---
+
+## ٠. الحالة العاملة الحالية (data-driven — يُقرأ أولاً)
+
+> هذا هو **مصدر الحقيقة التشغيلي**. لو في تعارض بين هذا القسم وأي قسم تاني تحت، هذا يفوز.
+
+### ٠.١ ما تم حسمه نهائياً (أزل من قائمة القلق)
+
+| الموضوع                                                | الحالة                                                                                         | الدليل                                                 |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| **CLS على كل routes**                                  | ✅ تحت 0.012 على الست routes في الـ CI artifact                                                | `manifest.json` + per-route LHR (مايو 11)              |
+| **TTFB**                                               | ✅ 24ms ثابت عبر كل routes (Vercel fra1 + edge cache يعملان)                                   | LHR `server-response-time.numericValue ≈ 24` في كل ملف |
+| **الـ CLS على home (`/ar`)**                           | ✅ DeliveryModeSelector skeleton matched (PR #378) — DevTools live CLS = 0.01 بعد الإصلاح      | screenshots مايو 10                                    |
+| **الـ CLS على provider detail (`/ar/providers/{id}`)** | ✅ Banner `height: 0 → auto` removed — DevTools live CLS = 0 (مطعم الصفا، كان 0.84)            | الـ PR الحالي                                          |
+| **الـ LCP المتأخّر بالـ banner opacity animation**     | ✅ Banner opacity animation removed — كان يُضيف 1.4s render delay على LCP element              | الـ PR الحالي commit `6e04b64`                         |
+| **CI Lighthouse على Vercel preview**                   | ✅ Phase 2 يعمل — artifacts كاملة تتولّد على كل deployment_status                              | PR #377 + الـ artifact الحالي                          |
+| **SEO false-fail من preview noindex**                  | ✅ `skipAudits: ['is-crawlable']` على preview + guardrail script في `scripts/check-noindex.sh` | PR #377                                                |
+
+**الخلاصة:** الـ CLS و TTFB لم يعودا أهدافاً. كل التحسين الجاي يستهدف **LCP و TBT و JS bundle size**.
+
+### ٠.٢ الأولوية الحالية (impact-ranked) — يُتبَع بالترتيب بدون سؤال
+
+الـ Impact = `(100 - real_user_RES) × samples` من Vercel Speed Insights (real-user data، آخر ٧ أيام). الترتيب يُعاد حسابه لما البيانات تتغيّر.
+
+| #      | Route                                  | Field RES   | Samples | Impact   | Lab Perf (CI) | حالة                | ملاحظة                                                            |
+| ------ | -------------------------------------- | ----------- | ------- | -------- | ------------- | ------------------- | ----------------------------------------------------------------- |
+| **P0** | `/ar` (الـ home الفعلي بعد location)   | **47 POOR** | 44      | **2332** | غير مقاس      | ⬜ Step 0 ثم Step 1 | الـ CI بيـ redirect لـ welcome → ما بنقيسش home. لازم نضيفه أولاً |
+| **P1** | `/ar/providers/{id}` (provider detail) | 78          | 47      | 1034     | غير مقاس      | 🔄 الـ PR الحالي    | غير موجود في الـ CI URLs — نضيفه مع P0                            |
+| **P2** | `/ar/auth/login`                       | **44 POOR** | 16      | 896      | 0.78 lab      | ⬜                  | lab أفضل من field — مرشح لـ JS-heavy hydration                    |
+| **P3** | `/ar/welcome`                          | 84          | 22      | 352      | **0.80 lab**  | ✅ مقبول            | لا يستحق work الآن — مراقبة فقط                                   |
+| **P4** | `/ar/admin/log...`                     | 64          | 10      | 360      | غير مقاس      | ⬜                  | Admin route — أولوية أقل                                          |
+| **P5** | `/ar/admin`                            | 59          | 5       | 205      | غير مقاس      | ⬜                  | Admin — لاحقاً                                                    |
+
+**Cross-cutting:** الـ LCP بين 3.8s-5.2s على **كل** الـ routes في الـ CI. ده universal cause مش route-specific. **PR منفصل (P-X)** لـ root-cause investigation (font loading, render-blocking CSS, image priority، إلخ). لو نجح، يحسّن الست routes دفعة واحدة → impact تراكمي ضخم.
+
+### ٠.٣ قواعد القرار الإجبارية (تمنع "أيهم تفضّل؟")
+
+1. **لا تنفّذ على route مش الـ top of queue** إلا لو:
+   - Cross-cutting fix يفيد كل routes (مثل LCP root cause).
+   - Bug على route لا تعمل أصلاً (CLS/build/runtime).
+   - User طلب صراحة route بعينه.
+2. **لا تضيف route للـ CI URLs بدون قياس قبل والبعد.** الـ baseline في §٧ يلزم له entry جديد.
+3. **لا تخفّض threshold في `lighthouserc.js`.** الـ regression تُحلَّل root cause. لو الـ assertion نقص، نـ fix الكود مش العتبة.
+4. **PR per route per metric.** ما نخلطش CLS + LCP + TBT في PR واحد إلا لو نفس الـ component (زي banner: CLS + LCP لأنه نفس السبب الجذري).
+5. **كل PR يحتوي على:**
+   - Hypothesis قبل الـ fix (في commit message).
+   - بعد الـ merge: validation من real-user data أو CI run جديد ضمن ٢٤ ساعة.
+6. **لو الـ hypothesis اتعارض مع الـ data بعد القياس** → reverting أسرع من إصلاح second-order. لا نتمسّك بالـ fix لو ما حسّنش.
+7. **التحقق mandatory قبل أي commit:** `npm run format:check && npm run lint && npm run typecheck`. لو الـ husky hook اتجاوز، الـ CI سيفشل.
+
+### ٠.٤ الـ Process الموحّد لكل route (٧ خطوات ثابتة)
+
+كل PR على route جديد يتبع هذه الخطوات بالحرف:
+
+1. **اقرأ الـ data**: افتح آخر CI artifact LHR للـ route + Speed Insights field RES. حدّد الـ dominant metric (LCP أم TBT أم INP).
+2. **اقرأ الكود**: ابحث عن الـ component المسؤول عن:
+   - LCP element (من `audits["largest-contentful-paint-element"].details.items[0].node.snippet`)
+   - أكبر long tasks (من `audits["long-tasks"].details.items`)
+   - render-blocking resources (`audits["render-blocking-resources"]`)
+3. **اكتب hypothesis** في الـ TodoWrite + draft commit message: "I think X causes Y because Z. Fixing X should reduce Y by ~N%."
+4. **fix minimum viable** — أصغر تغيير ينجز الـ hypothesis. لا cleanup، لا abstraction.
+5. **validate locally**: format/lint/typecheck. لو لمست component فيه `useEffect` معقد، شغّل تجربة local بـ `npm run dev` ثم DevTools.
+6. **commit + push** على branch مفرد `claude/perf-<route>-<metric>`. مفيش mixed concerns.
+7. **بعد merge + deploy**: انتظر CI run جديد. حدّث §٧ بالأرقام الفعلية. علّم الـ task ✅ في §٠.٢. لو ما تحسّنش، open follow-up أو revert.
+
+### ٠.٥ Measurement gaps معروفة (يُسد قبل القياس)
+
+- **`/ar` redirect**: `app/[locale]/page.tsx` يـ redirect لـ `/welcome` لو مفيش location cookie. الـ CI runs بدون cookie → كل measurement لـ welcome، ليس home الفعلي. **حل مقترح:** إضافة cookie injection في `lighthouserc.js` collect.settings.extraHeaders، أو قياس `/ar?location=<sample-id>` صراحة. مهم قبل أي شغل على P0.
+- **Provider detail و dashboards غير في الـ CI URLs**: نضيفهم في PR Step 0 مع home.
+
+### ٠.٦ المهام الفعلية المُجدولة بالترتيب
+
+| Order | Task                                                                                                            | PR Branch                          | Owner Action | Blocker                   |
+| ----- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------ | ------------------------- |
+| **A** | merge الـ PR الحالي (CLS + LCP banner)                                                                          | `claude/perf-provider-detail-page` | merge فقط    | جاهز                      |
+| **B** | Step 0: إضافة `/ar` (home بـ location cookie) و `/ar/providers/{id}` و `/provider/orders` للـ `lighthouserc.js` | `claude/perf-add-routes-ci`        | PR + reviews | A merged                  |
+| **C** | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority)                 | `claude/perf-lcp-cross-cutting`    | PR           | B merged + 1 fresh CI run |
+| **D** | P0 home: PR صغير على home page بناءً على الـ data                                                               | `claude/perf-home-<metric>`        | PR           | C merged + new artifact   |
+| **E** | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                            | `claude/perf-auth-login-<metric>`  | PR           | D merged                  |
+
+**ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
 ---
 
@@ -351,9 +434,30 @@
 
 **الخلاصة:** Phase 1 quick wins نجحت — `/ar/providers` كان عند 783ms TBT قبلها (دون 0.5 perf score متوقع)، الآن median 0.71. الانتقال إلى Phase 2 (Vercel preview measurement) صار مبرَّراً لأن الأرقام الحالية pessimistic بـ 20-40% مقابل الإنتاج الحقيقي.
 
+### بعد Phase 2 + CLS fixes (2026-05-11) — أول قياس على Vercel preview بعد دمج كل CLS work
+
+من artifact `lighthouseresults_4.zip` (CI run بعد دمج PR #378 home CLS fix). ٦ URLs × ٣ runs = ١٨ تقرير LHR كامل. المتوسط (median) لكل route:
+
+| URL                              | Perf (median) |   LCP |       TBT |    CLS |   TTI |   FCP |     TTFB |
+| -------------------------------- | ------------: | ----: | --------: | -----: | ----: | ----: | -------: |
+| `/ar` → `/ar/welcome` (redirect) |      **0.80** | 3.77s |     220ms | 0.0004 | 4.91s | 1.47s | **24ms** |
+| `/ar/providers` (list)           |      **0.68** | 4.87s | **414ms** |  0.011 | 6.41s | 1.47s |     24ms |
+| `/ar/cart`                       |      **0.73** | 4.89s |     295ms | 0.0007 | 6.14s | 1.35s |     25ms |
+| `/ar/auth/login`                 |      **0.78** | 4.70s |     161ms |      0 | 5.51s | 1.31s |     24ms |
+| `/ar/custom-order`               |      **0.79** | 4.30s |     158ms |  0.003 | 6.09s | 1.34s |     24ms |
+| `/ar/provider/login`             |      **0.68** | 5.23s | **358ms** | 0.0004 | 6.91s | 1.53s |     24ms |
+
+**قراءات حاسمة (مُكرَّسة في §٠.١):**
+
+- **CLS = 0** عملياً عبر كل routes. الـ work الجاي مش CLS.
+- **TTFB = 24ms ثابت.** الـ Vercel fra1 + edge cache يعملان كما يُرجى. مفيش server-side bottleneck.
+- **LCP بين 3.8s و 5.2s على كل routes** — universal bottleneck. سبب مشترك مرشّح للـ cross-cutting investigation (PR-C في §٠.٦).
+- **TBT 414ms على `/ar/providers`** و 358ms على `/ar/provider/login` — JS-heavy، يستحقان شغل خاص بعد cross-cutting.
+- **`/ar` يساوي welcome في الـ CI** — redirect يحجب قياس الـ home الفعلي. مذكور في §٠.٥.
+
 ### بعد المرحلة ٢
 
-_يُملأ بعد التنفيذ_
+_legacy section — تم استبداله بالـ table أعلاه_
 
 ### بعد المرحلة ٣
 
@@ -376,6 +480,11 @@ _(وهكذا)_
 - **متابعة Phase 2 (gap closure):** الـ skip للـ `is-crawlable` يفتح blind spot صغير: لو `<meta name="robots" content="noindex">` ضاف بالغلط في source، preview CI مش هيمسكه. مغطّى مؤقتاً بـ `scripts/check-noindex.sh` (يجري في CI lint job ضمن `.github/workflows/ci.yml`) — بـ allowlist لـ `src/app/[locale]/auth/layout.tsx` (auth pages noindex مقصود). الحل النهائي: production Lighthouse workflow يقيس `www.engezna.com` بعد deploy إلى main، يعيد فيه `is-crawlable` كـ assertion حقيقية، وعندها يُحذَف الـ guardrail script. مدرَج كـ Phase 2.x مستقبلية.
 - **متابعة:** `manifest.json` يحوي Performance category scores فقط؛ `assertion-results.json` يحوي الـ assertions الفاشلة فقط (مع numericValues). لذلك TBT/LCP/TTI الناجحة لـ `/ar/providers` غير متاحة من أي منهما. **المصدر الوحيد** هو الـ representative LHR: `ar_providers-2026_05_09_10_14_17-report.json` — يحوي `audits["total-blocking-time"].numericValue` و `audits["largest-contentful-paint"].numericValue` و `audits.interactive.numericValue` بالأرقام الكاملة.
 - **متابعة عملية (Prettier + Husky):** الـ pre-commit hook (`.husky/pre-commit` → `npx lint-staged`) يُشغّل `prettier --write` على ملفات `.md` تلقائياً، لكن الـ Claude Code agent sessions أحياناً تتجاوز الـ husky hooks. **القاعدة:** قبل أي commit يدوي على markdown، شغّل `npm run format:check` محلياً. CI يُشغّل `npm run format:check` في `.github/workflows/ci.yml` (Lint & Type Check job)، فشل عنده يبقى صريح.
+- **اكتشاف 2026-05-10 (DevTools live على /ar):** CLS = 0.48 على home — السبب الجذري كان `DeliveryModeSelector` skeleton (~84px) ≠ loaded state (~160px) فالـ section كله ينحت بعد hydration. **عُولج في PR #378:** skeleton يـ mirror الـ default loaded structure (toggle + address row).
+- **اكتشاف 2026-05-10 (DevTools live على /ar/providers/{id}):** CLS = 0.84 على providers مع `operation_mode='custom'/'hybrid'` فقط (CLS = 0 على providers بدونه). السبب الجذري: `CustomOrderWelcomeBanner` كان يـ animate `height: 0 → auto` عبر Framer Motion على mount → relayout كامل. **عُولج في الـ PR الحالي** (commits `e546cf6` + `94ce74d`).
+- **اكتشاف 2026-05-10 (Lighthouse على نفس الصفحة):** بعد إصلاح CLS، LCP = 5.3s مع element render delay = 1.44s، والـ LCP element كان `<p>` نص الـ banner. السبب: الـ `motion.div` لسه عنده `opacity: 0 → 1` "for polish" — Lighthouse ما يعتبرش العنصر painted لما opacity = 0. الـ chain (HTML → JS → hydrate → Framer mount → animation) أضاف 1.4s. **عُولج في الـ PR الحالي** (commit `6e04b64`): replace outer `motion.div` بـ plain `div`. Inner expandable region لسه motion (user-triggered animations لا تحسب في CLS).
+- **اكتشاف 2026-05-11 (artifact analysis):** TTFB ثابت عند 24ms عبر كل routes — Vercel fra1 + edge cache يعملان. **TTFB ليس مشكلة.** كل اشتباه سابق فيه مغلوط. وLCP بين 3.8-5.2s على كل routes = universal cause. مرشّح للـ cross-cutting PR (PR-C في §٠.٦) قبل أي route-specific work.
+- **متابعة 2026-05-11 (measurement gap):** CI URL `/ar` يـ redirect لـ `/ar/welcome` بسبب الكوكي → الـ home الفعلي مش مقاس. Speed Insights field RES = 47 على home (P0) لكن الـ CI lab بيقول 0.80 لأنه يقيس welcome. **خطوة B في §٠.٦:** إضافة `/ar` كـ measured route مع cookie injection أو URL مع `?location=...` صراحة قبل أي شغل على P0.
 
 ---
 
