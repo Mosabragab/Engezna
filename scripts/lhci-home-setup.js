@@ -47,8 +47,35 @@
 
 const GUEST_LOCATION_KEY = 'engezna_guest_location';
 
+// RFC 4122 UUID format (any version). Used to validate the secrets
+// before they're written to localStorage so a misconfigured
+// LHCI_SEED_* value fails the audit loudly instead of silently
+// seeding garbage and producing empty-home metrics (the exact bug
+// the first B-bis CI run hit).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const SEED_GOVERNORATE_ID = process.env.LHCI_SEED_GOVERNORATE_ID || null;
 const SEED_CITY_ID = process.env.LHCI_SEED_CITY_ID || null;
+
+// Validate up-front. If a secret is set but malformed, exit immediately
+// — better to fail the workflow with a clear message than to silently
+// audit a redirected /welcome page.
+if (SEED_GOVERNORATE_ID && !UUID_RE.test(SEED_GOVERNORATE_ID)) {
+  // eslint-disable-next-line no-console
+  console.error(
+    `[lhci-home-setup] LHCI_SEED_GOVERNORATE_ID is not a valid UUID. Got: "${SEED_GOVERNORATE_ID}". ` +
+      'Fix the secret in GitHub Actions repository settings (Settings → Secrets and variables → Actions).'
+  );
+  process.exit(1);
+}
+if (SEED_CITY_ID && !UUID_RE.test(SEED_CITY_ID)) {
+  // eslint-disable-next-line no-console
+  console.error(
+    `[lhci-home-setup] LHCI_SEED_CITY_ID is not a valid UUID. Got: "${SEED_CITY_ID}". ` +
+      'Fix the secret in GitHub Actions repository settings (Settings → Secrets and variables → Actions).'
+  );
+  process.exit(1);
+}
 
 const SEED_LOCATION = {
   governorateId: SEED_GOVERNORATE_ID,
@@ -82,18 +109,27 @@ module.exports = async (browser, context) => {
       waitUntil: 'domcontentloaded',
       timeout: 30000,
     });
+    // Errors thrown inside page.evaluate propagate as a Puppeteer error
+    // from the await — we want them to. A silent catch here would let
+    // /ar audit a redirected /welcome page and produce misleading
+    // metrics under the wrong URL slot, which is exactly the failure
+    // mode we're trying to prevent. Fail loud, fail fast.
     await page.evaluate(
       (key, value) => {
-        try {
-          window.localStorage.setItem(key, JSON.stringify(value));
-        } catch {
-          // Storage may be unavailable in some sandbox configurations;
-          // Lighthouse will still measure something, just not the home.
-        }
+        window.localStorage.setItem(key, JSON.stringify(value));
       },
       GUEST_LOCATION_KEY,
       SEED_LOCATION
     );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error(
+      '[lhci-home-setup] seed failed for',
+      context.url,
+      '—',
+      err && err.message ? err.message : err
+    );
+    throw err;
   } finally {
     await page.close();
   }
