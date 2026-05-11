@@ -16,44 +16,63 @@
  *
  *   The `extraHeaders` cookie injection in lighthouserc.js handles
  *   guard #1, but Lighthouse CI has no way to seed localStorage from
- *   HTTP headers. Without this script, `/ar` would let Lighthouse start
- *   measuring the home page, then immediately redirect to welcome after
- *   hydration — giving misleading/blended numbers worse than the
- *   pre-existing "always measure welcome" baseline.
+ *   HTTP headers. So this script writes the seed into localStorage
+ *   before each audit.
  *
- * What it does:
- *   For each URL Lighthouse audits, we open a same-origin page first,
- *   write a synthetic GuestLocation into localStorage (any truthy
- *   `governorateId` is enough to pass the redirect check), then close
- *   the helper page. localStorage is origin-scoped, so when Lighthouse
- *   opens its own page on the same origin moments later, the seeded
- *   entry is available before HomePageClient's first read.
+ * IMPORTANT — empty-home pitfall (Codex catch from PR #384 first run):
+ *   HomePageClient.tsx:326-330 uses the seeded `cityId` and
+ *   `governorateId` as STRICT Supabase filters when querying for
+ *   nearby + top-rated providers. If the seeded IDs don't match any
+ *   real row in the `governorates`/`cities` tables, the page renders
+ *   the home chrome but with empty provider lists — that's not the
+ *   real user journey and produces misleading lab metrics.
  *
- * Footprint:
- *   The seeding is harmless on every other route (none of them gate
- *   on `engezna_guest_location` in a way that changes behaviour), so
- *   we run it unconditionally for simplicity. Per-run overhead is
- *   one extra navigation (~1s on CI), acceptable for a 6-URL run.
+ *   The first CI run with this script used synthetic strings
+ *   ('lhci-test-governorate', 'lhci-test-city'); the result was
+ *   /ar perf = 0.43–0.50 with CLS errors, all driven by the
+ *   empty-providers-then-skeleton-collapse render path.
  *
- * Shape of the seeded value matches src/lib/hooks/useGuestLocation.ts
- * `GuestLocation` interface. The names are intentionally tagged with
- * "lhci-" so any UI accidentally surfacing them is obviously test data.
+ *   To audit the real home, configure GitHub Actions secrets:
+ *     LHCI_SEED_GOVERNORATE_ID  — UUID of a populated governorate
+ *     LHCI_SEED_CITY_ID         — UUID of a populated city (optional;
+ *                                 if omitted the home renders all
+ *                                 providers in the governorate)
+ *
+ *   Without those secrets, `/ar` is intentionally OMITTED from the
+ *   lighthouserc.js URL list — the puppeteer setup is wired up and
+ *   ready, but the audit only runs when the seed values match real
+ *   DB rows. This is documented in PERFORMANCE_OPTIMIZATION_ROADMAP
+ *   §0.5 / §0.6 as the B-bis gate condition.
  */
 
 const GUEST_LOCATION_KEY = 'engezna_guest_location';
 
+const SEED_GOVERNORATE_ID = process.env.LHCI_SEED_GOVERNORATE_ID || null;
+const SEED_CITY_ID = process.env.LHCI_SEED_CITY_ID || null;
+
 const SEED_LOCATION = {
-  governorateId: 'lhci-test-governorate',
+  governorateId: SEED_GOVERNORATE_ID,
   governorateName: { ar: 'بني سويف', en: 'Beni Suef' },
-  cityId: 'lhci-test-city',
-  cityName: { ar: 'بني سويف', en: 'Beni Suef' },
+  cityId: SEED_CITY_ID,
+  cityName: SEED_CITY_ID ? { ar: 'بني سويف', en: 'Beni Suef' } : null,
 };
 
 module.exports = async (browser, context) => {
-  // `context.url` is the URL Lighthouse is about to audit. We need a
-  // same-origin page first so localStorage is reachable for that origin.
-  const targetOrigin = new URL(context.url).origin;
+  // If no governorate seed is configured this script becomes a no-op.
+  // lighthouserc.js separately excludes `/ar` from the URL list when
+  // LHCI_SEED_GOVERNORATE_ID is unset, so the audit never starts.
+  // We still keep the function exported (as a guard against the env
+  // being set inconsistently) but log a clear warning rather than
+  // writing test placeholders that would silently mismeasure home.
+  if (!SEED_GOVERNORATE_ID) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[lhci-home-setup] LHCI_SEED_GOVERNORATE_ID not set — skipping localStorage seed. /ar audit (if scheduled) will redirect to /ar/welcome.'
+    );
+    return;
+  }
 
+  const targetOrigin = new URL(context.url).origin;
   const page = await browser.newPage();
   try {
     // `/ar/welcome` is the cheapest reliably-rendering page in the app

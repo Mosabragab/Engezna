@@ -15,6 +15,21 @@
 const BASE_URL = process.env.LHCI_TARGET_URL || 'http://localhost:3000';
 const RUN_LOCAL_SERVER = !process.env.LHCI_TARGET_URL;
 
+// Home (/ar) measurement requires a real governorate UUID seeded into
+// localStorage so HomePageClient's Supabase filter
+// (HomePageClient.tsx:326-330) returns actual providers instead of an
+// empty list. Without it, the audit measures a home page rendering
+// empty content — misleading metrics (the first attempt produced
+// CLS errors and perf 0.43-0.50 driven entirely by the empty-state
+// render path, not real performance).
+//
+// When `LHCI_SEED_GOVERNORATE_ID` is configured (in GitHub Actions
+// secrets), `/ar` is added to the URL list AND the puppeteerScript
+// is wired up to seed localStorage. When it's not, `/ar` is omitted
+// and the puppeteerScript is not invoked — neither half does anything
+// without the other.
+const HOME_SEED_AVAILABLE = !!process.env.LHCI_SEED_GOVERNORATE_ID;
+
 // Stable sample provider used for measuring `/ar/providers/{id}` (P1 in
 // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.2). Picked deliberately:
 //   - مطعم الصفا — active, well-populated provider, low churn risk
@@ -36,23 +51,15 @@ module.exports = {
 
       // URL patterns to test.
       //
-      // `/ar` (the real home page) measures the customer home that
-      // real users hit most. Two gates have to be defeated to reach
-      // it:
-      //   1. Server-side: src/middleware.ts:70 checks the
-      //      `engezna_has_location` cookie and redirects to
-      //      /ar/welcome if missing. Handled by `extraHeaders` below.
-      //   2. Client-side: src/app/[locale]/HomePageClient.tsx:163-178
-      //      reads `engezna_guest_location` from localStorage in a
-      //      useState lazy initializer, then calls
-      //      router.replace('/welcome') post-hydration if there's no
-      //      governorateId. Handled by `puppeteerScript` below, which
-      //      seeds a synthetic GuestLocation before each audit
-      //      navigation.
-      // Remove either piece and `/ar` will silently redirect to
-      // welcome.
+      // `/ar` (the home page) is gated by two redirects (cookie +
+      // localStorage). The cookie half is handled by `extraHeaders`
+      // below; the localStorage half is handled by `puppeteerScript`.
+      // Both halves require a real governorate UUID (see top-of-file
+      // HOME_SEED_AVAILABLE for the env-var contract). When the seed
+      // isn't configured, `/ar` falls out of the URL list AND the
+      // puppeteerScript isn't wired up — they're a single feature.
       url: [
-        `${BASE_URL}/ar`,
+        ...(HOME_SEED_AVAILABLE ? [`${BASE_URL}/ar`] : []),
         `${BASE_URL}/ar/providers`,
         `${BASE_URL}/ar/providers/${HARDCODED_PROVIDER_ID}`,
         `${BASE_URL}/ar/cart`,
@@ -61,20 +68,16 @@ module.exports = {
         `${BASE_URL}/ar/provider/login`,
       ],
 
-      // Puppeteer setup runs once per URL audit. For `/ar` it seeds
-      // the `engezna_guest_location` localStorage entry so
-      // HomePageClient.tsx:163-178's post-hydration redirect to
-      // /welcome doesn't fire. The script is a no-op-equivalent for
-      // every other URL (it visits /ar/welcome once and writes a
-      // localStorage key that those routes never read).
+      // Puppeteer setup runs once per URL audit and seeds
+      // `engezna_guest_location` in localStorage so /ar doesn't
+      // redirect to /welcome. Only wired when the seed env vars are
+      // configured — see HOME_SEED_AVAILABLE comment for rationale.
       //
-      // Requires `puppeteer` as a devDep — lhci's healthcheck calls
+      // The script itself (scripts/lhci-home-setup.js) requires
+      // `puppeteer` as a devDep — lhci's healthcheck calls
       // `puppeteer.executablePath()` and the file at that path needs
-      // to exist. The earlier puppeteer-core that came in
-      // transitively via lighthouse was not enough; full `puppeteer`
-      // (which manages its own Chromium download via postinstall) is
-      // what makes this work on both local dev and CI.
-      puppeteerScript: './scripts/lhci-home-setup.js',
+      // to exist.
+      ...(HOME_SEED_AVAILABLE && { puppeteerScript: './scripts/lhci-home-setup.js' }),
 
       // Only spawn `next start` when measuring localhost; for a remote
       // target_url the URL is already serving and starting a local server
