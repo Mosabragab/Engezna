@@ -60,6 +60,13 @@ const SEED_CITY_ID = process.env.LHCI_SEED_CITY_ID || null;
 // Validate up-front. If a secret is set but malformed, exit immediately
 // — better to fail the workflow with a clear message than to silently
 // audit a redirected /welcome page.
+//
+// City validation is gated on the governorate being set as well: if a
+// maintainer sets only LHCI_SEED_CITY_ID by mistake (without
+// LHCI_SEED_GOVERNORATE_ID), the script becomes a no-op anyway via the
+// `if (!SEED_GOVERNORATE_ID) return;` early-out below, so a malformed
+// city value can't actually reach localStorage. Hard-failing on it
+// would be a false positive — the seed never gets used.
 if (SEED_GOVERNORATE_ID && !UUID_RE.test(SEED_GOVERNORATE_ID)) {
   // eslint-disable-next-line no-console
   console.error(
@@ -68,7 +75,7 @@ if (SEED_GOVERNORATE_ID && !UUID_RE.test(SEED_GOVERNORATE_ID)) {
   );
   process.exit(1);
 }
-if (SEED_CITY_ID && !UUID_RE.test(SEED_CITY_ID)) {
+if (SEED_GOVERNORATE_ID && SEED_CITY_ID && !UUID_RE.test(SEED_CITY_ID)) {
   // eslint-disable-next-line no-console
   console.error(
     `[lhci-home-setup] LHCI_SEED_CITY_ID is not a valid UUID. Got: "${SEED_CITY_ID}". ` +
