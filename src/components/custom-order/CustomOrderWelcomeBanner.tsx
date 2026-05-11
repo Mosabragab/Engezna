@@ -157,9 +157,9 @@ export function CustomOrderWelcomeBanner({
               <div className="hidden md:inline-block px-3 py-1 bg-amber-400 rounded-full text-xs font-bold text-amber-900 mb-2 shadow-md">
                 {isRTL ? 'خدمة جديدة!' : 'NEW SERVICE!'}
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-md">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-1 drop-shadow-md">
                 {isRTL ? 'نظام الطلب الخاص' : 'Custom Order System'}
-              </h3>
+              </h2>
               <p className="text-white text-sm md:text-base leading-relaxed drop-shadow-sm">
                 {bannerText}
               </p>
@@ -231,9 +231,9 @@ export function CustomOrderWelcomeBanner({
             aria-hidden={!isExpanded}
           >
             <div className="mt-4 pt-4 border-t border-white/30">
-              <h4 className="text-white font-bold mb-3 drop-shadow-sm">
+              <h3 className="text-white font-bold mb-3 drop-shadow-sm">
                 {isRTL ? 'كيف يعمل النظام؟' : 'How does it work?'}
-              </h4>
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="bg-white/20 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                   <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-3 shadow-md">

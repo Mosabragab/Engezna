@@ -29,7 +29,7 @@
 | **الـ LCP المتأخّر بالـ banner opacity animation**     | ✅ Banner opacity animation removed — كان يُضيف 1.4s render delay على LCP element                                                                     | الـ PR الحالي commit `6e04b64`                         |
 | **CI Lighthouse على Vercel preview**                   | ✅ Phase 2 يعمل — artifacts كاملة تتولّد على كل deployment_status                                                                                     | PR #377 + الـ artifact الحالي                          |
 | **SEO false-fail من preview noindex**                  | ✅ `skipAudits: ['is-crawlable']` على preview + guardrail script في `scripts/check-noindex.sh`                                                        | PR #377                                                |
-| **LCP universal bottleneck (font preload bandwidth)**  | ✅ Task C font preload removal validated by post-merge artifact — LCP −1.0s على 4 routes (cart / auth / custom-order / provider-login)، perf +3..5pts | artifact 2026-05-11 (post PR #382) في §٧               |
+| **LCP universal bottleneck (font preload bandwidth)**  | ✅ Task C font preload removal validated by post-merge artifact — LCP −1.0s على 4 routes (cart / auth / custom-order / provider-login)، perf +3–5 pts | artifact 2026-05-11 (post PR #382) في §٧               |
 
 **الخلاصة:** الـ CLS و TTFB لم يعودا أهدافاً. كل التحسين الجاي يستهدف **LCP و TBT و JS bundle size**.
 

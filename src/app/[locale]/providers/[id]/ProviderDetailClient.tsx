@@ -580,7 +580,18 @@ export default function ProviderDetailClient({
           {/* Provider Actions */}
           <div className="absolute top-3 start-3 flex items-center gap-2">
             <button
+              type="button"
               onClick={handleFavoriteClick}
+              aria-label={
+                locale === 'ar'
+                  ? isProviderFavorite
+                    ? 'إزالة من المفضلة'
+                    : 'إضافة إلى المفضلة'
+                  : isProviderFavorite
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
+              }
+              aria-pressed={isProviderFavorite}
               className={`w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-sm transition-colors ${
                 isProviderFavorite
                   ? 'bg-white/90 text-red-500'
@@ -590,7 +601,9 @@ export default function ProviderDetailClient({
               <Heart className={`w-5 h-5 ${isProviderFavorite ? 'fill-red-500' : ''}`} />
             </button>
             <button
+              type="button"
               onClick={handleShare}
+              aria-label={locale === 'ar' ? 'مشاركة' : 'Share'}
               className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-slate-600 hover:text-primary transition-colors"
             >
               <Share2 className="w-5 h-5" />
