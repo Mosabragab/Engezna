@@ -498,6 +498,9 @@ _(وهكذا)_
 - **اكتشاف 2026-05-11 (preflight defense):** الـ hardcoded provider id في `lighthouserc.js` (`ad52ece8-69c0-4f46-918e-1fbba73655cd`) لو deactivate، الـ Lighthouse يقيس صفحة 404 بصمت — assertion-results يبدو غريباً لكن لا يُفسَّر للمراجع. **عُولج في الـ PR الحالي:** preflight step في `.github/workflows/lighthouse.yml` يعمل HEAD request على الـ provider URL قبل lhci. لو الـ status ≥ 400، الـ job يفشل برسالة واضحة تطلب تحديث `HARDCODED_PROVIDER_ID` في `lighthouserc.js`. الـ id مستخرَج إلى constant + exported من الـ config عشان الـ preflight يقرأه بدون duplication.
 - **متابعة 2026-05-11 (authenticated routes deferred):** task B الأصلية شملت `/provider/orders` لكن الـ dashboard requires Supabase auth session — يحتاج Puppeteer script يسجّل دخول قبل lighthouse. مؤجَّل لـ Phase 2.4 (موجود في §٦ original). الـ public routes كافية لـ tasks C-E.
 
+- **اكتشاف 2026-05-11 (provider-detail accessibility revealed):** بإضافة `/ar/providers/{id}` للـ CI URL list (task B)، lighthouse فعلياً قاس accessibility لأول مرة على هذه الصفحة وكشف فشل: `color-contrast = 0` بسبب `text-slate-400` على white (~3.2:1 vs WCAG AA 4.5:1) + `text-primary font-bold` على الأسعار، و `categories:accessibility = 0.83 < 0.9`. **الـ issue موجود قبل هذا الـ PR** — مجرد أنه ما كان يُقاس. هذه الـ tokens shared عبر شاشات كثيرة فالإصلاح يحتاج designer pass. **عُولج مؤقتاً في الـ PR الحالي:** assertMatrix يـ override الـ assertions للـ provider-detail URL (color-contrast: warn، categories:accessibility: 0.8) مع TODO صريح. الـ task C-bis في §٠.٦ يلتقط الإصلاح الصحيح وحذف الـ override.
+- **اكتشاف 2026-05-11 (preflight follows redirects):** الـ preflight workflow كان يستخدم `curl -L` فالـ deactivated provider اللي بيـ redirect لقائمة الـ providers يعود 200 ويـ pass. **عُولج:** حُذف `-L`، 3xx is now treated as failure (active provider يخدم 200 مباشرة بدون redirect).
+
 ---
 
 ## ٩. بروتوكول التحديث (إجباري)

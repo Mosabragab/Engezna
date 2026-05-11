@@ -76,6 +76,12 @@ jobs:
       # message and the actual status code so the failure mode is obvious.
       # Only runs on remote target_url — local builds without a target are
       # used for ad-hoc dev runs that may not have a populated db.
+      #
+      # Note: redirects are treated as failure. -L is intentionally omitted
+      # so a 3xx response surfaces as STATUS rather than being followed to
+      # whatever fallback page Vercel/Next decided on (e.g. a deactivated
+      # provider redirecting to /providers list would otherwise yield a 200
+      # and silently pass the check). Active providers respond 200 directly.
       - name: Preflight — verify pinned provider URL is reachable
         if: env.LHCI_TARGET_URL != ''
         run: |
@@ -83,13 +89,12 @@ jobs:
           PROVIDER_ID=$(node -e "console.log(require('./lighthouserc.js').HARDCODED_PROVIDER_ID)")
           URL="${LHCI_TARGET_URL%/}/ar/providers/${PROVIDER_ID}"
           echo "Checking $URL"
-          # Follow redirects (-L) so a 200 final response counts as healthy.
-          # -o /dev/null discards body; -w prints the final status.
-          STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" --max-time 30 "$URL")
+          STATUS=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 30 "$URL")
           echo "HTTP $STATUS"
-          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 400 ]; then
-            echo "::error::Pinned provider URL returned HTTP $STATUS — provider may be deactivated."
-            echo "::error::Swap HARDCODED_PROVIDER_ID in lighthouserc.js to another active provider."
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 300 ]; then
+            echo "::error::Pinned provider URL returned HTTP $STATUS — provider may be deactivated, deleted, or the route may have changed."
+            echo "::error::A 3xx redirect counts as failure here because an active provider serves 200 directly. If this is a legitimate routing change, update the lighthouse workflow preflight too."
+            echo "::error::To fix: pick another active provider id and update HARDCODED_PROVIDER_ID in lighthouserc.js."
             exit 1
           fi
 
