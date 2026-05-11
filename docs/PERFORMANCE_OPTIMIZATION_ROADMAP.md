@@ -85,14 +85,14 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                           | PR Branch                             | Owner Action      | Blocker                   |
-| --------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ----------------- | ------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                         | `claude/perf-provider-detail-page`    | ✅ merged PR #381 | جاهز                      |
-| **B**     | Step 0a: إضافة `/ar/providers/{id}` للـ `lighthouserc.js` + cookie injection (تحضير لـ B-bis)                  | `claude/perf-add-routes-ci`           | 🔄 الـ PR الحالي  | A merged ✓                |
-| **B-bis** | Step 0b: Puppeteer script يـ seed `engezna_guest_location` في localStorage قبل قياس `/ar`، يضيف `/ar` للـ URLs | `claude/perf-add-routes-ci` (stacked) | 🔄 الـ PR الحالي  | B (نفس الـ branch)        |
-| **C**     | Cross-cutting: LCP root cause investigation (font loading، render-blocking CSS، image priority)                | `claude/perf-lcp-cross-cutting`       | PR                | B merged + 1 fresh CI run |
-| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                              | `claude/perf-home-<metric>`           | PR                | B-bis + C merged          |
-| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                           | `claude/perf-auth-login-<metric>`     | PR                | D merged                  |
+| Order     | Task                                                                                                                | PR Branch                             | Owner Action      | Blocker                               |
+| --------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ----------------- | ------------------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                              | `claude/perf-provider-detail-page`    | ✅ merged PR #381 | جاهز                                  |
+| **B**     | Step 0a: إضافة `/ar/providers/{id}` للـ `lighthouserc.js` + cookie injection (تحضير لـ B-bis)                       | `claude/perf-add-routes-ci`           | 🔄 الـ PR الحالي  | A merged ✓                            |
+| **B-bis** | Step 0b: Puppeteer script يـ seed `engezna_guest_location` في localStorage قبل قياس `/ar`، يضيف `/ar` للـ URLs      | `claude/perf-add-routes-ci` (stacked) | 🔄 الـ PR الحالي  | B (نفس الـ branch)                    |
+| **C**     | Cross-cutting: drop font preload على 8 weights (تخفيف ~310KB من critical bandwidth، tests universal LCP hypothesis) | `claude/perf-add-routes-ci` (stacked) | 🔄 الـ PR الحالي  | data-supported from existing artifact |
+| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                   | `claude/perf-home-<metric>`           | PR                | B-bis + C merged                      |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                | `claude/perf-auth-login-<metric>`     | PR                | D merged                              |
 
 **ملاحظة:** الـ ranking يتغيّر لو Speed Insights data اتحركت بعد B/C/D. حدّث §٠.٢ قبل اختيار E.
 
@@ -488,6 +488,7 @@ _(وهكذا)_
 - **اكتشاف 2026-05-11 (artifact analysis):** TTFB ثابت عند 24ms عبر كل routes — Vercel fra1 + edge cache يعملان. **TTFB ليس مشكلة.** كل اشتباه سابق فيه مغلوط. وLCP بين 3.8-5.2s على كل routes = universal cause. مرشّح للـ cross-cutting PR (PR-C في §٠.٦) قبل أي route-specific work.
 - **متابعة 2026-05-11 (measurement gap — ✅ مغلقة في الـ PR الحالي):** الـ home `/ar` كان gated بـ guard مزدوج (middleware cookie + client localStorage). المراجعة الأولى لـ task B اقترحت cookie injection فقط، لكن المراجع كشف أن `HomePageClient.tsx:163-178` يـ check localStorage `engezna_guest_location` ويعمل `router.replace('/welcome')` post-hydration بغض النظر عن الكوكي. **task B-bis في نفس الـ PR:** أضاف `scripts/lhci-home-setup.js` (Puppeteer setup script) يـ seed localStorage بـ stable test GuestLocation قبل كل audit، ورجّع `/ar` للـ URL list في `lighthouserc.js`. cookie injection (للـ middleware) + puppeteer script (للـ client) يعملان معاً.
 - **`/ar/providers/{id}` ✅ مغطّى في task B:** إضافة URL ثابتة لـ `ad52ece8-69c0-4f46-918e-1fbba73655cd` (مطعم الصفا، `operation_mode='custom'`) يقيس P1 + يحرس CLS/LCP regression من PR #381.
+- **اكتشاف 2026-05-11 (task C — cross-cutting LCP):** الـ artifact كشف أن LCP بين 4-5s على كل الـ routes رغم أن TTFB 24ms / FCP 1.4s / CLS 0. السبب الجذري ليس server-side — هو bandwidth contention على الـ critical request path. next/font/local كان preload لـ 8 woff2 files (~310KB) على priority High بسبب `preload: true` على كل من Noto Sans + Noto Sans Arabic بكل الأوزان (400/500/600/700). مع `display: swap` فالـ LCP يفير على fallback paint، فالـ preload يكلّف bandwidth بدون فائدة LCP-defining. **عُولج في الـ PR الحالي:** `preload: false` على كلتا الـ font families الرئيسية في `src/lib/fonts/index.ts`. الـ web fonts تـ load on-demand لما الـ CSS تـ reference @font-face، ثم تـ swap للنص. التحقق من الـ hypothesis ينتظر CI artifact ثاني بعد merge. **لو الـ artifact يظهر LCP regression** (مثلاً LCP زاد لأن الـ web font swap حصل قبل LCP candidate paint): revert + جرّب preload على Noto Sans Arabic فقط (الأكبر بايتاً) — مدوَّن صراحة في تعليقات `src/lib/fonts/index.ts`.
 - **متابعة 2026-05-11 (authenticated routes deferred):** task B الأصلية شملت `/provider/orders` لكن الـ dashboard requires Supabase auth session — يحتاج Puppeteer script يسجّل دخول قبل lighthouse. مؤجَّل لـ Phase 2.4 (موجود في §٦ original). الـ public routes كافية لـ tasks C-E.
 
 ---
