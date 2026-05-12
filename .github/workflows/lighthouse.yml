@@ -59,6 +59,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Cache the Chromium binary Puppeteer downloads during postinstall
+      # (~276 MB at /home/runner/.cache/puppeteer). Without this cache the
+      # `npm ci` step pulls Chromium fresh on every run (~30 s + bandwidth).
+      # The cache key includes the puppeteer version pin from package-lock
+      # so a version bump invalidates the cache automatically; the OS is
+      # part of the key because Chromium is platform-specific.
+      - name: Cache Puppeteer Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: ${{ runner.os }}-puppeteer-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-puppeteer-
+
       - name: Install dependencies
         run: npm ci
 
@@ -102,6 +116,22 @@ jobs:
         run: npx @lhci/cli@0.15.x autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          # When these secrets are set, the puppeteerScript in
+          # lighthouserc.js seeds localStorage with a real
+          # governorate/city pair so `/ar` measures the actual home
+          # page (with populated provider lists) instead of redirecting
+          # to /welcome or measuring an empty home. Both lighthouserc.js
+          # and scripts/lhci-home-setup.js degrade gracefully when these
+          # are absent — `/ar` drops out of the URL list and the script
+          # is not invoked.
+          #
+          # The IDs are NOT secrets in the security sense — they're
+          # public UUIDs from a public Supabase table — but storing
+          # them as GitHub secrets keeps the lighthouserc.js source
+          # free of project-specific identifiers and lets us rotate
+          # them without a code change.
+          LHCI_SEED_GOVERNORATE_ID: ${{ secrets.LHCI_SEED_GOVERNORATE_ID }}
+          LHCI_SEED_CITY_ID: ${{ secrets.LHCI_SEED_CITY_ID }}
 
       - name: Upload Lighthouse Results
         uses: actions/upload-artifact@v4
