@@ -42,35 +42,26 @@ const nextConfig: NextConfig = {
   // lucide-react: 206 files import icons — without this, the full icon set (~180KB) is bundled.
   // framer-motion: 29 files import animations — tree-shakes unused animation primitives.
   // date-fns: 6 files import date utilities — prevents bundling all 200+ locale/fn modules.
+  //
+  // CSS render-blocking note (Task C-ter — REVERTED): the May 11 Lighthouse
+  // artifact flagged ~22 KB shared CSS chunk as 91% unused per page with a
+  // 300-340ms render-blocking warn. Two Next.js flags were tried and both
+  // turned out wrong for this app:
+  //   - `experimental.optimizeCss: true` — Pages Router only, no effect on
+  //     App Router routes (`src/app/`). Codex catch #1.
+  //   - `experimental.inlineCss: true` — works on App Router, but replaces
+  //     the cacheable <link> stylesheet with an inline <style> tag in
+  //     every HTML response. Ships the full 22KB inline per request,
+  //     defeats stylesheet caching for returning users, doesn't reduce
+  //     unused CSS. Codex catch #2 (https://nextjs.org/docs/app/api-reference/config/next-config-js/inlineCss).
+  // Neither flag does App Router critical-CSS extraction; Next.js doesn't
+  // ship that out-of-the-box for App Router today. Proper fix is structural
+  // (route-level CSS code-splitting / moving shared styles into CSS modules)
+  // and out of scope for a perf-flag PR. The warn stays at WARN level and
+  // doesn't block CI. Deferred — see PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6
+  // task C-ter for the open follow-up.
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'date-fns'],
-    // Inline critical CSS into the initial HTML and defer the rest.
-    // Targets the ~22 KB render-blocking CSS chunk Lighthouse flagged
-    // with 300-340ms warns across /ar/cart, /ar/auth/login, and
-    // /ar/providers/{id} in the May 11 artifact — the file is ~91%
-    // unused per page, so inlining the critical portion and async-
-    // loading the rest should drop the wasted ms substantially.
-    //
-    // IMPORTANT: this project uses the App Router (src/app/) — the
-    // correct flag is `inlineCss`, NOT `optimizeCss`. Codex caught
-    // an earlier commit that set `optimizeCss: true` and added
-    // `critters` as a devDep; that's the Pages Router code path
-    // (consumed in node_modules/next/dist/server/render.js:1089 +
-    // node_modules/next/dist/pages/_document.js) and we have no
-    // pages/ directory. The App Router renderer reads
-    // `experimental.inlineCss` instead (see
-    // node_modules/next/dist/server/base-server.js:390 and
-    // node_modules/next/dist/server/app-render/types.d.ts:80), and
-    // the implementation is built into Next.js itself — no external
-    // dependency required. critters has been removed from package.json
-    // for the same reason.
-    //
-    // Tracked as task C-ter in
-    // docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §0.6. If a post-merge
-    // CI artifact shows a regression (FOUC-driven CLS spike on
-    // client-rendered sections, or an LCP regression because the
-    // inlined CSS is too large), revert by removing this flag.
-    inlineCss: true,
   },
 
   // Image optimization configuration
