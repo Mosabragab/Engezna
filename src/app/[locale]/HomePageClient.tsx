@@ -111,7 +111,6 @@ import { createClient } from '@/lib/supabase/client';
 import { useCart } from '@/lib/store/cart';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
-import { Loader2 } from 'lucide-react';
 
 // Type for last order display
 interface LastOrderDisplay {
@@ -508,17 +507,20 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
   // rendered structure, so dropping the outer skeleton collapses the chain
   // to a single in-place transition. See PERFORMANCE_OPTIMIZATION_ROADMAP.md
   // §7 "بعد تفعيل seeds + B-bis (2026-05-12)" for the audit data.
-
-  // If no location after loading, the useEffect will redirect - show loading in meantime
-  if (!userLocation.governorateId) {
-    return (
-      <CustomerLayout showHeader={true} showBottomNav={true}>
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      </CustomerLayout>
-    );
-  }
+  //
+  // The previous full-screen spinner fallback (rendered when
+  // `userLocation.governorateId` was null) was also removed: UserLocationContext
+  // initializes `governorateId` to null and populates it asynchronously after
+  // `isDataLoaded` + Supabase auth/profile fetch, so for normal returning users
+  // the spinner branch fired during hydration and then the page jumped from a
+  // `min-h-screen` centered loader to the real home layout — a fresh CLS
+  // regression on the exact code path this task is meant to fix. The
+  // `earlyRedirectDone` check above already returns null synchronously when
+  // there's no guest location, so users without a location never see the home
+  // layout at all. For everyone else, rendering sections immediately lets each
+  // section's own loading state mount in place (matching its real DOM); the
+  // fallback redirect useEffect (lines 197-220) still handles the edge case
+  // where the location stays null after data has loaded.
 
   // Build sections based on SDUI configuration
   const renderSection = (sectionKey: string) => {
