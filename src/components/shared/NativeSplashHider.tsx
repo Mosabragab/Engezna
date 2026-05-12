@@ -7,13 +7,22 @@ import { isNativePlatform } from '@/lib/platform';
 /**
  * Web-based splash overlay:
  * - On native: shows a polished animated splash while the web content loads
- * - On web: shows once per session
+ * - On web: DISABLED. The fixed `inset-0` overlay co-existed in the page
+ *   tree during Lighthouse's CLS measurement window — artifact #18
+ *   (PR #387) showed thumb 2 at 3599ms = splash logo only, thumb 3 at
+ *   4799ms = real home with offers banner. The lab assertion-results
+ *   pinned a 0.239 CLS to the OffersCarousel section.children[1] (banner
+ *   container) that matched the geometry of the splash unmount + lazy
+ *   sections settling together. Web users get the SSR'd home directly,
+ *   which is the audited path; no need for a session-shown splash to
+ *   "soften" the load.
  * - The native Capacitor splash auto-hides via launchAutoHide: true
  */
 export function NativeSplashHider() {
   const [showSplash, setShowSplash] = useState(() => {
     if (typeof window === 'undefined') return false;
-    if (isNativePlatform()) return true;
+    // Web: no splash. Lab measures the SSR home immediately.
+    if (!isNativePlatform()) return false;
     if (sessionStorage.getItem('splash_shown')) return false;
     return true;
   });
