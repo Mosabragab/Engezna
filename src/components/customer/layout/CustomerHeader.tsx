@@ -296,7 +296,17 @@ export const CustomerHeader = memo(function CustomerHeader({
             href={`/${locale}`}
             className="absolute left-1/2 -translate-x-1/2 hover:scale-105 transition-transform duration-200"
           >
-            <EngeznaLogo size="lg" showPen={false} bgColor="white" />
+            {/* `static` is required here: the default EngeznaLogo path renders
+                a `::after` overlay that animates a `transform: translateX`
+                reveal over 1.8s (EngeznaLogo.tsx:84-93). The overlay covers
+                the logo text until the animation finishes, so Lighthouse's
+                LCP finalization stalls — artifact #20 attributed the LCP
+                element on /ar (and others) to `span.logo-text-...` with a
+                2.7-3.7s render delay (~85% of LCP). The reveal is a brand
+                splash flourish, not a header behaviour; the static branch
+                renders a plain <span> that paints with first contentful
+                paint. */}
+            <EngeznaLogo size="lg" static showPen={false} bgColor="white" />
           </Link>
 
           {/* Right Section - Custom Action + Notifications & Profile */}
