@@ -755,20 +755,29 @@ export function OffersCarousel({
         <div className="flex items-center justify-between mb-5">
           <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse" />
         </div>
-        {/* Skeleton matches final layout: mobile shows scroll container, desktop shows grid */}
-        <div
-          className={isDesktop ? 'grid grid-cols-3 gap-4' : 'flex gap-4 overflow-hidden -mx-4 px-4'}
-        >
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`
+        {/* Skeleton matches final layout: section.children[1] is `div.relative`
+            in both states so Lighthouse's path-index matcher doesn't read the
+            skeleton→real swap as a shift. Without this wrapper the skeleton's
+            child[1] was a `div.flex...` while real's child[1] is `div.relative`,
+            and the layout-shifts audit attributed ~0.239 to the position
+            difference even though both stayed at the same Y (artifact #19). */}
+        <div className="relative">
+          <div
+            className={
+              isDesktop ? 'grid grid-cols-3 gap-4' : 'flex gap-4 overflow-hidden -mx-4 px-4 pb-2'
+            }
+          >
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`
                 flex-shrink-0 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 animate-pulse
                 ${isDesktop ? '' : 'w-[85%]'}
                 aspect-[16/9]
               `}
-            />
-          ))}
+              />
+            ))}
+          </div>
         </div>
         {/* Skeleton for progress indicator to prevent CLS */}
         <div className="flex items-center justify-center gap-1.5 mt-4 h-1.5">
