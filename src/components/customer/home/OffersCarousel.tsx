@@ -304,16 +304,24 @@ function BannerCard({
   const imageOnCenter = imagePosition === 'center';
   const imageOnBackground = imagePosition === 'background';
 
+  // Outer wrapper kept as plain <div>: CI run #17 (2026-05-12, PR #387)
+  // attributed CLS 0.239 on /ar to this element's first paint. Same pattern
+  // as the CustomOrderWelcomeBanner fix landed in PR #381 — Framer Motion
+  // wrapping the outer element delays first paint past the skeleton-to-real
+  // swap and the new DOM lands at a slightly different position than the
+  // skeleton placeholder, registering as a large shift. The desktop hover
+  // scale (whileHover scale: 1.01) was a nice-to-have polish and is not
+  // visible on the mobile lab profile that LH measures, so dropping it does
+  // not affect the audited metrics. Inner motion components (CTA button,
+  // badge) are untouched because they only trigger on user interaction.
   const CardContent = (
-    <motion.div
+    <div
       className={`
         relative overflow-hidden rounded-2xl
         aspect-[16/9]
         ${isDesktop && !isActive ? 'opacity-70' : 'opacity-100'}
       `}
       style={gradientStyle}
-      whileHover={isDesktop ? { scale: 1.01 } : undefined}
-      transition={{ type: 'tween', duration: 0.4, ease: 'easeOut' }}
     >
       {/* Background Image (if image_position is 'background') */}
       {imageOnBackground && banner.image_url && (
@@ -444,7 +452,7 @@ function BannerCard({
           </motion.div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 
   // Wrap with Link if link_url exists
