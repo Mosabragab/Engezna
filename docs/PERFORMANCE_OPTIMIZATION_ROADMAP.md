@@ -91,15 +91,15 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                                                                                                                           | PR Branch                             | Owner Action                                | Blocker                                |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- | -------------------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                                                                         | `claude/perf-provider-detail-page`    | ✅ merged PR #381                           | جاهز                                   |
-| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                                                                                                           | `claude/perf-add-routes-ci`           | ✅ merged PR #382                           | —                                      |
-| **B-bis** | Infrastructure: puppeteer devDep + lhci-home-setup.js seeds localStorage + workflow Chromium cache + env-driven seed gate + UUID validation. الـ home measurement يحتاج user يضبط real UUIDs في GitHub Secrets | `claude/perf-puppeteer-home-setup`    | ✅ merged PR #384                           | B merged ✓ + user-supplied real UUIDs  |
-| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                                                                                                               | `claude/perf-add-routes-ci`           | ✅ merged PR #382 — LCP −1.0s مُحقَّق       | —                                      |
-| **C-bis** | Fix provider-detail a11y tokens (slate-400→slate-500، primary→primary-dark) + ProductCard + heading-order + button/link names + remove assertMatrix override                                                   | `claude/perf-validate-roadmap-update` | ✅ merged PR #383 — a11y = 1.0 على 5 routes | C merged ✓                             |
-| **D**     | P0 home: PR صغير على home page بناءً على الـ data                                                                                                                                                              | `claude/perf-home-<metric>`           | PR                                          | B-bis merged ✓ + real seed secrets set |
-| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                                                                                                           | `claude/perf-auth-login-<metric>`     | PR                                          | D merged                               |
+| Order     | Task                                                                                                                                                                                                                                                                                                                                                                                    | PR Branch                             | Owner Action                                | Blocker                                  |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- | ---------------------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                                                                                                                                                                                                                                                  | `claude/perf-provider-detail-page`    | ✅ merged PR #381                           | جاهز                                     |
+| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                                                                                                                                                                                                                                                                                    | `claude/perf-add-routes-ci`           | ✅ merged PR #382                           | —                                        |
+| **B-bis** | Infrastructure: puppeteer devDep + lhci-home-setup.js seeds localStorage + workflow Chromium cache + env-driven seed gate + UUID validation. الـ home measurement يحتاج user يضبط real UUIDs في GitHub Secrets                                                                                                                                                                          | `claude/perf-puppeteer-home-setup`    | ✅ merged PR #384                           | B merged ✓ + user-supplied real UUIDs    |
+| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                                                                                                                                                                                                                                                                                        | `claude/perf-add-routes-ci`           | ✅ merged PR #382 — LCP −1.0s مُحقَّق       | —                                        |
+| **C-bis** | Fix provider-detail a11y tokens (slate-400→slate-500، primary→primary-dark) + ProductCard + heading-order + button/link names + remove assertMatrix override                                                                                                                                                                                                                            | `claude/perf-validate-roadmap-update` | ✅ merged PR #383 — a11y = 1.0 على 5 routes | C merged ✓                               |
+| **D**     | P0 home CLS: حذف الـ outer skeleton block في `HomePageClient.tsx` (lines 506-544) + تصحيح `min-h-[180px]` للـ categories wrapper. السبب: artifact CI #230 كشف CLS = 0.46 على `/ar`، الـ culprits = OffersCarousel banner (0.319) + CategoriesSection (0.140). الـ outer skeleton DOM يختلف عن الـ real components — anti-pattern. التفاصيل في §٧ "بعد تفعيل seeds + B-bis (2026-05-12)" | `claude/perf-home-cls`                | PR                                          | B-bis merged ✓ + real seed secrets set ✓ |
+| **E**     | P2 auth/login: TBT 161ms جيد لكن field RES = 44 — investigation للـ INP/JS hydration                                                                                                                                                                                                                                                                                                    | `claude/perf-auth-login-<metric>`     | PR                                          | D merged                                 |
 
 **ملاحظة على C-ter (removed لكن موثَّق):** `C-ter` (render-blocking CSS via experimental flags) كان في الجدول قبل، حُذف هنا بحسب بروتوكول §9 رقم 4 ("لو الـ task أُلغي أو تأجَّل: احذفه من الجدول واكتب السبب في §٨"). كامل التفاصيل (Codex catch #1 على `optimizeCss`، Codex catch #2 على `inlineCss`، قرار الـ revert) في §٨. PR #386 = الـ revert. أي إعادة فتح لاحقاً يجب أن يبدأ كـ task جديد في §٠.٦ مع hypothesis مختلف عن flag-based extraction.
 
@@ -488,6 +488,51 @@ artifact: `lighthouseresults_7.zip` (run post-merge على Vercel preview). كل
 
 **CI status post-merge:** نجح بدون error-level failures. warnings فقط: `color-contrast` على provider-detail (متوقع، task C-bis يعالجه) و `mainthread-work-breakdown` على provider-detail (4.5s med، above 4s warn threshold).
 
+### بعد تفعيل seeds + B-bis (2026-05-12) — أول قياس فعلي للـ `/ar` (P0 home)
+
+artifact: `lighthouseresults_15.zip` (CI run #230 على Vercel preview، بعد user ضبط `LHCI_SEED_GOVERNORATE_ID` + `LHCI_SEED_CITY_ID` في GitHub Secrets). 7 URLs × 3 runs = 21 reports. أول مرة `/ar` يتقاس فعلياً مع providers مَلْيَى.
+
+| URL                  | Perf (median) | CLS (median) | TBT (median) | الحالة                          |
+| -------------------- | ------------: | -----------: | -----------: | ------------------------------- |
+| `/ar` **(جديد، P0)** |      **0.46** |    **0.463** |      ~700ms+ | 🔴 CLS كارثي + perf تحت العتبة  |
+| `/ar/providers`      |          0.71 |           ~0 |         ~300 | ✓ يمر                           |
+| `/ar/providers/<id>` |          0.59 |           ~0 |         ~300 | ⚠ perf تحت 0.6 بـ 0.01 — Task E |
+| `/ar/cart`           |          0.75 |           ~0 |         ~250 | ✓                               |
+| `/ar/auth/login`     |          0.79 |           ~0 |         ~200 | ✓                               |
+| `/ar/custom-order`   |          0.85 |           ~0 |         ~150 | ✓                               |
+| `/ar/provider/login` |          0.66 |           ~0 |         ~450 | ✓                               |
+
+**ملاحظة منهجية:** أول run من 3 لـ `/ar` ظهر بـ `finalUrl = /ar/welcome` (redirect حصل قبل ما الـ localStorage seed يستقر). الـ runs الثانية والثالثة استقرت على `/ar`. الـ assertion-results يجمع الـ failed run تحت `/ar/welcome` URL منفصل. مشكلة موثوقية ثانوية في الـ puppeteerScript — مدوَّنة كـ follow-up في §٨.
+
+**تشخيص CLS على `/ar` (من `audits['layout-shifts']`):**
+
+| Element (selector)                                                                | CLS score | السبب                                                                                                                                                        |
+| --------------------------------------------------------------------------------- | --------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `div.pb-4 > div.min-h-[220px] > section.bg-white > div.relative` (OffersCarousel) |     0.319 | skeleton له `px-4 py-6` (سطر 522)، real wrapper مالوش padding (سطر 576) → structures مختلفة                                                                  |
+| `div.pb-4 > div.min-h-[180px]` (CategoriesSection)                                |     0.140 | reservation = 180px، actual rendered = **320px** (height overflow بـ 140px). كذلك skeleton `grid-cols-4` vs real `grid-cols-3 sm:grid-cols-6` — grids مختلفة |
+| (نفس categories، tail effect)                                                     |     0.002 | shift ثانوي بعد load                                                                                                                                         |
+| **Sum**                                                                           | **0.461** | matches الـ reported CLS                                                                                                                                     |
+
+**Root cause:** عندنا **3-state transition** على `/ar`:
+
+1. `HomePageClient` outer skeleton (سطور 510-540) لما `isLoading=true`
+2. Skeleton الداخلي لكل section component (مثلاً `CategoriesSection.tsx:82-93`) لما الـ data بتجيب
+3. Real content
+
+كل transition بيـ shift layout لأن الـ DOM structures الثلاثة مختلفة. الـ outer skeleton أساساً anti-pattern — كل section عنده internal skeleton يطابق الـ real layout الخاص بيه، فالـ outer skeleton duplicate يـ ship dimensions غلط.
+
+**Task D plan (PR منفصل، small surface):**
+
+1. حذف الـ `if (isLoading) return (...)` block في `HomePageClient.tsx:506-544` بالكامل
+2. تصحيح `min-h-[180px]` → `min-h-[280px]` على categories wrapper (سطر 582) لو لزم
+3. الـ render الطبيعي يحصل من أول مرة، كل section يعرض internal skeleton لو data مش جاهزة
+
+**Expected impact:** CLS 0.46 → ≤0.05 (single skeleton-to-real transition بـ matching DOM)، perf من 0.46 → 0.60+ (CLS contributes to perf score).
+
+**Trade-off:** ممكن "وميض" بسيط لو الـ section components تأخرت في mount. منزّل لمستوى مقبول لأن كل section عنده skeleton داخلي.
+
+**Warns ثابتة عبر كل routes (مؤجَّلة):** `render-blocking-resources` 537-879ms على `/ar` + `/welcome` + `/ar/providers` + `/ar/providers/<id>`. mainthread-work-breakdown 10.8s على `/ar`. كلها warn-level (مش errors)، structural fixes خارج scope Task D.
+
 ### بعد المرحلة ٢
 
 _legacy section — تم استبداله بالـ tables أعلاه_
@@ -538,6 +583,7 @@ _(وهكذا)_
 - **اكتشاف 2026-05-11 (CodeRabbit — CI cache Chromium):** الـ workflow كان يـ download Chromium (~276MB) في كل run داخل `npm ci`. **عُولج:** `actions/cache@v4` يخزّن `~/.cache/puppeteer` بـ key مشتق من `package-lock.json` hash. لو package-lock يتغيّر (مثل puppeteer version bump)، الـ cache يُلغى تلقائياً.
 
 - **اكتشاف 2026-05-11 (C-ter applied + Codex correction):** بعد C-bis الـ CI artifact أظهر أن الـ warns الباقية هي `render-blocking-resources` على عدة routes (300-340ms median). السبب: CSS chunk واحد (`cc2c948acf257440.css`, ~23KB، 91% unused per page). **محاولة أولى (خطأ):** أضفنا `experimental.optimizeCss: true` + `critters^0.0.23` devDep. **Codex كشف الخطأ:** `optimizeCss` يُستهلَك بالـ Pages Router فقط (`node_modules/next/dist/server/render.js:1089` + `_document.js`). Engezna يستخدم App Router (`src/app/`، لا `pages/`)، فالـ flag لم يكن يُفعَّل أبداً — كان يضيف dep بلا تأثير. **عُولج في الـ PR الحالي:** الـ flag الصحيح للـ App Router هو `experimental.inlineCss` (انظر `node_modules/next/dist/server/base-server.js:390` + `app-render/types.d.ts:80`). built into Next.js، لا dependency. حذفنا `critters` devDep بالكامل. لو الـ post-merge artifact أظهر FOUC-CLS أو LCP regression، revert الـ flag فقط (مفيش dep ينحذف).
+- **متابعة 2026-05-12 (puppeteer seed reliability):** CI run #230 أظهر أن واحد من 3 runs لـ `/ar` انتهى بـ `finalUrl = /ar/welcome` — الـ localStorage seed لم يثبت في الـ run ده. الـ assertion-results.json يجمع الفشل تحت `/ar/welcome` URL منفصل (يظهر كـ "8 URLs" في الـ log رغم أن lighthouserc.js يحدد 7). 2/3 ثبت بنجاح فالـ measurement مفيد، لكن الـ flakiness يحتاج fix. الـ hypothesis: lhci يـ spawn Chrome fresh لكل run، لكن الـ puppeteerScript ينفذ pre-audit عبر `browser.newPage()` على الـ instance الموجود — لو الـ instance يُعاد توليده بين runs، الـ localStorage يضيع. الإصلاح المحتمل: نقل الـ seed إلى `setupScript` بدل `puppeteerScript`، أو استخدام `extraHeaders` للـ session cookie + server-side route لـ set localStorage عبر `<script>` inline. مؤجَّل — Task D priority أعلى.
 - **اكتشاف 2026-05-11 (C-ter REVERTED — Codex catch #2):** بعد تصحيح الـ flag إلى `inlineCss`، Codex لاحظ من Next.js docs (https://nextjs.org/docs/app/api-reference/config/next-config-js/inlineCss) أن `inlineCss` فعلياً يـ replace الـ stylesheet `<link>` tags بـ `<style>` tags inline في الـ HTML — **يـ ship الـ full 22KB في كل HTML response**، يلغي browser stylesheet caching لـ returning users، ولا يستخرج critical subset. لما الـ CSS file 91% unused per page، الـ inlineCss يجعل الوضع أسوأ مش أحسن (extra bytes per request × millions of requests). **عُولج في الـ PR الحالي:** revert كامل لـ C-ter. الـ flag حُذف من `next.config.ts`، critters كان حُذف بالفعل. الـ render-blocking warn يبقى (warn-level فقط، لا يكسر CI). الإصلاح الـ structural (route-level CSS splitting أو CSS modules per component) خارج scope flag-based PR — مؤجَّل كـ task مستقل بعد ما الـ priorities الأعلى تنجز.
 
 ---

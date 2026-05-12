@@ -498,50 +498,16 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
     return null;
   }
 
-  // Show loading only while location data is loading.
-  // Auth (isInitializing) is NOT a blocker — the page renders with ISR data
-  // immediately and auth-dependent sections (reorder) appear when ready.
-  const isLoading = !isDataLoaded || isUserLocationLoading;
-
-  if (isLoading) {
-    return (
-      <CustomerLayout showHeader={true} showBottomNav={true}>
-        <div className="min-h-screen">
-          {/* Skeleton hero — matches HeroSection: pt-8 pb-10, text-center */}
-          <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#E8F7FF] via-[#F0FAFF] to-white" />
-            <div className="relative px-4 pt-8 pb-10">
-              <div className="text-center mb-8">
-                <div className="h-8 w-56 bg-slate-200/60 rounded-lg animate-pulse mx-auto mb-2" />
-                <div className="h-5 w-72 bg-slate-200/40 rounded animate-pulse mx-auto" />
-              </div>
-              <div className="h-[58px] bg-white rounded-2xl shadow-sm animate-pulse max-w-2xl mx-auto" />
-            </div>
-          </div>
-          {/* Skeleton banners — matches OffersCarousel min-h */}
-          <div className="min-h-[220px] md:min-h-[280px] px-4 py-6">
-            <div className="h-7 w-28 bg-slate-100 rounded-lg animate-pulse mb-5" />
-            <div className="flex gap-4 overflow-hidden">
-              <div className="w-[85%] shrink-0 aspect-[16/9] rounded-2xl bg-slate-100 animate-pulse" />
-              <div className="w-[85%] shrink-0 aspect-[16/9] rounded-2xl bg-slate-100 animate-pulse" />
-            </div>
-          </div>
-          {/* Skeleton categories — matches CategoriesSection grid */}
-          <div className="min-h-[180px] px-4 mt-6">
-            <div className="h-6 w-24 bg-slate-100 rounded animate-pulse mb-4" />
-            <div className="grid grid-cols-4 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 animate-pulse" />
-                  <div className="h-3 w-12 bg-slate-100 rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </CustomerLayout>
-    );
-  }
+  // Outer skeleton removed: CI artifact (run #230, 2026-05-12) showed CLS = 0.46
+  // on /ar driven by a 3-state transition (outer skeleton → section internal
+  // skeleton → real content), each with different DOM structure. The outer
+  // skeleton's `grid-cols-4` categories + `px-4 py-6` offers wrapper didn't
+  // match either the real OffersCarousel/CategoriesSection wrappers OR their
+  // internal skeletons, so every load caused a layout shift cascade. Each
+  // section component has its own internal skeleton that matches its real
+  // rendered structure, so dropping the outer skeleton collapses the chain
+  // to a single in-place transition. See PERFORMANCE_OPTIMIZATION_ROADMAP.md
+  // §7 "بعد تفعيل seeds + B-bis (2026-05-12)" for the audit data.
 
   // If no location after loading, the useEffect will redirect - show loading in meantime
   if (!userLocation.governorateId) {
@@ -572,14 +538,22 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
         // New combined delivery mode selector (replaces old address_selector)
         return <DeliveryModeSelector key="delivery_mode" className="mt-3" />;
       case 'offers_carousel':
+        // min-h tuned to actual rendered height on mobile (412px viewport):
+        // section py-6 (48) + header h-7 + mb-5 (48) + card aspect-16/9 ~200 +
+        // dots mt-4 (24) ≈ 320px. Previous 220px under-reserved by 100px,
+        // causing CLS when OffersCarousel internal skeleton/real expanded.
         return (
-          <div key="offers_carousel" className="min-h-[220px] md:min-h-[280px]">
+          <div key="offers_carousel" className="min-h-[320px] md:min-h-[280px]">
             <OffersCarousel onViewAll={handleViewAllOffers} className="mt-4" />
           </div>
         );
       case 'categories':
+        // min-h tuned to actual rendered height. Mobile uses grid-cols-3
+        // with 6 categories = 2 rows; sm:grid-cols-6 collapses to 1 row.
+        // CI artifact (run #230) measured 320px on mobile; previous 180px
+        // under-reserved by 140px and was the second-biggest CLS contributor.
         return (
-          <div key="categories" className="min-h-[180px]">
+          <div key="categories" className="min-h-[320px] sm:min-h-[200px]">
             <CategoriesSection onCategoryClick={handleCategoryClick} className="mt-6" />
           </div>
         );
