@@ -54,11 +54,32 @@ export const notoSansArabic = localFont({
 });
 
 // Logo font - Aref Ruqaa (Arabic calligraphy style)
-// Used for the "إنجزنا" logo text — display: 'swap' ensures text is always visible
-// preload: false because this font is only used for the small logo text
+// Used for the "إنجزنا" logo text — display: 'swap' ensures text is always visible.
+//
+// preload: true here is a targeted re-introduction after Task C's blanket
+// preload removal. Task F (artifact #21 follow-up): on /ar/custom-order
+// the LCP element was the إنجزنا logo at the redirected /auth/login page,
+// with render delay = 85% of LCP. The static EngeznaLogo branch renders
+// a plain <span> styled with `font-family: var(--font-aref-ruqaa)`. Under
+// display: swap the text DOES paint in the fallback font, but the
+// fallback→Aref-Ruqaa swap changes glyph metrics enough that Lighthouse
+// re-evaluates the element as a NEW LCP candidate after the swap, and
+// the LCP timestamp lands at the swap moment instead of first paint.
+// Preloading aref-ruqaa-700.woff2 (45kb, ONE file — not the 8-file 310kb
+// blanket that Task C dropped) gets the web font onto the critical
+// request path so the swap happens before LCP is finalized, not after.
+//
+// Cross-cutting impact: every page showing the logo above the fold
+// — auth/login, welcome, register, forgot-password, custom-order
+// (redirects to login), etc. — gets the LCP improvement. Pages
+// without the logo above the fold (home, providers list, cart) are
+// unaffected by this preload because their LCP elements use the
+// Noto Sans family and the browser still won't preload aref-ruqaa
+// (preload: true on a font that isn't used above the fold is just
+// a cold cache write that Next.js skips at runtime).
 export const arefRuqaa = localFont({
   src: [{ path: '../../../public/fonts/aref-ruqaa-700.woff2', weight: '700', style: 'normal' }],
   variable: '--font-aref-ruqaa',
   display: 'swap',
-  preload: false,
+  preload: true,
 });
