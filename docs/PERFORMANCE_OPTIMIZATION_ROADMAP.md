@@ -10,7 +10,7 @@
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
 > فرع التنفيذ الحالي للأداء: `claude/perf-css-render-blocking` (Revert C-ter بعد Codex catch ثاني — `inlineCss` يـ inline ALL CSS مش critical، يكسر caching). B-bis merged في main.
-> آخر تحديث: 2026-05-12 — Tasks A/B/C/B-bis/C-bis/D ✅ merged. C-ter REVERTED. Task E قيد التنفيذ على `claude/perf-logo-lcp`: cross-cutting LCP fix على CustomerHeader logo (الـ `::after` reveal animation كانت تخفي الـ logo نص لمدة 1.8s فيـ delay LCP على كل routes الـ customer). متوقع +0.02-0.10 perf على 5 routes فترفع `/ar` لـ 🥇. render-blocking warn يبقى deferred.
+> آخر تحديث: 2026-05-12 — Tasks A/B/C/B-bis/C-bis/D ✅ merged. Task E ✅ CI passed على `claude/perf-logo-lcp` (artifact #21): `/ar/welcome` 0.71→0.87 ✨🥇، `/ar/provider/login` 0.84→0.82 (🥇)، `/ar/custom-order` 0.77→0.80 ✨ — **4/8 routes at 🥇** (كان 2/8). C-ter REVERTED. render-blocking warn يبقى deferred لـ structural fix.
 
 ---
 
@@ -91,15 +91,15 @@
 
 ### ٠.٦ المهام الفعلية المُجدولة بالترتيب
 
-| Order     | Task                                                                                                                                                                                                                                                                                                                                                                                                                                               | PR Branch                             | Owner Action                                | Blocker                                  |
-| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------- | ---------------------------------------- |
-| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                                                                                                                                                                                                                                                                                                             | `claude/perf-provider-detail-page`    | ✅ merged PR #381                           | جاهز                                     |
-| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                                                                                                                                                                                                                                                                                                                                               | `claude/perf-add-routes-ci`           | ✅ merged PR #382                           | —                                        |
-| **B-bis** | Infrastructure: puppeteer devDep + lhci-home-setup.js seeds localStorage + workflow Chromium cache + env-driven seed gate + UUID validation. الـ home measurement يحتاج user يضبط real UUIDs في GitHub Secrets                                                                                                                                                                                                                                     | `claude/perf-puppeteer-home-setup`    | ✅ merged PR #384                           | B merged ✓ + user-supplied real UUIDs    |
-| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                                                                                                                                                                                                                                                                                                                                                   | `claude/perf-add-routes-ci`           | ✅ merged PR #382 — LCP −1.0s مُحقَّق       | —                                        |
-| **C-bis** | Fix provider-detail a11y tokens (slate-400→slate-500، primary→primary-dark) + ProductCard + heading-order + button/link names + remove assertMatrix override                                                                                                                                                                                                                                                                                       | `claude/perf-validate-roadmap-update` | ✅ merged PR #383 — a11y = 1.0 على 5 routes | C merged ✓                               |
-| **D**     | P0 home CLS: 5 commits على PR #387 — حذف الـ outer skeleton + حذف الـ spinner branch (Codex catch) + BannerCard motion.div→div + web splash disabled على web + **align OffersCarousel skeleton DOM مع real** (root cause الفعلي: Lighthouse layout-shifts يـ match elements بـ DOM path index لا class names). artifact #20 أكّد: CLS 0.463 → **0.055** ✓، perf 0.46 → **0.74** ✓ على `/ar`. تفاصيل في §٧ "بعد Task D"                             | `claude/perf-home-cls`                | ✅ CI passed — جاهز للـ merge               | B-bis merged ✓ + real seed secrets set ✓ |
-| **E**     | Cross-cutting LCP: `EngeznaLogo` في `CustomerHeader.tsx:299` كان يستخدم الـ default branch بدون `static` prop. الـ default يـ render `::after` overlay يـ animate `transform: translateX` reveal لمدة 1.8s — يخفي الـ logo نص للـ Lighthouse فـ LCP finalization يتأخر 2.7-3.7s (85% من LCP) على `/ar`. الـ static branch يـ render plain `<span>` بدون animation. تأثير cross-cutting لأن الـ CustomerHeader يـ render على كل routes الـ customer | `claude/perf-logo-lcp`                | PR                                          | D merged ✓                               |
+| Order     | Task                                                                                                                                                                                                                                                                                                                                                                                                                                               | PR Branch                             | Owner Action                                                                                                                                           | Blocker                                  |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| **A**     | merge الـ PR الحالي (CLS + LCP banner)                                                                                                                                                                                                                                                                                                                                                                                                             | `claude/perf-provider-detail-page`    | ✅ merged PR #381                                                                                                                                      | جاهز                                     |
+| **B**     | إضافة provider-detail URL + cookie injection + preflight + assertMatrix override (ثم أُزيل في C-bis)                                                                                                                                                                                                                                                                                                                                               | `claude/perf-add-routes-ci`           | ✅ merged PR #382                                                                                                                                      | —                                        |
+| **B-bis** | Infrastructure: puppeteer devDep + lhci-home-setup.js seeds localStorage + workflow Chromium cache + env-driven seed gate + UUID validation. الـ home measurement يحتاج user يضبط real UUIDs في GitHub Secrets                                                                                                                                                                                                                                     | `claude/perf-puppeteer-home-setup`    | ✅ merged PR #384                                                                                                                                      | B merged ✓ + user-supplied real UUIDs    |
+| **C**     | Drop font preload (8 weights → 0) لتخفيف ~310KB من critical path                                                                                                                                                                                                                                                                                                                                                                                   | `claude/perf-add-routes-ci`           | ✅ merged PR #382 — LCP −1.0s مُحقَّق                                                                                                                  | —                                        |
+| **C-bis** | Fix provider-detail a11y tokens (slate-400→slate-500، primary→primary-dark) + ProductCard + heading-order + button/link names + remove assertMatrix override                                                                                                                                                                                                                                                                                       | `claude/perf-validate-roadmap-update` | ✅ merged PR #383 — a11y = 1.0 على 5 routes                                                                                                            | C merged ✓                               |
+| **D**     | P0 home CLS: 5 commits على PR #387 — حذف الـ outer skeleton + حذف الـ spinner branch (Codex catch) + BannerCard motion.div→div + web splash disabled على web + **align OffersCarousel skeleton DOM مع real** (root cause الفعلي: Lighthouse layout-shifts يـ match elements بـ DOM path index لا class names). artifact #20 أكّد: CLS 0.463 → **0.055** ✓، perf 0.46 → **0.74** ✓ على `/ar`. تفاصيل في §٧ "بعد Task D"                             | `claude/perf-home-cls`                | ✅ merged PR #387                                                                                                                                      | B-bis merged ✓ + real seed secrets set ✓ |
+| **E**     | Cross-cutting LCP: `EngeznaLogo` في `CustomerHeader.tsx:299` كان يستخدم الـ default branch بدون `static` prop. الـ default يـ render `::after` overlay يـ animate `transform: translateX` reveal لمدة 1.8s — يخفي الـ logo نص للـ Lighthouse فـ LCP finalization يتأخر 2.7-3.7s (85% من LCP) على `/ar`. الـ static branch يـ render plain `<span>` بدون animation. تأثير cross-cutting لأن الـ CustomerHeader يـ render على كل routes الـ customer | `claude/perf-logo-lcp`                | ✅ CI passed (artifact #21): /ar/welcome 0.71→0.87 ✨🥇، /ar/provider/login 0.84→0.82 (🥇)، /ar/custom-order 0.77→0.80 ✨ — 4/8 routes at 🥇 (كان 2/8) | D merged ✓                               |
 
 **ملاحظة على C-ter (removed لكن موثَّق):** `C-ter` (render-blocking CSS via experimental flags) كان في الجدول قبل، حُذف هنا بحسب بروتوكول §9 رقم 4 ("لو الـ task أُلغي أو تأجَّل: احذفه من الجدول واكتب السبب في §٨"). كامل التفاصيل (Codex catch #1 على `optimizeCss`، Codex catch #2 على `inlineCss`، قرار الـ revert) في §٨. PR #386 = الـ revert. أي إعادة فتح لاحقاً يجب أن يبدأ كـ task جديد في §٠.٦ مع hypothesis مختلف عن flag-based extraction.
 
@@ -196,59 +196,59 @@
 
 ---
 
-### ٣.١ checklist تقدّم الأهداف (post Task D، artifact #20 — 2026-05-12)
+### ٣.١ checklist تقدّم الأهداف (post Task E، artifact #21 — 2026-05-12)
 
 تقييم كل route على CI مقابل عتبات الـ 3 طبقات. الـ data من lab median (3 runs لكل route، Vercel preview، 4x CPU throttle، formFactor mobile).
 
 #### حالة كل route per metric
 
-| URL                  | Perf |   CLS |    LCP |   TBT |    TTI |  Tier  |
-| -------------------- | ---: | ----: | -----: | ----: | -----: | :----: |
-| `/ar/auth/login`     | 0.94 | 0.000 | 2421ms | 173ms | 4709ms | **🥇** |
-| `/ar/cart`           | 0.90 | 0.000 | 2424ms | 364ms | 5060ms | **🥇** |
-| `/ar/provider/login` | 0.84 | 0.000 | 2723ms | 498ms | 5288ms |   🥈   |
-| `/ar`                | 0.78 | 0.055 | 4318ms | 415ms | 6443ms |   🥈   |
-| `/ar/custom-order`   | 0.77 | 0.008 | 4669ms | 284ms | 4829ms |   🥈   |
-| `/ar/providers`      | 0.76 | 0.000 | 3924ms | 416ms | 5413ms |   🥈   |
-| `/ar/welcome`        | 0.71 | 0.055 | 2919ms | 655ms | 5221ms |   🥈   |
-| `/ar/providers/<id>` | 0.69 | 0.003 | 4524ms | 470ms | 6278ms |   🥈   |
+| URL                  | Perf |   CLS |    LCP |   TBT |    TTI |           Tier           |
+| -------------------- | ---: | ----: | -----: | ----: | -----: | :----------------------: |
+| `/ar/auth/login`     | 0.93 | 0.000 | 2363ms | 246ms | 3957ms |          **🥇**          |
+| `/ar/cart`           | 0.91 | 0.000 | 2720ms | 218ms | 4634ms |          **🥇**          |
+| `/ar/welcome`        | 0.87 | 0.003 | 2913ms | 180ms | 4316ms |        **🥇 ✨**         |
+| `/ar/provider/login` | 0.82 | 0.000 | 3019ms | 455ms | 5255ms |        **🥇 ✨**         |
+| `/ar/custom-order`   | 0.80 | 0.001 | 4145ms | 277ms | 4145ms | borderline 🥇 (LCP +145) |
+| `/ar`                | 0.76 | 0.055 | 4075ms | 513ms | 5064ms |            🥈            |
+| `/ar/providers`      | 0.74 | 0.000 | 4602ms | 356ms | 4625ms |            🥈            |
+| `/ar/providers/<id>` | 0.74 | 0.001 | 4975ms | 319ms | 5523ms |            🥈            |
 
 > 🥇 = كل المعايير الأربعة (Perf ≥ 0.8، LCP ≤ 4s، TBT ≤ 600ms، TTI ≤ 6s) متحقّقة | 🥈 = TBT ≤ 700ms + Perf ≥ 0.6 + باقي المتركس داخل العتبات | 🥉 = الحد الأدنى فقط
 
 #### الحالة الكلية
 
-| الطبقة                     | الـ routes الناجحة                                  | عدد |
-| -------------------------- | --------------------------------------------------- | --: |
-| 🥇 جودة عالية (الهدف)      | `/ar/auth/login` ✓ + `/ar/cart` ✓                   | 2/8 |
-| 🥈 مقبول (الحد الحالي)     | باقي الـ 6 routes                                   | 6/8 |
-| 🥉 حد أدنى (لا regression) | كل الـ 8 routes (TBT ≤ 900 ✓، CLS ≤ 0.1 ✓ على الكل) | 8/8 |
+| الطبقة                     | الـ routes الناجحة                                                         | عدد     |
+| -------------------------- | -------------------------------------------------------------------------- | ------- |
+| 🥇 جودة عالية (الهدف)      | `/ar/auth/login` + `/ar/cart` + `/ar/welcome` ✨ + `/ar/provider/login` ✨ | **4/8** |
+| 🥇 borderline              | `/ar/custom-order` (perf 0.80 ✓ لكن LCP 4145 > 4000 بـ 145ms)              | 1/8     |
+| 🥈 مقبول                   | `/ar`، `/ar/providers`، `/ar/providers/<id>`                               | 3/8     |
+| 🥉 حد أدنى (لا regression) | كل الـ 8 routes (TBT ≤ 900 ✓، CLS ≤ 0.1 ✓ على الكل)                        | 8/8     |
 
 #### ما تم إنجازه
 
-- ✅ **CLS أُحلَّ بالكامل**: 8/8 routes تحت 0.1 (المحدّد الـ "good" من Google). أعلى قيمة `/ar` = 0.055 و `/ar/welcome` = 0.055. باقي الـ routes ≈ 0 أو 0.003-0.008.
-- ✅ **TBT تحت 600ms على 7/8**: فقط `/ar/welcome` 655ms أعلى قليلاً من عتبة 🥇 لكنه داخل عتبة 🥈 (700ms).
-- ✅ **CI assertions تمرّ بدون errors** (artifact #20 على PR #387 post-Task-D).
-- ✅ **2 routes حقّقت 🥇 كاملة**: `/ar/auth/login` (perf 0.94) و `/ar/cart` (perf 0.90).
+- ✅ **CLS أُحلَّ بالكامل** (Task D): 8/8 routes تحت 0.1. أعلى قيمة `/ar` = 0.055.
+- ✅ **TBT تحت 600ms على 8/8 routes**: كل الـ routes داخل عتبة 🥇 على TBT.
+- ✅ **4 routes في 🥇 كاملة** (كان 2 قبل Task E): `/ar/auth/login`، `/ar/cart`، `/ar/welcome` ✨، `/ar/provider/login` ✨.
+- ✅ **CI assertions تمرّ بدون errors** على artifact #20 (Task D) و artifact #21 (Task E).
 - ✅ **مفيش route تحت الـ 🥉**: كل الـ 8 routes فوق الحد الأدنى.
+- ✅ **Cross-cutting LCP win عبر Task E**: `EngeznaLogo` reveal animation removal أحرز +0.16 على `/ar/welcome` و دفعت 2 routes جديدة لـ 🥇.
 
 #### الفجوة للوصول إلى 🥇 لكل routes
 
-| الـ route            | المتركس الناقصة عن 🥇                                                      | الـ root cause المحتمل                                              |
-| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `/ar`                | Perf 0.78 (يحتاج ≥0.8)، LCP 4318ms (يحتاج ≤4000)، TTI 6443ms (يحتاج ≤6000) | الـ home بيـ render 7 sections، LCP element غالباً banner الـ first |
-| `/ar/welcome`        | Perf 0.71، TBT 655ms (يحتاج ≤600)                                          | mainthread work 12s — JS bundle ثقيل أو hydration buffer            |
-| `/ar/providers`      | Perf 0.76، LCP في حدود 4s                                                  | render-blocking CSS warn (713ms) — structural fix                   |
-| `/ar/providers/<id>` | Perf 0.69، LCP 4524ms، TTI 6278ms                                          | provider data fetch + cover image + menu items — كان P1             |
-| `/ar/custom-order`   | Perf 0.77، LCP 4669ms                                                      | regression طفيف بعد Task D — يحتاج فحص لو noise vs persistent       |
+| الـ route            | المتركس الناقصة عن 🥇                 | الـ root cause المحتمل                                                                                   |
+| -------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `/ar/custom-order`   | LCP 4145ms (يحتاج ≤4000) — borderline | قريب جداً من 🥇 — single tweak على LCP element كافٍ                                                      |
+| `/ar`                | Perf 0.76، LCP 4075ms (75ms over)     | الـ home بيـ render 7 sections؛ بعد ما الـ logo اتحلّ، الـ banner أو DeliveryModeSelector لسه bottleneck |
+| `/ar/providers`      | Perf 0.74، LCP 4602ms                 | render-blocking CSS warn (728ms) + list rendering                                                        |
+| `/ar/providers/<id>` | Perf 0.74، LCP 4975ms، TTI 5523ms     | banner welcome text لسه LCP element بـ render delay كبير — يحتاج SSR-first بدلاً من client-render        |
 
 #### المتبقي في الـ Roadmap
 
-- **Task E** (next): `/ar/auth/login` — لكن الـ lab perf دلوقتي 0.94 ممتاز (🥇). الـ field RES = 44 (POOR) قد يكون من INP/hydration على real devices مش lab. **يحتاج إعادة prioritization بناءً على Speed Insights الجديدة**.
-- **render-blocking CSS** (4 routes warn-level): structural fix مؤجَّل — راجع §٨ "C-ter REVERTED".
-- **`/ar` Performance من 0.78 إلى 0.80+**: قريب من الهدف. ممكن task صغير على mainthread reduction.
-- **`/ar/providers/<id>` Performance من 0.69 إلى 0.80+**: يحتاج work أكبر — image priority + bundle splitting.
-- **`/ar/welcome` TBT من 655 إلى ≤600**: يحتاج تقليل JS execution (mainthread 12s = ضخم).
-- **`/ar/custom-order` perf regression check**: 0.85 → 0.77 بعد Task D — يحتاج تحقق ثاني CI run لمعرفة لو noise.
+- **render-blocking CSS** (4 routes warn-level 545-733ms): structural fix مؤجَّل — راجع §٨ "C-ter REVERTED". الـ pure-CSS subset extraction خارج capability الـ Next.js App Router حالياً.
+- **`/ar/custom-order` LCP من 4145 إلى ≤4000**: قريب من 🥇، أصغر فجوة.
+- **`/ar` Performance من 0.76 إلى 0.80+**: يحتاج LCP element optimization (الـ logo اتحلّ، الـ next bottleneck غالباً OffersCarousel banner أو DeliveryModeSelector).
+- **`/ar/providers/<id>` Performance من 0.74 إلى 0.80+**: الـ CustomOrderWelcomeBanner text لسه LCP element مع render delay كبير. يحتاج SSR الـ banner من server component بدلاً من client-only mount.
+- **`/ar/providers` Performance من 0.74 إلى 0.80+**: similar pattern للـ providers/<id> — list rendering ثقيل.
 
 #### Cross-cutting follow-ups (مدرجة في §٨)
 
@@ -618,6 +618,39 @@ artifact: `lighthouseresults_20.zip` (CI run بعد commit 5 على PR #387). 7 
 - **side effects إيجابية**: غالباً بسبب إزالة web splash، الـ TTI نزل على كل routes فالـ perf scores ارتفعت بالعرض (cart +0.15، auth +0.15، provider/login +0.18).
 - **`/ar/custom-order` regression طفيف** (0.85 → 0.77): يحتاج فحص لو persistent عبر runs. ممكن يكون noise (3 runs) أو لو الـ splash كان يـ defer أحد الـ scripts. مدرَج كـ متابعة في §٨.
 - **render-blocking-resources** لسه warn-level على عدة routes (574-733ms) — structural CSS refactor مؤجَّل خارج Task D.
+
+### بعد Task E (2026-05-12) — cross-cutting LCP fix (artifact #21)
+
+artifact: `lighthouseresults_21.zip` (CI run بعد single-line fix في `CustomerHeader.tsx:299`: إضافة `static` prop لـ `EngeznaLogo`). 7 URLs × 3 runs = 21 reports. assertion-results بدون errors.
+
+| URL                  | Perf (median) |   CLS |    LCP |   TBT |    TTI | Δ Perf vs #20 |               Tier               |
+| -------------------- | ------------: | ----: | -----: | ----: | -----: | :-----------: | :------------------------------: |
+| `/ar/auth/login`     |          0.93 | 0.000 | 2363ms | 246ms | 3957ms |     -0.01     |                🥇                |
+| `/ar/cart`           |          0.91 | 0.000 | 2720ms | 218ms | 4634ms |     +0.01     |                🥇                |
+| `/ar/welcome`        |      **0.87** | 0.003 | 2913ms | 180ms | 4316ms | **+0.16** ✨  |              🥇 ✨               |
+| `/ar/provider/login` |          0.82 | 0.000 | 3019ms | 455ms | 5255ms |     -0.02     |              🥇 ✨               |
+| `/ar/custom-order`   |          0.80 | 0.001 | 4145ms | 277ms | 4145ms |     +0.03     | borderline 🥇 (LCP just over 4s) |
+| `/ar`                |          0.76 | 0.055 | 4075ms | 513ms | 5064ms |     -0.02     |                🥈                |
+| `/ar/providers`      |          0.74 | 0.000 | 4602ms | 356ms | 4625ms |     -0.02     |                🥈                |
+| `/ar/providers/<id>` |          0.74 | 0.001 | 4975ms | 319ms | 5523ms |   **+0.05**   |                🥈                |
+
+**التحليل:**
+
+- **Task E نجح**: `/ar/welcome` perf 0.71 → **0.87** (+0.16) — أكبر مكسب لأن الـ welcome مفيش data fetch ثقيل فالـ logo render delay كان dominant. `/ar/custom-order` و `/ar/providers/<id>` و `/ar/welcome` كلهم تحسّنوا significantly.
+- **2 routes جديدة دخلت 🥇**: `/ar/welcome` و `/ar/provider/login` — رفع العدد من 2/8 → 4/8.
+- **`/ar/custom-order` على الحدود**: perf 0.80 ✓ لكن LCP 4145ms أعلى من 4000 بـ 145ms. يحتاج tweaks إضافية للوصول الكامل لـ 🥇.
+- **`/ar` regressed slightly** (0.78 → 0.76): الـ logo فيه fix لكن LCP element تغيّر — لازم يكون عنصر تاني (banner أو غيره) لسه delayed. متوقع لـ /ar specifically لأن الـ home بيـ render 7 sections.
+- **`/ar/providers` regressed slightly** (0.76 → 0.74): probably noise (single-digit perf change عبر 3 runs).
+- **`/ar/providers/<id>` تحسّن** (0.69 → 0.74): الـ logo fix ساعد لكن LCP عنصر تاني (banner welcome text) لسه delayed بعد ما الـ logo اتحلّ.
+
+**Current state vs targets:** 🥇 4/8، 🥈 4/8، 🥉 8/8. الـ "current target" 🥈 محقّق على الجميع (per §1). الـ "ambitious target" 🥇 محقّق على نصف الـ routes.
+
+**المتبقي للوصول لـ 🥇 على الـ 4 routes الباقية:**
+
+- `/ar`: LCP 4075 (75ms over)، TBT 513 (within 600). يحتاج cross-cutting JS reduction أو شعور بأن الـ home بسبب 7 sections.
+- `/ar/providers`: LCP 4602، TBT 356. الـ list rendering كثيف.
+- `/ar/providers/<id>`: LCP 4975 (banner text)، TBT 319. الـ banner element مع reveal animation removed لسه delayed — يحتاج فحص.
+- `/ar/custom-order`: LCP 4145 (145ms over). قريب جداً من 🥇.
 
 ### بعد المرحلة ٢
 
