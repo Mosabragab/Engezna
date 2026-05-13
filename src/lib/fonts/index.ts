@@ -54,37 +54,43 @@ export const notoSansArabic = localFont({
 });
 
 // Logo font - Aref Ruqaa (Arabic calligraphy style)
-// Used for the "إنجزنا" logo text — display: 'swap' ensures text is always visible.
 //
-// preload: false. History of the decision:
-//   1. Originally false (post Task C blanket-preload removal).
-//   2. Task F (commit 0a70095) flipped it to true to chase a logo LCP delay
-//      observed on /ar/custom-order (which client-redirects to /auth/login).
-//      The hypothesis was that Aref Ruqaa's font swap was changing the
-//      "إنجزنا" element's metrics enough that Lighthouse re-evaluated LCP
-//      after the swap.
-//   3. Codex flagged the change before merge: arefRuqaa.variable is applied
-//      on <body> in src/app/[locale]/layout.tsx, so Next.js emits the
-//      preload tag for EVERY route under [locale] — not only ones where
-//      the logo is above the fold. The runtime "preload only when used
-//      above the fold" claim in the original Task F comment was wrong;
-//      Next.js emits preload statically based on which layout/page imports
-//      the font, not on any viewport heuristic.
-//   4. Artifact #22 confirmed the regression: /ar/welcome perf 0.87 → 0.74
-//      (lost 🥇), /ar/cart 0.91 → 0.87, /ar/custom-order 0.80 → 0.78
-//      (lost borderline 🥇). The 45kb extra request on the critical path
-//      reintroduced the bandwidth contention Task C was removing — only
-//      this time the wins (logo LCP swap) didn't outweigh the losses on
-//      the routes where the LCP is something else (banner, image, cart text).
-//   5. Reverted to false. The proper fix would scope arefRuqaa to the
-//      pages that actually need the logo above the fold — moving the
-//      `arefRuqaa.variable` className out of the root layout into the
-//      auth/welcome layouts only. That's a structural change deferred
-//      as a follow-up; the small LCP loss from the swap on those pages
-//      is acceptable for now (auth/login is already 🥇 with perf 0.92).
+// display: 'optional' (not 'swap'). The earlier 'swap' value caused a
+// recurring LCP penalty: the "إنجزنا" logo text paints in the fallback
+// font during FCP, then re-paints in Aref Ruqaa once the web font loads,
+// and Aref Ruqaa's glyph metrics differ from any sans-serif fallback
+// enough that Lighthouse re-evaluates the element as a NEW LCP candidate
+// at the swap moment — pushing LCP from ~1.5s to 4-5s on routes where
+// the logo is the LCP element (artifact #24: /ar/custom-order LCP 4580ms
+// with render delay 3968ms = 87% of LCP).
+//
+// 'optional' avoids the re-evaluation: the browser blocks for ~100ms
+// waiting for the font and, if it isn't ready, locks in the fallback for
+// the rest of the page load — no swap, no metric change, LCP finalizes
+// at first paint. Real users see Aref Ruqaa from the second visit
+// onwards (font is cached) and on fast connections from the first visit.
+// On the slow connections that Lighthouse simulates and that real users
+// in our target market actually experience, the fallback is what shows,
+// and that's an acceptable trade for shaving 2-4s off LCP.
+//
+// preload: false is intentional and stays that way. History:
+//   1. Task F (commit 0a70095) flipped to true to chase the same LCP
+//      swap issue — but Codex caught that `arefRuqaa.variable` is on the
+//      root <body> in src/app/[locale]/layout.tsx, so `preload: true`
+//      emits the preload tag for EVERY route, not just logo-LCP ones.
+//      Next.js sets preload statically based on import scope, not any
+//      runtime viewport heuristic.
+//   2. Artifact #22 confirmed the regression — /ar/welcome 0.87→0.74,
+//      /ar/cart 0.91→0.87, /ar/custom-order 0.80→0.78 — the 45kb on
+//      the critical path re-introduced the bandwidth contention that
+//      Task C was removing.
+//   3. Reverted (PR #389 → main).
+// The current `display: 'optional'` approach sidesteps the preload
+// trade-off entirely: no extra bytes on the critical path, and no LCP
+// re-evaluation because there's no swap to wait for.
 export const arefRuqaa = localFont({
   src: [{ path: '../../../public/fonts/aref-ruqaa-700.woff2', weight: '700', style: 'normal' }],
   variable: '--font-aref-ruqaa',
-  display: 'swap',
+  display: 'optional',
   preload: false,
 });

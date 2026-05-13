@@ -548,7 +548,18 @@ html.no-transition * {
   background-size: 1000px 100%;
 }
 
-/* Banner shine animation for custom order banner */
+/* Banner shine animation for custom order banner.
+ *
+ * Iteration-count is `2` (not `infinite`) intentionally. The CustomOrderWelcomeBanner
+ * <p> text is the LCP element on /ar/providers/<id> (artifact #24: LCP 5866ms with
+ * render delay 5250ms = 89%). Lighthouse holds off finalizing LCP while a
+ * continuously-animating overlay sits on top of the element — the moving gradient
+ * keeps the painted area changing, so the element never becomes "stable" within
+ * the LCP measurement window. Two iterations (~6s total) is plenty for the shine
+ * to be noticed as a brand flourish on first load; after that the overlay parks
+ * off-screen and Lighthouse can finalize. Real users still see the animation;
+ * they just don't see it loop forever, which is fine for a one-shot banner.
+ */
 @keyframes banner-shine {
   0% {
     transform: translateX(-100%);
@@ -559,7 +570,7 @@ html.no-transition * {
 }
 
 .animate-banner-shine {
-  animation: banner-shine 3s ease-in-out infinite;
+  animation: banner-shine 3s ease-in-out 2;
 }
 
 /* Loading skeleton */
