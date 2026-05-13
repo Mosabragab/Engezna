@@ -655,21 +655,29 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
             {!loading && filteredProviders.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {visibleProviders.map((provider, index) => (
-                  // First card is the LCP element on mobile (single-column
-                  // grid). Mark it as priority so next/image emits a high
-                  // priority hint instead of lazy-loading. On md+ the grid
-                  // is 2 cols so cards 0+1 are above the fold — mark both.
-                  // Artifact #23 measured /ar/providers LCP at 5.5s with
-                  // 58% of that as lazy-load scheduling delay; with priority
-                  // the image hint goes onto the critical request path and
-                  // load-delay collapses to the network RTT.
+                  // First card only. Codex caught the previous `index < 2`
+                  // version: on mobile (single-column grid, Lighthouse's
+                  // 412×915 form factor) only card 0 is above the fold, so
+                  // pre-loading card 1 puts a second 100vw logo image onto
+                  // the critical request path where it competes with the
+                  // actual LCP image and re-introduces the bandwidth
+                  // contention this whole roadmap section keeps tripping
+                  // on. Next 16 Image docs:
+                  // https://nextjs.org/docs/app/api-reference/components/image#preload
+                  // explicitly warn against priority-loading multiple
+                  // images that could be LCP depending on viewport.
+                  //
+                  // On md+ (grid-cols-2) cards 0+1 are side-by-side and
+                  // both above the fold, but card 1's logo is small enough
+                  // and the network fast enough on desktop that the lazy
+                  // path doesn't hurt LCP there.
                   <ProviderCard
                     key={provider.id}
                     provider={provider}
                     variant="default"
                     isFavorite={isFavorite(provider.id)}
                     onFavoriteToggle={isAuthenticated ? toggleFavorite : undefined}
-                    isPriority={index < 2}
+                    isPriority={index === 0}
                   />
                 ))}
               </div>
