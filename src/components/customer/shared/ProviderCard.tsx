@@ -43,6 +43,16 @@ interface ProviderCardProps {
    */
   onFavoriteToggle?: (providerId: string) => void;
   showPopularItem?: string;
+  /**
+   * Marks this card as above-the-fold so the logo image renders with
+   * `priority` instead of `loading="lazy"`. Parents should set this on
+   * the first 1–2 cards in the grid (those visible in a 412×915 mobile
+   * viewport — typically the first card on mobile, first row on tablet).
+   * Lazy-loading the LCP image cost us a ~3.2s load-delay on /ar/providers
+   * (artifact #23: LCP = "سلطان بيتزا" provider name + logo image, with
+   * 58% of LCP spent in the lazy-load scheduling window).
+   */
+  isPriority?: boolean;
 }
 
 function ProviderCardImpl({
@@ -53,6 +63,7 @@ function ProviderCardImpl({
   isFavorite = false,
   onFavoriteToggle,
   showPopularItem,
+  isPriority = false,
 }: ProviderCardProps) {
   const locale = useLocale();
   const t = useTranslations('providers');
@@ -162,7 +173,7 @@ function ProviderCardImpl({
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-contain img-zoom p-4"
-              loading="lazy"
+              {...(isPriority ? { priority: true } : { loading: 'lazy' })}
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">

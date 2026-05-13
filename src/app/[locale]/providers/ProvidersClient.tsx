@@ -654,13 +654,22 @@ export default function ProvidersClient({ initialProviders }: ProvidersClientPro
             {/* Providers Grid */}
             {!loading && filteredProviders.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {visibleProviders.map((provider) => (
+                {visibleProviders.map((provider, index) => (
+                  // First card is the LCP element on mobile (single-column
+                  // grid). Mark it as priority so next/image emits a high
+                  // priority hint instead of lazy-loading. On md+ the grid
+                  // is 2 cols so cards 0+1 are above the fold — mark both.
+                  // Artifact #23 measured /ar/providers LCP at 5.5s with
+                  // 58% of that as lazy-load scheduling delay; with priority
+                  // the image hint goes onto the critical request path and
+                  // load-delay collapses to the network RTT.
                   <ProviderCard
                     key={provider.id}
                     provider={provider}
                     variant="default"
                     isFavorite={isFavorite(provider.id)}
                     onFavoriteToggle={isAuthenticated ? toggleFavorite : undefined}
+                    isPriority={index < 2}
                   />
                 ))}
               </div>
