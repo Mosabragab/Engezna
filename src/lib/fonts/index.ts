@@ -55,42 +55,47 @@ export const notoSansArabic = localFont({
 
 // Logo font - Aref Ruqaa (Arabic calligraphy style)
 //
-// display: 'optional' (not 'swap'). The earlier 'swap' value caused a
-// recurring LCP penalty: the "إنجزنا" logo text paints in the fallback
-// font during FCP, then re-paints in Aref Ruqaa once the web font loads,
-// and Aref Ruqaa's glyph metrics differ from any sans-serif fallback
-// enough that Lighthouse re-evaluates the element as a NEW LCP candidate
-// at the swap moment — pushing LCP from ~1.5s to 4-5s on routes where
-// the logo is the LCP element (artifact #24: /ar/custom-order LCP 4580ms
-// with render delay 3968ms = 87% of LCP).
+// display: 'swap'. The brand identity for "إنجزنا" requires the
+// calligraphic Aref Ruqaa face — it's the LOGO. Any fallback (regular
+// sans-serif) is a brand fidelity violation, not an acceptable
+// degradation.
 //
-// 'optional' avoids the re-evaluation: the browser blocks for ~100ms
-// waiting for the font and, if it isn't ready, locks in the fallback for
-// the rest of the page load — no swap, no metric change, LCP finalizes
-// at first paint. Real users see Aref Ruqaa from the second visit
-// onwards (font is cached) and on fast connections from the first visit.
-// On the slow connections that Lighthouse simulates and that real users
-// in our target market actually experience, the fallback is what shows,
-// and that's an acceptable trade for shaving 2-4s off LCP.
+// History of this flag and why we're back to 'swap':
+//   1. Originally 'swap' since project inception.
+//   2. Task G (commit 573b08c) flipped to 'optional' to chase a logo
+//      LCP penalty on /ar and /ar/custom-order. The hypothesis was
+//      that Aref Ruqaa's swap moment was re-evaluating LCP because
+//      the calligraphic glyph metrics differ enough from any
+//      sans-serif fallback that Lighthouse treats the post-swap
+//      element as a new LCP candidate.
+//   3. The trade-off documented in Task G's commit was that real
+//      users on cold connections (no font cache yet) would see the
+//      fallback font for the brand text on first visit. We accepted
+//      that for the LCP gain.
+//   4. Owner caught the regression visually after Task G merged: the
+//      home page (`/ar`) logo renders in plain sans-serif on first
+//      load; a refresh (cache hit) restores Aref Ruqaa. That's the
+//      `optional` behavior working as documented — but the visual
+//      cost is unacceptable for a brand-identity element.
+//   5. Reverted to 'swap'. The LCP gain Task G was chasing wasn't
+//      large (`/ar` 4068→4068, `/ar/custom-order` 4576→4578 per
+//      artifact #26 — basically no change) so the brand cost was
+//      paid for nothing measurable.
 //
-// preload: false is intentional and stays that way. History:
-//   1. Task F (commit 0a70095) flipped to true to chase the same LCP
-//      swap issue — but Codex caught that `arefRuqaa.variable` is on the
-//      root <body> in src/app/[locale]/layout.tsx, so `preload: true`
-//      emits the preload tag for EVERY route, not just logo-LCP ones.
-//      Next.js sets preload statically based on import scope, not any
-//      runtime viewport heuristic.
-//   2. Artifact #22 confirmed the regression — /ar/welcome 0.87→0.74,
-//      /ar/cart 0.91→0.87, /ar/custom-order 0.80→0.78 — the 45kb on
-//      the critical path re-introduced the bandwidth contention that
-//      Task C was removing.
-//   3. Reverted (PR #389 → main).
-// The current `display: 'optional'` approach sidesteps the preload
-// trade-off entirely: no extra bytes on the critical path, and no LCP
-// re-evaluation because there's no swap to wait for.
+// preload: false stays. History of THAT flag is in §8 of the roadmap:
+// Task F's `preload: true` attempt regressed three routes via
+// bandwidth contention (artifact #22) because arefRuqaa.variable is
+// applied on the root <body>, so any `preload: true` becomes a
+// blanket preload across every locale route. A scoped preload (move
+// the variable into auth/welcome layouts only) is the structural
+// fix on the deferred list.
+//
+// Net: live with the swap-driven LCP wobble on routes where the
+// logo is the LCP element. It's currently ~+68ms over the 🥇 LCP
+// threshold on /ar — that's a borderline 🥇 the brand has earned.
 export const arefRuqaa = localFont({
   src: [{ path: '../../../public/fonts/aref-ruqaa-700.woff2', weight: '700', style: 'normal' }],
   variable: '--font-aref-ruqaa',
-  display: 'optional',
+  display: 'swap',
   preload: false,
 });
