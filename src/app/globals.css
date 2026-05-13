@@ -570,7 +570,15 @@ html.no-transition * {
 }
 
 .animate-banner-shine {
-  animation: banner-shine 3s ease-in-out 2;
+  /* CodeRabbit follow-up on Task G's shine fix: the bare `2` iteration count
+   * reverts the overlay's transform to its base state (translateX(0), i.e.
+   * sitting ON TOP of the banner text) after the animation completes. That
+   * left a stationary overlay over the LCP element — not what we want.
+   * `forwards` pins the final keyframe (translateX(100%) — off-screen right),
+   * so once the shine finishes its two passes the overlay parks fully outside
+   * the banner area and Lighthouse can finalize LCP cleanly.
+   */
+  animation: banner-shine 3s ease-in-out 2 forwards;
 }
 
 /* Loading skeleton */
