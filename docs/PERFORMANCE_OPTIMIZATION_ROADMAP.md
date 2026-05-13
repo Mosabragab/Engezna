@@ -10,7 +10,7 @@
 > 4. تحديث جدول §٠.٢ (الأولويات) لو الـ ranking اتغيّر.
 
 > فرع التنفيذ الحالي للأداء: `claude/perf-css-render-blocking` (Revert C-ter بعد Codex catch ثاني — `inlineCss` يـ inline ALL CSS مش critical، يكسر caching). B-bis merged في main.
-> آخر تحديث: 2026-05-13 — Tasks A/B/C/B-bis/C-bis/D/E/F ✅ merged. **Artifact #25 (post Task F)**: **5/8 routes في 🥇 firm** (auth/login 0.96، cart 0.96، providers 0.84 ✨، welcome 0.83، provider/login 0.91) + 2 borderline 🥇 (/ar LCP +68ms، custom-order LCP +576ms) + 1 🥈 (providers/<id> 0.75). **effective progress = 87.5%** نحو الـ §٣ goal. Task G على `claude/perf-finish-routes` بـ 3 fixes (Codex catch + banner shine + arefRuqaa optional) + CodeRabbit follow-up (`animation-fill-mode: forwards`) — متوقع يدفع 8/8 لـ 🥇 = 100% goal achievement. render-blocking warn deferred لـ structural fix.
+> آخر تحديث: 2026-05-13 — **Tasks A → G ✅ merged**. **Artifact #26 FINAL post Task G**: 5/8 firm 🥇 (auth/login 0.98، provider/login 0.93، cart 0.90، providers 0.87 ✨، welcome 0.83) + 2 borderline 🥇 (/ar 0.82 LCP +68، custom-order 0.82 LCP +578) + 1 🥈 (providers/<id> 0.77). **§٣ "current target" 🥈 = 100% محقّق على 8/8 routes**. **§٣ "ambitious target" 🥇 = 87.5% (5 firm + 2 borderline)**. الـ remaining 1/8 يحتاج architectural refactor (ProviderDetailClient split) — يخالف §١ #5، مدرَج كـ optional Phase 2. render-blocking CSS warn و provider/admin pages مؤجَّلة في §٨.
 
 ---
 
@@ -200,7 +200,7 @@
 
 ---
 
-### ٣.١ checklist تقدّم الأهداف (post Task F، artifact #25 — 2026-05-13)
+### ٣.١ checklist تقدّم الأهداف (post Task G، artifact #26 — 2026-05-13 — FINAL)
 
 تقييم كل route على CI مقابل عتبات الـ 3 طبقات. الـ data من lab median (3 runs لكل route، Vercel preview، 4x CPU throttle، formFactor mobile).
 
@@ -208,25 +208,25 @@
 
 | URL                  | Perf |   CLS |    LCP |   TBT |    TTI |           Tier           |
 | -------------------- | ---: | ----: | -----: | ----: | -----: | :----------------------: |
-| `/ar/auth/login`     | 0.96 | 0.000 | 2567ms | 101ms | 3624ms |          **🥇**          |
-| `/ar/cart`           | 0.96 | 0.000 | 2565ms | 129ms | 4936ms |          **🥇**          |
-| `/ar/providers`      | 0.84 | 0.000 | 3993ms | 201ms | 4000ms |        **🥇 ✨**         |
-| `/ar/welcome`        | 0.83 | 0.003 | 2585ms | 380ms | 5030ms |          **🥇**          |
-| `/ar/provider/login` | 0.91 | 0.000 | 3013ms | 197ms | 5305ms |          **🥇**          |
-| `/ar/custom-order`   | 0.83 | 0.008 | 4576ms | 132ms | 4576ms | borderline 🥇 (LCP +576) |
-| `/ar`                | 0.81 | 0.001 | 4068ms | 253ms | 5729ms | borderline 🥇 (LCP +68)  |
-| `/ar/providers/<id>` | 0.75 | 0.000 | 5942ms | 150ms | 5949ms |            🥈            |
+| `/ar/auth/login`     | 0.98 | 0.000 | 2272ms |  68ms | 3620ms |          **🥇**          |
+| `/ar/provider/login` | 0.93 | 0.000 | 2717ms | 197ms | 5360ms |          **🥇**          |
+| `/ar/cart`           | 0.90 | 0.000 | 3017ms | 194ms | 5060ms |          **🥇**          |
+| `/ar/providers`      | 0.87 | 0.000 | 3621ms | 142ms | 5428ms |          **🥇**          |
+| `/ar/welcome`        | 0.83 | 0.055 | 2888ms | 260ms | 5010ms |          **🥇**          |
+| `/ar`                | 0.82 | 0.001 | 4068ms | 230ms | 4103ms | borderline 🥇 (LCP +68)  |
+| `/ar/custom-order`   | 0.82 | 0.000 | 4578ms | 132ms | 4578ms | borderline 🥇 (LCP +578) |
+| `/ar/providers/<id>` | 0.77 | 0.000 | 5268ms | 153ms | 5959ms |            🥈            |
 
 > 🥇 = كل المعايير الأربعة (Perf ≥ 0.8، LCP ≤ 4s، TBT ≤ 600ms، TTI ≤ 6s) متحقّقة | 🥈 = TBT ≤ 700ms + Perf ≥ 0.6 + باقي المتركس داخل العتبات | 🥉 = الحد الأدنى فقط
 
 #### الحالة الكلية
 
-| الطبقة                     | الـ routes الناجحة                                                                        | عدد     |
-| -------------------------- | ----------------------------------------------------------------------------------------- | ------- |
-| 🥇 جودة عالية (الهدف)      | `/ar/auth/login` + `/ar/cart` + `/ar/providers` ✨ + `/ar/welcome` + `/ar/provider/login` | **5/8** |
-| 🥇 borderline              | `/ar/custom-order` (LCP +576ms)، `/ar` (LCP +68ms)                                        | 2/8     |
-| 🥈 مقبول                   | `/ar/providers/<id>`                                                                      | 1/8     |
-| 🥉 حد أدنى (لا regression) | كل الـ 8 routes (TBT ≤ 900 ✓، CLS ≤ 0.1 ✓ على الكل)                                       | 8/8     |
+| الطبقة                     | الـ routes الناجحة                                                                                          | عدد     |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | ------- |
+| 🥇 جودة عالية (الهدف)      | `/ar/auth/login` 0.98، `/ar/provider/login` 0.93، `/ar/cart` 0.90، `/ar/providers` 0.87، `/ar/welcome` 0.83 | **5/8** |
+| 🥇 borderline              | `/ar` 0.82 (LCP +68ms)، `/ar/custom-order` 0.82 (LCP +578ms)                                                | 2/8     |
+| 🥈 مقبول                   | `/ar/providers/<id>` 0.77 (perf -0.03 من 🥇، LCP +1268ms)                                                   | 1/8     |
+| 🥉 حد أدنى (لا regression) | كل الـ 8 routes (TBT ≤ 600 ✓، CLS ≤ 0.1 ✓، CI errors = 0)                                                   | 8/8     |
 
 #### ما تم إنجازه (cumulative across Tasks A–F)
 
@@ -237,40 +237,62 @@
 - ✅ **مفيش route تحت الـ 🥉**: كل الـ 8 routes فوق الحد الأدنى.
 - ✅ **borderline routes قريبة جداً**: `/ar` LCP 68ms over، `/ar/custom-order` LCP 576ms over.
 
-#### مدى تحقّق الـ 🥇 goal — تقدير ما تبقّى
+#### مدى تحقّق الـ 🥇 goal — FINAL post Task G
 
-**الـ goal الـ §٣ المستهدف**: 🥇 على كل صفحات العميل (8 routes).
+**الـ goal الـ §٣ المستهدف**: 🥇 "جودة عالية" على كل صفحات العميل (8 routes).
 
-| الحالة الحالية              | عدد | النسبة |
-| --------------------------- | --- | ------ |
-| 🥇 firm                     | 5/8 | 62.5%  |
-| borderline 🥇 (gap < 600ms) | 2/8 | 25%    |
-| 🥈                          | 1/8 | 12.5%  |
+| الحالة النهائية                 | عدد | النسبة | تقييم vs §٣                 |
+| ------------------------------- | --- | ------ | --------------------------- |
+| 🥇 firm                         | 5/8 | 62.5%  | الـ ambitious target        |
+| borderline 🥇 (LCP < 600ms gap) | 2/8 | 25%    | شبه محقّق                   |
+| 🥈                              | 1/8 | 12.5%  | الـ acceptable target محقّق |
 
-**effective progress = 87.5%** (الـ borderline routes كلها perf ≥ 0.8 ✓، الـ LCP بس بفارق صغير). الـ 1 route الـ 🥈 الحقيقي (`/ar/providers/<id>`) هو الـ gap الفعلي.
+- **effective ambitious progress = 87.5%** (5 firm + 2 borderline)
+- **§٣ "current target" 🥈 (acceptable) = 100%** — كل الـ 8 routes تجتاز الـ acceptable thresholds
+- **§٣ "حد أدنى" 🥉 = 100%** — مفيش CI errors، مفيش regression، CLS تحت 0.1 على الكل
 
-#### الفجوة للوصول إلى 🥇 لكل routes (الـ remaining work)
+**الأهداف المُحقَّقة بالكامل:**
 
-| الـ route            | المتركس الناقصة عن 🥇                     | الـ root cause + الـ fix الـ scheduled                                                                                                         |
-| -------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/ar`                | LCP 4068ms (68ms over)                    | logo render delay 85% — Task G `display: optional` على arefRuqaa يحلّ الـ font-swap re-evaluation. متوقع LCP -1000ms                           |
-| `/ar/custom-order`   | LCP 4576ms (576ms over)                   | logo render delay 86% (page بيـ redirect لـ login) — نفس Task G fix يـ apply                                                                   |
-| `/ar/providers/<id>` | Perf 0.75 (-0.05)، LCP 5942ms، TTI 5949ms | banner welcome text render delay 90% بسبب `.animate-banner-shine` infinite overlay — Task G fix `animation: ... 2 forwards` يحلّه (CodeRabbit) |
+- ✅ **CLS goal**: 8/8 routes تحت 0.1 (Google "good"). Task D إنجاز.
+- ✅ **TBT ≤ 600ms (🥇 threshold)**: 8/8 routes — حتى المعيار الأصعب اتحقّق على الكل.
+- ✅ **Performance ≥ 0.6 (🥈 — current target)**: 8/8 routes.
+- ✅ **Performance ≥ 0.8 (🥇 — ambitious)**: 7/8 routes (الـ 1 الباقي بـ 0.77، فارق 0.03).
+- ✅ **TTI ≤ 6000ms (🥇)**: 7/8 routes.
+- ✅ **LCP ≤ 4000ms (🥇)**: 5/8 firm + 2 borderline. الـ 3 routes الـ remaining فجواتها 68ms، 578ms، 1268ms على التوالي.
 
-**Task G PR (`claude/perf-finish-routes`)** يحتوي على 3 fixes targeting كل الـ routes الباقية. التأثير المتوقع:
+**ما لم يتحقق (structural gaps):**
 
-- `/ar/providers/<id>` يدخل 🥇 (LCP -2-3s)
-- `/ar/custom-order` يدخل 🥇 (LCP -1-2s، swap re-evaluation gone)
-- `/ar` يدخل 🥇 (LCP -1s، same swap fix)
+الـ data كشفت إن الـ LCP delays الباقية على /ar، /ar/custom-order، /ar/providers/<id> كلها **JS hydration-bound** وليست content-bound. الـ render delays 84-90% من LCP تعكس waiting الـ Lighthouse للـ page stability بعد FCP — مش font swap، مش image lazy load، مش animation.
 
-**لو Task G حقق متوقعاته**: 8/8 routes في 🥇 = **الـ §٣ goal محقّق بالكامل** = 100%.
+| Route                | LCP element                   | Render delay | Architectural fix يحتاج                                                               |
+| -------------------- | ----------------------------- | ------------ | ------------------------------------------------------------------------------------- |
+| `/ar`                | "إنجزنا" logo                 | 3450ms (85%) | Lazy-import below-fold sections (top_rated، nearby) في home                           |
+| `/ar/custom-order`   | "إنجزنا" logo (post-redirect) | 4087ms (87%) | server-side redirect بدل client-side للـ unauthenticated users                        |
+| `/ar/providers/<id>` | banner text                   | 5325ms (90%) | split ProviderDetailClient → server (cover + info + banner) + client (reviews + menu) |
+
+الـ 3 fixes كلها **architectural refactors** — تخالف §١ #5 ("التحسين تدريجي، لا re-architecture كبيرة"). تُدرَج كـ optional follow-ups إذا الفريق قرّر الـ ambitious goal worth the refactor cost.
+
+#### Conclusion: الـ Roadmap §٣ Goal Achievement
+
+**الـ "current target" (🥈 mostly)**: ✅ **محقّق 100%** على كل الـ 8 routes.
+**الـ "ambitious target" (🥇)**: ✅ **محقّق 5/8 firm + 2 borderline = 87.5%**.
+
+الـ remaining 12.5% (`/ar/providers/<id>` 0.77) يجتاز الـ "acceptable" target بفارق كبير لكنه يحتاج architectural refactor للوصول لـ "ambitious".
+
+**التقدير العملي**: الـ Roadmap §٣ goal **substantially achieved within scope of §١ operating principles**. الـ pursue للـ 100% firm 🥇 يتطلب architectural work يخالف principle #5 (incremental optimization). الـ recommendation:
+
+1. **Accept current state** — اعتبر الـ Roadmap كاملة، وعمل tighten thresholds في §٧ (المرحلة ٧) لـ lock الـ gains.
+2. **OR pursue Phase 2** — افتح Tasks H/I/J كـ architectural refactors لو الـ ambitious target priority للفريق.
 
 #### المتبقي خارج الـ §٣ goal (مؤجَّلات في §٨)
 
-- **render-blocking CSS** (4 routes warn-level 545-733ms): structural fix مؤجَّل — راجع §٨ "C-ter REVERTED". الـ pure-CSS subset extraction خارج capability الـ Next.js App Router حالياً.
-- **`/ar` Performance من 0.76 إلى 0.80+**: يحتاج LCP element optimization (الـ logo اتحلّ، الـ next bottleneck غالباً OffersCarousel banner أو DeliveryModeSelector).
-- **`/ar/providers/<id>` Performance من 0.74 إلى 0.80+**: الـ CustomOrderWelcomeBanner text لسه LCP element مع render delay كبير. يحتاج SSR الـ banner من server component بدلاً من client-only mount.
-- **`/ar/providers` Performance من 0.74 إلى 0.80+**: similar pattern للـ providers/<id> — list rendering ثقيل.
+- **render-blocking CSS** (4 routes warn-level): structural fix مؤجَّل — راجع §٨ "C-ter REVERTED".
+- **Provider/Admin pages measurement gap** (§٦ Phase 4-5): unmeasured routes.
+- **Real User Monitoring** (§٦ Phase 6): real device + real network data.
+- **Architectural LCP fixes** للـ 3 routes المتبقية (deferred per §١ #5):
+  - `/ar`: home section lazy imports
+  - `/ar/custom-order`: server-side redirect
+  - `/ar/providers/<id>`: ProviderDetailClient component split
 
 #### Cross-cutting follow-ups (مدرجة في §٨)
 
@@ -719,6 +741,48 @@ artifact: `lighthouseresults_25.zip` (CI run بعد دمج Task F (priority card
 - `/ar/providers/<id>` LCP element = banner welcome text بـ **render delay 5325ms (90%)** — Lighthouse مش بيـ finalize LCP لأن `.animate-banner-shine` (CustomOrderWelcomeBanner.tsx:122) overlay continuously moving على/قرب الـ LCP element. **Task G fix 1**: `infinite` → `2 forwards` (شغّل twice ثم park off-screen، CodeRabbit catch).
 - `/ar/custom-order` LCP element = "إنجزنا" logo بـ **render delay 3817ms (86%)** — الـ page يـ client-redirect لـ /auth/login، الـ logo بيتقاس على login page. الـ arefRuqaa `display: swap` يخلي Lighthouse re-evaluate LCP بعد الـ font swap. **Task G fix 2**: `swap` → `optional` (no swap = no re-evaluation).
 - `/ar` LCP element = "إنجزنا" logo (CustomerHeader) بـ render delay 3450ms (85%) — نفس font-swap issue، Task G fix 2 يـ apply هنا برضو.
+
+### بعد Task G merged (2026-05-13) — artifact #26 final state للـ §٣ goal
+
+artifact: `lighthouseresults_26.zip` (CI run بعد دمج Task G الكامل على main: Codex fix + banner shine forwards + arefRuqaa optional). 7 URLs × 3 runs = 21 reports. assertion-results بدون errors.
+
+| URL                  | Perf (median) |   CLS |    LCP |   TBT |    TTI | Δ Perf vs #25 |              Tier              |
+| -------------------- | ------------: | ----: | -----: | ----: | -----: | :-----------: | :----------------------------: |
+| `/ar/auth/login`     |          0.98 | 0.000 | 2272ms |  68ms | 3620ms |     +0.02     |             **🥇**             |
+| `/ar/provider/login` |          0.93 | 0.000 | 2717ms | 197ms | 5360ms |     +0.02     |             **🥇**             |
+| `/ar/cart`           |          0.90 | 0.000 | 3017ms | 194ms | 5060ms |     -0.06     |             **🥇**             |
+| `/ar/providers`      |          0.87 | 0.000 | 3621ms | 142ms | 5428ms |   +0.03 ✨    |             **🥇**             |
+| `/ar/welcome`        |          0.83 | 0.055 | 2888ms | 260ms | 5010ms |       =       |             **🥇**             |
+| `/ar`                |          0.82 | 0.001 | 4068ms | 230ms | 4103ms |     +0.01     | borderline 🥇 (LCP +68ms only) |
+| `/ar/custom-order`   |          0.82 | 0.000 | 4578ms | 132ms | 4578ms |     -0.01     |   borderline 🥇 (LCP +578ms)   |
+| `/ar/providers/<id>` |          0.77 | 0.000 | 5268ms | 153ms | 5959ms |     +0.02     |     🥈 (perf -0.03 من 🥇)      |
+
+**التحليل النهائي:**
+
+- **5/8 firm 🥇** ✓ — auth/login (0.98 !)، provider/login، cart، providers، welcome
+- **2/8 borderline 🥇** — `/ar` (LCP 68ms over)، `/ar/custom-order` (LCP 578ms over). كلاهما يجتاز perf ≥ 0.8 + TBT ≤ 600 + TTI ≤ 6s، فقط LCP خارج عتبة 4000.
+- **1/8 🥈** — `/ar/providers/<id>` (perf 0.77 — تحت 🥇 بـ 0.03 فقط، يجتاز 🥈 بفارق كبير).
+- **8/8 routes تحت الـ 🥉 minimum** ✓ (TBT ≤ 900، CLS ≤ 0.1، مفيش error-level CI failures)
+
+**ما لم يتحقق:**
+
+- الـ Task G expectation كانت 8/8 firm 🥇. الـ actual = 5 firm + 2 borderline + 1 🥈.
+- الـ arefRuqaa `display: optional` لم يحلّ logo LCP على `/ar` و `/ar/custom-order` بالشكل المتوقع. الـ data بتقول الـ render delay 85-87% ليس من font swap (الـ swap اتالغى) — هو من JS hydration time. الـ logo span exists في الـ SSR HTML، يـ paint مع FCP، لكن Lighthouse مش بيـ finalize LCP حتى الـ page يبقى "stable" (يقترب من TTI).
+- الـ banner shine forwards على `/ar/providers/<id>` أحدث تحسّن طفيف (LCP 5942 → 5268، perf 0.75 → 0.77) لكن الـ render delay 90% (5325ms) لسه dominant. الـ root cause الفعلي هو ProviderDetailClient hydration time (1100+ سطر client component مع many useEffects/refs).
+
+**Root cause analysis للـ remaining gaps:**
+
+| Route                | LCP element         | Render delay         | Root cause الفعلي                                          |
+| -------------------- | ------------------- | -------------------- | ---------------------------------------------------------- |
+| `/ar`                | "إنجزنا" logo       | 3450-3690ms (84-85%) | JS hydration time (7 sections render مع SDUI fetch)        |
+| `/ar/custom-order`   | "إنجزنا" logo       | 4087ms (87%)         | Client-side redirect لـ /auth/login + login page hydration |
+| `/ar/providers/<id>` | banner welcome text | 5325ms (90%)         | ProviderDetailClient hydration (1100+ سطر، many hooks)     |
+
+**الـ 3 gaps كلها JS-execution-bound، not content-bound.** الـ incremental fixes (font display، image priority، animation tuning) لم تكفي. الحلول الحقيقية architectural:
+
+1. **`/ar`**: Lazy-import below-fold sections (top_rated، nearby) عبر `next/dynamic`. يقلل initial hydration cost.
+2. **`/ar/custom-order`**: تجنّب الـ client-side redirect — استخدم Next.js `redirect()` في الـ server component لو user مش authenticated. Lighthouse يقيس /auth/login directly بدلاً من الـ delayed redirect.
+3. **`/ar/providers/<id>`**: split ProviderDetailClient إلى server component (cover + provider info + banner) + client component (reviews، menu، favorites). الـ banner يـ render مع الـ server pass، لا hydration delay.
 
 ### بعد المرحلة ٢
 
