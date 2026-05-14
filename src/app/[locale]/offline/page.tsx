@@ -103,11 +103,23 @@ export default function OfflinePage() {
         <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-gray-700">
           <WifiOff className="w-12 h-12 text-gray-400" />
         </div>
-        <h1
-          className="text-3xl font-bold mb-2"
-          style={{ fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif" }}
-        >
-          إنجزنا
+        <h1 className="text-3xl font-bold mb-2">
+          {/* SVG used as a CSS mask so the parent's `text-white` (-ish) color
+           * via background-color can theme the brand mark against the dark
+           * offline-page gradient. The previous `<img>` approach didn't
+           * inherit currentColor — Codex catch — so the SVG would render
+           * in its document's default black on the black-to-gray gradient
+           * and disappear. mask-image keeps the calligraphic outlines and
+           * recolors them via background-color. */}
+          <span
+            role="img"
+            aria-label="إنجزنا"
+            className="block h-10 w-12 mx-auto bg-white"
+            style={{
+              WebkitMask: "url('/logos/engezna-mark.svg') no-repeat center / contain",
+              mask: "url('/logos/engezna-mark.svg') no-repeat center / contain",
+            }}
+          />
         </h1>
       </div>
 

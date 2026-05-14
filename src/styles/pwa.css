@@ -204,11 +204,20 @@
   z-index: 10000;
 }
 
+/* PWA splash logo — currently unused in source (the splash content is
+ * driven by NativeSplashHider / native Capacitor plugin), but the class
+ * is kept in case a future PWA install prompt needs an inline splash.
+ * Switched from font-family-driven text rendering (which required the
+ * arefRuqaa woff2) to a mask-image of the brand SVG, so the class no
+ * longer depends on the font being loaded. The `color` is applied via
+ * background-color through the mask. */
 .pwa-splash-logo {
-  font-family: var(--font-aref-ruqaa), 'Aref Ruqaa', serif;
-  font-size: 3rem;
-  font-weight: 700;
-  color: #ffffff;
+  display: inline-block;
+  width: 9rem;
+  height: 8rem;
+  background-color: #ffffff;
+  -webkit-mask: url('/logos/engezna-mark.svg') no-repeat center / contain;
+  mask: url('/logos/engezna-mark.svg') no-repeat center / contain;
   animation: pulse 2s ease-in-out infinite;
 }
 

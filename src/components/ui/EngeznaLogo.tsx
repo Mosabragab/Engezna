@@ -12,14 +12,21 @@ interface EngeznaLogoProps {
   bgColor?: string;
 }
 
+// Height classes for the SVG logo. Calibrated so the rendered visual height
+// matches what the previous Aref Ruqaa text rendering produced at each size.
+// The SVG's natural aspect ratio is ~1673:1465 (≈1.14:1), and width auto-scales
+// from height via `w-auto`.
 const sizes = {
-  xs: 'text-xl',
-  sm: 'text-2xl',
-  md: 'text-4xl',
-  lg: 'text-5xl',
-  xl: 'text-6xl',
-  '2xl': 'text-7xl',
+  xs: 'h-7',
+  sm: 'h-8',
+  md: 'h-12',
+  lg: 'h-14',
+  xl: 'h-16',
+  '2xl': 'h-20',
 };
+
+const LOGO_SRC = '/logos/engezna-mark.svg';
+const LOGO_ALT = 'إنجزنا';
 
 export function EngeznaLogo({
   size = 'lg',
@@ -45,17 +52,20 @@ export function EngeznaLogo({
 
   const uniqueId = `engezna-logo-${animationKey}`;
 
+  // Static branch: SVG paints with first paint, no font swap, no LCP wobble.
+  // The brand mark is a vector asset rendered from the Aref Ruqaa glyph
+  // outlines for "إنجزنا" — see public/logos/engezna-mark.svg. Replacing
+  // the text+font-family combo eliminates the swap window where the
+  // fallback sans-serif briefly stands in for the calligraphic mark.
   if (isStatic) {
     return (
-      <span
-        className={`font-bold ${sizes[size]} ${className}`}
-        style={{
-          fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif",
-          color: '#0F172A',
-        }}
-      >
-        إنجزنا
-      </span>
+      <img
+        src={LOGO_SRC}
+        alt={LOGO_ALT}
+        className={`${sizes[size]} w-auto ${className}`}
+        width={1673}
+        height={1465}
+      />
     );
   }
 
@@ -66,30 +76,30 @@ export function EngeznaLogo({
         className={`relative inline-block overflow-hidden md:overflow-visible ${className}`}
         style={{ padding: showPen ? '0.5rem 1rem' : '0' }}
       >
-        <span
-          className={`logo-text-${uniqueId} font-bold ${sizes[size]} relative inline-block`}
-          style={{
-            fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif",
-            color: '#0F172A',
-            lineHeight: 1.2,
-          }}
-        >
-          إنجزنا
-        </span>
+        <img
+          src={LOGO_SRC}
+          alt={LOGO_ALT}
+          className={`${sizes[size]} w-auto relative inline-block`}
+          width={1673}
+          height={1465}
+        />
+
+        {/* Reveal overlay — a sibling element instead of a ::after pseudo
+         * on the <img>, since <img> elements can't host pseudo-elements.
+         * Slides from cover-on-logo (translateX(0)) to off-screen-left
+         * (translateX(-105%)) revealing the brand mark behind it. */}
+        <div className={`reveal-overlay-${uniqueId}`} />
 
         {showPen && <div className={`pen-cursor-${uniqueId}`} />}
       </div>
 
       <style>{`
-        .logo-text-${uniqueId}::after {
-          content: '';
+        .reveal-overlay-${uniqueId} {
           position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
+          inset: 0;
           background: ${bgColor};
           animation: revealRTL-${uniqueId} 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+          z-index: 5;
         }
 
         @keyframes revealRTL-${uniqueId} {
@@ -131,12 +141,13 @@ export function EngeznaLoading({ size = 'sm' }: { size?: 'xs' | 'sm' | 'md' }) {
   return (
     <div className="inline-flex items-center gap-3">
       <div className="w-5 h-5 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
-      <span
-        className={`font-bold ${sizes[size]}`}
-        style={{ fontFamily: "var(--font-aref-ruqaa), 'Aref Ruqaa', serif", color: '#0F172A' }}
-      >
-        إنجزنا
-      </span>
+      <img
+        src={LOGO_SRC}
+        alt={LOGO_ALT}
+        className={`${sizes[size]} w-auto`}
+        width={1673}
+        height={1465}
+      />
     </div>
   );
 }

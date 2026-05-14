@@ -53,49 +53,10 @@ export const notoSansArabic = localFont({
   preload: false,
 });
 
-// Logo font - Aref Ruqaa (Arabic calligraphy style)
-//
-// display: 'swap'. The brand identity for "إنجزنا" requires the
-// calligraphic Aref Ruqaa face — it's the LOGO. Any fallback (regular
-// sans-serif) is a brand fidelity violation, not an acceptable
-// degradation.
-//
-// History of this flag and why we're back to 'swap':
-//   1. Originally 'swap' since project inception.
-//   2. Task G (commit 573b08c) flipped to 'optional' to chase a logo
-//      LCP penalty on /ar and /ar/custom-order. The hypothesis was
-//      that Aref Ruqaa's swap moment was re-evaluating LCP because
-//      the calligraphic glyph metrics differ enough from any
-//      sans-serif fallback that Lighthouse treats the post-swap
-//      element as a new LCP candidate.
-//   3. The trade-off documented in Task G's commit was that real
-//      users on cold connections (no font cache yet) would see the
-//      fallback font for the brand text on first visit. We accepted
-//      that for the LCP gain.
-//   4. Owner caught the regression visually after Task G merged: the
-//      home page (`/ar`) logo renders in plain sans-serif on first
-//      load; a refresh (cache hit) restores Aref Ruqaa. That's the
-//      `optional` behavior working as documented — but the visual
-//      cost is unacceptable for a brand-identity element.
-//   5. Reverted to 'swap'. The LCP gain Task G was chasing wasn't
-//      large (`/ar` 4068→4068, `/ar/custom-order` 4576→4578 per
-//      artifact #26 — basically no change) so the brand cost was
-//      paid for nothing measurable.
-//
-// preload: false stays. History of THAT flag is in §8 of the roadmap:
-// Task F's `preload: true` attempt regressed three routes via
-// bandwidth contention (artifact #22) because arefRuqaa.variable is
-// applied on the root <body>, so any `preload: true` becomes a
-// blanket preload across every locale route. A scoped preload (move
-// the variable into auth/welcome layouts only) is the structural
-// fix on the deferred list.
-//
-// Net: live with the swap-driven LCP wobble on routes where the
-// logo is the LCP element. It's currently ~+68ms over the 🥇 LCP
-// threshold on /ar — that's a borderline 🥇 the brand has earned.
-export const arefRuqaa = localFont({
-  src: [{ path: '../../../public/fonts/aref-ruqaa-700.woff2', weight: '700', style: 'normal' }],
-  variable: '--font-aref-ruqaa',
-  display: 'swap',
-  preload: false,
-});
+// Logo font (Aref Ruqaa) was previously declared here and used only for
+// the "إنجزنا" logo text in three places (EngeznaLogo, offline page,
+// pwa-splash CSS). Removed in Task H: replaced by a pre-rendered SVG
+// (public/logos/engezna-mark.svg) that contains the vector outlines
+// of the brand mark, eliminating the font-swap LCP wobble and the
+// 45 KB woff2 file. Decision history is in
+// docs/PERFORMANCE_OPTIMIZATION_ROADMAP.md §8 "Task H — logo SVG".
