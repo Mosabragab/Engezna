@@ -3254,7 +3254,7 @@ export const FEATURES = {
 
 ## 📋 ملخص الـ Deliverables النهائية
 
-### Migrations (8 ملفات)
+### Migrations (10 ملفات)
 
 1. `20260513000001_welcome_box_system.sql`
 2. `20260513000002_stamp_card_v2.sql`
@@ -3264,6 +3264,8 @@ export const FEATURES = {
 6. `20260513000006_loyalty_v2.sql`
 7. `20260513000007_hide_gift_values.sql`
 8. `20260513000008_cleanup_old_features.sql`
+9. `20260513000009_v2_5_2_fixes.sql` — مراجعة CodeRabbit الأولى (8 fixes)
+10. `20260513000010_harden_rating_bonus.sql` — وجود + ملكية الطلب
 
 ### Backend Services (4 جديدة)
 

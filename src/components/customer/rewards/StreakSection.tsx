@@ -96,7 +96,7 @@ export function StreakSection({
           {streakTier !== 'none' && (
             <div className="flex flex-col items-end">
               <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-bold text-slate-800">
-                {TIER_LABEL[streakTier][locale as 'ar' | 'en']}
+                {TIER_LABEL[streakTier][isRTL ? 'ar' : 'en']}
               </span>
               {pointsMultiplier > 1.0 && (
                 <span className="mt-1 text-[10px] font-bold text-purple-600">

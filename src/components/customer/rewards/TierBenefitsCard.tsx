@@ -129,12 +129,12 @@ export function TierBenefitsCard(props: TierBenefitsCardProps) {
         className={`rounded-2xl border bg-gradient-to-br p-5 ${gradient}`}
       >
         <div className="mb-4 flex items-center gap-2">
-          <span className="text-3xl" aria-hidden>
+          <span className="text-3xl" aria-hidden={true}>
             {label.emoji}
           </span>
           <div>
             <p className="text-base font-extrabold text-slate-900">{isRTL ? label.ar : label.en}</p>
-            {pointsToNextTier !== null && pointsToNextTier !== undefined && nextTierName && (
+            {pointsToNextTier != null && nextTierName && (
               <p className="text-xs text-slate-600">
                 {isRTL
                   ? `${pointsToNextTier} نقطة لـ ${nextTierName}`

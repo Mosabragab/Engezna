@@ -38,7 +38,6 @@ export function StreakIcon({ streak, tier = 'none' }: StreakIconProps) {
       animate={{ scale: 1, opacity: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}
       className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5"
-      title={`Streak: ${streak} weeks`}
       aria-label={`Streak: ${streak} weeks`}
     >
       <motion.span

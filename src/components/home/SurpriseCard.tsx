@@ -31,10 +31,19 @@ function formatExpiry(expiresAt: string, locale: 'ar' | 'en'): string {
 
   if (locale === 'ar') {
     if (days > 0) return `${days} ${days === 1 ? 'يوم' : 'أيام'}`;
-    return `${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}`;
+    if (hours > 0) return `${hours} ${hours === 1 ? 'ساعة' : 'ساعات'}`;
+    // v2.5.2 fix: avoid "0 ساعات" near expiry — show minutes instead.
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    if (minutes <= 0) return 'أقل من دقيقة';
+    if (minutes === 1) return '1 دقيقة';
+    return `${minutes} دقائق`;
   }
+
   if (days > 0) return `${days} day${days === 1 ? '' : 's'}`;
-  return `${hours} hour${hours === 1 ? '' : 's'}`;
+  if (hours > 0) return `${hours} hour${hours === 1 ? '' : 's'}`;
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  if (minutes <= 0) return 'less than a minute';
+  return `${minutes} minute${minutes === 1 ? '' : 's'}`;
 }
 
 export function SurpriseCard({ entryId, expiresAt, locale }: SurpriseCardProps) {

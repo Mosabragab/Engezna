@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
@@ -28,6 +28,9 @@ export function WelcomeBoxModal() {
   const [phase, setPhase] = useState<Phase>('loading');
   const [open, setOpen] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Track the reveal timeout so we can cancel it on unmount or dismiss
+  // (v2.5.2 CodeRabbit nitpick — avoid setting state after unmount).
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Call the hook once on mount.
   useEffect(() => {
@@ -40,13 +43,20 @@ export function WelcomeBoxModal() {
 
         if (!res.ok) {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
-          // already_granted is not an error — treat it as "no surprise this time"
           if (body.error === 'Email not verified') {
             setErrorMsg(isRTL ? 'لم يتم تأكيد البريد بعد' : 'Email not verified yet');
             setPhase('error');
             return;
           }
-          setOpen(false);
+          // v2.5.2 fix: show a retryable error instead of silently dismissing.
+          // Previously any non-OK + non-"Email not verified" closed the modal,
+          // leaving the user with no signal that anything went wrong.
+          setErrorMsg(
+            isRTL
+              ? 'حدث خطأ غير متوقع، حاول لاحقًا'
+              : 'Something went wrong, please try again later'
+          );
+          setPhase('error');
           return;
         }
 
@@ -67,13 +77,30 @@ export function WelcomeBoxModal() {
 
     return () => {
       cancelled = true;
+      // Clean up any pending reveal timer on unmount.
+      if (revealTimerRef.current !== null) {
+        clearTimeout(revealTimerRef.current);
+        revealTimerRef.current = null;
+      }
     };
   }, [isRTL]);
+
+  function handleClose() {
+    if (revealTimerRef.current !== null) {
+      clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
+    setOpen(false);
+  }
 
   function handleReveal() {
     setPhase('revealing');
     // 1.8s reveal animation — matches the bounce duration below.
-    setTimeout(() => setPhase('revealed'), 1800);
+    // Stored in ref so we can cancel if the user dismisses or unmounts.
+    revealTimerRef.current = setTimeout(() => {
+      revealTimerRef.current = null;
+      setPhase('revealed');
+    }, 1800);
   }
 
   if (!open) return null;
@@ -96,7 +123,7 @@ export function WelcomeBoxModal() {
           className="relative w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl"
         >
           <button
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
             className="absolute top-3 end-3 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
             aria-label={isRTL ? 'إغلاق' : 'Close'}
           >
@@ -115,10 +142,7 @@ export function WelcomeBoxModal() {
           {phase === 'error' && (
             <div className="py-6">
               <p className="text-sm font-medium text-rose-600">{errorMsg}</p>
-              <button
-                onClick={() => setOpen(false)}
-                className="mt-4 text-xs text-slate-500 underline"
-              >
+              <button onClick={handleClose} className="mt-4 text-xs text-slate-500 underline">
                 {isRTL ? 'حسنًا' : 'OK'}
               </button>
             </div>
