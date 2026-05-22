@@ -105,39 +105,98 @@ export class LoyaltyService {
   }
 
   /**
-   * Awards points for a completed order. Idempotency is the caller's
-   * responsibility (use the order_completion_processed table at the hook level).
+   * Awards points for a completed order.
+   *
+   * v2.5.2 changes:
+   *   - Zero points if order has any discount (gift / promo / referral)
+   *   - Applies loyalty_multiplier (Mega Referrer 1.25×) × streak_multiplier (Platinum 1.10×)
+   *   - Routes to award_order_loyalty_points RPC (replaces the v1 award_loyalty_points_atomic)
+   *
+   * Idempotency lives in the RPC via order_id uniqueness on loyalty_transactions.
    */
   async awardOrderPoints(
     userId: string,
     orderId: string,
-    subtotalPiasters: number
+    subtotalPiasters: number,
+    discountPiasters: number = 0
   ): Promise<AwardPointsResult> {
-    const points = calculatePointsForOrder(subtotalPiasters);
-
-    const { data, error } = await this.supabase.rpc('award_loyalty_points_atomic', {
+    const { data, error } = await this.supabase.rpc('award_order_loyalty_points', {
       p_user_id: userId,
       p_order_id: orderId,
-      p_points: points,
-      p_description: `Earned ${points} points for order subtotal ${subtotalPiasters / 100} EGP`,
+      p_subtotal_piasters: subtotalPiasters,
+      p_discount_piasters: discountPiasters,
     });
 
     if (error) {
       throw new Error(`awardOrderPoints failed: ${error.message}`);
     }
 
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row) {
+    // RPC returns a single JSONB object
+    const result = data as {
+      points: number;
+      base_points?: number;
+      multiplier?: number;
+      reason?: string;
+      new_balance?: number;
+      new_lifetime?: number;
+      new_tier?: string;
+    };
+
+    if (!result) {
       throw new Error('awardOrderPoints returned no row');
+    }
+
+    // Zero-point cases: already_awarded / discount_applied / zero_subtotal
+    if (result.points === 0) {
+      return {
+        success: true,
+        pointsAwarded: 0,
+        skipReason: result.reason,
+        newBalance: result.new_balance ?? 0,
+        newTier: (result.new_tier as LoyaltyTier) ?? 'bronze',
+        tierChanged: false,
+        previousTier: (result.new_tier as LoyaltyTier) ?? 'bronze',
+      };
     }
 
     return {
       success: true,
-      pointsAwarded: points,
-      newBalance: row.points_balance,
-      newTier: row.tier as LoyaltyTier,
-      tierChanged: Boolean(row.tier_changed),
-      previousTier: row.previous_tier as LoyaltyTier,
+      pointsAwarded: result.points,
+      basePoints: result.base_points,
+      multiplier: result.multiplier,
+      newBalance: result.new_balance!,
+      newTier: (result.new_tier as LoyaltyTier) ?? 'bronze',
+      tierChanged: false, // tier-up detection now lives in DB trigger (migration 7)
+      previousTier: (result.new_tier as LoyaltyTier) ?? 'bronze',
+    };
+  }
+
+  /**
+   * Awards bonus points for a 5-star rating (v2.5.2: 20 points, was 5).
+   *
+   * The SQL RPC returns snake_case keys (`new_balance`). We remap to
+   * camelCase here so callers receive the documented `newBalance` field.
+   */
+  async awardRatingBonus(
+    userId: string,
+    orderId: string,
+    stars: number
+  ): Promise<{ points: number; reason?: string; newBalance?: number }> {
+    const { data, error } = await this.supabase.rpc('award_rating_bonus', {
+      p_user_id: userId,
+      p_order_id: orderId,
+      p_stars: stars,
+    });
+
+    if (error) {
+      throw new Error(`awardRatingBonus failed: ${error.message}`);
+    }
+
+    const raw = data as { points: number; reason?: string; new_balance?: number };
+    return {
+      points: raw.points,
+      reason: raw.reason,
+      newBalance: raw.new_balance,
     };
   }
 

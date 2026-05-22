@@ -31,6 +31,12 @@ export interface AwardPointsResult {
   newTier: LoyaltyTier;
   tierChanged: boolean;
   previousTier: LoyaltyTier;
+  /** v2.5.2: 'discount_applied' / 'already_awarded' / 'zero_subtotal' / undefined */
+  skipReason?: string;
+  /** v2.5.2: base points before multiplier (1 per 10 EGP) */
+  basePoints?: number;
+  /** v2.5.2: combined multiplier (loyalty × streak) */
+  multiplier?: number;
 }
 
 export type RedeemPointsResult =

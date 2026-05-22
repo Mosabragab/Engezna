@@ -503,7 +503,14 @@ function LiquidProgressIndicator({
           <motion.button
             key={index}
             onClick={() => onSelect(index)}
-            className="relative h-1.5 rounded-full overflow-hidden bg-slate-200"
+            // v2.5.2 a11y:
+            //   • aria-label gives the button an accessible name (Lighthouse
+            //     button-name audit) + aria-current pinpoints the active slide
+            //   • before:* extends a transparent hit area to satisfy WCAG 2.5.8
+            //     target-size (≥24×24px) without altering the visual 6px height
+            aria-label={isRTL ? `الانتقال إلى الشريحة ${index + 1}` : `Go to slide ${index + 1}`}
+            aria-current={isActive ? 'true' : undefined}
+            className="relative h-1.5 rounded-full overflow-hidden bg-slate-200 before:absolute before:-inset-x-3 before:-inset-y-5 before:content-['']"
             animate={{
               width,
               opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3,

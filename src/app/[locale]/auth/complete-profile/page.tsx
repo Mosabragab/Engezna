@@ -404,10 +404,13 @@ export default function CompleteProfilePage() {
                 min="1925-01-01"
                 dir="ltr"
               />
+              {/* v2.5.2: birthday-gift promise removed (deprecated per docs/POINTS_REWARDS_PROPOSAL_V2_5.md decision #1).
+                  The birthdate field stays — useful for demographic segmentation —
+                  but we no longer advertise a birthday reward we don't deliver. */}
               <p className="text-xs text-muted-foreground">
                 {locale === 'ar'
-                  ? '🎁 احصل على هدية في عيد ميلادك كل سنة'
-                  : '🎁 Get a gift on your birthday every year'}
+                  ? 'يساعدنا في تخصيص تجربتك (اختياري)'
+                  : 'Helps us personalize your experience (optional)'}
               </p>
               {errors.birthdate && (
                 <p className="text-xs text-destructive">

@@ -51,6 +51,8 @@ import {
   BadgeCheck,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useTierBenefits, applyTierDeliveryAdjustment } from '@/lib/tier-rewards';
+import { TierDeliveryDiscountLine } from '@/components/customer/checkout/TierDeliveryDiscountLine';
 import type { OrderType, DeliveryTiming } from '@/types/database';
 import {
   type BusinessHours,
@@ -1233,8 +1235,15 @@ export default function CheckoutPage() {
         }
       }
 
+      // v2.5.2: roll the tier delivery benefit into the discount field so
+      // settlement still sees the base delivery fee (the driver/provider
+      // gets paid the full delivery amount; Engezna absorbs the discount
+      // as a marketing expense — same pattern as promo codes).
+      const tierDiscountEgpLocal = tierAdjustment.discountApplied / 100;
+      const discountWithTier = discountAmount + tierDiscountEgpLocal;
+
       // Calculate final total with discount (use calculated delivery fee based on order type)
-      const finalTotal = subtotal + calculatedDeliveryFee - discountAmount;
+      const finalTotal = subtotal + calculatedDeliveryFee - discountWithTier;
 
       // NOTE: platform_commission is calculated SERVER-SIDE by database trigger
       // This prevents any client-side manipulation of commission values
@@ -1294,7 +1303,8 @@ export default function CheckoutPage() {
           p_provider_id: provider.id,
           p_subtotal: subtotal,
           p_delivery_fee: calculatedDeliveryFee,
-          p_discount: discountAmount,
+          // v2.5.2: tier discount merged into p_discount alongside promo
+          p_discount: discountWithTier,
           p_total: finalTotal,
           p_payment_method: paymentMethod,
           p_payment_status: 'pending',
@@ -1344,7 +1354,7 @@ export default function CheckoutPage() {
         provider_name: locale === 'ar' ? provider.name_ar : provider.name_en,
         subtotal: subtotal,
         delivery_fee: calculatedDeliveryFee,
-        discount: discountAmount,
+        discount: discountWithTier,
         total: finalTotal,
         payment_method: paymentMethod,
         order_type: orderType,
@@ -1476,6 +1486,17 @@ export default function CheckoutPage() {
     }
   };
 
+  // v2.5.2: tier benefits hook MUST be called before any early returns
+  // (Rules of Hooks). Compute once at the top using the live cart subtotal +
+  // calculated delivery fee, then reuse `tierBenefits` / `tierAdjustment`
+  // throughout the component (including via closure in handlePlaceOrder).
+  const _tierSubtotalPiasters = Math.round(getSubtotal() * 100);
+  const { benefits: tierBenefits } = useTierBenefits(_tierSubtotalPiasters);
+  const tierAdjustment = applyTierDeliveryAdjustment(
+    Math.round(calculatedDeliveryFee * 100),
+    tierBenefits
+  );
+
   // Show loading while auth is loading or cart is hydrating
   // Also show loading if order was placed (navigating to confirmation)
   if (authLoading || !_hasHydrated || orderPlaced) {
@@ -1497,7 +1518,12 @@ export default function CheckoutPage() {
 
   const subtotal = getSubtotal();
   const deliveryFee = calculatedDeliveryFee;
-  const total = subtotal + deliveryFee - discountAmount;
+  // v2.5.2: tierBenefits + tierAdjustment are computed at the top of the
+  // component (before early returns) to comply with the Rules of Hooks.
+  // Derive the effective delivery fee here for the displayed total.
+  const effectiveDeliveryFee = tierAdjustment.feeAfterTier / 100;
+
+  const total = subtotal + effectiveDeliveryFee - discountAmount;
 
   return (
     <CustomerLayout
@@ -2329,6 +2355,12 @@ export default function CheckoutPage() {
                         {deliveryFee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
                     </div>
+                    {/* v2.5.2: Tier delivery benefit line (Silver/Gold/Platinum) */}
+                    <TierDeliveryDiscountLine
+                      benefits={tierBenefits}
+                      freeDeliveryApplied={tierAdjustment.freeDeliveryApplied}
+                      discountPiasters={tierAdjustment.discountApplied}
+                    />
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
                         <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
