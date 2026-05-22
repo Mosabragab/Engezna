@@ -2345,18 +2345,53 @@ ROI: 9× التكلفة ✅
 > **هذا القسم يحوي خطة تنفيذية تفصيلية واحدة لكل التعديلات بترتيب التنفيذ المنطقي.**
 > **مدة التنفيذ المتوقعة: 7-10 أيام عمل.**
 
-## 📊 نظرة عامة على التنفيذ (محدَّث بعد Phase 1)
+## 📊 نظرة عامة على التنفيذ (محدَّث بعد Phase 4)
 
-| المرحلة | الموضوع                                  | المدة   | الأولوية | الحالة    |
-| ------- | ---------------------------------------- | ------- | -------- | --------- |
-| 1       | DB Migrations (8 ملفات)                  | يومان   | 🔴 حرجة  | ✅ مكتمل  |
-| 2       | Backend Services (4 services جديدة)      | يومان   | 🔴 حرجة  | 🔜 التالي |
-| 3       | API Endpoints + Hooks Integration        | يوم     | 🔴 حرجة  | ⏳ منتظر  |
-| **4**   | **Frontend — Customer (Rewards + Home)** | يومان   | 🟡 مهمة  | ⏳ منتظر  |
-| **5**   | **Frontend — Checkout (Tier benefits)**  | يوم     | 🔴 حرجة  | ⏳ منتظر  |
-| **6**   | **Frontend — Admin (3 صفحات جديدة)**     | يوم     | 🟡 مهمة  | ⏳ منتظر  |
-| **7**   | **Frontend — Provider + Onboarding**     | نصف يوم | 🟡 مهمة  | ⏳ منتظر  |
-| 8       | Testing + QA                             | يومان   | 🔴 حرجة  | ⏳ منتظر  |
+| المرحلة | الموضوع                                  | المدة   | الأولوية | الحالة       |
+| ------- | ---------------------------------------- | ------- | -------- | ------------ |
+| 1       | DB Migrations (10 ملفات — شامل fixes)    | يومان   | 🔴 حرجة  | ✅ مكتمل     |
+| 2       | Backend Services (4 services جديدة)      | يومان   | 🔴 حرجة  | ✅ مكتمل     |
+| 3       | API Endpoints (7 endpoints)              | يوم     | 🔴 حرجة  | ✅ مكتمل     |
+| **4**   | **Frontend — Customer (Rewards + Home)** | يومان   | 🟡 مهمة  | ✅ **مكتمل** |
+| **5**   | **Frontend — Checkout (Tier benefits)**  | يوم     | 🔴 حرجة  | 🔜 التالي    |
+| **6**   | **Frontend — Admin (3 صفحات جديدة)**     | يوم     | 🟡 مهمة  | ⏳ منتظر     |
+| **7**   | **Frontend — Provider + Onboarding**     | نصف يوم | 🟡 مهمة  | ⏳ منتظر     |
+| 8       | Testing + QA                             | يومان   | 🔴 حرجة  | ⏳ منتظر     |
+
+### تفاصيل Phase 4 المُنفَّذ (v2.5.2)
+
+**Components جديدة (6):**
+
+- `src/components/home/SurpriseCard.tsx` — بطاقة Homepage بدون كشف القيمة
+- `src/components/layout/StreakIcon.tsx` — أيقونة 🔥 في الـ Header
+- `src/components/customer/rewards/StreakSection.tsx` — قسم السلسلة + milestones
+- `src/components/customer/rewards/TierBenefitsCard.tsx` — مزايا ملموسة (مش احتمالات)
+- `src/components/customer/rewards/MegaReferrerBadge.tsx` — Founder #N أو شريط تقدم
+- `src/components/customer/onboarding/WelcomeBoxModal.tsx` — Modal احتفائي بعد تأكيد البريد
+
+**تعديلات:**
+
+- `StampCardSection.tsx` — 4 → 3 خانات + النص المُحدَّث (500 ج.م، شهر/ختم، 75-100 ج.م)
+- `StampCard.tsx` — يستقبل `totalStamps={3}`
+
+**التزامات Phase 4:**
+
+- ✅ SurpriseCard مع Reveal لاحقًا في `/rewards` (لا يكشف القيمة في HTML)
+- ✅ StreakIcon يختفي عند streak < 2 (تجنب الضوضاء البصرية للمستخدم الجديد)
+- ✅ Tier benefits ملموسة (قائمة شروط محددة بدل "احتمال +10%")
+- ✅ MegaReferrerBadge بحالتين (Founder Filled أو Progress Bar)
+- ✅ Welcome modal بـ 3 مراحل (loading → reveal animation → CTA)
+- ✅ كل المكوّنات تحترم `prefers-reduced-motion`
+- ✅ RTL/LTR كامل + aria-labels + aria-modal
+
+**ما لم يُدمَج بعد (يقع في Phase 5/6/7):**
+
+- وضع `<SurpriseCard />` داخل `src/app/[locale]/page.tsx` Homepage
+- وضع `<StreakIcon />` داخل `src/components/layout/Header.tsx`
+- ضمّ الـ sections الجديدة داخل `RewardsHubClient.tsx`
+- استخدام `<WelcomeBoxModal />` في صفحة `/auth/email-verified`
+
+المكوّنات جاهزة plug-and-play — كل integration يحتاج fetch بسيط من الـ endpoint المُناظر (انظر §3 من الخطة).
 
 **الإجمالي المُحدَّث:** 10-12 يوم عمل (كان 7-10 — تعديل بعد Frontend audit).
 

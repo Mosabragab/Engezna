@@ -28,12 +28,20 @@ async function requireAdmin() {
   } = await userClient.auth.getUser();
   if (!user) return { error: 'Unauthorized', status: 401 as const };
 
-  const { data: adminRow } = await userClient
+  // v2.5.2 fix: distinguish DB errors from "no admin row".
+  // Without capturing `error`, a transient query failure silently maps to
+  // 403 Forbidden — a misleading response that hides outages.
+  const { data: adminRow, error: adminErr } = await userClient
     .from('admin_users')
     .select('id, is_active')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
+
+  if (adminErr) {
+    console.error('[admin guard] admin_users lookup failed:', adminErr);
+    return { error: 'Internal Server Error', status: 500 as const };
+  }
 
   if (!adminRow) return { error: 'Forbidden', status: 403 as const };
 

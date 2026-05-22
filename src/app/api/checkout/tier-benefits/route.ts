@@ -33,10 +33,14 @@ export async function POST(req: Request) {
       subtotalPiasters?: unknown;
     };
 
-    const subtotalPiasters = Number(body.subtotalPiasters);
-    if (!Number.isFinite(subtotalPiasters) || subtotalPiasters < 0) {
+    // v2.5.2 fix: strict validation — refuse coerced values.
+    // Number(null) === 0, Number(false) === 0, Number('') === 0 all
+    // silently passed through the previous Number(x) coercion.
+    const raw = body.subtotalPiasters;
+    if (typeof raw !== 'number' || !Number.isInteger(raw) || raw < 0) {
       return NextResponse.json({ error: 'Invalid subtotalPiasters' }, { status: 400 });
     }
+    const subtotalPiasters = raw;
 
     const service = new TierRewardsService(supabase);
     const benefits = await service.getBenefitsForCheckout(user.id, subtotalPiasters);

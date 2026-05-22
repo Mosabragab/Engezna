@@ -36,12 +36,20 @@ async function requireAdmin() {
   } = await userClient.auth.getUser();
   if (!user) return { error: 'Unauthorized', status: 401 as const };
 
-  const { data: adminRow } = await userClient
+  // v2.5.2 fix: distinguish DB errors from "no admin row".
+  // Previously a transient query failure (network, RLS edge-case, etc.)
+  // would surface as 403 Forbidden which is misleading and silent.
+  const { data: adminRow, error: adminErr } = await userClient
     .from('admin_users')
     .select('id, is_active')
     .eq('user_id', user.id)
     .eq('is_active', true)
     .maybeSingle();
+
+  if (adminErr) {
+    console.error('[admin guard] admin_users lookup failed:', adminErr);
+    return { error: 'Internal Server Error', status: 500 as const };
+  }
 
   if (!adminRow) return { error: 'Forbidden', status: 403 as const };
 
@@ -59,25 +67,45 @@ function validatePatch(input: unknown): { patch: IncomingPatch; errors: string[]
   }
   const body = input as Record<string, unknown>;
 
-  const numericFields: Array<keyof IncomingPatch> = [
-    'deliveryDiscountPercent',
+  // Integer-only fields (counts / piasters). deliveryDiscountPercent
+  // accepts non-integer values like 20.5 — kept as decimal in DB.
+  const integerFields: Array<keyof IncomingPatch> = [
     'freeDeliveriesPerMonth',
     'freeDeliveryMinOrderPiasters',
     'monthlyBoxValuePiasters',
   ];
 
-  for (const field of numericFields) {
-    if (body[field] === undefined || body[field] === null) continue;
-    const n = Number(body[field]);
-    if (!Number.isFinite(n) || n < 0) {
+  // v2.5.2 fix: strict type validation — reject coerced values.
+  // Previously `Number('foo')` → NaN handled, but `Number(null)` → 0,
+  // `Number(true)` → 1, `Number('')` → 0 all silently passed through.
+  for (const field of integerFields) {
+    const raw = body[field];
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw !== 'number') {
       errors.push(`${field}_invalid`);
       continue;
     }
-    if (field === 'deliveryDiscountPercent' && n > 100) {
-      errors.push('deliveryDiscountPercent_out_of_range');
+    if (!Number.isInteger(raw) || raw < 0) {
+      errors.push(`${field}_invalid`);
       continue;
     }
-    (patch as Record<string, unknown>)[field] = n;
+    (patch as Record<string, unknown>)[field] = raw;
+  }
+
+  // deliveryDiscountPercent — number (allow decimals), 0-100 range
+  {
+    const raw = body.deliveryDiscountPercent;
+    if (raw !== undefined && raw !== null) {
+      if (typeof raw !== 'number' || !Number.isFinite(raw)) {
+        errors.push('deliveryDiscountPercent_invalid');
+      } else if (raw < 0) {
+        errors.push('deliveryDiscountPercent_invalid');
+      } else if (raw > 100) {
+        errors.push('deliveryDiscountPercent_out_of_range');
+      } else {
+        (patch as Record<string, unknown>).deliveryDiscountPercent = raw;
+      }
+    }
   }
 
   const booleanFields: Array<keyof IncomingPatch> = [

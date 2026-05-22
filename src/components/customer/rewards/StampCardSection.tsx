@@ -22,12 +22,12 @@ export function StampCardSection({ stampCard }: StampCardSectionProps) {
         <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-yellow-50 via-amber-50/60 to-orange-50 p-6 text-center">
           <EmptyStampIllustration className="mx-auto mb-2 h-32 w-40" />
           <p className="text-base font-bold text-slate-800">
-            {isRTL ? '٤ أختام = صندوق ذهبي 🏆' : '4 stamps = a golden box 🏆'}
+            {isRTL ? '٣ أختام = صندوق ذهبي 🏆' : '3 stamps = a golden box 🏆'}
           </p>
           <p className="mt-1.5 text-xs leading-relaxed text-slate-500">
             {isRTL
-              ? 'كل طلب ٣٠٠ ج.م = ختم. اطلب ٤ مرات وكسبت صندوق هدية ذهبي بقيمة تصل لـ ١٠٠ ج.م'
-              : 'Each 300 EGP order = 1 stamp. Collect 4 stamps to unlock a golden gift up to 100 EGP.'}
+              ? 'كل طلب ٥٠٠ ج.م = ختم. اطلب ٣ مرات وكسبت صندوق ذهبي بقيمة ٧٥-١٠٠ ج.م. كل ختم صالح لمدة شهر.'
+              : 'Each 500 EGP order = 1 stamp. Collect 3 stamps to unlock a golden gift worth 75-100 EGP. Each stamp valid for 1 month.'}
           </p>
         </div>
       </section>
@@ -39,7 +39,7 @@ export function StampCardSection({ stampCard }: StampCardSectionProps) {
       <h2 id="stamps-heading" className="text-lg font-bold text-slate-900">
         {isRTL ? '🎫 بطاقة الختم' : '🎫 Stamp card'}
       </h2>
-      <StampCard stampCard={stampCard} />
+      <StampCard stampCard={stampCard} totalStamps={3} />
     </section>
   );
 }
