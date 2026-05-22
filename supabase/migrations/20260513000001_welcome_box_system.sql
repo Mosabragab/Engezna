@@ -127,12 +127,18 @@ REVOKE ALL ON FUNCTION public.grant_welcome_box_atomic(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.grant_welcome_box_atomic(UUID) TO service_role;
 
 -- ─── 5. Mark Welcome Box used hook ─────────────────────────────────────────────
+-- NOTE: The WHEN clause of a CREATE TRIGGER is type-checked at trigger creation
+-- time. Since 'welcome_signup' was just added to gift_source in the same
+-- transaction, Postgres rejects it ("unsafe use of new enum value").
+-- We filter inside the function body instead (evaluated at runtime, safe).
 CREATE OR REPLACE FUNCTION public.mark_welcome_box_used()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF NEW.source = 'welcome_signup' AND NEW.status = 'used' AND OLD.status != 'used' THEN
+  IF NEW.source::TEXT = 'welcome_signup'
+     AND NEW.status = 'used'
+     AND (OLD.status IS DISTINCT FROM 'used') THEN
     UPDATE public.profiles
     SET welcome_box_used_at = NOW()
     WHERE welcome_box_entry_id = NEW.id;
@@ -145,7 +151,6 @@ DROP TRIGGER IF EXISTS trg_welcome_box_used ON public.gift_box_entries;
 CREATE TRIGGER trg_welcome_box_used
   AFTER UPDATE OF status ON public.gift_box_entries
   FOR EACH ROW
-  WHEN (NEW.source = 'welcome_signup')
   EXECUTE FUNCTION public.mark_welcome_box_used();
 
 COMMENT ON FUNCTION public.grant_welcome_box_atomic(UUID) IS
