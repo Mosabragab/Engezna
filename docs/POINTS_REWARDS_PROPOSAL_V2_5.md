@@ -2345,20 +2345,20 @@ ROI: 9× التكلفة ✅
 > **هذا القسم يحوي خطة تنفيذية تفصيلية واحدة لكل التعديلات بترتيب التنفيذ المنطقي.**
 > **مدة التنفيذ المتوقعة: 7-10 أيام عمل.**
 
-## 📊 نظرة عامة على التنفيذ
+## 📊 نظرة عامة على التنفيذ (محدَّث بعد Phase 1)
 
-| المرحلة | الموضوع                                   | المدة | الأولوية |
-| ------- | ----------------------------------------- | ----- | -------- |
-| 1       | DB Migrations (8 migration ملف)           | يومان | 🔴 حرجة  |
-| 2       | Backend Services (engine + RPCs)          | يومان | 🔴 حرجة  |
-| 3       | Welcome Box flow كامل                     | يوم   | 🔴 حرجة  |
-| 4       | Tier System الجديد                        | يومان | 🟡 مهمة  |
-| 5       | Streak system                             | يوم   | 🟡 مهمة  |
-| 6       | Mega Referrer system                      | يوم   | 🟡 مهمة  |
-| 7       | UI Updates (Surprise Card + إخفاء القيمة) | يوم   | 🟡 مهمة  |
-| 8       | Testing + QA                              | يوم   | 🔴 حرجة  |
+| المرحلة | الموضوع                                  | المدة   | الأولوية | الحالة    |
+| ------- | ---------------------------------------- | ------- | -------- | --------- |
+| 1       | DB Migrations (8 ملفات)                  | يومان   | 🔴 حرجة  | ✅ مكتمل  |
+| 2       | Backend Services (4 services جديدة)      | يومان   | 🔴 حرجة  | 🔜 التالي |
+| 3       | API Endpoints + Hooks Integration        | يوم     | 🔴 حرجة  | ⏳ منتظر  |
+| **4**   | **Frontend — Customer (Rewards + Home)** | يومان   | 🟡 مهمة  | ⏳ منتظر  |
+| **5**   | **Frontend — Checkout (Tier benefits)**  | يوم     | 🔴 حرجة  | ⏳ منتظر  |
+| **6**   | **Frontend — Admin (3 صفحات جديدة)**     | يوم     | 🟡 مهمة  | ⏳ منتظر  |
+| **7**   | **Frontend — Provider + Onboarding**     | نصف يوم | 🟡 مهمة  | ⏳ منتظر  |
+| 8       | Testing + QA                             | يومان   | 🔴 حرجة  | ⏳ منتظر  |
 
-**الإجمالي:** 9-10 أيام عمل.
+**الإجمالي المُحدَّث:** 10-12 يوم عمل (كان 7-10 — تعديل بعد Frontend audit).
 
 ---
 
@@ -2844,26 +2844,347 @@ await supabase.rpc('check_and_grant_mega_referrer', { p_user_id: referrer_id });
 
 ---
 
-## المرحلة 7: UI Updates النهائية (يوم)
+## المرحلة 4: Frontend — Customer (Rewards + Homepage) (يومان)
 
-### 7.1 Homepage Surprise Card
+> **الفلسفة:** كل تعديل DB يجب أن ينعكس في تجربة العميل البصرية، وإلا فالقيمة الإدارية ضائعة.
 
-- Component جديد `SurpriseCard.tsx` (تفاصيل §3.1.2).
-- إضافته في `src/app/[locale]/page.tsx`.
+### 4.1 Homepage (`src/app/[locale]/page.tsx`)
 
-### 7.2 إخفاء قيمة الهدية
+#### A. Component جديد: `SurpriseCard.tsx`
 
-- تعديل كل الـ notification triggers لاستخدام `send_gift_notification` الجديد.
-- مراجعة `MysteryBoxCard.tsx` لإخفاء القيمة قبل الفتح.
+**الموقع:** `src/components/home/SurpriseCard.tsx`
 
-### 7.3 Stamp Card UI v2
+**الوظيفة:** بطاقة بارزة في أعلى الصفحة الرئيسية تعرض:
 
-- تعديل الـ visual من 4 → 3 خانات.
-- إضافة عداد لكل ختم "ينتهي خلال X يوم".
+- Welcome Box (للعملاء الجدد بعد تأكيد البريد)
+- Daily Surprise (لو فيه gift granted)
+- **لا تكشف القيمة قبل الفتح**
+
+```tsx
+<SurpriseCard
+  giftEntry={giftEntry} // أول هدية pending
+  locale={locale}
+/>
+```
+
+#### B. Header Badge: `StreakIcon.tsx`
+
+**الموقع:** `src/components/layout/StreakIcon.tsx`
+
+**الوظيفة:** أيقونة 🔥 صغيرة + رقم بجوار اسم المستخدم في الـ Header.
+يظهر فقط لو streak ≥ 2.
+
+```tsx
+<header>
+  <UserMenu />
+  <StreakIcon streak={user.current_streak_weeks} /> {/* جديد */}
+  <NotificationBell />
+</header>
+```
+
+### 4.2 Rewards Hub (`src/app/[locale]/rewards/`)
+
+#### تعديلات على components موجودة:
+
+| الملف                      | التعديل                                             |
+| -------------------------- | --------------------------------------------------- |
+| `RewardsHubClient.tsx`     | إضافة `StreakSection` + `MegaReferrerCard` sections |
+| `StampCardSection.tsx`     | تغيير visual من 4 → 3 خانات + per-stamp countdown   |
+| `TierBadge.tsx`            | استبدال "احتمال صندوق +10%" بمزايا ملموسة           |
+| `LoyaltyPointsSection.tsx` | عرض `loyalty_multiplier` للـ Mega Referrers         |
+| `ActiveGiftsCarousel.tsx`  | إخفاء قيمة الهدية قبل الفتح                         |
+| `HeroHeader.tsx`           | إضافة Streak indicator                              |
+
+#### Components جديدة:
+
+| Component               | الموقع                                | الدور                                    |
+| ----------------------- | ------------------------------------- | ---------------------------------------- |
+| `StreakSection.tsx`     | `src/components/customer/rewards/`    | عرض السلسلة + milestones + tier          |
+| `TierBenefitsCard.tsx`  | `src/components/customer/rewards/`    | عرض المزايا الفعلية لـ tier العميل       |
+| `MegaReferrerBadge.tsx` | `src/components/customer/rewards/`    | شارة "Mega Referrer Founder" 🌟 لو متأهل |
+| `WelcomeBoxModal.tsx`   | `src/components/customer/onboarding/` | Modal احتفائي بعد تأكيد البريد           |
+
+#### Wireframe RewardsHubClient الجديد
+
+```
+┌─────────────────────────────────────────┐
+│  مساء الخير، أحمد 👋  🔥 5            │  ← Header + Streak
+│  🥈 Silver Member                        │
+│  ━━━━━━━━━━░░ 1,847 / 5,000 نقطة      │
+└─────────────────────────────────────────┘
+
+┌─── 🎁 صناديقك (3) ─ swipeable ─────────┐
+│  ⏰ 6h │ ⏰ 1d │ ⏰ 3d                   │  ← لا تكشف القيمة
+└─────────────────────────────────────────┘
+
+┌─── 🎫 بطاقة الختم 2/3 ─────────────────┐
+│  ⓿ ⓿ ○                                │  ← 3 خانات (لا 4)
+│  الختم الأول: ينتهي خلال 12 يوم        │
+│  الختم الثاني: ينتهي خلال 22 يوم       │
+└─────────────────────────────────────────┘
+
+┌─── 🔥 سلسلتك ───────────────────────────┐  ← جديد
+│  5 أسابيع متواصلة!                       │
+│  3 أسابيع لـ Silver Streak 🥈           │
+└─────────────────────────────────────────┘
+
+┌─── ⭐ نقاطي ────────────────────────────┐
+│     1,847   (مضاعف ×1.25 لو Mega) 🌟    │  ← تحسين
+│  [استبدل 100]  [استبدل 500]              │
+└─────────────────────────────────────────┘
+
+┌─── 🥈 مزاياك (Silver) ──────────────────┐  ← جديد بدل Tier Badge القديم
+│  ✓ خصم 20% على رسوم التوصيل دائمًا      │
+│  انتقل لـ Gold بـ 3,153 نقطة إضافية!    │
+└─────────────────────────────────────────┘
+
+┌─── ⚡ تواصل + اكسب ─────────────────────┐
+│  [👥 ادعُ صديق]  [🌟 Mega Referrer]     │
+└─────────────────────────────────────────┘
+```
+
+### 4.3 Welcome Box flow (Onboarding)
+
+**الموقع:** `/auth/email-verified` page + `WelcomeBoxModal`
+
+**Flow:**
+
+1. العميل يضغط لينك تأكيد البريد.
+2. `/auth/email-verified` يستدعي `POST /api/auth/email-verified-hook`.
+3. Backend يستدعي `grant_welcome_box_atomic(user_id)`.
+4. الـ frontend يعرض `WelcomeBoxModal` احتفائي:
+
+```
+┌──────────────────────────────────────┐
+│           🎉 أهلًا بيك!                │
+│                                       │
+│      ┌───────────────┐               │
+│      │  [Animated]    │               │
+│      │  Surprise Box  │               │
+│      │     يهتز       │               │
+│      └───────────────┘               │
+│                                       │
+│      [ اكتشف هديتك الترحيبية ]      │
+└──────────────────────────────────────┘
+```
+
+5. عند الفتح: reveal animation → "أول توصيل علينا 🎁".
+6. زر "اطلب الآن" → ينقل للمتاجر.
 
 ---
 
-## المرحلة 8: Testing + QA (يوم)
+## المرحلة 5: Frontend — Checkout (يوم)
+
+**الموقع:** `src/app/[locale]/checkout/page.tsx`
+
+> **هذه المرحلة حرجة ماليًا** — أي خطأ يعني خصم خاطئ من تسوية التاجر أو خسارة للمنصة.
+
+### 5.1 Tier Benefits Integration
+
+```typescript
+// عند تحميل صفحة الـ Checkout
+const tierBenefits = await fetch('/api/checkout/tier-benefits', {
+  method: 'POST',
+  body: JSON.stringify({ subtotal_piasters: order.subtotal }),
+}).then((r) => r.json());
+
+// تطبيق الخصم على رسوم التوصيل
+if (tierBenefits.can_use_free_delivery) {
+  deliveryFee = 0;
+  // إظهار "توصيل مجاني — مزايا Platinum"
+} else if (tierBenefits.delivery_discount_percent > 0) {
+  deliveryFee = baseDeliveryFee * (1 - tierBenefits.delivery_discount_percent / 100);
+  // إظهار "خصم {x}% — مزايا {tier}"
+}
+```
+
+### 5.2 UI Changes
+
+```
+┌─── فاتورة الطلب ────────────────────┐
+│  المنتجات:           450 ج.م        │
+│  ─────────────────────────────────  │
+│  رسوم التوصيل:        25 ج.م        │
+│  🥈 خصم Silver 20%:   -5 ج.م ✨     │  ← جديد
+│  ─────────────────────────────────  │
+│  الإجمالي:           470 ج.م        │
+└─────────────────────────────────────┘
+```
+
+### 5.3 رسائل توعية
+
+| الحالة                                | الرسالة                                             |
+| ------------------------------------- | --------------------------------------------------- |
+| العميل استخدم خصم/كود                 | "لن تكسب نقاط على هذا الطلب — اختر الفائدة الأعلى!" |
+| Gold استخدم آخر توصيل مجاني هذا الشهر | "✓ آخر توصيل مجاني لهذا الشهر مُستخدَم"             |
+| Platinum + طلب < 400 ج.م              | "أضِف 50 ج.م للاستفادة من توصيل مجاني Platinum"     |
+| Welcome Box نشط                       | "✨ Welcome Gift: التوصيل علينا!"                   |
+
+### 5.4 Order Submit Integration
+
+```typescript
+// بعد إنشاء الطلب بنجاح:
+if (tierBenefits.can_use_free_delivery && order.tier === 'gold') {
+  await supabase.rpc('consume_tier_free_delivery', {
+    p_user_id: user.id,
+    p_order_id: order.id,
+  });
+}
+```
+
+---
+
+## المرحلة 6: Frontend — Admin (يوم)
+
+> **3 صفحات جديدة + تعديلات على 4 موجودة.**
+
+### 6.1 صفحات جديدة
+
+#### A. `/admin/tier-rewards` — تحرير Tier Config
+
+**الوظيفة:** السوبر أدمن يقدر يعدّل مزايا كل tier بدون إعادة deployment.
+
+```
+┌─── إدارة مزايا المستويات ─────────────────────┐
+│                                                 │
+│  🥉 Bronze (0-499)                               │
+│  ▸ خصم توصيل: 0% [edit]                          │
+│                                                 │
+│  🥈 Silver (500-1,499)                           │
+│  ▸ خصم توصيل: [20]% [save]                       │
+│  ▸ توصيل مجاني/شهر: [0]                          │
+│                                                 │
+│  🥇 Gold (1,500-4,999)                           │
+│  ▸ خصم توصيل: [30]%                              │
+│  ▸ توصيل مجاني/شهر: [1]                          │
+│  ▸ أولوية دعم: ☑                                 │
+│                                                 │
+│  💎 Platinum (5,000+)                            │
+│  ▸ توصيل مجاني (≥ [400] ج.م): ☑                 │
+│  ▸ صندوق شهري: [30] ج.م                          │
+│  ▸ مدير حساب: ☑                                  │
+│                                                 │
+│  [ حفظ التغييرات — audit log سيُسجَّل ]         │
+└─────────────────────────────────────────────────┘
+```
+
+#### B. `/admin/streaks` — تحليلات Streaks
+
+```
+┌─── تحليلات Streaks ───────────────────────────┐
+│                                                │
+│  العملاء النشطون حاليًا: 145                   │
+│  ━━━━━━━━━━━━━━━━━━━━░ 38% من القاعدة          │
+│                                                │
+│  توزيع الـ Streak Tiers:                       │
+│  • Platinum (24+): 3                           │
+│  • Gold (12-23):   12                          │
+│  • Silver (8-11):  28                          │
+│  • None (1-7):    102                          │
+│                                                │
+│  أطول streak تاريخيًا: 31 أسبوع                 │
+│  (محمد أحمد — engezna@example.com)             │
+│                                                │
+│  [Chart] DAU/MAU للـ streak users vs others    │
+└────────────────────────────────────────────────┘
+```
+
+#### C. `/admin/mega-referrers` — لوحة الـ 10
+
+```
+┌─── Mega Referrer Slots ────────────────────────┐
+│                                                  │
+│  🥇 #1: محمد أحمد   — 47 إحالة — 03 مايو      │
+│  🥇 #2: علي حسن    — 32 إحالة — 08 مايو      │
+│  🥇 #3: أمل محمود  — 18 إحالة — 12 مايو      │
+│  🟢 #4-10: متاحة                                │
+│                                                  │
+│  [إحصائيات الإحالات الإجمالية]                  │
+└──────────────────────────────────────────────────┘
+```
+
+### 6.2 تعديلات على صفحات موجودة
+
+| الصفحة                  | التعديل                                           |
+| ----------------------- | ------------------------------------------------- |
+| `/admin/gifts`          | 4 دلاء بدل 5 (Welcome مكان Win-back)              |
+| `/admin/gifts/budget`   | UI جديد لتوزيع 30/30/20/20 + cap على changes      |
+| `/admin/gifts/rules`    | إخفاء birthday rules deprecated + filter          |
+| `/admin/gifts/partners` | **إخفاء كاملًا** (feature flag — تأجيل للمرحلة 2) |
+
+### 6.3 Admin Sidebar تحديث
+
+```diff
+  Marketing
+- ├── Dashboard
+- ├── Rules
+- ├── Campaigns
+- ├── Partners      ← يُخفى
+- ├── Budget
+- └── Analytics
++ ├── 🎁 الهدايا والمكافآت (overview موحَّد)
++ ├── 💰 الميزانية
++ ├── 🥈 Tier Rewards (جديد)
++ ├── 🔥 Streaks (جديد)
++ ├── 🌟 Mega Referrers (جديد)
++ └── 📊 ERP (موجود)
+```
+
+---
+
+## المرحلة 7: Frontend — Provider + Onboarding (نصف يوم)
+
+### 7.1 إخفاء Partner Gifts
+
+**Feature flag في `src/lib/feature-flags.ts`:**
+
+```typescript
+export const FEATURES = {
+  PARTNER_GIFTS_ENABLED: process.env.NEXT_PUBLIC_PARTNER_GIFTS === 'true',
+  // false في v2.5.2
+};
+```
+
+**في `ProviderSidebar.tsx`:**
+
+```tsx
+{
+  FEATURES.PARTNER_GIFTS_ENABLED && <SidebarItem href="/provider/gifts">هدايا الشركاء</SidebarItem>;
+}
+```
+
+### 7.2 Merchant Onboarding
+
+**حذف من صفحة "Welcome New Provider":**
+
+- ❌ "10 صناديق ذهبية مجانية"
+
+**إضافة:**
+
+- ✓ "شارة تاجر جديد 7 أيام"
+- ✓ "بنر مجاني 7 أيام"
+- ✓ "ترويج في قائمة 'اكتشف جديد'"
+
+### 7.3 Registration Form
+
+**حذف من صفحة `/auth/signup`:**
+
+- ❌ "+20 نقطة لو سجلت عيد الميلاد"
+
+**حذف من Profile Settings:**
+
+- ❌ زر "Gift-it Forward" / "أرسل هدية لصديق"
+
+### 7.4 Email Verification Page
+
+تحديث `/auth/email-verified`:
+
+- استدعاء `POST /api/auth/email-verified-hook`
+- عرض `<WelcomeBoxModal />` تلقائيًا
+
+---
+
+## المرحلة 8: Testing + QA (يومان)
 
 ### 8.1 Unit Tests
 
@@ -2924,19 +3245,78 @@ await supabase.rpc('check_and_grant_mega_referrer', { p_user_id: referrer_id });
 - `src/lib/gifts/helpers.ts`
 - `src/lib/orders/completion-hook.ts`
 
-### Frontend Components (3 جديدة + 4 تعديلات)
+### Frontend Components (6 جديدة + 10 تعديلات) — محدَّث
 
-- جديد: `SurpriseCard.tsx`, `StreakIcon.tsx`, `StreakSection.tsx`
-- تعديل: `MysteryBoxCard.tsx`, `StampCard.tsx`, `RewardsHubClient.tsx`, `checkout/page.tsx`
+**جديدة:**
 
-### API Endpoints (2 جديدة)
+- `src/components/home/SurpriseCard.tsx`
+- `src/components/layout/StreakIcon.tsx`
+- `src/components/customer/rewards/StreakSection.tsx`
+- `src/components/customer/rewards/TierBenefitsCard.tsx`
+- `src/components/customer/rewards/MegaReferrerBadge.tsx`
+- `src/components/customer/onboarding/WelcomeBoxModal.tsx`
 
-- `POST /api/auth/email-verified` (Welcome Box trigger)
-- `GET /api/streaks/current` (Streak status)
+**تعديلات:**
 
-### Tests (8 ملفات)
+- `src/app/[locale]/page.tsx` (Homepage — إضافة SurpriseCard)
+- `src/app/[locale]/checkout/page.tsx` (Tier benefits integration)
+- `src/app/[locale]/rewards/RewardsHubClient.tsx` (sections جديدة)
+- `src/components/customer/rewards/StampCardSection.tsx` (4→3 خانات)
+- `src/components/customer/rewards/TierBadge.tsx` (مزايا ملموسة)
+- `src/components/customer/rewards/LoyaltyPointsSection.tsx` (multiplier)
+- `src/components/customer/rewards/ActiveGiftsCarousel.tsx` (إخفاء القيمة)
+- `src/components/customer/rewards/HeroHeader.tsx` (Streak indicator)
+- `src/components/layout/Header.tsx` (StreakIcon)
+- `src/lib/feature-flags.ts` (PARTNER_GIFTS_ENABLED)
 
-- 4 unit tests + 4 E2E tests
+### Admin Pages (3 جديدة + 4 تعديلات)
+
+**جديدة:**
+
+- `/admin/tier-rewards/page.tsx` (تحرير tier config)
+- `/admin/streaks/page.tsx` (تحليلات Streaks)
+- `/admin/mega-referrers/page.tsx` (لوحة الـ 10)
+
+**تعديلات:**
+
+- `/admin/gifts/page.tsx` (4 دلاء بدل 5)
+- `/admin/gifts/budget/page.tsx` (UI جديد 30/30/20/20)
+- `/admin/gifts/rules/page.tsx` (إخفاء deprecated)
+- `src/components/admin/AdminSidebar.tsx` (3 روابط جديدة + إخفاء Partners)
+
+### Provider + Auth Pages (3 تعديلات)
+
+- `src/components/provider/ProviderSidebar.tsx` (إخفاء Partner Gifts)
+- `src/app/[locale]/auth/signup/page.tsx` (حذف birthday bonus CTA)
+- `src/app/[locale]/auth/email-verified/page.tsx` (Welcome Box trigger)
+
+### API Endpoints (5 جديدة)
+
+- `POST /api/auth/email-verified-hook` (Welcome Box trigger)
+- `GET  /api/streaks/current` (Streak status)
+- `GET  /api/mega-referrer/status` (Mega Referrer status + leaderboard)
+- `POST /api/checkout/tier-benefits` (Tier benefits for checkout)
+- `GET  /api/admin/tier-rewards` + `PATCH /api/admin/tier-rewards/[tier]` (Admin)
+
+### Tests (12 ملفات) — محدَّث
+
+**Unit tests (6):**
+
+- `src/lib/welcome-box/service.test.ts`
+- `src/lib/streaks/service.test.ts`
+- `src/lib/mega-referrer/service.test.ts`
+- `src/lib/tier-rewards/service.test.ts`
+- `src/lib/loyalty/service.test.ts` (updated for multipliers)
+- `src/lib/gifts/engine.test.ts` (updated for 3 stamps + 90/10)
+
+**E2E tests (6):**
+
+- `tests/e2e/welcome-box-flow.spec.ts`
+- `tests/e2e/stamp-card-v2.spec.ts`
+- `tests/e2e/tier-rewards-checkout.spec.ts`
+- `tests/e2e/mega-referrer-grant.spec.ts`
+- `tests/e2e/streak-system.spec.ts`
+- `tests/e2e/gift-value-hidden-in-notifications.spec.ts`
 
 ---
 
