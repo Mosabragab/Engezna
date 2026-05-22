@@ -19,7 +19,10 @@ ALTER TABLE public.gift_forwards
   ADD COLUMN IF NOT EXISTS is_deprecated BOOLEAN NOT NULL DEFAULT TRUE;
 
 -- Block new forwards from being created (RPC throws)
-CREATE OR REPLACE FUNCTION public.create_gift_forward_atomic(p_gift_entry_id UUID)
+-- DROP first: CREATE OR REPLACE cannot change return type of existing function
+DROP FUNCTION IF EXISTS public.create_gift_forward_atomic(UUID);
+
+CREATE FUNCTION public.create_gift_forward_atomic(p_gift_entry_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -30,6 +33,9 @@ BEGIN
     USING HINT = 'This feature was removed per docs/POINTS_REWARDS_PROPOSAL_V2_5.md decision matrix #2.';
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.create_gift_forward_atomic(UUID) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.create_gift_forward_atomic(UUID) TO service_role;
 
 -- claim/peek still work for historical inflight forwards
 COMMENT ON TABLE public.gift_forwards IS
@@ -54,7 +60,10 @@ WHERE trigger = 'birthday'
    OR name ILIKE '%birthday%';
 
 -- Block process_birthday_gifts RPC from doing anything
-CREATE OR REPLACE FUNCTION public.process_birthday_gifts()
+-- DROP first: CREATE OR REPLACE cannot change return type of existing function
+DROP FUNCTION IF EXISTS public.process_birthday_gifts();
+
+CREATE FUNCTION public.process_birthday_gifts()
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
