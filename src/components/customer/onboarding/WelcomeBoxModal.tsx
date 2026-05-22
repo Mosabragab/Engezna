@@ -65,15 +65,24 @@ export function WelcomeBoxModal() {
         if (cancelled) return;
 
         if (!res.ok) {
+          // 401 = unauthenticated visitor (Lighthouse, signed-out user).
+          // Silently close so the modal never appears for callers who
+          // have no business seeing it — also prevents the a11y audit
+          // from flagging a dialog without an accessible name during
+          // the brief loading→error transition on the welcome page.
+          if (res.status === 401) {
+            markWelcomeSeen();
+            setOpen(false);
+            return;
+          }
           const body = (await res.json().catch(() => ({}))) as { error?: string };
           if (body.error === 'Email not verified') {
             setErrorMsg(isRTL ? 'لم يتم تأكيد البريد بعد' : 'Email not verified yet');
             setPhase('error');
             return;
           }
-          // v2.5.2 fix: show a retryable error instead of silently dismissing.
-          // Previously any non-OK + non-"Email not verified" closed the modal,
-          // leaving the user with no signal that anything went wrong.
+          // Show a retryable error for authenticated callers — they should
+          // know something went wrong, not just see the modal disappear.
           setErrorMsg(
             isRTL
               ? 'حدث خطأ غير متوقع، حاول لاحقًا'
@@ -142,6 +151,12 @@ export function WelcomeBoxModal() {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
         role="dialog"
         aria-modal="true"
+        // v2.5.2: aria-labelledby points to the h2 that exists in closed/
+        // revealed phases. During loading/error/revealing phases the h2
+        // isn't in the DOM yet, so we also provide a static aria-label
+        // fallback to keep the dialog named in every phase. The aria-label
+        // is ignored by AT when aria-labelledby resolves to a valid element.
+        aria-label={isRTL ? 'هدية الترحيب' : 'Welcome gift'}
         aria-labelledby="welcome-modal-title"
       >
         <motion.div

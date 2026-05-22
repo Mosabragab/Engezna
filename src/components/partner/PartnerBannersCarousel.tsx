@@ -302,7 +302,11 @@ function ProgressIndicator({
           <motion.button
             key={index}
             onClick={() => onSelect(index)}
-            className="relative h-1.5 rounded-full overflow-hidden bg-[#009DE0]/20"
+            // v2.5.2 a11y: accessible name + WCAG 2.5.8 hit-area
+            // (see OffersCarousel.tsx for the same pattern + rationale).
+            aria-label={isRTL ? `الانتقال إلى الشريحة ${index + 1}` : `Go to slide ${index + 1}`}
+            aria-current={isActive ? 'true' : undefined}
+            className="relative h-1.5 rounded-full overflow-hidden bg-[#009DE0]/20 before:absolute before:-inset-x-3 before:-inset-y-5 before:content-['']"
             animate={{
               width,
               opacity: isActive ? 1 : 0.5 + (1 - Math.min(distance, 1)) * 0.3,
