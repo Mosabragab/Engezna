@@ -21,12 +21,35 @@ import { Gift, X } from 'lucide-react';
 
 type Phase = 'loading' | 'closed' | 'revealing' | 'revealed' | 'error';
 
+const SEEN_FLAG_KEY = 'engezna_welcome_seen';
+
+function hasSeenWelcome(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem(SEEN_FLAG_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function markWelcomeSeen(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(SEEN_FLAG_KEY, '1');
+  } catch {
+    // localStorage disabled — modal re-renders next visit, no real harm
+  }
+}
+
 export function WelcomeBoxModal() {
   const locale = useLocale();
   const isRTL = locale === 'ar';
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<Phase>('loading');
-  const [open, setOpen] = useState(true);
+  // v2.5.2: skip mounting entirely if the user has already seen the welcome
+  // flow. Saves one POST per home-page visit AND prevents the "preparing"
+  // flash for returning users. Cleared only by clearing site data.
+  const [open, setOpen] = useState<boolean>(() => !hasSeenWelcome());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   // Track the reveal timeout so we can cancel it on unmount or dismiss
   // (v2.5.2 CodeRabbit nitpick — avoid setting state after unmount).
@@ -62,7 +85,9 @@ export function WelcomeBoxModal() {
 
         const data = (await res.json()) as { granted?: boolean; reason?: string };
         if (data.granted === false && data.reason === 'already_granted') {
-          // Quietly close — user has already seen this once.
+          // Quietly close — user has already opened this once.
+          // Mark the flag so we don't re-fetch on every home page visit.
+          markWelcomeSeen();
           setOpen(false);
           return;
         }
@@ -90,6 +115,9 @@ export function WelcomeBoxModal() {
       clearTimeout(revealTimerRef.current);
       revealTimerRef.current = null;
     }
+    // Whenever the user dismisses the modal (any phase), remember it so
+    // the flow doesn't re-trigger on the next home page visit.
+    markWelcomeSeen();
     setOpen(false);
   }
 

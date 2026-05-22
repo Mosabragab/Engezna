@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { StreakIconClient } from '@/components/layout/StreakIconClient';
 import { useNotifications } from '@/hooks/customer';
 import { useCart } from '@/lib/store/cart';
 import { useGuestLocation } from '@/lib/hooks/useGuestLocation';
@@ -335,6 +336,8 @@ export const CustomerHeader = memo(function CustomerHeader({
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
+              {/* v2.5.2: Streak indicator (auto-hides for streak < 2) */}
+              <StreakIconClient />
               <button
                 className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-slate-100 active:scale-95 transition-all duration-200 relative group"
                 onClick={() => router.push(`/${locale}/notifications`)}

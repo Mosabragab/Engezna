@@ -22,6 +22,7 @@ import {
   Crown,
 } from 'lucide-react';
 import { EngeznaLogo } from '@/components/ui/EngeznaLogo';
+import { FEATURES } from '@/lib/feature-flags';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Types
@@ -228,11 +229,16 @@ export function ProviderSidebar({
         label: { ar: 'بانر العروض', en: 'Promo Banner' },
         path: `/${locale}/provider/banner`,
       });
-      storeItems.push({
-        icon: Gift,
-        label: { ar: 'هدايا المتجر', en: 'Store Gifts' },
-        path: `/${locale}/provider/gifts`,
-      });
+      // v2.5.2: Partner Gifts hidden behind a feature flag — re-enables
+      // when NEXT_PUBLIC_PARTNER_GIFTS_ENABLED=true. The backend stays
+      // live so historical campaigns + admin tooling keep functioning.
+      if (FEATURES.PARTNER_GIFTS_ENABLED) {
+        storeItems.push({
+          icon: Gift,
+          label: { ar: 'هدايا المتجر', en: 'Store Gifts' },
+          path: `/${locale}/provider/gifts`,
+        });
+      }
     }
 
     // Reviews - visible to all (read-only for staff without specific permission)

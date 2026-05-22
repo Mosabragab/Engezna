@@ -108,6 +108,8 @@ const OffersCarousel = dynamic(
 //   { ssr: false }
 // );
 import { createClient } from '@/lib/supabase/client';
+import { WelcomeBoxModal } from '@/components/customer/onboarding/WelcomeBoxModal';
+import { SurpriseCardClient } from '@/components/home/SurpriseCardClient';
 import { useCart } from '@/lib/store/cart';
 import { useLocation } from '@/lib/contexts/LocationContext';
 import { guestLocationStorage } from '@/lib/hooks/useGuestLocation';
@@ -599,7 +601,17 @@ export default function HomePageClient({ initialTopRated }: HomePageClientProps)
 
   return (
     <CustomerLayout showHeader={true} showBottomNav={true}>
+      {/* v2.5.2: Welcome Box modal auto-mounts on every home visit. The
+          underlying API hook is idempotent — first visit after email
+          confirmation reveals the gift; subsequent visits return
+          already_granted and the modal closes silently. Unauthenticated
+          callers get 401 and the modal hides itself. */}
+      <WelcomeBoxModal />
       <div className="pb-4">
+        {/* v2.5.2: SurpriseCard renders only when the user has an unopened
+            gift. Self-fetches via /api/rewards and never reveals the gift
+            value in HTML — the reveal happens on /rewards after the tap. */}
+        <SurpriseCardClient />
         {/* SDUI: Render sections based on database configuration */}
         {sections
           .sort((a, b) => a.display_order - b.display_order)
