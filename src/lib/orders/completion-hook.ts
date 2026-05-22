@@ -3,6 +3,8 @@ import { createGiftEngine } from '@/lib/gifts';
 import { createRuleEngine } from '@/lib/gifts/rule-engine';
 import { createReferralService } from '@/lib/referrals';
 import { createLoyaltyService, REDEMPTION_RATE_PIASTERS_PER_POINT } from '@/lib/loyalty';
+import { StreakService } from '@/lib/streaks';
+import { MegaReferrerService } from '@/lib/mega-referrer';
 import {
   sendGiftStampCompleteEmail,
   sendGiftLoyaltyTierUpEmail,
@@ -18,6 +20,12 @@ export interface CompletionResults {
   stamp_added: boolean;
   referral_completed: boolean;
   loyalty_points_awarded: number;
+  /** v2.5.2: streak update outcome */
+  streak_updated: boolean;
+  streak_weeks?: number;
+  /** v2.5.2: Mega Referrer grant outcome (when a referral pushed the referrer over 10) */
+  mega_referrer_granted: boolean;
+  mega_referrer_rank?: number;
   errors: Array<{ step: string; message: string }>;
 }
 
@@ -78,6 +86,8 @@ export async function processOrderCompletion(
       stamp_added: false,
       referral_completed: false,
       loyalty_points_awarded: 0,
+      streak_updated: false,
+      mega_referrer_granted: false,
       errors: [],
     };
   }
@@ -89,6 +99,8 @@ export async function processOrderCompletion(
       stamp_added: false,
       referral_completed: false,
       loyalty_points_awarded: 0,
+      streak_updated: false,
+      mega_referrer_granted: false,
       errors: [{ step: 'eligibility', message: 'not_delivered_or_paid' }],
     };
   }
@@ -107,6 +119,8 @@ export async function processOrderCompletion(
     stamp_added: false,
     referral_completed: false,
     loyalty_points_awarded: 0,
+    streak_updated: false,
+    mega_referrer_granted: false,
     errors: [],
   };
 
@@ -221,13 +235,15 @@ export async function processOrderCompletion(
     });
   }
 
-  // Step 4: Loyalty points (computed on subtotal AFTER discount). On tier
-  // upgrade, fire the celebratory email — Path B already handles push.
+  // Step 4: Loyalty points (v2.5.2: subtotal + discount passed; RPC blocks
+  // zero-grant on any discount and applies loyalty × streak multipliers).
+  // On tier upgrade, fire the celebratory email — DB trigger handles push.
   try {
     const award = await loyaltyService.awardOrderPoints(
       order.customer_id,
       orderId,
-      earningPiasters
+      subtotalPiasters,
+      discountPiasters
     );
     results.loyalty_points_awarded = award.pointsAwarded;
 
@@ -246,6 +262,49 @@ export async function processOrderCompletion(
       step: 'loyalty',
       message: error instanceof Error ? error.message : String(error),
     });
+  }
+
+  // Step 5 (v2.5.2): Streak update. Qualifying order = subtotal ≥ 200 EGP.
+  // The SQL function handles week boundary, milestone bonuses, and tier
+  // transitions. Failure here doesn't impact the order flow.
+  try {
+    const streakService = new StreakService(supabase);
+    const streakResult = await streakService.update(order.customer_id, subtotalPiasters);
+    results.streak_updated = streakResult.updated;
+    results.streak_weeks = streakResult.streak;
+  } catch (error) {
+    results.errors.push({
+      step: 'streak',
+      message: error instanceof Error ? error.message : String(error),
+    });
+  }
+
+  // Step 6 (v2.5.2): Mega Referrer check. Only meaningful if this order
+  // completed a referral (which increments successful_referrals_count).
+  // Safe to call on every order — the RPC short-circuits when below threshold.
+  if (results.referral_completed) {
+    try {
+      // The referrer (not the customer who just ordered) is the candidate.
+      // Look up the referrer for this order's customer.
+      const { data: referralRow } = await supabase
+        .from('referrals')
+        .select('referrer_id')
+        .eq('referee_id', order.customer_id)
+        .eq('status', 'completed')
+        .maybeSingle();
+
+      if (referralRow?.referrer_id) {
+        const megaService = new MegaReferrerService(supabase);
+        const megaResult = await megaService.checkAndGrant(referralRow.referrer_id as string);
+        results.mega_referrer_granted = megaResult.granted;
+        results.mega_referrer_rank = megaResult.rank;
+      }
+    } catch (error) {
+      results.errors.push({
+        step: 'mega_referrer',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   // Persist results for observability + admin debug.
