@@ -173,6 +173,9 @@ export class LoyaltyService {
 
   /**
    * Awards bonus points for a 5-star rating (v2.5.2: 20 points, was 5).
+   *
+   * The SQL RPC returns snake_case keys (`new_balance`). We remap to
+   * camelCase here so callers receive the documented `newBalance` field.
    */
   async awardRatingBonus(
     userId: string,
@@ -189,7 +192,12 @@ export class LoyaltyService {
       throw new Error(`awardRatingBonus failed: ${error.message}`);
     }
 
-    return data as { points: number; reason?: string; newBalance?: number };
+    const raw = data as { points: number; reason?: string; new_balance?: number };
+    return {
+      points: raw.points,
+      reason: raw.reason,
+      newBalance: raw.new_balance,
+    };
   }
 
   /**
