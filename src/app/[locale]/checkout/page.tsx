@@ -1486,6 +1486,17 @@ export default function CheckoutPage() {
     }
   };
 
+  // v2.5.2: tier benefits hook MUST be called before any early returns
+  // (Rules of Hooks). Compute once at the top using the live cart subtotal +
+  // calculated delivery fee, then reuse `tierBenefits` / `tierAdjustment`
+  // throughout the component (including via closure in handlePlaceOrder).
+  const _tierSubtotalPiasters = Math.round(getSubtotal() * 100);
+  const { benefits: tierBenefits } = useTierBenefits(_tierSubtotalPiasters);
+  const tierAdjustment = applyTierDeliveryAdjustment(
+    Math.round(calculatedDeliveryFee * 100),
+    tierBenefits
+  );
+
   // Show loading while auth is loading or cart is hydrating
   // Also show loading if order was placed (navigating to confirmation)
   if (authLoading || !_hasHydrated || orderPlaced) {
@@ -1507,14 +1518,9 @@ export default function CheckoutPage() {
 
   const subtotal = getSubtotal();
   const deliveryFee = calculatedDeliveryFee;
-
-  // v2.5.2: tier-based delivery adjustment (Silver/Gold/Platinum benefits).
-  // subtotal/deliveryFee here are in EGP (NUMBER), but the hook + helper
-  // operate in piasters. Convert at the boundary, then convert back.
-  const subtotalPiasters = Math.round(subtotal * 100);
-  const { benefits: tierBenefits } = useTierBenefits(subtotalPiasters);
-  const tierAdjustment = applyTierDeliveryAdjustment(Math.round(deliveryFee * 100), tierBenefits);
-  const tierDiscountEgp = tierAdjustment.discountApplied / 100;
+  // v2.5.2: tierBenefits + tierAdjustment are computed at the top of the
+  // component (before early returns) to comply with the Rules of Hooks.
+  // Derive the effective delivery fee here for the displayed total.
   const effectiveDeliveryFee = tierAdjustment.feeAfterTier / 100;
 
   const total = subtotal + effectiveDeliveryFee - discountAmount;
