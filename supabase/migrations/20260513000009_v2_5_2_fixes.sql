@@ -46,7 +46,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_settings        public.retention_settings%ROWTYPE;
+  v_settings        RECORD;  -- v2.5.2 defensive: avoid compile-time %ROWTYPE lookup
   v_card_id         UUID;
   v_active_stamps   INT;
   v_golden_value    BIGINT;
@@ -277,13 +277,18 @@ BEGIN
     END IF;
 
     -- Slot claimed: now grant the box and log financials.
+    -- v2.5.2 fix: Platinum monthly box belongs to the engagement bucket
+    -- (Daily Surprise), NOT the Welcome bucket. The original code mistakenly
+    -- charged it to 'welcome' which is reserved for first-order signup
+    -- incentives. Using 'mystery' keeps budget tracking accurate since
+    -- Platinum benefits are continued-engagement rewards.
     INSERT INTO public.gift_box_entries (
       user_id, gift_id, source, status, expires_at,
       bucket_name, cost_piasters, funder_type
     ) VALUES (
       v_user_id, v_gift_id, 'manual_campaign', 'granted',
       NOW() + INTERVAL '30 days',
-      'welcome', v_box_value, 'engezna'
+      'mystery', v_box_value, 'engezna'
     )
     RETURNING id INTO v_entry_id;
 
@@ -291,8 +296,8 @@ BEGIN
       transaction_type, amount_piasters, bucket, funder_type,
       user_id, gift_entry_id, notes
     ) VALUES (
-      'grant', v_box_value, 'welcome', 'engezna',
-      v_user_id, v_entry_id, 'Platinum monthly box'
+      'grant', v_box_value, 'mystery', 'engezna',
+      v_user_id, v_entry_id, 'Platinum monthly box (tier reward)'
     );
 
     -- Backfill the entry_id reference on the claimed row.
@@ -313,6 +318,10 @@ GRANT EXECUTE ON FUNCTION public.grant_platinum_monthly_box() TO service_role;
 
 
 -- ─── 4. get_tier_benefits_for_checkout — enforce caller identity ──────────────
+-- v2.5.2 fix: replaced `tier_rewards%ROWTYPE` with `RECORD` to avoid
+-- compile-time "relation does not exist" errors when the function is
+-- (re)created in an environment where the schema-resolution context hasn't
+-- materialised the table reference yet. Behaviour is unchanged at runtime.
 CREATE OR REPLACE FUNCTION public.get_tier_benefits_for_checkout(
   p_user_id            UUID,
   p_order_subtotal_piasters BIGINT
@@ -325,7 +334,7 @@ AS $$
 DECLARE
   v_caller       UUID := auth.uid();
   v_tier         TEXT;
-  v_rewards      public.tier_rewards%ROWTYPE;
+  v_rewards      RECORD;
   v_month_year   TEXT := TO_CHAR(NOW(), 'YYYY-MM');
   v_used_free    INT;
   v_can_use_free BOOLEAN := FALSE;
@@ -491,7 +500,7 @@ REVOKE ALL ON FUNCTION public.update_customer_streak(UUID, BIGINT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.update_customer_streak(UUID, BIGINT) TO service_role;
 
 
--- ─── 6. award_rating_bonus — upsert loyalty_points + idempotent ──────────────
+-- ─── 6. award_rating_bonus — upsert loyalty_points + atomic claim ────────────
 CREATE OR REPLACE FUNCTION public.award_rating_bonus(
   p_user_id    UUID,
   p_order_id   UUID,
@@ -509,6 +518,12 @@ BEGIN
   IF p_stars < 5 THEN
     RETURN jsonb_build_object('points', 0, 'reason', 'below_5_stars');
   END IF;
+
+  -- v2.5.2 fix: serialize concurrent calls on the same order.
+  -- The previous EXISTS check + INSERT was a classic TOCTOU race — two
+  -- workers could both pass the check and award 40 points. Locking the
+  -- order row first forces serial execution for this order.
+  PERFORM 1 FROM public.orders WHERE id = p_order_id FOR UPDATE;
 
   IF EXISTS (
     SELECT 1 FROM public.loyalty_transactions
