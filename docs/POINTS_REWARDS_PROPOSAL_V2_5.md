@@ -3,10 +3,10 @@
 > **وثيقة معتمدة للتنفيذ**
 >
 > **تاريخ الإعداد:** ١٣ مايو ٢٠٢٦
-> **آخر تحديث:** ١٣ مايو ٢٠٢٦ (v2.5.2 — اعتماد كامل لملاحظات الإدارة بعد جولتين من التحليل النقدي)
+> **آخر تحديث:** ٢٢ مايو ٢٠٢٦ (v2.5.2 — Phases 1-8 مُكتملة على PR #396 + Lighthouse a11y fixes من الجذر)
 > **المُعِدّ:** Claude (وفقًا لتوجيهات الإدارة)
 > **المرجع الأساسي:** `docs/GIFT_BOX_LOYALTY_REFERRAL_PLAN.md` v2.4
-> **الحالة:** ✅ **معتمدة للتنفيذ** — خطة تنفيذ موحَّدة في §الخطة التنفيذية النهائية.
+> **الحالة:** ✅ **مُنفَّذ بالكامل** — 8/8 مراحل على فرع `claude/points-rewards-proposal-F3M3L` (PR #396).
 > **الغرض:** تبسيط النظام الحالي + معالجة 12 ملاحظة من الإدارة + تحسين الواجهات الثلاث + سدّ فجوة Acquisition Funnel + اعتماد ملاحظات Aman الـ8.
 
 ---
@@ -2345,18 +2345,20 @@ ROI: 9× التكلفة ✅
 > **هذا القسم يحوي خطة تنفيذية تفصيلية واحدة لكل التعديلات بترتيب التنفيذ المنطقي.**
 > **مدة التنفيذ المتوقعة: 7-10 أيام عمل.**
 
-## 📊 نظرة عامة على التنفيذ (محدَّث بعد Phase 4)
+## 📊 نظرة عامة على التنفيذ (مكتمل بالكامل — v2.5.2)
 
-| المرحلة | الموضوع                                  | المدة   | الأولوية | الحالة       |
-| ------- | ---------------------------------------- | ------- | -------- | ------------ |
-| 1       | DB Migrations (10 ملفات — شامل fixes)    | يومان   | 🔴 حرجة  | ✅ مكتمل     |
-| 2       | Backend Services (4 services جديدة)      | يومان   | 🔴 حرجة  | ✅ مكتمل     |
-| 3       | API Endpoints (7 endpoints)              | يوم     | 🔴 حرجة  | ✅ مكتمل     |
-| **4**   | **Frontend — Customer (Rewards + Home)** | يومان   | 🟡 مهمة  | ✅ **مكتمل** |
-| **5**   | **Frontend — Checkout (Tier benefits)**  | يوم     | 🔴 حرجة  | 🔜 التالي    |
-| **6**   | **Frontend — Admin (3 صفحات جديدة)**     | يوم     | 🟡 مهمة  | ⏳ منتظر     |
-| **7**   | **Frontend — Provider + Onboarding**     | نصف يوم | 🟡 مهمة  | ⏳ منتظر     |
-| 8       | Testing + QA                             | يومان   | 🔴 حرجة  | ⏳ منتظر     |
+| المرحلة | الموضوع                                  | المدة   | الأولوية | الحالة   |
+| ------- | ---------------------------------------- | ------- | -------- | -------- |
+| 1       | DB Migrations (10 ملفات — شامل fixes)    | يومان   | 🔴 حرجة  | ✅ مكتمل |
+| 2       | Backend Services (4 services جديدة)      | يومان   | 🔴 حرجة  | ✅ مكتمل |
+| 3       | API Endpoints (7 endpoints + admin)      | يوم     | 🔴 حرجة  | ✅ مكتمل |
+| 4       | Frontend — Customer (Rewards + Home)     | يومان   | 🟡 مهمة  | ✅ مكتمل |
+| 5       | Frontend — Checkout (Tier benefits)      | يوم     | 🔴 حرجة  | ✅ مكتمل |
+| 6       | Frontend — Admin (3 صفحات جديدة)         | يوم     | 🟡 مهمة  | ✅ مكتمل |
+| 7       | Frontend — Provider + Onboarding         | نصف يوم | 🟡 مهمة  | ✅ مكتمل |
+| 8       | Testing + QA (6 unit suites + e2e smoke) | يومان   | 🔴 حرجة  | ✅ مكتمل |
+
+**🎉 8/8 مراحل مُكتملة على فرع `claude/points-rewards-proposal-F3M3L` (PR #396).**
 
 ### تفاصيل Phase 4 المُنفَّذ (v2.5.2)
 
@@ -2384,14 +2386,90 @@ ROI: 9× التكلفة ✅
 - ✅ كل المكوّنات تحترم `prefers-reduced-motion`
 - ✅ RTL/LTR كامل + aria-labels + aria-modal
 
-**ما لم يُدمَج بعد (يقع في Phase 5/6/7):**
+**كل الـ integrations تمَّت في Phase 7 (انظر القسم أدناه).**
 
-- وضع `<SurpriseCard />` داخل `src/app/[locale]/page.tsx` Homepage
-- وضع `<StreakIcon />` داخل `src/components/layout/Header.tsx`
-- ضمّ الـ sections الجديدة داخل `RewardsHubClient.tsx`
-- استخدام `<WelcomeBoxModal />` في صفحة `/auth/email-verified`
+---
 
-المكوّنات جاهزة plug-and-play — كل integration يحتاج fetch بسيط من الـ endpoint المُناظر (انظر §3 من الخطة).
+### تفاصيل Phase 5 المُنفَّذ — Checkout (v2.5.2)
+
+**ملفات جديدة (2):**
+
+- `src/lib/tier-rewards/use-tier-benefits.ts` — hook auto-fetching + `applyTierDeliveryAdjustment` pure helper
+- `src/components/customer/checkout/TierDeliveryDiscountLine.tsx` — line في الـ order summary
+
+**تعديلات (2):**
+
+- `src/lib/tier-rewards/index.ts` — تصدير الـ hook + helper + type
+- `src/app/[locale]/checkout/page.tsx` — استدعاء الـ hook قبل أي early return (Rules of Hooks)، تطبيق الـ adjustment على الـ effective fee، دمج tier discount في `discountWithTier` المرسَل لـ `create_order_atomic` + `pending_orders` (نفس نموذج الـ promo codes — Engezna تتحمل التكلفة).
+
+**التحقق:** customer Bronze لا يرى شيء، Silver/Gold يرى خصم %، Gold مع free shot شهري يرى "توصيل مجاني"، Platinum + ≥400 ج.م يرى توصيل مجاني، Platinum + <400 ج.م لا يرى الميزة.
+
+---
+
+### تفاصيل Phase 6 المُنفَّذ — Admin Pages (v2.5.2)
+
+**3 صفحات جديدة:**
+
+- `/admin/tier-rewards/page.tsx` — تحرير tier_rewards config (4 cards) مع per-tier Save + "Saved" check
+- `/admin/streaks/page.tsx` — KPI cards (total / active / longest) + تحليلات توزيع المستويات
+- `/admin/mega-referrers/page.tsx` — جدول الـ 10 slots + KPIs (qualified / open)
+
+**Endpoint جديد:**
+
+- `GET /api/admin/streaks/route.ts` — aggregates `customer_streaks` (tierCounts + activeCount + longestUserId)
+
+**نمط Admin:** null-user guard ينتج TS narrow صحيح، `onMenuClick={toggleSidebar}` (مش `onSidebarToggle`)، service-role client بعد admin_users.is_active check.
+
+---
+
+### تفاصيل Phase 7 المُنفَّذ — Wiring (v2.5.2)
+
+**ملفات جديدة (3):**
+
+- `src/lib/feature-flags.ts` — `FEATURES.PARTNER_GIFTS_ENABLED` (default false)
+- `src/components/layout/StreakIconClient.tsx` — auto-fetching wrapper حول `<StreakIcon />`
+- `src/components/home/SurpriseCardClient.tsx` — auto-fetching wrapper حول `<SurpriseCard />`
+
+**تكاملات (5 ملفات):**
+
+- `ProviderSidebar.tsx` — Partner Gifts entry مُغلَّف بـ `FEATURES.PARTNER_GIFTS_ENABLED`
+- `auth/complete-profile/page.tsx` — حذف الـ CTA "🎁 احصل على هدية في عيد ميلادك" (deprecated per decision #1)
+- `HomePageClient.tsx` — `<WelcomeBoxModal />` + `<SurpriseCardClient />` مُضافين
+- `CustomerHeader.tsx` — `<StreakIconClient />` بجوار bell الإشعارات
+- `WelcomeBoxModal.tsx` — localStorage flag `engezna_welcome_seen` يمنع POST/flash على كل home visit
+
+---
+
+### تفاصيل Phase 8 المُنفَّذ — Testing + QA (v2.5.2)
+
+**Unit Tests — 6 ملفات / 43 cases (كلها تجتاز):**
+
+- `src/__tests__/unit/services/tier-rewards.test.ts` — `applyTierDeliveryAdjustment` 4 branches + edge cases
+- `src/__tests__/unit/services/streaks.test.ts` — `StreakService` + threshold
+- `src/__tests__/unit/services/mega-referrer.test.ts` — `MegaReferrerService` + constants + leaderboard mapping
+- `src/__tests__/unit/services/welcome-box.test.ts` — `WelcomeBoxService.grant/getState` idempotent
+- `src/__tests__/unit/services/tier-rewards-service.test.ts` — checkout RPC + admin updateConfig + snake↔camel
+- `src/__tests__/unit/services/loyalty-v2.test.ts` — multiplier × streak + discount block + 5★=20 + ownership_mismatch
+
+**E2E Smoke — 1 ملف / 6 cases:**
+
+- `e2e/v2_5_2-rewards.spec.ts`:
+  - admin pages: tier-rewards / streaks / mega-referrers يفتحوا بدون أخطاء
+  - a11y regression guards: لا dialog leak لزائر غير-مسجَّل، كل dialog له اسم، carousel buttons لها aria-label
+
+**النتائج الإجمالية:** TypeScript 0 errors، Vitest 16/313 cases pass، Prettier نظيف، ESLint 0 errors.
+
+---
+
+### Lighthouse a11y fixes (parallel work)
+
+أثناء المراحل 7-8، CI كشف فشل Lighthouse `categories:accessibility = 0.86` على /ar و /welcome (تحت 0.9). عُولج من الجذر بدون رفع الـ threshold:
+
+- **`aria-dialog-name`**: WelcomeBoxModal لم يكن له aria-label fallback حين الـ h2 المُشار له بـ aria-labelledby غير موجود في loading/error phases. أُضيف static aria-label + branch `401 → silent close` للزوار غير المُسجَّلين.
+- **`button-name`**: OffersCarousel + PartnerBannersCarousel pagination dots بدون اسم. أُضيف `aria-label="Go to slide N"` + `aria-current` للنشطة.
+- **`target-size`**: نفس الـ dots height 6px (تحت 24px minimum). أُضيف `before:-inset-x-3 before:-inset-y-5` hit-area expansion يحافظ على الـ visual 6px.
+
+**TBT threshold revert:** الـ 700→800 السابق كان متعجلًا. الـ run الثاني أظهر TBT=516ms (آمن تحت 700). تم الـ revert.
 
 **الإجمالي المُحدَّث:** 10-12 يوم عمل (كان 7-10 — تعديل بعد Frontend audit).
 
