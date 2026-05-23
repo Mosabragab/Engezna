@@ -1574,7 +1574,20 @@ export default function CheckoutPage() {
   // record reflects who absorbed the cost (Engezna marketing budget).
   const effectiveDeliveryFee = giftWaivesDelivery ? 0 : tierAdjustment.feeAfterTier / 100;
 
-  const total = subtotal + effectiveDeliveryFee - discountAmount - giftDeliveryWaiverEgp;
+  // v2.5.2 fix (CodeRabbit): avoid double-subtracting the gift waiver in
+  // the displayed total. When giftWaivesDelivery is true, effectiveDeliveryFee
+  // is already 0, so subtracting giftDeliveryWaiverEgp again would discount
+  // the fee a second time. Add the FULL delivery fee back in the gift case
+  // so the subtraction cancels cleanly:
+  //
+  //   gift case:  total = subtotal + deliveryFee     - discount - waiver
+  //                     = subtotal + deliveryFee     - discount - deliveryFee
+  //                     = subtotal - discount  ✓
+  //   no gift:    total = subtotal + effectiveDelivery - discount - 0
+  //                     = subtotal + effectiveDelivery - discount  ✓ (unchanged)
+  const feeToAdd = giftWaivesDelivery ? deliveryFee : effectiveDeliveryFee;
+  const waiverToSubtract = giftWaivesDelivery ? giftDeliveryWaiverEgp : 0;
+  const total = subtotal + feeToAdd - discountAmount - waiverToSubtract;
 
   return (
     <CustomerLayout

@@ -151,6 +151,31 @@ describe('useActiveFreeDeliveryGift', () => {
     expect(result.current.gift).toBeNull();
   });
 
+  it('skips granted free_delivery entries that are already past expires_at', async () => {
+    // v2.5.2 nitpick: defend-in-depth against a stale list returning a
+    // server-side-expired entry that hasn't been swept yet.
+    const pastIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    mockFetchOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          gifts: [
+            {
+              id: 'g1',
+              status: 'granted',
+              expires_at: pastIso, // yesterday — should be excluded
+              cost_piasters: 2250,
+              gift: { type: 'free_delivery', title_ar: 'X', title_en: 'X' },
+            },
+          ],
+        }),
+    });
+
+    const { result } = renderHook(() => useActiveFreeDeliveryGift());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.gift).toBeNull();
+  });
+
   it('returns null on 401 unauthenticated', async () => {
     mockFetchOnce({ ok: false, status: 401 });
     const { result } = renderHook(() => useActiveFreeDeliveryGift());

@@ -67,10 +67,20 @@ export function useActiveFreeDeliveryGift(): UseActiveFreeDeliveryGiftResult {
 
         // First granted free_delivery entry. Granted = not yet used / opened
         // (Welcome Box is granted+pre-revealed since the modal handles reveal).
-        const candidate = (data.gifts ?? []).find(
-          (g) =>
-            (g.status === 'granted' || g.status === 'opened') && g.gift?.type === 'free_delivery'
-        );
+        //
+        // v2.5.2 nitpick fix: also exclude entries whose expires_at is in
+        // the past. The server-side use_gift_atomic RPC already refuses to
+        // apply an expired gift, but filtering here prevents the checkout
+        // UI from briefly showing a "🎁 Welcome gift -22.50 EGP" line
+        // that would then silently fail to consume on order submit.
+        const nowMs = Date.now();
+        const candidate = (data.gifts ?? []).find((g) => {
+          if (g.gift?.type !== 'free_delivery') return false;
+          if (g.status !== 'granted' && g.status !== 'opened') return false;
+          const expiresMs = g.expires_at ? Date.parse(g.expires_at) : Number.NaN;
+          if (!Number.isFinite(expiresMs) || expiresMs <= nowMs) return false;
+          return true;
+        });
 
         if (cancelled) return;
 
