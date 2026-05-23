@@ -1539,9 +1539,17 @@ export default function CheckoutPage() {
   // Precedence: tier free-delivery takes priority over gift free-delivery
   // (the gift then carries over to the next order). This avoids burning a
   // gift when the user's tier already covers the fee.
+  //
+  // Also gated on (a) the order actually having a delivery fee — pickup
+  // orders have calculatedDeliveryFee === 0 and orderType === 'pickup',
+  // so the gift must NOT be consumed (it would have nothing to waive).
   const { gift: activeFreeDeliveryGift, refresh: refreshActiveGift } = useActiveFreeDeliveryGift();
   const tierAlreadyFree = tierAdjustment.freeDeliveryApplied;
-  const giftWaivesDelivery = Boolean(activeFreeDeliveryGift) && !tierAlreadyFree;
+  const giftWaivesDelivery =
+    Boolean(activeFreeDeliveryGift) &&
+    !tierAlreadyFree &&
+    orderType !== 'pickup' &&
+    calculatedDeliveryFee > 0;
   const giftDeliveryWaiverEgp = giftWaivesDelivery
     ? Math.round(calculatedDeliveryFee * 100) / 100
     : 0;
