@@ -52,7 +52,9 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTierBenefits, applyTierDeliveryAdjustment } from '@/lib/tier-rewards';
+import { useActiveFreeDeliveryGift } from '@/lib/gifts/use-active-free-delivery-gift';
 import { TierDeliveryDiscountLine } from '@/components/customer/checkout/TierDeliveryDiscountLine';
+import { WelcomeBoxAppliedLine } from '@/components/customer/checkout/WelcomeBoxAppliedLine';
 import type { OrderType, DeliveryTiming } from '@/types/database';
 import {
   type BusinessHours,
@@ -1239,8 +1241,20 @@ export default function CheckoutPage() {
       // settlement still sees the base delivery fee (the driver/provider
       // gets paid the full delivery amount; Engezna absorbs the discount
       // as a marketing expense — same pattern as promo codes).
-      const tierDiscountEgpLocal = tierAdjustment.discountApplied / 100;
-      const discountWithTier = discountAmount + tierDiscountEgpLocal;
+      //
+      // When a free_delivery gift already waives the full fee, the tier
+      // percentage off is suppressed — stacking both would over-discount
+      // (e.g. Silver 20% + gift 100% = 120%) and cause Engezna to absorb
+      // more than the delivery cost. The displayed total math below mirrors
+      // this so finalTotal === total.
+      const tierDiscountEgpLocal = giftWaivesDelivery ? 0 : tierAdjustment.discountApplied / 100;
+
+      // v2.5.2: also fold in the active free_delivery gift waiver. If the
+      // tier already covers delivery, the gift is preserved for next order
+      // (the `giftWaivesDelivery` flag above gates this).
+      const giftDeliveryDiscountEgpLocal = giftWaivesDelivery ? calculatedDeliveryFee : 0;
+
+      const discountWithTier = discountAmount + tierDiscountEgpLocal + giftDeliveryDiscountEgpLocal;
 
       // Calculate final total with discount (use calculated delivery fee based on order type)
       const finalTotal = subtotal + calculatedDeliveryFee - discountWithTier;
@@ -1330,6 +1344,26 @@ export default function CheckoutPage() {
         const orderId = result?.order_id;
         if (!orderId) {
           throw new Error('Order creation returned no order ID');
+        }
+
+        // v2.5.2: mark the free_delivery gift as consumed by this order.
+        // Best-effort — failure here doesn't roll back the order (the
+        // user already paid / committed). The gift stays granted and the
+        // user can apply it on the next order — better than blocking
+        // confirmation on a non-critical RPC call.
+        if (giftWaivesDelivery && activeFreeDeliveryGift) {
+          fetch('/api/gifts/use', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+            body: JSON.stringify({
+              giftEntryId: activeFreeDeliveryGift.entryId,
+              orderId,
+            }),
+          })
+            .then(() => refreshActiveGift())
+            .catch((err) => {
+              console.warn('[checkout] gift use marker failed (non-fatal):', err);
+            });
         }
 
         // Mark order as placed and clear cart
@@ -1497,6 +1531,29 @@ export default function CheckoutPage() {
     tierBenefits
   );
 
+  // v2.5.2: pick up an active free_delivery gift (Welcome Box / mystery
+  // free_delivery / etc.) and apply it as a delivery waiver. Closes the
+  // gap reported on /rewards "Use Now" — clicking the button redirects
+  // here, and now the delivery actually becomes free.
+  //
+  // Precedence: tier free-delivery takes priority over gift free-delivery
+  // (the gift then carries over to the next order). This avoids burning a
+  // gift when the user's tier already covers the fee.
+  //
+  // Also gated on (a) the order actually having a delivery fee — pickup
+  // orders have calculatedDeliveryFee === 0 and orderType === 'pickup',
+  // so the gift must NOT be consumed (it would have nothing to waive).
+  const { gift: activeFreeDeliveryGift, refresh: refreshActiveGift } = useActiveFreeDeliveryGift();
+  const tierAlreadyFree = tierAdjustment.freeDeliveryApplied;
+  const giftWaivesDelivery =
+    Boolean(activeFreeDeliveryGift) &&
+    !tierAlreadyFree &&
+    orderType !== 'pickup' &&
+    calculatedDeliveryFee > 0;
+  const giftDeliveryWaiverEgp = giftWaivesDelivery
+    ? Math.round(calculatedDeliveryFee * 100) / 100
+    : 0;
+
   // Show loading while auth is loading or cart is hydrating
   // Also show loading if order was placed (navigating to confirmation)
   if (authLoading || !_hasHydrated || orderPlaced) {
@@ -1521,9 +1578,34 @@ export default function CheckoutPage() {
   // v2.5.2: tierBenefits + tierAdjustment are computed at the top of the
   // component (before early returns) to comply with the Rules of Hooks.
   // Derive the effective delivery fee here for the displayed total.
-  const effectiveDeliveryFee = tierAdjustment.feeAfterTier / 100;
+  //
+  // Delivery waivers — exactly one applies per order:
+  //   1. Tier benefit (Silver/Gold/Platinum) → tierAdjustment.feeAfterTier.
+  //      If the tier waives the full fee (Gold/Platinum), the gift is
+  //      preserved for the next order.
+  //   2. Active free_delivery gift entry (Welcome Box / mystery) →
+  //      gates on `giftWaivesDelivery`. When the gift fully waives the
+  //      fee, the tier % off (Silver) is suppressed in handlePlaceOrder
+  //      so we don't stack 20%+100% and over-discount.
+  //
+  // Whichever applies is added to the discount field for persistence so
+  // the order record reflects who absorbed the cost (Engezna marketing).
+  const effectiveDeliveryFee = giftWaivesDelivery ? 0 : tierAdjustment.feeAfterTier / 100;
 
-  const total = subtotal + effectiveDeliveryFee - discountAmount;
+  // v2.5.2 fix (CodeRabbit): avoid double-subtracting the gift waiver in
+  // the displayed total. When giftWaivesDelivery is true, effectiveDeliveryFee
+  // is already 0, so subtracting giftDeliveryWaiverEgp again would discount
+  // the fee a second time. Add the FULL delivery fee back in the gift case
+  // so the subtraction cancels cleanly:
+  //
+  //   gift case:  total = subtotal + deliveryFee     - discount - waiver
+  //                     = subtotal + deliveryFee     - discount - deliveryFee
+  //                     = subtotal - discount  ✓
+  //   no gift:    total = subtotal + effectiveDelivery - discount - 0
+  //                     = subtotal + effectiveDelivery - discount  ✓ (unchanged)
+  const feeToAdd = giftWaivesDelivery ? deliveryFee : effectiveDeliveryFee;
+  const waiverToSubtract = giftWaivesDelivery ? giftDeliveryWaiverEgp : 0;
+  const total = subtotal + feeToAdd - discountAmount - waiverToSubtract;
 
   return (
     <CustomerLayout
@@ -2355,12 +2437,25 @@ export default function CheckoutPage() {
                         {deliveryFee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
                     </div>
-                    {/* v2.5.2: Tier delivery benefit line (Silver/Gold/Platinum) */}
-                    <TierDeliveryDiscountLine
-                      benefits={tierBenefits}
-                      freeDeliveryApplied={tierAdjustment.freeDeliveryApplied}
-                      discountPiasters={tierAdjustment.discountApplied}
-                    />
+                    {/* v2.5.2: Tier delivery benefit line (Silver/Gold/Platinum).
+                        Suppressed when a free_delivery gift covers the full fee,
+                        since the tier % off is not applied in that case (see
+                        handlePlaceOrder). */}
+                    {!giftWaivesDelivery && (
+                      <TierDeliveryDiscountLine
+                        benefits={tierBenefits}
+                        freeDeliveryApplied={tierAdjustment.freeDeliveryApplied}
+                        discountPiasters={tierAdjustment.discountApplied}
+                      />
+                    )}
+                    {/* v2.5.2: Welcome Box (or other free_delivery gift) line */}
+                    {giftWaivesDelivery && activeFreeDeliveryGift && (
+                      <WelcomeBoxAppliedLine
+                        titleAr={activeFreeDeliveryGift.titleAr}
+                        titleEn={activeFreeDeliveryGift.titleEn}
+                        amountEgp={giftDeliveryWaiverEgp}
+                      />
+                    )}
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-sm text-green-600">
                         <span>{locale === 'ar' ? 'الخصم' : 'Discount'}</span>
