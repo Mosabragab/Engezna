@@ -1241,7 +1241,13 @@ export default function CheckoutPage() {
       // settlement still sees the base delivery fee (the driver/provider
       // gets paid the full delivery amount; Engezna absorbs the discount
       // as a marketing expense — same pattern as promo codes).
-      const tierDiscountEgpLocal = tierAdjustment.discountApplied / 100;
+      //
+      // When a free_delivery gift already waives the full fee, the tier
+      // percentage off is suppressed — stacking both would over-discount
+      // (e.g. Silver 20% + gift 100% = 120%) and cause Engezna to absorb
+      // more than the delivery cost. The displayed total math below mirrors
+      // this so finalTotal === total.
+      const tierDiscountEgpLocal = giftWaivesDelivery ? 0 : tierAdjustment.discountApplied / 100;
 
       // v2.5.2: also fold in the active free_delivery gift waiver. If the
       // tier already covers delivery, the gift is preserved for next order
@@ -1565,13 +1571,17 @@ export default function CheckoutPage() {
   // component (before early returns) to comply with the Rules of Hooks.
   // Derive the effective delivery fee here for the displayed total.
   //
-  // Two distinct delivery waivers can apply, in this order of precedence:
-  //   1. Tier benefit (Silver/Gold/Platinum) → tierAdjustment.feeAfterTier
-  //   2. Active free_delivery gift entry (Welcome Box / mystery)
-  //      → only if tier didn't already waive the fee (giftWaivesDelivery)
+  // Delivery waivers — exactly one applies per order:
+  //   1. Tier benefit (Silver/Gold/Platinum) → tierAdjustment.feeAfterTier.
+  //      If the tier waives the full fee (Gold/Platinum), the gift is
+  //      preserved for the next order.
+  //   2. Active free_delivery gift entry (Welcome Box / mystery) →
+  //      gates on `giftWaivesDelivery`. When the gift fully waives the
+  //      fee, the tier % off (Silver) is suppressed in handlePlaceOrder
+  //      so we don't stack 20%+100% and over-discount.
   //
-  // Both are added to the discountAmount for persistence so the order
-  // record reflects who absorbed the cost (Engezna marketing budget).
+  // Whichever applies is added to the discount field for persistence so
+  // the order record reflects who absorbed the cost (Engezna marketing).
   const effectiveDeliveryFee = giftWaivesDelivery ? 0 : tierAdjustment.feeAfterTier / 100;
 
   // v2.5.2 fix (CodeRabbit): avoid double-subtracting the gift waiver in
@@ -2419,12 +2429,17 @@ export default function CheckoutPage() {
                         {deliveryFee.toFixed(2)} {locale === 'ar' ? 'ج.م' : 'EGP'}
                       </span>
                     </div>
-                    {/* v2.5.2: Tier delivery benefit line (Silver/Gold/Platinum) */}
-                    <TierDeliveryDiscountLine
-                      benefits={tierBenefits}
-                      freeDeliveryApplied={tierAdjustment.freeDeliveryApplied}
-                      discountPiasters={tierAdjustment.discountApplied}
-                    />
+                    {/* v2.5.2: Tier delivery benefit line (Silver/Gold/Platinum).
+                        Suppressed when a free_delivery gift covers the full fee,
+                        since the tier % off is not applied in that case (see
+                        handlePlaceOrder). */}
+                    {!giftWaivesDelivery && (
+                      <TierDeliveryDiscountLine
+                        benefits={tierBenefits}
+                        freeDeliveryApplied={tierAdjustment.freeDeliveryApplied}
+                        discountPiasters={tierAdjustment.discountApplied}
+                      />
+                    )}
                     {/* v2.5.2: Welcome Box (or other free_delivery gift) line */}
                     {giftWaivesDelivery && activeFreeDeliveryGift && (
                       <WelcomeBoxAppliedLine
